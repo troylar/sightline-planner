@@ -16,7 +16,7 @@ const tasks = [
   ['guide-pending', 'planning-guide', 'Draft Scope, Work breakdown and guidance for Integrations (int) and Search (rag). Integrations owns bringing external tools into the product; Search owns finding answers across connected content. Cross-tool retrieval belongs in Search. Preserve other guidance.'],
   ['edit-duplicate', 'edit-plan', 'Rename Better onboarding to Teams start planning together. Prepare the changes file.'],
   ['edit-supported', 'edit-plan', 'Rename dv-onboard to Teams start planning together. Write the changes file for my review.'],
-  ['edit-unsupported', 'edit-plan', 'Delete dv-onboard. Prepare any supported amendments and tell me what to do next.'],
+  ['edit-unsupported', 'edit-plan', 'Merge Avery into Blake. Prepare any supported amendments and tell me what to do next.'],
   ['meeting', 'meeting-to-plan', 'Turn these notes into proposals and write the changes file: Agreed: move dv-search to 2027-Q2. Idea only: explore offline search; capture this as an unscheduled idea too. Avery asked whether the idea needs a new workstream. No owner was agreed for the idea.'],
   ['roadmap-ambiguous', 'plan-roadmap', 'Move dv-onboard to Q2 and write the proposed change.'],
   ['roadmap-explicit', 'plan-roadmap', 'Plan Q1 through Q4 2027. Move dv-onboard to 2027-Q1 and dv-search to 2027-Q2. Keep everything else, including later work, as it is. Write the proposals.']

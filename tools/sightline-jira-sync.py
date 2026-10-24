@@ -1748,6 +1748,158 @@ AM_BAR_ID, AM_TASK_ID = re.compile(r"^bar-[A-Za-z0-9_-]{1,60}$"), re.compile(r"^
 STATUS_KEYS = ["notstarted", "inprogress", "done", "atrisk"]
 
 
+# Actions ({op: "action", action, args}): the page's action table, by name and argument types. harness114 checks this
+# table against the page's own. Offline, an action is checked for shape and references; its rules (loops, Jira dates,
+# blacked-out time) are checked by the page, which runs it on a copy before showing it for review.
+ACTIONS = {
+    "initiative.add": ({"id": "id?", "lane": "id?", "parent": "id?", "start": "num?", "day": "iso?", "span": "num?", "label": "str?", "owners": "ids?", "tags": "ids?"}, False),
+    "initiative.set": ({"id": "id", "field": "str", "value": "any"}, True),
+    "initiative.setStatus": ({"id": "id", "status": "str"}, True),
+    "initiative.move": ({"id": "id", "start": "num?", "day": "iso?", "span": "num?"}, True),
+    "initiative.setLane": ({"id": "id", "lane": "id"}, True),
+    "initiative.setParent": ({"id": "id", "parent": "idOrBlank"}, True),
+    "initiative.place": ({"id": "id", "target": "id", "zone": "str"}, False),
+    "initiative.del": ({"id": "id"}, False),
+    "task.add": ({"id": "id?", "bar": "id", "start": "iso", "days": "int?", "label": "str?", "owners": "ids?", "tags": "ids?"}, False),
+    "task.set": ({"id": "id", "field": "str", "value": "any"}, True),
+    "task.setStatus": ({"id": "id", "status": "str"}, True),
+    "task.move": ({"id": "id", "start": "iso?", "days": "int?"}, True),
+    "task.moveTo": ({"id": "id", "bar": "id"}, True),
+    "task.link": ({"id": "id", "after": "id"}, False),
+    "task.unlink": ({"id": "id", "after": "id"}, False),
+    "task.del": ({"id": "id"}, False),
+    "outcome.add": ({"id": "id?", "name": "str", "source": "str?", "target": "str?", "release": "id?", "date": "iso?", "jira": "keys?"}, False),
+    "outcome.set": ({"id": "id", "field": "str", "value": "any"}, True),
+    "outcome.setTarget": ({"id": "id", "target": "str?", "date": "iso?"}, True),
+    "outcome.setRelease": ({"id": "id", "release": "idOrBlank"}, True),
+    "outcome.linkJira": ({"id": "id", "keys": "keys"}, False),
+    "outcome.unlinkJira": ({"id": "id", "key": "str"}, False),
+    "outcome.drop": ({"id": "id", "reason": "str?"}, False),
+    "outcome.del": ({"id": "id"}, True),
+    "link.add": ({"id": "id", "after": "id"}, False),
+    "link.remove": ({"id": "id", "after": "id"}, False),
+    "initiative.waitFor": ({"id": "id", "gate": "id"}, False),
+    "initiative.unwait": ({"id": "id", "gate": "id"}, False),
+    "workstream.add": ({"id": "id?", "name": "str", "members": "ids?", "color": "str?"}, False),
+    "workstream.rename": ({"id": "id", "name": "str"}, True),
+    "workstream.addMember": ({"id": "id", "person": "id"}, False),
+    "workstream.removeMember": ({"id": "id", "person": "id"}, False),
+    "person.add": ({"id": "id?", "name": "str", "role": "str?", "days": "int?", "outside": "any?"}, False),
+    "person.set": ({"id": "id", "field": "str", "value": "any"}, True),
+    "person.setAlloc": ({"id": "id", "alloc": "any"}, True),
+    "person.timeOff.add": ({"id": "id", "from": "iso", "to": "iso?", "note": "str?"}, False),
+    "person.timeOff.del": ({"id": "id", "from": "iso"}, False),
+    "milestone.add": ({"id": "id?", "what": "str", "day": "iso?", "lane": "id?", "status": "str?", "owners": "ids?", "after": "ids?"}, False),
+    "milestone.move": ({"id": "id", "day": "iso", "stretch": "any?"}, True),
+    "milestone.set": ({"id": "id", "field": "str", "value": "any"}, True),
+    "milestone.doneWhen.add": ({"id": "id", "bar": "id"}, False),
+    "milestone.doneWhen.remove": ({"id": "id", "bar": "id"}, False),
+    "milestone.del": ({"id": "id"}, False),
+    "gate.add": ({"id": "id?", "gate": "str", "day": "iso?", "label": "str?", "blocks": "str?", "owners": "ids?"}, False),
+    "gate.move": ({"id": "id", "day": "str"}, True),
+    "gate.set": ({"id": "id", "field": "str", "value": "any"}, True),
+    "gate.del": ({"id": "id"}, False),
+    "risk.add": ({"id": "id?", "text": "str", "sev": "any?", "state": "any?", "owners": "any?", "item": "any?", "next": "any?", "waitingOn": "any?", "escalateBy": "any?"}, False),
+    "risk.set": ({"id": "id", "field": "str", "value": "any"}, True),
+    "risk.del": ({"id": "id"}, False),
+    "decision.add": ({"id": "id?", "text": "str", "state": "any?", "owners": "any?", "item": "any?", "due": "any?", "decider": "any?", "next": "any?", "waitingOn": "any?", "escalateBy": "any?"}, False),
+    "decision.set": ({"id": "id", "field": "str", "value": "any"}, True),
+    "decision.del": ({"id": "id"}, False),
+}
+ACT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,79}$")
+# What an id-like argument points at, by the action's first word (id) or the argument's own name.
+ACT_REF_BY_NOUN = {"initiative": "bar", "link": "bar", "task": "task", "outcome": "dv", "workstream": "lane", "person": "person",
+                   "milestone": "ms", "gate": "gate", "risk": "risk", "decision": "dec"}
+ACT_REF_BY_ARG = {"after": "bar", "parent": "bar", "target": "bar", "bar": "bar", "lane": "lane", "person": "person",
+                  "owners": "person", "members": "person", "item": "bar", "decider": "person"}
+
+
+def _act_type_ok(t: str, v) -> bool:
+    if t == "id":
+        return isinstance(v, str) and bool(ACT_ID.match(v))
+    if t == "idOrBlank":
+        return v == "" or _act_type_ok("id", v)
+    if t == "ids":
+        return isinstance(v, list) and len(v) <= 500 and all(_act_type_ok("id", x) for x in v)
+    if t == "str":
+        return isinstance(v, str) and len(v) <= 4000
+    if t == "num":
+        return isinstance(v, (int, float)) and not isinstance(v, bool) and v == v and abs(v) != float("inf")
+    if t == "int":
+        return isinstance(v, int) and not isinstance(v, bool)
+    if t == "iso":
+        return _valid_iso(v)
+    if t == "keys":
+        return isinstance(v, list) and len(v) <= 500 and all(isinstance(k, str) and len(k) <= 40 for k in v)
+    if t == "any":
+        return v is None or isinstance(v, bool) or _act_type_ok("num", v) or _act_type_ok("str", v) or _act_type_ok("ids", v)
+    return False
+
+
+def _valid_iso(v) -> bool:
+    if not isinstance(v, str) or not re.match(r"^\d{4}-\d{2}-\d{2}$", v):
+        return False
+    try:
+        return _dt.date.fromisoformat(v).isoformat() == v
+    except ValueError:
+        return False
+
+
+def check_action_op(o, at: str, ids: dict, made: dict) -> str:
+    """Shape, types and references for one action op; '' when fine. made collects ids the change creates."""
+    name, args = o.get("action"), o.get("args")
+    if not isinstance(name, str) or name not in ACTIONS:
+        return f'{at}: "{str(name)[:40]}" isn\'t an action (the context file lists them under actions)'
+    extra = [k for k in o if k not in ("op", "action", "args")]
+    if extra:
+        return f"{at}: an action op has op, action and args (not {', '.join(str(k)[:20] for k in extra)})"
+    if not isinstance(args, dict):
+        return f"{at}: {name} needs args, an object"
+    spec, has_prev = ACTIONS[name]
+    for k in args:
+        if k not in spec and not (k == "prev" and has_prev):
+            return f"{at}: {name} has no argument called {str(k)[:30]}."
+    for k, t in spec.items():
+        opt, ty = t.endswith("?"), t.rstrip("?")
+        if k not in args:
+            if opt:
+                continue
+            return f"{at}: {name} needs {k}."
+        if not _act_type_ok(ty, args[k]):
+            return f"{at}: {k} isn't a valid {'date (YYYY-MM-DD)' if ty == 'iso' else 'list' if ty in ('ids', 'keys') else 'id' if ty == 'id' else 'number' if ty in ('num', 'int') else 'value'}."
+    noun, verb = name.split(".", 1)
+    creates = verb == "add" and noun not in ("link",)
+    if creates and "id" in spec and not (isinstance(args.get("id"), str) and args["id"]):
+        return f"{at}: give the new item an id (like risk-vendor-limits), so reading the file again can't add it twice"
+    for k, v in args.items():
+        kind = ACT_REF_BY_NOUN.get(noun) if k == "id" else ACT_REF_BY_ARG.get(k)
+        if name == "task.link" or name == "task.unlink":
+            kind = "task" if k in ("id", "after") else kind
+        if name in ("task.add", "task.moveTo") and k == "bar":
+            kind = "bar"
+        if name == "initiative.waitFor" and k == "gate":
+            kind = "gate|block"
+        if not kind or (k == "id" and creates) or name.endswith(".remove") and k != "id" or name in ("link.remove", "initiative.unwait", "task.unlink", "milestone.doneWhen.remove", "workstream.removeMember", "outcome.unlinkJira") and k != "id":
+            continue
+        vals = v if isinstance(v, list) else [v]
+        for x in vals:
+            if x == "" or not isinstance(x, str):
+                continue
+            if not any(x in ids.get(kd, set()) or x in made.get(kd, set()) for kd in kind.split("|")):
+                return f"{at}: {x[:60]} isn't in the plan (for {k})"
+    if creates and isinstance(args.get("id"), str):
+        made.setdefault(ACT_REF_BY_NOUN.get(noun, noun), set()).add(args["id"])
+    return ""
+
+
+def _plan_ids(plan) -> dict:
+    bars = [b for b in plan.get("bars") or [] if isinstance(b, dict)]
+    pick = lambda key: {x.get("id") for x in plan.get(key) or [] if isinstance(x, dict)}
+    return {"bar": {b.get("id") for b in bars}, "task": {t.get("id") for b in bars for t in b.get("tasks") or [] if isinstance(t, dict)},
+            "dv": pick("deliverables"), "lane": pick("lanes"), "person": pick("people"), "ms": pick("milestones"), "gate": pick("gates"),
+            "block": pick("blocks"), "risk": pick("risks"), "dec": pick("decisions")}
+
+
 def _plan_start(plan) -> _dt.date:
     return _dt.date.fromisoformat((plan.get("meta") or {}).get("start"))
 
@@ -1980,10 +2132,19 @@ def am_check(c: dict, plan: dict, status: dict) -> dict:
     def dv(i):
         return made.get(i) or next((d for d in dvs if d.get("id") == i), None)
 
+    plan_ids, act_made = _plan_ids(plan), {}
     for n, o in enumerate(c["ops"], 1):
         at = f"op {n}"
         if not isinstance(o, dict):
             bad.append(f"{at} isn't an object")
+            continue
+        if o.get("op") == "action":
+            why = check_action_op(o, at, plan_ids, act_made)
+            if why:
+                bad.append(why)
+            else:
+                todo += 1
+                notes.append("Sightline checks each action's own rules (loops, Jira dates, blacked-out time) when it reads the file.")
             continue
         if o.get("op") == "propose":
             k, f = str(o.get("key") or "").upper(), o.get("field")
@@ -2120,7 +2281,7 @@ def am_check(c: dict, plan: dict, status: dict) -> dict:
             if change:
                 todo += 1
             continue
-        bad.append(f'{at}: "{str(o.get("op"))[:20]}" isn\'t an amendment (use add, set, link, unlink or propose)')
+        bad.append(f'{at}: "{str(o.get("op"))[:20]}" isn\'t an amendment (use add, set, link, unlink, propose or action)')
     st = "invalid" if bad else "changed" if stale else "ready" if todo else "done"
     return {"id": c["id"], "summary": str(c.get("summary") or "")[:200], "status": st, "reasons": bad + stale, "notes": list(dict.fromkeys(notes))}
 

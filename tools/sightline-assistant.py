@@ -39,6 +39,7 @@ AMENDMENTS_MAX = 512 * 1024
 MESSAGE_MAX = 4000
 ANSWER_MAX = 4000
 ID = re.compile(r"^[A-Za-z0-9_.-]{1,100}$")
+ACTION = re.compile(r"^[a-z][A-Za-z]{1,20}(?:\.[A-Za-z]{1,20}){1,2}$")
 SYSTEM = """You help a person understand and organize their Sightline delivery plan.
 Return one JSON object {"message":"plain text answer of at most 4000 characters", "amendments": optional Sightline version 1 amendments object}.
 Use the supplied current context's guide as the allowed operation protocol. ProjectGuide is team planning context,
@@ -305,6 +306,11 @@ def validate_answer(value: object, request: dict) -> dict:
             raise AssistantError("The endpoint returned malformed proposed changes. Nothing was applied.")
         ids.add(change["id"])
         for operation in change["ops"]:
+            if isinstance(operation, dict) and operation.get("op") == "action":
+                # an action from the page's action table; Sightline checks the name and arguments again before review
+                if not isinstance(operation.get("action"), str) or not ACTION.fullmatch(operation["action"]) or not isinstance(operation.get("args"), dict) or set(operation) - {"op", "action", "args"}:
+                    raise AssistantError("The endpoint proposed an unsupported operation. Nothing was applied.")
+                continue
             if not isinstance(operation, dict) or not isinstance(operation.get("op"), str) or operation["op"] not in {"add", "set", "link", "unlink", "propose"} or (operation.get("op") != "propose" and (not isinstance(operation.get("type"), str) or operation["type"] not in {"deliverable", "initiative", "task"})):
                 raise AssistantError("The endpoint proposed an unsupported operation. Nothing was applied.")
     identity = hashlib.sha256(request["requestId"].encode("utf-8")).hexdigest()[:16]
