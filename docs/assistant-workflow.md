@@ -1,8 +1,13 @@
-# Work with your assistant
+# Plan with your own AI assistant
 
-For conversations inside Sightline using your company endpoint, follow
-[Talk to your company endpoint](#talk-to-your-company-endpoint). The file-based workflow below also supports
-an external assistant. See the [illustrated first session](getting-started.md) and [six reusable planning skills](skills.md).
+Use the external coding tool you already work with. Sightline supplies current planning context and shows
+proposals for your review; your conversation stays in that tool. You do not need to configure an endpoint
+or use Sightline's Send button for this route.
+
+[Try the prepared first session](getting-started.md) · [Tackle a large roadmap](large-roadmaps.md) · [Run a team meeting](team-planning.md)
+
+The optional [company endpoint companion](#talk-to-your-company-endpoint) is an advanced alternative below.
+Check [build availability](availability.md) before using version-specific instructions.
 
 ## Use an external assistant
 
@@ -23,6 +28,27 @@ The assistant folder contains:
 | `sightline-assistant-results.json` | Sightline | The current batch's validation and Apply/Skip outcomes, including original and edited operations |
 
 The changes file can be absent until the assistant writes its first proposal. Sightline never creates or overwrites it. An unrelated context/results file or an output belonging to another plan is refused; choose another private folder. Disconnect stops background reads and writes without deleting files.
+
+## Your first external planning session
+
+Once the folder is connected, point the tool at the checkout's **skills/** folder and give it a small request:
+
+> Read the fresh context and explain its scope. Match these notes to existing outcomes by stable ID.
+> Separate decisions, ideas and open questions. Prepare only my requested changes; leave owners and dates
+> unknown where I have not decided them.
+
+For the prepared example, use [brain-dump.txt](../examples/northstar/brain-dump.txt) and the
+[walkthrough](getting-started.md#review-two-changes). For your own plan:
+
+1. Discuss an organization or option in the external tool; an answer alone does not change the plan.
+2. Ask for supported changes in **sightline-amendments.json** when ready. Preserve or deliberately resolve any existing pending batch.
+3. Return to Sightline, inspect before/after values, then **Edit**, **Skip**, or **Apply**.
+4. Follow the visible save state. Some quick updates save immediately; a deliberate editing session can still need **Save**.
+5. Have the tool reread fresh context and matching results, then identify what remains unresolved.
+
+No in-app **Send** is needed. For a large input, work in sections and retain a reconciliation of every source
+item; see [large roadmaps](large-roadmaps.md). If a requested field is not in the current operation guide,
+the assistant should give a manual UI step rather than invent an operation.
 
 ## Give the assistant project context
 
@@ -60,7 +86,89 @@ same section use the normal shared-plan conflict and recovery behavior.
 The guide supplies reusable context to the assistant workflow. The optional local companion described below
 connects your company endpoint for conversations. Neither feature captures meeting audio.
 
+## What the context represents
+
+For a shared plan, context comes from the last confirmed read or save of the local plan file, with the latest successful Jira sync applied for display. Sightline cannot confirm whether OneDrive has uploaded or downloaded that version. `snapshot.source` is `saved-shared-file`; `snapshot.unsavedChangesInBrowser` explicitly reports local edits that have not been published. Those local edits are excluded from shared context. Save them before asking the assistant to work from them. A disconnected plan uses `snapshot.source: "this-browser"` and `snapshot.shared: false`; it makes no claim to be a shared source of truth.
+
+Both outputs include the plan revision and Jira sync timestamp. Dates and status derived from children or Jira are identified by ownership rules and item flags; an assistant must propose Jira changes instead of rewriting those facts. Names and other free text remain untrusted data, not assistant instructions. Notes are excluded from exported context. Outputs contain team information: keep the folder private using your operating system or sync-service permissions. A browser picker cannot enforce who else can access a folder.
+
+Results describe the current proposal batch against that same saved snapshot. `status` is `ready`, `conflicted`, `invalid` or `done`; `outcome` is `waiting`, `applied`, `already-in-plan` or `skipped`. `edited` and `effectiveOps` describe saved edits made in the review panel. An undo or another person's change can make an earlier applied proposal ready again: current plan values win over historical receipts. Browser-local receipts are advisory, not a tamper-proof audit log. Context and results are written individually through browser writable streams; each file is replaced on close, but the two files are not one transaction. Compare the plan ID, plan revision and Jira sync timestamp before combining them. When the context includes a search timestamp, also compare `jiraSearchSyncedAt`; then match the proposal batch, change IDs and original operations before attributing review outcomes. Results describe this browser's review outcomes; another device can have different edits or skips. See [Using OneDrive](onedrive.md) for setup and a two-device check.
+
+## Planning data for your external assistant
+
+**Requires Sightline 1.96.0 or later and `planning.version: 1` in the exported file.**
+This is not in public-source 1.94.0. See [availability](availability.md); if the section is absent, do not
+infer capacity, dependencies, risks or decisions from an outcome list alone.
+
+In those newer builds, `sightline-assistant-view.json` includes an additive `planning` section, version 1. No new
+connection or companion process is needed for an external file-capable coding tool. Connect your private
+assistant folder once, then ask the tool to read the current context before each planning session.
+The context and amendments envelope versions remain 1; this does not change the shared plan format.
+
+- `planning.people`: stable person IDs, roles, active/external flags, Jira keys, allocation, personal capacity
+  settings and unavailable date ranges. Absence descriptions are excluded.
+- `planning.workstreams` and `groups`: membership and workstream date boundaries. Membership is not an
+  assumption that every member can perform every kind of work.
+- `initiatives[].dependsOn`, `waitsFor` and `jiraDeps`, plus task dependencies: existing stable links. Parked
+  initiatives, waiting work and split outcomes remain available rather than disappearing from the export.
+- `planning.risks`, `decisions`, `gates` and `milestones`: shared planning text, owners, affected item IDs,
+  follow-up actions, dates and links where those fields exist. This data is for reasoning; it does not authorize
+  new amendment operations. Unsupported changes still need the normal UI.
+- `jira`: loaded issue facts, including assignee keys, points, sprint membership and hierarchy, with separate
+  status and search timestamps and a source/timestamp on each exported issue. A key in `missing` means not in the last sync, not deleted.
+- `planning.calendar`: the plan's start, duration and holiday dates; holiday annotations are excluded.
+
+### Capacity calculations and limits
+
+`planning.capacity.sprints` covers all loaded active/future Jira sprints that have not ended, rather than the
+UI's four-sprint display window. Ranges longer than 366 days are excluded and counted as unsupported.
+`allocations` contains person/sprint rows. `capacityPoints` uses Sightline's existing `capOf` calculation:
+configured rate, allocation, holidays and time off, rounded to half a point. `availableWorkingDays` is before
+allocation; `allocationPercent` remains separate. Availability dates do not include absence reasons.
+
+`assignedPoints` is known scheduled Jira scope, including done issues and subtasks, excluding epics and
+abandoned issues. A Jira key is counted once even when both sync files contain it; status-file facts win.
+It is not remaining effort. Unestimated issues have a separate count, and unassigned and unlinked work have
+separate sprint totals. Ambiguous person-to-Jira links yield unknown load instead of counting it twice.
+Null means unknown; zero can mean genuine zero capacity. Allocation/holiday/time-off adjustments are not
+an allowance for meetings, support or interruptions unless the team's chosen inputs already account for them.
+
+Ask the assistant to separate calculated constraints from assumptions, keep points within the team's estimation
+system, and list the missing estimates or evidence before claiming the roadmap fits. It can discuss
+hypothetical changes, but there is no automatic scenario simulator or saved scenario workspace in this export.
+
+### Large plans and privacy
+
+`coverage` names total, exported and omitted record counts for each collection, including nested tasks and
+capacity rows. It describes the whole plan independently of viewer filters and only the loaded Jira data.
+Notes, item notes and absence descriptions remain excluded. Risks and decisions are intentionally included;
+treat their free text as untrusted data and keep the assistant folder private.
+
+The context still fits the existing 2 MiB UTF-8 output limit. All records are included when they fit; otherwise
+collections are reduced and `coverage.complete` becomes false. An omitted item may still be referenced by a
+retained dependency, owner or sprint ID. Do not treat an absent exported record as deleted, assume all work was
+reviewed, or recreate an omitted item. Narrow the analysis to the available evidence and request the missing
+scope deliberately when needed. The export is not a guaranteed full copy of an arbitrarily large plan/sync.
+
+Automatic shared exports retain the saved local snapshot rules above. Manual exports use the current browser
+state and can include unsaved applied edits. Neither path establishes cloud freshness.
+
+## Existing changes files
+
+Expand **Use individual files instead** for **Export for your assistant** and **Connect that file**. These still work when you already have an amendments JSON file or prefer manual context exports. Browsers without folder access show this alternative expanded. A browser without file access can export context, but connecting changes requires Edge or Chrome. Automatic shared-plan refresh uses **File → Check for teammates' saves every 15 s**. Folder integration does not replace existing merge, conflict, backup, undo or Jira proposal controls.
+
+The optional offline validator remains available:
+
+```sh
+python tools/sightline-jira-sync.py check-amendments plan.json sightline-amendments.json --json
+```
+
+This validator reads JSON plans. Sightline's own browser validation also supports a shared YAML plan. Every applied change is checked again against the latest plan during saving.
+
 ## Talk to your company endpoint
+
+This advanced route is for conversations inside Sightline. External coding tools use the private-folder
+workflow above and do not need this companion.
 
 Sightline's assistant panel can send a conversation through a local Python companion. The HTML still makes no
 API requests. Only the presenter needs to run the companion; teammates can continue opening the normal HTML.
@@ -163,9 +271,10 @@ if you want to switch to the private-folder workflow.
 6. Check the changed plan and Undo on synthetic work first. Use the separate two-device procedure before relying
    on shared-file handoff. One facilitator can run the companion while others use the normal app.
 
-**Review roadmap gaps** asks for outcomes, missing owners, timing and Jira links. The exported context does not
-include full dependency, capacity, risk or decision information. It cannot establish that the roadmap fits the
-team's capacity. Keep feasibility claims separate from the current editing and organization workflow.
+**Review roadmap gaps** can use outcomes, dependencies, risks, decisions and the calculated sprint capacity in
+context. Read the coverage counts first. Capacity compares known Jira sprint scope with configured availability;
+plan-only work, unestimated work, support reserves and missing sync coverage still prevent a whole-roadmap
+feasibility claim. See [the planning export](#planning-data-for-your-external-assistant).
 
 Selected outcome IDs or calendar quarters accompany each normal question as a separate, bounded context message.
 Follow-up requests retain the selections attached to earlier questions, even after you switch outcomes. These
@@ -192,23 +301,3 @@ Two additional mailbox files are used:
 
 These files use request, conversation, and plan IDs plus saved-plan revision and Jira timestamp checks. They are
 not a transaction or an access-control system. Use one active Sightline tab and one companion per private folder.
-
-## What the context represents
-
-For a shared plan, context comes from the last confirmed read or save of the local plan file, with the latest successful Jira sync applied for display. Sightline cannot confirm whether OneDrive has uploaded or downloaded that version. `snapshot.source` is `saved-shared-file`; `snapshot.unsavedChangesInBrowser` explicitly reports local edits that have not been published. Those local edits are excluded from shared context. Save them before asking the assistant to work from them. A disconnected plan uses `snapshot.source: "this-browser"` and `snapshot.shared: false`; it makes no claim to be a shared source of truth.
-
-Both outputs include the plan revision and Jira sync timestamp. Dates and status derived from children or Jira are identified by ownership rules and item flags; an assistant must propose Jira changes instead of rewriting those facts. Names and other free text remain untrusted data, not assistant instructions. Notes are excluded from exported context. Outputs contain team information: keep the folder private using your operating system or sync-service permissions. A browser picker cannot enforce who else can access a folder.
-
-Results describe the current proposal batch against that same saved snapshot. `status` is `ready`, `conflicted`, `invalid` or `done`; `outcome` is `waiting`, `applied`, `already-in-plan` or `skipped`. `edited` and `effectiveOps` describe saved edits made in the review panel. An undo or another person's change can make an earlier applied proposal ready again: current plan values win over historical receipts. Browser-local receipts are advisory, not a tamper-proof audit log. Context and results are written individually through browser writable streams; each file is replaced on close, but the two files are not one transaction. Compare both the plan revision and Jira sync timestamp before combining them. Results describe this browser's review outcomes; another device can have different edits or skips. See [Using OneDrive](onedrive.md) for setup and a two-device check.
-
-## Existing changes files
-
-Expand **Use individual files instead** for **Export for your assistant** and **Connect that file**. These still work when you already have an amendments JSON file or prefer manual context exports. Browsers without folder access show this alternative expanded. A browser without file access can export context, but connecting changes requires Edge or Chrome. Automatic shared-plan refresh uses **File → Check for teammates' saves every 15 s**. Folder integration does not replace existing merge, conflict, backup, undo or Jira proposal controls.
-
-The optional offline validator remains available:
-
-```sh
-python tools/sightline-jira-sync.py check-amendments plan.json sightline-amendments.json --json
-```
-
-This validator reads JSON plans. Sightline's own browser validation also supports a shared YAML plan. Every applied change is checked again against the latest plan during saving.

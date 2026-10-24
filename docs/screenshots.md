@@ -35,3 +35,15 @@ Don't hide warning/coverage information or edit screenshots to imply a capabilit
 
 Use paired `<picture>` sources in Markdown, describe the relevant action in the alt text, and inspect both images
 before publishing. Keep image filenames stable when refreshing the tour.
+
+The bundled-skills dialog was captured from Sightline 1.96.0 opened from a standalone HTML copy. Its ZIP
+was downloaded through the actual browser UI and compared with the embedded manifest using Python zipfile.
+Direct native folder-picker permissions remain a separate manual check.
+
+## Prepared planning storyboard
+
+`planning-story-*.svg` is an illustration, not a screenshot or model response. Its four variants cover
+wide/narrow layouts and light/dark themes. The content follows `examples/northstar/brain-dump.txt` and
+`roadmap-session-amendments.json`: a Q2-to-Q1 target move plus an unscheduled idea. Its labels explicitly say
+that the proposals are prepared. It makes no capacity or live-connectivity claim. Check all variants when
+changing the example, keep text readable, and retain an accurate text equivalent beside the image.

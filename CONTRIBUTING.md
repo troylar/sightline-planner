@@ -5,7 +5,7 @@ The app stays one self-contained HTML file, with separate plan files and optiona
 
 ## Build and verify
 
-You need Node.js 18+, Python 3, Bash and `timeout` on PATH. On macOS, GNU coreutils can provide the timeout command;
+You need Node.js 18+, Python 3.10+, Bash and `timeout` on PATH. On macOS, GNU coreutils can provide the timeout command;
 on Windows use a Bash environment with those commands available.
 
 ```sh
@@ -47,3 +47,16 @@ folder. Keep npm's runtime dependencies empty. The package should contain the bu
 trusted helpers, synthetic example and documentation, with no local credentials or generated mailbox files.
 Git tags and release assets must match the tested source commit and package version. Publication is a separate,
 deliberate action after validation.
+
+## Keep the first-session promise
+
+The README starts with a working source-build path. Before advertising npm or a release asset, run the
+[public availability checks](docs/availability.md#before-changing-the-advertised-download-route); a dry run
+or changelog entry is not publication evidence.
+
+Keep the [prepared brain-dump session](docs/getting-started.md) reproducible. Its notes, proposal file and
+before/after table must agree. Validate proposals against the invented Northstar plan and inspect the rendered
+storyboard in light/dark and narrow/wide layouts. Keep its prepared-example label visible.
+
+Keep newer capabilities version-labeled until their matching source or artifact is public. Documentation-only
+updates do not need an application version bump.

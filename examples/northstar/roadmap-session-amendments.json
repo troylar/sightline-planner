@@ -1,0 +1,42 @@
+{
+  "kind": "sightline-amendments",
+  "version": 1,
+  "planId": "p-northstar-example",
+  "batchId": "northstar-roadmap-session",
+  "createdAt": "2026-10-24T09:00:00Z",
+  "source": "Prepared roadmap walkthrough",
+  "basedOn": {
+    "planRevision": 1
+  },
+  "changes": [
+    {
+      "id": "bring-context-forward",
+      "summary": "Bring customer context forward to Q1 2027",
+      "ops": [
+        {
+          "op": "set",
+          "type": "deliverable",
+          "id": "dv-integrations",
+          "field": "target",
+          "prev": "2027-Q2",
+          "value": "2027-Q1"
+        }
+      ]
+    },
+    {
+      "id": "capture-offline-search",
+      "summary": "Retain offline search as an unscheduled idea",
+      "ops": [
+        {
+          "op": "add",
+          "type": "deliverable",
+          "id": "dv-offline-search-idea",
+          "value": {
+            "name": "Explore offline search",
+            "stage": "idea"
+          }
+        }
+      ]
+    }
+  ]
+}

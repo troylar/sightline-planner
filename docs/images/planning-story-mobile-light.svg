@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 1120" role="img" aria-labelledby="title desc">
+<title id="title">From rough notes to reviewed plan</title>
+<desc id="desc">A prepared Northstar example. Separate an agreed Q1 target change from an unscheduled idea. Review each proposal before applying it. This is an illustration, not an app screenshot or live model response.</desc>
+<rect width="460" height="1120" rx="18" fill="#f6f8fa"/>
+<g font-family="system-ui, -apple-system, Segoe UI, sans-serif" fill="#17243b">
+<text x="24" y="35" font-size="12" font-weight="700" letter-spacing="1.4" fill="#52637a">PREPARED NORTHSTAR SESSION</text>
+<text x="24" y="77" font-size="30" font-weight="750">One decision. One idea.</text>
+<rect x="24" y="110" width="412" height="280" rx="12" fill="#ffffff" stroke="#d0d7de"/>
+<text x="46" y="149" font-size="16" font-weight="700" fill="#2860ad">1 / Capture</text>
+<text x="46" y="193" font-size="25" font-weight="700">Keep the uncertainty</text>
+<text x="46" y="237" font-size="20" fill="#52637a">Bring customer context</text>
+<text x="46" y="267" font-size="20" fill="#52637a">into Q1 2027.</text>
+<text x="46" y="297" font-size="20" fill="#52637a">Explore offline search.</text>
+<text x="46" y="327" font-size="20" fill="#52637a">No owner or date yet.</text>
+<path d="M230 397v15m-5-5 5 5 5-5" fill="none" stroke="#2860ad" stroke-width="2"/>
+<rect x="24" y="420" width="412" height="280" rx="12" fill="#ffffff" stroke="#d0d7de"/>
+<text x="46" y="459" font-size="16" font-weight="700" fill="#2860ad">2 / Make sense</text>
+<text x="46" y="503" font-size="25" font-weight="700">Two distinct proposals</text>
+<text x="46" y="547" font-size="20" fill="#52637a">Move an existing outcome:</text>
+<text x="46" y="577" font-size="20" fill="#52637a">Q2 2027 → Q1 2027.</text>
+<text x="46" y="607" font-size="20" fill="#52637a">Add an unscheduled idea.</text>
+<text x="46" y="637" font-size="20" fill="#52637a">Keep the existing IDs.</text>
+<path d="M230 707v15m-5-5 5 5 5-5" fill="none" stroke="#2860ad" stroke-width="2"/>
+<rect x="24" y="730" width="412" height="280" rx="12" fill="#ffffff" stroke="#d0d7de"/>
+<text x="46" y="769" font-size="16" font-weight="700" fill="#2860ad">3 / Review</text>
+<text x="46" y="813" font-size="25" font-weight="700">You choose what lands</text>
+<text x="46" y="857" font-size="20" fill="#52637a">Inspect each change.</text>
+<text x="46" y="887" font-size="20" fill="#52637a">Apply, edit, or skip.</text>
+<text x="46" y="917" font-size="20" fill="#52637a">Save when required.</text>
+<text x="46" y="947" font-size="20" fill="#52637a">Undo stays available.</text>
+<text x="24" y="1070" font-size="17" fill="#52637a">Prepared proposals. Existing work retained.</text>
+<text x="24" y="1097" font-size="17" fill="#52637a">No AI account needed to try this example.</text>
+</g></svg>
