@@ -7452,10 +7452,14 @@ function onTaskUp(e){
     const overP = d.fromPerson !== undefined && d.mode === "move" && e && e.clientX != null ? document.elementFromPoint(e.clientX, e.clientY)?.closest(".lane[data-person]") : null;
     if (overP && overP.dataset.person !== d.fromPerson && editable()){ const f = taskById(d.tid); if (f){ reassign(f.t, d.fromPerson, overP.dataset.person); d.moved = true; } }
     if (!d.moved || !editable()){ S = JSON.parse(d.snapshot); if (d.moved) return; }
-    if (d.moved){ pushSnap(d.snapshot); coalesceKey = null; rollup(S); const rs2 = reschedule(); if (rs2.moved) queueMicrotask(()=>setStatus(`Moved ${rs2.moved} linked item${rs2.moved===1?"":"s"} to keep their order`)); syncWeeks(S); fitHorizonTasks(S); markDirty(); dragJustEnded = true; setTimeout(()=>dragJustEnded=false,0); }
+    if (d.moved){ commitDragged(d.snapshot); dragJustEnded = true; setTimeout(()=>dragJustEnded=false,0); }
     sel = {type:"task", id:d.tid};
   } finally { render(); }
 }
+// A drag edits S live so the chart follows the pointer. When it ends, put the plan back and apply the finished state
+// through commit, like any other edit: stamped, rolled up, rescheduled, and refused if it lands in a blacked-out time.
+function commitDragged(snapshot){ const fin = S; S = JSON.parse(snapshot);
+  return commit(s=>{ Object.keys(s).forEach(k=>{ if (!(k in fin)) delete s[k]; }); Object.assign(s, fin); }, {norender:true}); }
 function onTaskCancel(){ const d = tdrag; if (!d) return; tdrag = null; detachTask(d); hideTip(); S = JSON.parse(d.snapshot); render(); setStatus("Drag canceled"); }
 function taskKey(e, tid){
   if (e.key==="Enter" || e.key===" "){ e.preventDefault(); select("task",tid); if (editable()) setTimeout(()=>$("#f-tlabel")?.focus(),0); return; }
@@ -7602,9 +7606,8 @@ function onUp(e){
     if (!d.moved){ S = JSON.parse(d.snapshot); sel = {type:d.type,id:d.id}; return; }   // a click or sub-threshold wiggle changes nothing
     if (d.moved && d.type==="ms"){ const st = d.mode==="stretch"; relabel(item, st, st ? d.orig.stretchAt : d.orig.at); }
     if (d.moved && d.type==="bar" && derived(item)){ const days = Math.round((item.start - d.orig.start)*7); item.start = d.orig.start; shiftBar(item, days); fitHorizonTasks(S); }
-    if (d.moved){ const rs = reschedule(); syncWeeks(S); fitHorizonTasks(S); if (rs.moved) growToFit(); if (rs.moved) queueMicrotask(()=>setStatus(`Moved ${rs.moved} linked item${rs.moved===1?"":"s"} to keep their order`)); }
-    if (d.moved){ pushSnap(d.snapshot); coalesceKey = null; markDirty(); dragJustEnded = true; setTimeout(()=>dragJustEnded=false,0);
-      if (d.type === "bar" && fActive() && !barVisible(item)) showToast("Moved outside this view", "Undo", ()=>undo()); }
+    if (d.moved){ const done = commitDragged(d.snapshot); dragJustEnded = true; setTimeout(()=>dragJustEnded=false,0);
+      if (done && d.type === "bar" && fActive() && barById(d.id) && !barVisible(barById(d.id))) showToast("Moved outside this view", "Undo", ()=>undo()); }
     sel = {type:d.type,id:d.id};
   } finally { render(); }
 }
