@@ -6232,6 +6232,246 @@ function moveBarToLane(id, laneId){
   S.bars.splice(root && root.lane === laneId ? lastIndexOfTree(root) + 1 : S.bars.length, 0, b);
   rollup(S); return true;
 }
+// Plan actions (docs/app-access.md 3.3). Every edit an app may ask for runs from this one table, and the card's own
+// controls for the same edits call it too, so a command and a click can't drift apart. Each action names its
+// arguments, check refuses with a plain reason, and run changes the plan it's given. runAction does one action on a
+// plan; act does it inside a commit (refusing says why and changes nothing); applyAction does it on a copy and then
+// schedules and checks blackouts the way commit does.
+const planActions = Object.create(null);
+function defAction(id, def){ planActions[id] = {id, args:{}, ...def}; }
+const ACT_ID = /^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,79}$/;
+const ACT_ARG = {
+  id: v => typeof v === "string" && ACT_ID.test(v),
+  idOrBlank: v => v === "" || ACT_ARG.id(v),
+  ids: v => Array.isArray(v) && v.length <= 500 && v.every(ACT_ARG.id),
+  str: v => typeof v === "string" && v.length <= 4000,
+  num: v => typeof v === "number" && Number.isFinite(v),
+  int: v => Number.isInteger(v),
+  iso: v => validIso(v),
+  keys: v => Array.isArray(v) && v.length <= 500 && v.every(k=>typeof k === "string" && k.length <= 40),
+  any: v => v === null || typeof v === "boolean" || ACT_ARG.num(v) || ACT_ARG.str(v) || ACT_ARG.ids(v),
+};
+// args: {name: "type"} or "type?" when it can be left out. prev, when an action knows its current value, is always allowed.
+function actArgsProblem(a, args){
+  if (!args || typeof args !== "object" || Array.isArray(args)) return "The arguments must be an object.";
+  for (const k of Object.keys(args)) if (!(k in a.args) && !(k === "prev" && a.cur)) return `${a.id} has no argument called ${k}.`;
+  for (const [k, t] of Object.entries(a.args)){ const opt = t.endsWith("?"), ty = opt ? t.slice(0, -1) : t;
+    if (!(k in args) || args[k] === undefined){ if (opt) continue; return `${a.id} needs ${k}.`; }
+    if (!ACT_ARG[ty](args[k])) return `${k} isn't a valid ${ty === "iso" ? "date (YYYY-MM-DD)" : ty === "ids" || ty === "keys" ? "list" : ty === "id" ? "id" : ty === "num" || ty === "int" ? "number" : "value"}.`; }
+  return null;
+}
+const actMissing = what => ({code:"invalid", reason:`That ${what} isn't in the plan.`});
+const actInvalid = reason => ({code:"invalid", reason});
+function runAction(plan, id, args = {}, ctx = {}){
+  const a = planActions[id]; if (!a) return {ok:false, code:"invalid", reason:`There's no action called ${id}.`};
+  const bad = actArgsProblem(a, args); if (bad) return {ok:false, code:"invalid", reason:bad};
+  const was = S; S = plan;                                    // the helpers read S: point them at the plan being changed
+  try {
+    if (a.cur && "prev" in args){ const now = a.cur(plan, args); if (now !== undefined && !jeq(now, args.prev)) return {ok:false, code:"stale", reason:a.stale || "It changed since you looked, so it wasn't changed.", now}; }
+    const why = a.check ? a.check(plan, args, ctx) : null;
+    if (why) return {ok:false, code: typeof why === "string" ? "blocked" : why.code, reason: typeof why === "string" ? why : why.reason};
+    const r = a.run(plan, args, ctx);
+    return r === NOCHANGE ? {ok:true, nochange:true} : {ok:true, value:r};
+  } finally { S = was; }
+}
+function act(id, args, plan = S){ const r = runAction(plan, id, args);
+  if (!r.ok){ setStatus(r.reason); return NOCHANGE; } return r.nochange ? NOCHANGE : (r.value === undefined ? true : r.value); }
+function applyAction(plan, id, args, ctx = {}){
+  const was = S, before = clone(plan); S = clone(plan);
+  try {
+    dropJiraMemos();
+    const r = runAction(S, id, args, ctx); if (!r.ok || r.nochange) return {...r, plan};
+    stampAuthors(before, S); stampStatuses(before, S); rollup(S); const rs = reschedule(); syncWeeks(S); fitHorizonTasks(S); if (rs.moved) growToFit(); clampToRange(S);
+    const bad = blackoutHit(before, S); if (bad) return {ok:false, code:"blocked", reason:bad, plan};
+    return {...r, moved:rs.moved || 0, plan:S};
+  } finally { S = was; dropJiraMemos(); }
+}
+const actBar = (p, id) => p.bars.find(b=>b.id === id);
+const actTask = (p, id) => { for (const b of p.bars) for (const t of (b.tasks || [])) if (t.id === id) return {t, b}; return null; };
+const actDv = (p, id) => (p.deliverables || []).find(d=>d.id === id);
+const actFreeId = (p, id) => !id || ![...p.bars, ...p.bars.flatMap(b=>b.tasks || []), ...(p.deliverables || [])].some(x=>x.id === id);
+const actPeople = (p, ids) => ids.every(x=>p.people.some(pp=>pp.id === x));
+const jiraDatesMsg = L => `${L.key} is scheduled by its Jira sprint${L.sprint ? " (" + L.sprint + ")" : ""}. To move it, change its sprint in Jira.`;
+const jiraStatusMsg = L => `${L.key || "Jira"} sets its status${L.label ? " (" + L.label + ")" : ""}. Change it in Jira.`;
+const STATUS_IDS = STATUSES.map(x=>x[0]);
+
+// Initiatives
+const BAR_SET = {label:"str", chartName:"str", kind:"str", owners:"ids", datesFrom:"str"};
+defAction("initiative.add", {scope:"initiatives", risk:"routine", args:{id:"id?", lane:"id?", parent:"id?", start:"num", span:"num?", label:"str?", owners:"ids?", tags:"ids?"},
+  check:(p, a)=>{ if (!actFreeId(p, a.id)) return actInvalid(`${a.id} is already used.`); const par = a.parent && actBar(p, a.parent);
+    if (a.parent && !par) return actMissing("parent initiative"); if (!par && a.lane && !p.lanes.some(l=>l.id === a.lane)) return actMissing("workstream");
+    if (a.start < 0 || a.start > p.meta.weeks) return actInvalid(`Start is a week from 0 to ${p.meta.weeks}.`);
+    if (a.span !== undefined && (a.span < .5 || a.span > p.meta.weeks)) return actInvalid(`Length is from 0.5 to ${p.meta.weeks} weeks.`);
+    if (a.owners && !actPeople(p, a.owners)) return actMissing("person"); },
+  run:(p, a)=>{ const id = a.id || newId("bar"), par = a.parent ? actBar(p, a.parent) : null;
+    const b = {id, lane: par ? par.lane : a.lane || p.lanes[0]?.id, ...(par ? {parent:par.id} : {}), start:a.start, span:a.span ?? 1, label:a.label ?? (par ? "New sub-initiative" : "New initiative"), kind:"work",
+      owners: a.owners ? [...a.owners] : par ? [...own(par)] : [], jira:"", status:"notstarted", dependsOn:[], tasks:[], datesFrom:"manual", ...(a.tags && a.tags.length ? {tags:[...a.tags]} : {})};
+    if (par) p.bars.splice(lastIndexOfTree(par) + 1, 0, b); else p.bars.push(b);
+    return id; }});
+defAction("initiative.set", {scope:"initiatives", risk:"routine", args:{id:"id", field:"str", value:"any"},
+  cur:(p, a)=>{ const b = actBar(p, a.id); return b && a.field in BAR_SET ? clone(b[a.field] ?? "") : undefined; },
+  check:(p, a)=>{ const b = actBar(p, a.id); if (!b) return actMissing("initiative");
+    if (a.field === "start" || a.field === "span") return actInvalid("Use initiative.move to change its dates.");
+    if (a.field === "status") return actInvalid("Use initiative.setStatus to change its status.");
+    if (a.field === "lane") return actInvalid("Use initiative.setLane to change its workstream.");
+    if (a.field === "parent") return actInvalid("Use initiative.setParent to change what it's part of.");
+    if (!(a.field in BAR_SET)) return actInvalid(`An initiative's ${a.field} can't be set this way.`);
+    if (!ACT_ARG[BAR_SET[a.field]](a.value)) return actInvalid(`That isn't a valid ${a.field}.`);
+    if (a.field === "label" && a.value.length > 2000) return actInvalid("A title is up to 2,000 characters.");
+    if (a.field === "kind" && !KINDS.some(k=>k[0] === a.value)) return actInvalid(`Kind is one of ${KINDS.map(k=>k[0]).join(", ")}.`);
+    if (a.field === "datesFrom"){ if (!["manual","tasks"].includes(a.value)) return actInvalid("Dates come from manual or tasks."); if (a.value === "tasks" && (!hasTasks(b) || hasKids(b))) return "Only an initiative with tasks (and nothing inside it) can take its dates from them."; }
+    if (a.field === "owners" && !actPeople(p, a.value)) return actMissing("person"); },
+  run:(p, a)=>{ const b = actBar(p, a.id), v = a.field === "chartName" ? a.value.slice(0, 60) : a.field === "owners" ? [...a.value] : a.value; if (jeq(b[a.field], v)) return NOCHANGE; b[a.field] = v; }});
+defAction("initiative.setStatus", {scope:"initiatives", risk:"routine", args:{id:"id", status:"str"},
+  cur:(p, a)=>actBar(p, a.id)?.status,
+  check:(p, a)=>{ const b = actBar(p, a.id); if (!b) return actMissing("initiative"); if (!STATUS_IDS.includes(a.status)) return actInvalid(`Status is one of ${STATUS_IDS.join(", ")}.`);
+    if (rolls(b)) return hasKids(b) ? "Its status comes from what's inside it." : "Its status comes from its tasks.";
+    const L = jiraLockOf(b); if (L && L.status) return jiraStatusMsg(L); },
+  run:(p, a)=>{ const b = actBar(p, a.id); if (b.status === a.status) return NOCHANGE; b.status = a.status; }});
+defAction("initiative.move", {scope:"schedule", risk:"routine", args:{id:"id", start:"num?", span:"num?"},
+  cur:(p, a)=>{ const b = actBar(p, a.id); return b ? {start:b.start, span:b.span} : undefined; },
+  check:(p, a)=>{ const b = actBar(p, a.id); if (!b) return actMissing("initiative"); if (a.start === undefined && a.span === undefined) return actInvalid("Give a start, a length, or both.");
+    if (derived(b)) return hasKids(b) ? "Its dates come from what's inside it." : "Its dates come from its tasks.";
+    const L = jiraLockOf(b); if (L && L.dates) return jiraDatesMsg(L); },
+  run:(p, a)=>{ const b = actBar(p, a.id), W = p.meta.weeks, s0 = b.start, n0 = b.span;
+    if (a.start !== undefined) b.start = Math.max(0, Math.min(W - b.span, a.start));
+    if (a.span !== undefined) b.span = Math.max(.5, Math.min(W - b.start, a.span));
+    if (b.start === s0 && b.span === n0) return NOCHANGE; }});
+defAction("initiative.setLane", {scope:"initiatives", risk:"routine", args:{id:"id", lane:"id"},
+  cur:(p, a)=>actBar(p, a.id)?.lane,
+  check:(p, a)=>{ if (!actBar(p, a.id)) return actMissing("initiative"); if (!p.lanes.some(l=>l.id === a.lane)) return actMissing("workstream"); },
+  run:(p, a)=>moveBarToLane(a.id, a.lane) || NOCHANGE});
+defAction("initiative.setParent", {scope:"initiatives", risk:"routine", args:{id:"id", parent:"idOrBlank"},
+  cur:(p, a)=>{ const b = actBar(p, a.id); return b ? b.parent || "" : undefined; },
+  check:(p, a)=>{ const b = actBar(p, a.id); if (!b) return actMissing("initiative"); if (!a.parent) return;
+    if (!actBar(p, a.parent)) return actMissing("parent initiative"); if (a.parent === a.id || isInside(a.parent, a.id)) return "It can't go inside itself."; },
+  run:(p, a)=>(a.parent ? moveBarTo(a.id, a.parent, "inside") : moveBarToLane(a.id, actBar(p, a.id).lane)) || NOCHANGE});
+defAction("initiative.place", {scope:"initiatives", risk:"routine", args:{id:"id", target:"id", zone:"str"},
+  check:(p, a)=>{ if (!actBar(p, a.id)) return actMissing("initiative"); if (!actBar(p, a.target)) return actMissing("initiative to place it by");
+    if (!["before","after","inside"].includes(a.zone)) return actInvalid("Zone is before, after or inside.");
+    if (a.target === a.id || isInside(a.target, a.id)) return "It can't go inside itself."; },
+  run:(p, a)=>moveBarTo(a.id, a.target, a.zone) || NOCHANGE});
+defAction("initiative.del", {scope:"initiatives", risk:"risky", args:{id:"id"},
+  check:(p, a)=>{ if (!actBar(p, a.id)) return actMissing("initiative"); },
+  run:(p, a)=>{ const all = [actBar(p, a.id), ...descendantsOf(a.id)], ids = new Set(all.map(b=>b.id)), gone = new Set(all.flatMap(b=>(b.tasks||[]).map(t=>t.id)));
+    p.updates = (p.updates||[]).filter(u=>!ids.has(u.item.slice(4)) && !gone.has(u.item.slice(5)));
+    [...p.decisions, ...p.risks].forEach(x=>{ if (ids.has(x.item)) x.item = ""; });
+    p.bars = p.bars.filter(b=>!ids.has(b.id)); p.bars.forEach(b=>{ b.dependsOn = b.dependsOn.filter(x=>!ids.has(x)); (b.tasks||[]).forEach(t=>{ t.dependsOn = (t.dependsOn||[]).filter(x=>!gone.has(x)); }); });
+    p.milestones.forEach(m=>{ m.after = (m.after||[]).filter(x=>!ids.has(x)); });
+    return all.length; }});
+
+// Tasks
+const TASK_SET = {label:"str", owners:"ids"};
+const taskStart = (p, iso) => dayToIso(nextWork(Math.max(isoToDay(p.meta.start), isoToDay(iso)), holidaySet(p)));
+defAction("task.add", {scope:"tasks", risk:"routine", args:{id:"id?", bar:"id", start:"iso", days:"int?", label:"str?", owners:"ids?", tags:"ids?"},
+  check:(p, a)=>{ if (!actFreeId(p, a.id)) return actInvalid(`${a.id} is already used.`); if (!actBar(p, a.bar)) return actMissing("initiative");
+    if (a.days !== undefined && (a.days < 1 || a.days > 260)) return actInvalid("Working days are from 1 to 260."); if (a.owners && !actPeople(p, a.owners)) return actMissing("person"); },
+  run:(p, a)=>{ const b = actBar(p, a.bar), id = a.id || newId("task");
+    b.tasks.push({id, label:a.label ?? "New task", start:taskStart(p, a.start), days:a.days ?? 1, owners: a.owners ? [...a.owners] : [...own(b)], jira:"", status:"notstarted", ...(a.tags && a.tags.length ? {tags:[...a.tags]} : {})});
+    return id; }});
+defAction("task.set", {scope:"tasks", risk:"routine", args:{id:"id", field:"str", value:"any"},
+  cur:(p, a)=>{ const f = actTask(p, a.id); return f && a.field in TASK_SET ? clone(f.t[a.field] ?? "") : undefined; },
+  check:(p, a)=>{ if (!actTask(p, a.id)) return actMissing("task");
+    if (a.field === "start" || a.field === "days") return actInvalid("Use task.move to change its dates.");
+    if (a.field === "status") return actInvalid("Use task.setStatus to change its status.");
+    if (!(a.field in TASK_SET)) return actInvalid(`A task's ${a.field} can't be set this way.`);
+    if (!ACT_ARG[TASK_SET[a.field]](a.value)) return actInvalid(`That isn't a valid ${a.field}.`);
+    if (a.field === "label" && a.value.length > 2000) return actInvalid("A title is up to 2,000 characters.");
+    if (a.field === "owners" && !actPeople(p, a.value)) return actMissing("person"); },
+  run:(p, a)=>{ const {t} = actTask(p, a.id), v = a.field === "owners" ? [...a.value] : a.value; if (jeq(t[a.field], v)) return NOCHANGE; t[a.field] = v; }});
+defAction("task.setStatus", {scope:"tasks", risk:"routine", args:{id:"id", status:"str"},
+  cur:(p, a)=>actTask(p, a.id)?.t.status,
+  check:(p, a)=>{ const f = actTask(p, a.id); if (!f) return actMissing("task"); if (!STATUS_IDS.includes(a.status)) return actInvalid(`Status is one of ${STATUS_IDS.join(", ")}.`);
+    const L = jiraLockOf(f.t); if (L && L.status) return jiraStatusMsg(L); },
+  run:(p, a)=>{ const {t} = actTask(p, a.id); if (t.status === a.status) return NOCHANGE; t.status = a.status; }});
+defAction("task.move", {scope:"schedule", risk:"routine", args:{id:"id", start:"iso?", days:"int?"},
+  cur:(p, a)=>{ const f = actTask(p, a.id); return f ? {start:f.t.start, days:f.t.days} : undefined; },
+  check:(p, a)=>{ const f = actTask(p, a.id); if (!f) return actMissing("task"); if (a.start === undefined && a.days === undefined) return actInvalid("Give a start, working days, or both.");
+    if (a.days !== undefined && (a.days < 1 || a.days > 260)) return actInvalid("Working days are from 1 to 260.");
+    const L = jiraLockOf(f.t); if (L && L.dates) return jiraDatesMsg(L); },
+  run:(p, a)=>{ const {t} = actTask(p, a.id), s0 = t.start, d0 = t.days;
+    if (a.start !== undefined) t.start = taskStart(p, a.start); if (a.days !== undefined) t.days = a.days;
+    if (t.start === s0 && t.days === d0) return NOCHANGE; }});
+defAction("task.moveTo", {scope:"tasks", risk:"routine", args:{id:"id", bar:"id"},
+  cur:(p, a)=>actTask(p, a.id)?.b.id,
+  check:(p, a)=>{ const f = actTask(p, a.id); if (!f) return actMissing("task"); const nb = actBar(p, a.bar); if (!nb) return actMissing("initiative");
+    if (nb !== f.b && nb.kind === "waiting") return "A waiting or unstaffed item can't hold tasks."; },
+  run:(p, a)=>{ const {t, b} = actTask(p, a.id), nb = actBar(p, a.bar); if (nb === b) return NOCHANGE;
+    b.tasks = b.tasks.filter(x=>x.id !== t.id); nb.tasks.push(t); if (!b.tasks.length) b.datesFrom = "manual"; }});
+defAction("task.link", {scope:"schedule", risk:"routine", args:{id:"id", after:"id"},
+  check:(p, a)=>{ if (!actTask(p, a.id)) return actMissing("task"); if (!actTask(p, a.after)) return actMissing("task it starts after");
+    if (a.id === a.after || taskReaches(a.after, a.id)) return "That would create a loop."; },
+  run:(p, a)=>{ const {t} = actTask(p, a.id); if ((t.dependsOn || []).includes(a.after)) return NOCHANGE; t.dependsOn = [...new Set([...(t.dependsOn||[]), a.after])]; }});
+defAction("task.unlink", {scope:"schedule", risk:"routine", args:{id:"id", after:"id"},
+  check:(p, a)=>{ if (!actTask(p, a.id)) return actMissing("task"); },
+  run:(p, a)=>{ const {t} = actTask(p, a.id); if (!(t.dependsOn || []).includes(a.after)) return NOCHANGE; t.dependsOn = t.dependsOn.filter(y=>y !== a.after); }});
+defAction("task.del", {scope:"tasks", risk:"risky", args:{id:"id"},
+  check:(p, a)=>{ if (!actTask(p, a.id)) return actMissing("task"); },
+  run:(p, a)=>{ const f = actTask(p, a.id); p.updates = (p.updates||[]).filter(u=>u.item !== "task:" + a.id); f.b.tasks = f.b.tasks.filter(t=>t.id !== a.id);
+    p.bars.forEach(b=>(b.tasks||[]).forEach(t=>{ t.dependsOn = (t.dependsOn||[]).filter(x=>x !== a.id); })); if (!f.b.tasks.length) f.b.datesFrom = "manual"; return f.b.id; }});
+
+// Outcomes (deliverables). Every change settles the stage and approval the way the card does (dvSettle).
+const DV_SET = {name:120, line:300, note:4000, kind:0, lane:0, owners:0, stage:0};
+const dvChange = (p, id, fn) => { const x = actDv(p, id), before = dvWords(x); if (fn(x) === NOCHANGE) return NOCHANGE; dvSettle(x, before); };
+const dvTargetOk = t => t === "later" || !!periodRange(t);
+defAction("outcome.add", {scope:"outcomes", risk:"routine", args:{id:"id?", name:"str", source:"str?", target:"str?", release:"id?", date:"iso?", jira:"keys?"},
+  check:(p, a)=>{ if (!actFreeId(p, a.id)) return actInvalid(`${a.id} is already used.`); if (!a.name.trim()) return actInvalid("Give it a name.");
+    if ((p.deliverables || []).length >= DV_MAX) return `A plan holds up to ${DV_MAX} deliverables. Drop or delete some first.`;
+    if (a.target && !dvTargetOk(a.target)) return actInvalid("Target is a year, half or quarter (2027, 2027-H1, 2027-Q2) or later.");
+    if (a.jira && a.jira.some(k=>!JKEY.test(k))) return actInvalid("That isn't a Jira key (like ABC-123).");
+    if (a.jira && a.jira.length > DV_MAX_KEYS) return `A deliverable links up to ${DV_MAX_KEYS} Jira issues. Link its epics or features instead of every story.`; },
+  run:(p, a)=>{ const id = a.id || newId("dv"), src = String(a.source || "").trim().slice(0, 60);
+    const d = {id, name:a.name.trim().slice(0, 120), stage:"idea", source: src ? `${src}, ${fmtDay(todayDay())}` : `Added ${fmtDay(todayDay())}`,
+      ...(a.target ? {target:a.target} : {}), ...(a.release ? {release:a.release} : {}), ...(a.date ? {date:a.date} : {}), ...(a.jira ? {jira:[...new Set(a.jira)]} : {})};
+    if (d.target || d.release || d.date) d.stage = "planned";
+    (p.deliverables = p.deliverables || []).push(d); return id; }});
+defAction("outcome.set", {scope:"outcomes", risk:"routine", args:{id:"id", field:"str", value:"any"},
+  cur:(p, a)=>{ const d = actDv(p, a.id); return d && a.field in DV_SET ? clone(d[a.field] ?? "") : undefined; },
+  check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable");
+    if (["target","date"].includes(a.field)) return actInvalid("Use outcome.setTarget to change its timing.");
+    if (a.field === "release") return actInvalid("Use outcome.setRelease to pick its release.");
+    if (a.field === "jira") return actInvalid("Use outcome.linkJira and outcome.unlinkJira for its Jira work.");
+    if (!(a.field in DV_SET)) return actInvalid(`A deliverable's ${a.field} can't be set this way.`);
+    const v = a.value;
+    if (a.field === "owners"){ if (!ACT_ARG.ids(v)) return actInvalid("Owners is a list of people."); if (!actPeople(p, v)) return actMissing("person"); return; }
+    if (typeof v !== "string") return actInvalid(`That isn't a valid ${a.field}.`);
+    if (DV_SET[a.field] && v.length > DV_SET[a.field]) return actInvalid(`Its ${a.field} is up to ${DV_SET[a.field]} characters.`);
+    if (a.field === "name" && !v.trim()) return actInvalid("It needs a name.");
+    if (a.field === "kind" && v && !DV_KINDS.some(k=>k[0] === v)) return actInvalid(`Kind is one of ${DV_KINDS.map(k=>k[0]).join(", ")}.`);
+    if (a.field === "lane" && v && !p.lanes.some(l=>l.id === v)) return actMissing("workstream");
+    if (a.field === "stage"){ if (!["idea","planned","done"].includes(v)) return actInvalid(v === "dropped" ? "Use outcome.drop to drop it." : "Stage is idea, planned or done.");
+      if (v === "planned" && !d.target && !d.release && !d.date) return "Pick a target to plan it."; } },
+  run:(p, a)=>{ const v = a.field === "owners" ? [...a.value] : a.value.trim();
+    if (a.field === "owners"){ const x = actDv(p, a.id); if (jeq(x.owners || [], v)) return NOCHANGE; if (v.length) x.owners = v; else delete x.owners; return; }
+    return dvChange(p, a.id, x=>{ if (a.field === "stage"){ if (x.stage === v) return NOCHANGE; x.stage = v; delete x.dropReason; return; }
+      if ((x[a.field] || "") === v) return NOCHANGE; if (v) x[a.field] = v; else delete x[a.field]; }); }});
+defAction("outcome.setTarget", {scope:"outcomes", risk:"routine", args:{id:"id", target:"str?", date:"iso?"},
+  cur:(p, a)=>{ const d = actDv(p, a.id); return d ? {target:d.target || "", date:d.date || "", release:d.release || ""} : undefined; },
+  check:(p, a)=>{ if (!actDv(p, a.id)) return actMissing("deliverable"); if (a.target && a.date) return actInvalid("Give a target or a date, not both.");
+    if (a.target && !dvTargetOk(a.target)) return actInvalid("Target is a year, half or quarter (2027, 2027-H1, 2027-Q2) or later."); },
+  run:(p, a)=>dvChange(p, a.id, x=>{ if (a.date){ x.date = a.date; delete x.release; x.target = quarterOf(isoToDay(a.date)); return; }
+    if (a.target) x.target = a.target; else delete x.target; delete x.release; delete x.date; if (!a.target && x.stage === "planned") x.stage = "idea"; })});
+defAction("outcome.setRelease", {scope:"outcomes", risk:"routine", args:{id:"id", release:"idOrBlank"},
+  cur:(p, a)=>{ const d = actDv(p, a.id); return d ? d.release || "" : undefined; },
+  check:(p, a)=>{ if (!actDv(p, a.id)) return actMissing("deliverable"); if (a.release && !relById(a.release)) return actInvalid("That release isn't in the Jira files."); },
+  run:(p, a)=>dvChange(p, a.id, x=>{ if (!a.release){ if (!x.release) return NOCHANGE; delete x.release; return; }
+    const r = relById(a.release); x.release = a.release; delete x.date; if (r.date) x.target = quarterOf(isoToDay(r.date)); })});
+defAction("outcome.linkJira", {scope:"outcomes", risk:"routine", args:{id:"id", keys:"keys"},
+  check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); const keys = a.keys.map(k=>k.trim().toUpperCase()).filter(k=>JKEY.test(k));
+    if (!keys.length) return actInvalid("That isn't a Jira key (like ABC-123).");
+    if (new Set([...(d.jira || []), ...keys]).size > DV_MAX_KEYS) return `A deliverable links up to ${DV_MAX_KEYS} Jira issues. Link its epics or features instead of every story.`; },
+  run:(p, a)=>dvChange(p, a.id, x=>{ const cur = new Set(x.jira || []), n0 = cur.size; a.keys.map(k=>k.trim().toUpperCase()).filter(k=>JKEY.test(k)).forEach(k=>cur.add(k)); if (cur.size === n0) return NOCHANGE; x.jira = [...cur]; })});
+defAction("outcome.unlinkJira", {scope:"outcomes", risk:"routine", args:{id:"id", key:"str"},
+  check:(p, a)=>{ if (!actDv(p, a.id)) return actMissing("deliverable"); },
+  run:(p, a)=>dvChange(p, a.id, x=>{ if (!(x.jira || []).includes(a.key)) return NOCHANGE; x.jira = x.jira.filter(y=>y !== a.key); if (!x.jira.length) delete x.jira; })});
+defAction("outcome.drop", {scope:"outcomes", risk:"routine", args:{id:"id", reason:"str?"},
+  check:(p, a)=>{ if (!actDv(p, a.id)) return actMissing("deliverable"); },
+  run:(p, a)=>dvChange(p, a.id, x=>{ if (x.stage === "dropped") return NOCHANGE; x.stage = "dropped"; const why = String(a.reason || "").trim(); if (why) x.dropReason = why.slice(0, 300); })});
+const dvSeen = d => { const {edited, ...r} = d; return r; };
+defAction("outcome.del", {scope:"outcomes", risk:"risky", args:{id:"id"}, stale:"Someone changed it since you opened it, so it wasn't deleted. Look at their change, then delete again if you still want to.",
+  cur:(p, a)=>{ const d = actDv(p, a.id); return d ? dvSeen(d) : undefined; },
+  check:(p, a)=>{ if (!actDv(p, a.id)) return actMissing("deliverable"); },
+  run:(p, a)=>{ p.deliverables = p.deliverables.filter(x=>x.id !== a.id); }});
 const nextSibling = b => { const sib = S.bars.filter(x=>x.lane===b.lane && (x.parent||"")===(b.parent||"")); const i = sib.indexOf(b); return i >= 0 && i < sib.length - 1 ? sib[i+1] : null; };
 const prevSibling = b => { const sib = S.bars.filter(x=>x.lane===b.lane && (x.parent||"")===(b.parent||"")); const i = sib.indexOf(b); return i > 0 ? sib[i-1] : null; };
 function packRows(items, s, e){
@@ -7389,12 +7629,12 @@ function addTaskAt0(e, barId){
   const b = barById(barId); if (!b || !DV) return;
   const r = e.currentTarget.getBoundingClientRect(), c = Math.max(0, Math.min(DV.N-1, Math.floor((e.clientX - r.left)/r.width*DV.N)));
   const id = newId("task"), start = dayToIso(nextWork(DV.cols[c], HS()));
-  if (commit(()=>{ b.tasks.push({id, label:"New task", start, days:1, owners:[...own(b)], jira:"", status:"notstarted"}); })){ select("task", id); setTimeout(()=>$("#f-tlabel")?.select(),0); }
+  if (commit(()=>act("task.add", {id, bar:b.id, start}))){ select("task", id); setTimeout(()=>$("#f-tlabel")?.select(),0); }
 }
 function addTask0(b){
   const hs = HS(); const last = (b.tasks||[]).reduce((m,t)=>Math.max(m, taskSpan(t,hs).e), wkDay(b.start)-1);
   const id = newId("task"), start = dayToIso(nextWork(Math.max(startDay(), last+1), hs));
-  if (commit(()=>{ b.tasks.push({id, label:"New task", start, days:1, owners:[...own(b)], jira:"", status:"notstarted"}); })){ select("task", id); setTimeout(()=>$("#f-tlabel")?.select(),0); }
+  if (commit(()=>act("task.add", {id, bar:b.id, start}))){ select("task", id); setTimeout(()=>$("#f-tlabel")?.select(),0); }
 }
 let tdrag = null;
 function startTaskDrag(e, tid, mode){
@@ -7512,7 +7752,7 @@ function markJiraLocks(){             // Jira-scheduled bars lose their resize h
     const L = jiraLockOf(o);
     if (L && L.dates){ el.classList.add("jlock"); el.title = `${L.key} · ${L.sprint} (${fmtDay(L.s)} – ${fmtDay(L.e)}). Scheduled by Jira.`; } });
 }
-function jiraLockedMsg(L){ setStatus(`${L.key} is scheduled by its Jira sprint${L.sprint ? " (" + L.sprint + ")" : ""}. To move it, change its sprint in Jira.`); }
+function jiraLockedMsg(L){ setStatus(jiraDatesMsg(L)); }
 function startDrag(e,type,id,mode){
   closePeek();
   if (!editable() || e.button !== 0) return;
@@ -7643,7 +7883,7 @@ function createAt0(type, laneId, day){
   const lane = laneId || S.lanes[0]?.id;
   if (type === "initiative"){
     const W = S.meta.weeks, at = Math.max(0, Math.min(W-1, Math.floor(dayToAt(day)*2)/2)), id = newId("bar");
-    if (commit(s=>s.bars.push({id,lane,start:at,span:1,label:"New initiative",kind:"work",owners:[],jira:"",status:"notstarted",dependsOn:[],tasks:[],datesFrom:"manual",...(ft.length ? {tags:[...ft]} : {})}))){ select("bar",id); focusSoon("#f-label"); return true; }
+    if (commit(()=>act("initiative.add", {id, lane, start:at, ...(ft.length ? {tags:[...ft]} : {})}))){ select("bar",id); focusSoon("#f-label"); return true; }
   } else if (type.startsWith("block:")){
     const t = typeById(type.slice(6)); if (!t) return false; const id = newId("blk");
     if (commit(s=>s.blocks.push({id, type:t.id, label:"", lane: S.lanes.some(l=>l.id===laneId) ? laneId : "", date:dayToIso(nextWork(day, HS())), days:null, status:"planned", after:[], sprint:"", skip:false, note:""}))){ select("block", id); return true; }
@@ -7654,7 +7894,7 @@ function createAt0(type, laneId, day){
     const p = barById(laneId); if (!p) return false;
     const id = newId("bar"), first = !hasKids(p), inRange = day >= wkDay(p.start) && day <= barEndDay(p);
     const st = first ? p.start : inRange ? Math.floor(dayToAt(day)*2)/2 : p.start, sp = first ? Math.max(.5, snap(p.span)) : 1;
-    if (commit(s=>{ s.bars.splice(lastIndexOfTree(p) + 1, 0, {id, lane:p.lane, parent:p.id, start:st, span:sp, label:"New sub-initiative", kind:"work", owners:[...own(p)], jira:"", status:"notstarted", dependsOn:[], tasks:[], datesFrom:"manual"}); })){
+    if (commit(()=>act("initiative.add", {id, parent:p.id, start:st, span:sp}))){
       if (UI.collapsed[p.id]){ delete UI.collapsed[p.id]; saveUI(); render(); }
       select("bar", id); focusSoon("#f-label"); return true; }
   } else if (type === "milestone"){
@@ -7666,7 +7906,7 @@ function createAt0(type, laneId, day){
   } else if (type === "task"){
     const b = barById(laneId); if (!b) return false;
     const id = newId("task"), start = dayToIso(nextWork(day, HS()));
-    if (commit(()=>{ b.tasks.push({id,label:"New task",start,days:1,owners:[...own(b)],jira:"",status:"notstarted",...(ft.length ? {tags:[...ft]} : {})}); })){ select("task",id); focusSoon("#f-tlabel"); return true; }
+    if (commit(()=>act("task.add", {id, bar:b.id, start, ...(ft.length ? {tags:[...ft]} : {})}))){ select("task",id); focusSoon("#f-tlabel"); return true; }
   } else if (type === "note"){
     whoAmI(null, me=>{ const id = newId("note");
       if (commit(s=>s.notes.push({id, text:"", date:dayToIso(day), lane, author:me, created:new Date().toISOString()}))){ if (UI.notes === "none" || UI.notes === "others"){ UI.notes = "all"; saveUI(); } select("note", id); focusSoon("#f-ntext"); } });
@@ -7845,11 +8085,8 @@ function select(type,id){ sel = {type,id}; if (["bar","task","ms","lane","gate",
 function del(type,id){
   if (type==="lane"){ const c = laneContents(id); if (!laneEmpty(c)){ setStatus("This workstream still has work in it. End it, or move its work to another workstream, first."); return; }
     commit(s=>{ s.lanes = s.lanes.filter(l=>l.id!==id); if (!s.lanes.length) s.lanes.push({id:newId("lane"),name:"Workstream",who:"",color:"#2c6fbb"}); }); }
-  else if (type==="bar") commit(s=>{ const all = [barById(id), ...descendantsOf(id)].filter(Boolean), ids = new Set(all.map(b=>b.id)), gone = new Set(all.flatMap(b=>(b.tasks||[]).map(t=>t.id)));
-    if (all.length > 1) queueMicrotask(()=>setStatus(`Deleted ${all[0].label || "the initiative"} and ${all.length-1} sub-initiative${all.length===2?"":"s"}. Undo brings them back.`));
-    s.updates = (s.updates||[]).filter(u=>!ids.has(u.item.slice(4)) && !gone.has(u.item.slice(5)));
-    [...s.decisions, ...s.risks].forEach(x=>{ if (ids.has(x.item)) x.item = ""; });
-    s.bars = s.bars.filter(b=>!ids.has(b.id)); s.bars.forEach(b=>{ b.dependsOn = b.dependsOn.filter(x=>!ids.has(x)); (b.tasks||[]).forEach(t=>{ t.dependsOn = (t.dependsOn||[]).filter(x=>!gone.has(x)); }); }); s.milestones.forEach(m=>{ m.after = (m.after||[]).filter(x=>!ids.has(x)); }); });
+  else if (type==="bar"){ const b = barById(id), n = descendantsOf(id).length;
+    if (commit(()=>act("initiative.del", {id})) && n) queueMicrotask(()=>setStatus(`Deleted ${b.label || "the initiative"} and ${n} sub-initiative${n===1?"":"s"}. Undo brings them back.`)); }
   else if (type==="ms") commit(s=>{ s.milestones = s.milestones.filter(m=>m.id!==id); });
   else if (type==="gate") commit(s=>{ s.gates = s.gates.filter(g=>g.id!==id); s.bars.forEach(b=>{ b.waitsFor = (b.waitsFor||[]).filter(x=>x!==id); }); });
   else if (type==="note") commit(s=>{ s.notes = s.notes.filter(n=>n.id!==id); });
@@ -7860,7 +8097,7 @@ function del(type,id){
   else if (type==="type") commit(s=>{ const gone = new Set([...s.blocks.filter(b=>b.type===id).map(b=>b.id), ...s.sprints.map(x=>id + "@" + x.id)]);
     s.types = s.types.filter(t=>t.id!==id); s.blocks = s.blocks.filter(b=>b.type!==id); s.bars.forEach(x=>{ x.waitsFor = (x.waitsFor||[]).filter(y=>!gone.has(y)); }); s.blocks.forEach(x=>{ x.after = x.after.filter(y=>!gone.has(y)); }); s.updates = s.updates.filter(u=>!gone.has(u.item.slice(6))); });
   else if (type==="group") commit(s=>{ s.groups = s.groups.filter(g=>g.id!==id); s.meetings.forEach(m=>{ m.groups = (m.groups||[]).filter(x=>x!==id); }); });
-  else if (type==="task"){ const f = taskById(id); if (f){ commit(()=>{ S.updates = (S.updates||[]).filter(u=>u.item !== "task:" + id); f.b.tasks = f.b.tasks.filter(t=>t.id!==id); S.bars.forEach(b=>(b.tasks||[]).forEach(t=>{ t.dependsOn = (t.dependsOn||[]).filter(x=>x!==id); })); if (!f.b.tasks.length) f.b.datesFrom = "manual"; }); sel = {type:"bar", id:f.b.id}; render(); return; } }
+  else if (type==="task"){ const f = taskById(id); if (f){ commit(()=>act("task.del", {id})); sel = {type:"bar", id:f.b.id}; render(); return; } }
   sel = null; render();
 }
 const field = (id,label,input) => h("div",{class:"field"}, h("label",{for:id},label), input);
@@ -8299,13 +8536,13 @@ function renderSide0(){
     const d = dvById(sel.id); if (!d){ sel = null; return; }
     const can = !present && !tooNew(), w = dvWhen(d), P = dvProgress(d), B = dvBadges(d), all = jiraAll(), parent = d.from ? dvById(d.from) : null, kids = (S.deliverables || []).filter(x=>x.from === d.id);
     const txt = (id, label, key, max, ph, area) => field(id, label, h(area ? "textarea" : "input",{id, value:d[key] || "", maxlength:String(max), placeholder:ph || "", rows: area ? "3" : null, disabled:!can,
-      onchange:e=>{ const v = e.target.value.trim().slice(0, max); if (key === "name" && !v){ e.target.value = d.name; return; } dvEdit(d.id, `${d.name}: ${key === "line" ? "customer wording" : key}`, x=>{ if (v) x[key] = v; else delete x[key]; }); }}));
+      onchange:e=>{ const v = e.target.value.trim().slice(0, max); if (key === "name" && !v){ e.target.value = d.name; return; } dvSave(`${d.name}: ${key === "line" ? "customer wording" : key}`, s=>act("outcome.set", {id:d.id, field:key, value:v}, s)); }}));
     const tsel = h("select",{id:"f-dvtarget","aria-label":"Target",disabled:!can,onchange:e=>{ const v = e.target.value; if (v === "__date"){ fdate.hidden = false; fdate.focus(); return; } setDvTarget(d.id, v); }},
       h("option",{value:"",selected:!d.target && !d.release && !d.date}, "No target yet (an idea)"),
       ...targetChoices().map(([v, l])=>h("option",{value:v, selected:!d.release && !d.date && d.target === v}, l)), h("option",{value:"__date",selected:!!d.date && !d.release}, "A specific date…"));
-    const fdate = h("input",{type:"date",id:"f-dvdate","aria-label":"Target date",value:d.date || "",hidden:!d.date || !!d.release,disabled:!can,onchange:e=>{ const v = e.target.value; if (!validIso(v)) return; dvEdit(d.id, `${d.name}: targets ${fmtDay(isoToDay(v))}`, x=>{ x.date = v; delete x.release; x.target = quarterOf(isoToDay(v)); }); }});
+    const fdate = h("input",{type:"date",id:"f-dvdate","aria-label":"Target date",value:d.date || "",hidden:!d.date || !!d.release,disabled:!can,onchange:e=>{ const v = e.target.value; if (!validIso(v)) return; dvSave(`${d.name}: targets ${fmtDay(isoToDay(v))}`, s=>act("outcome.setTarget", {id:d.id, date:v}, s)); }});
     const rels = (JIRA && JIRA.releases || []).slice().sort((a, b)=>(a.date || "9") < (b.date || "9") ? -1 : 1);
-    const rsel = h("select",{id:"f-dvrel","aria-label":"Jira release",disabled:!can,onchange:e=>{ const v = e.target.value; if (v) setDvRelease(d.id, v); else dvEdit(d.id, `${d.name}: no release`, x=>{ if (!x.release) return NOCHANGE; delete x.release; }); }},
+    const rsel = h("select",{id:"f-dvrel","aria-label":"Jira release",disabled:!can,onchange:e=>{ const v = e.target.value; if (v) setDvRelease(d.id, v); else dvSave(`${d.name}: no release`, s=>act("outcome.setRelease", {id:d.id, release:""}, s)); }},
       h("option",{value:""}, rels.length ? "No release yet" : "No releases in the Jira files"), ...rels.map(r=>h("option",{value:r.id, selected:d.release === r.id}, r.name + (r.date ? " · " + fmtDay(isoToDay(r.date)) : "") + (r.released ? " · released" : ""))));
     const sug = h("datalist",{id:"f-dvkeys"});
     const keyIn = h("input",{id:"f-dvkey",list:"f-dvkeys",placeholder:"ABC-123, or several with commas","aria-label":"Jira key to link",disabled:!can,
@@ -8314,16 +8551,16 @@ function renderSide0(){
         sug.replaceChildren(...hits.map(k=>h("option",{value:k}, (all[k].summary || "").slice(0, 80)))); }});
     const linked = (d.jira || []).map(k=>{ const j = all[k], st = j ? jiraStateOf(j) : null;
       return h("li",{"data-dvkey":k}, jiraUrl(k) ? h("a",{href:jiraUrl(k),target:"_blank",rel:"noopener noreferrer",class:"jkey"}, k) : h("span",{class:"jkey"}, k), h("span",{}, j ? " " + (j.summary || "") : " not in the last sync"), st ? h("span",{class:"hint"}, " · " + st.label) : null,
-        can ? h("button",{type:"button",class:"x","aria-label":`Unlink ${k}`,onclick:()=>dvEdit(d.id, `${d.name}: unlinked ${k}`, x=>{ x.jira = (x.jira || []).filter(y=>y !== k); if (!x.jira.length) delete x.jira; })},"×") : null); });
+        can ? h("button",{type:"button",class:"x","aria-label":`Unlink ${k}`,onclick:()=>dvSave(`${d.name}: unlinked ${k}`, s=>act("outcome.unlinkJira", {id:d.id, key:k}, s))},"×") : null); });
     put(h("div",{class:"quick dvside"},
       can ? h("button",{type:"button",class:"btn",id:"dvAsk",onclick:()=>openPlanningAssistant({kind:"deliverable",id:d.id})},"Ask assistant about this") : null,
       B.length ? h("div",{class:"dvbadges"}, ...B.map(x=>dvChip(...x)), ...B.filter(x=>x[0] !== "jira").map(x=>h("div",{class:"hint dvwhy"}, `${x[1]}: ${x[2]}`))) : null,
       txt("f-dvname", "What we'll ship", "name", 120, "e.g. Make onboarding effortless"),
       txt("f-dvline", "For customers (release-note wording)", "line", 300, "One sentence a customer would understand", true),
       h("div",{class:"row2"},
-        field("f-dvkind","Kind", h("select",{id:"f-dvkind",disabled:!can,onchange:e=>{ const v = e.target.value; dvEdit(d.id, `${d.name}: kind`, x=>{ if (v) x.kind = v; else delete x.kind; }); }}, h("option",{value:""},"Not set"), ...DV_KINDS.map(([v, l])=>h("option",{value:v, selected:d.kind === v}, l)))),
+        field("f-dvkind","Kind", h("select",{id:"f-dvkind",disabled:!can,onchange:e=>{ const v = e.target.value; dvSave(`${d.name}: kind`, s=>act("outcome.set", {id:d.id, field:"kind", value:v}, s)); }}, h("option",{value:""},"Not set"), ...DV_KINDS.map(([v, l])=>h("option",{value:v, selected:d.kind === v}, l)))),
         field("f-dvstage","Stage", h("select",{id:"f-dvstage",disabled:!can,onchange:e=>{ const v = e.target.value; if (v === "dropped"){ e.target.value = d.stage; dropDv(d.id); return; }
-          dvEdit(d.id, `${d.name}: ${v}`, x=>{ if (v === "planned" && !x.target && !x.release && !x.date){ setStatus("Pick a target to plan it."); return NOCHANGE; } x.stage = v; if (v !== "dropped") delete x.dropReason; }); }},
+          dvSave(`${d.name}: ${v}`, s=>act("outcome.set", {id:d.id, field:"stage", value:v}, s)); }},
           ...DV_STAGES.map(([v, l])=>h("option",{value:v, selected:d.stage === v}, l))))),
       d.stage === "dropped" && d.dropReason ? h("p",{class:"hint"}, `Dropped: ${d.dropReason}`) : null,
       field("f-dvtarget", "Target timing", h("div",{class:"qrow"}, tsel, fdate)), h("p",{class:"hint",id:"dvTimingMeaning"}, w ? `${w.prec === "release" ? "Jira release date" : w.prec === "date" ? "Planned date" : "Target window"}: ${w.label}. ` + (w.prec === "year" || w.prec === "half" ? "Broad for now; sharpen it as delivery gets closer. " : "") + "Timing describes the current plan, not a delivery guarantee." : "No target yet: it waits in Ideas to sort."),
@@ -8333,9 +8570,9 @@ function renderSide0(){
           : h("div",{class:"qrow"}, h("span",{class:"hint"}, d.line ? "Done. Check the customer wording, then approve it for the release notes." : "Done. Add the customer wording above, then approve it for the release notes."),
               can && d.line ? h("button",{type:"button",class:"btn",id:"f-dvapprovego",onclick:()=>approveDv(d.id, true)},"Approve for release notes") : null),
         d.release && relById(d.release) ? h("button",{type:"button",class:"linkish",onclick:()=>{ sel = {type:"release", id:d.release}; render(); }},"See the release notes") : null) : null,
-      field("f-dvlane", "Workstream", h("select",{id:"f-dvlane",disabled:!can,onchange:e=>{ const v = e.target.value; dvEdit(d.id, `${d.name}: workstream`, x=>{ if (v) x.lane = v; else delete x.lane; }); }}, h("option",{value:""},"No workstream"), ...S.lanes.map(l=>h("option",{value:l.id, selected:d.lane === l.id}, l.name)))),
+      field("f-dvlane", "Workstream", h("select",{id:"f-dvlane",disabled:!can,onchange:e=>{ const v = e.target.value; dvSave(`${d.name}: workstream`, s=>act("outcome.set", {id:d.id, field:"lane", value:v}, s)); }}, h("option",{value:""},"No workstream"), ...S.lanes.map(l=>h("option",{value:l.id, selected:d.lane === l.id}, l.name)))),
       field("f-dvown","Owner(s)", ownerPicker("f-dvown", ()=>d.owners || [], v=>{ if (v.length) d.owners = v; else delete d.owners; }, {outside:true,
-        save:(next, np)=>dvSave(`${d.name}: owners`, s=>{ if (np) s.people.push(mkPerson(np.id, np.name, s.people.length, np.ext)); const x = s.deliverables.find(y=>y.id === d.id); if (!x) return NOCHANGE; if (next.length) x.owners = next; else delete x.owners; })})),
+        save:(next, np)=>dvSave(`${d.name}: owners`, s=>{ if (np) s.people.push(mkPerson(np.id, np.name, s.people.length, np.ext)); return act("outcome.set", {id:d.id, field:"owners", value:next}, s); })})),
       tagField(d, "deliverable"),
       h("div",{class:"field"}, h("span",{class:"flabel"}, "Jira work"),
         P ? h("p",{class:"dvprogline"}, h("b",{}, `${P.done} of ${P.of}`), ` linked Jira issue${P.of === 1 ? "" : "s"} done` + (P.partial ? " (about: some are counted through their epic)" : "") + (P.missing ? ` · ${P.missing} not in the last sync` : "")) : h("p",{class:"hint"}, "No Jira work linked yet. Link the issues once the team has broken this down; progress then rolls up here."),
@@ -8353,9 +8590,7 @@ function renderSide0(){
       can ? h("div",{class:"qrow"}, h("button",{type:"button",class:"btn",id:"f-dvsplit",onclick:()=>splitDv(d.id)},"Split…"),
         d.stage !== "dropped" ? h("button",{type:"button",class:"btn",id:"f-dvdrop",onclick:()=>dropDv(d.id)},"Drop…") : null,
         h("button",{type:"button",class:"btn",id:"f-dvdel",onclick:()=>{ const seen = JSON.stringify(d); if (!window.confirm(`Delete "${d.name}"? Dropping keeps it as a record; deleting removes it.`)) return;
-          dvSave(`deleted ${d.name}`, s=>{ const cur = s.deliverables.find(x=>x.id === d.id); if (!cur) return NOCHANGE;
-            if (JSON.stringify({...cur, edited:undefined}) !== JSON.stringify({...JSON.parse(seen), edited:undefined})){ setStatus("Someone changed it since you opened it, so it wasn't deleted. Look at their change, then delete again if you still want to."); return NOCHANGE; }
-            s.deliverables = s.deliverables.filter(x=>x.id !== d.id); }).then(ok=>{ if (ok && !dvById(d.id)){ sel = null; render(); } }); }},"Delete")) : null));
+          dvSave(`deleted ${d.name}`, s=>act("outcome.del", {id:d.id, prev:dvSeen(JSON.parse(seen))}, s)).then(ok=>{ if (ok && !dvById(d.id)){ sel = null; render(); } }); }},"Delete")) : null));
     return;
   }
   if (sel.type === "release"){
@@ -8434,31 +8669,31 @@ function sideBody(put){
         return h("div",{class:"field"}, h("span",{class:"flabel"},"Risks and decisions"), h("div",{class:"tasklist"},
           ...rs.map(x=>h("button",{type:"button",class:"nav",onclick:()=>goTo("risk", x.id)}, h("span",{class:"dot " + (x.sev==="high" ? "atrisk" : "inprogress")}), `Risk (${x.sev}): ${x.text.slice(0,50)}`)),
           ...ds.map(x=>h("button",{type:"button",class:"nav",onclick:()=>goTo("decision", x.id)}, h("span",{class:"dot notstarted"}), `Decision${x.due ? " by " + fmtDay(isoToDay(x.due)) : ""}: ${x.text.slice(0,44)}`)))); })(),
-      titleOf(b).from === "plan" ? field("f-label","Title", textIn("f-label", ()=>b.label, v=>b.label=v, {tag:"textarea", attrs:{rows:"3"}, live:true})) : titleOf(b).from === "stale" ? jiraTitleField(b) : null,
-      field("f-parent","Part of", h("select",{id:"f-parent",onchange:e=>{ const v = e.target.value; commit(()=>(v ? moveBarTo(b.id, v, "inside") : moveBarToLane(b.id, b.lane)) || NOCHANGE); }},
+      titleOf(b).from === "plan" ? field("f-label","Title", textIn("f-label", ()=>b.label, v=>act("initiative.set", {id:b.id, field:"label", value:v}), {tag:"textarea", attrs:{rows:"3"}, live:true})) : titleOf(b).from === "stale" ? jiraTitleField(b) : null,
+      field("f-parent","Part of", h("select",{id:"f-parent",onchange:e=>{ const v = e.target.value; commit(()=>act("initiative.setParent", {id:b.id, parent:v})); }},
         h("option",{value:"",selected:!b.parent},"— Top level —"),
         ...S.lanes.map(l=>{ const opts = S.bars.filter(x=>x.lane===l.id && x.id!==b.id && !isInside(x.id, b.id)); return opts.length ? h("optgroup",{label:l.name}, ...opts.map(x=>h("option",{value:x.id,selected:b.parent===x.id}, "\u2003".repeat(depthOf(x)) + chartLabel(x).slice(0,48)))) : null; }))),
       h("div",{class:"nestbtns"},
         h("button",{class:"btn",type:"button",id:"f-addsub",onclick:()=>createAt("subinitiative", b.id)},"+ Sub-initiative"),
-        h("button",{class:"btn",type:"button",id:"f-indent",disabled:!prevSibling(b),title:prevSibling(b) ? `Put it inside "${chartLabel(prevSibling(b))}"` : "Nothing above it to go inside",onclick:()=>{ const pv = prevSibling(b); if (pv) commit(()=>(moveBarTo(b.id, pv.id, "inside")) || NOCHANGE); }},"→ Indent"),
-        h("button",{class:"btn",type:"button",id:"f-outdent",disabled:!b.parent,title:"Take it out one level",onclick:()=>{ if (b.parent) commit(()=>(moveBarTo(b.id, b.parent, "after")) || NOCHANGE); }},"← Outdent"),
-        h("button",{class:"btn",type:"button",id:"f-up",disabled:!prevSibling(b),"aria-label":"Move up",title:"Move up among its neighbors",onclick:()=>{ const pv = prevSibling(b); if (pv) commit(()=>moveBarTo(b.id, pv.id, "before") || NOCHANGE); }},"↑"),
-        h("button",{class:"btn",type:"button",id:"f-down",disabled:!nextSibling(b),"aria-label":"Move down",title:"Move down among its neighbors",onclick:()=>{ const nx = nextSibling(b); if (nx) commit(()=>moveBarTo(b.id, nx.id, "after") || NOCHANGE); }},"↓")),
+        h("button",{class:"btn",type:"button",id:"f-indent",disabled:!prevSibling(b),title:prevSibling(b) ? `Put it inside "${chartLabel(prevSibling(b))}"` : "Nothing above it to go inside",onclick:()=>{ const pv = prevSibling(b); if (pv) commit(()=>act("initiative.place", {id:b.id, target:pv.id, zone:"inside"})); }},"→ Indent"),
+        h("button",{class:"btn",type:"button",id:"f-outdent",disabled:!b.parent,title:"Take it out one level",onclick:()=>{ if (b.parent) commit(()=>act("initiative.place", {id:b.id, target:b.parent, zone:"after"})); }},"← Outdent"),
+        h("button",{class:"btn",type:"button",id:"f-up",disabled:!prevSibling(b),"aria-label":"Move up",title:"Move up among its neighbors",onclick:()=>{ const pv = prevSibling(b); if (pv) commit(()=>act("initiative.place", {id:b.id, target:pv.id, zone:"before"})); }},"↑"),
+        h("button",{class:"btn",type:"button",id:"f-down",disabled:!nextSibling(b),"aria-label":"Move down",title:"Move down among its neighbors",onclick:()=>{ const nx = nextSibling(b); if (nx) commit(()=>act("initiative.place", {id:b.id, target:nx.id, zone:"after"})); }},"↓")),
       hasKids(b) ? h("div",{class:"field"}, h("span",{class:"flabel"},"Inside it"), h("div",{class:"tasklist"}, ...kidsOf(b.id).map(x=>h("button",{type:"button",onclick:()=>select("bar",x.id),title:barTitle(x)}, h("span",{class:"dot "+effStatus(x)}), chartLabel(x).slice(0,40) + (hasKids(x) ? ` (${kidsOf(x.id).length})` : ""), h("span",{class:"dt"}, `${wkDate(x.start)}–${endDate(x)}`))))) : null,
-      field("f-chart", titleOf(b).from === "plan" ? "Chart name (optional)" : "Name on the chart (the plan's, optional)", textIn("f-chart", ()=>b.chartName || "", v=>{ b.chartName = v.slice(0,60); }, {attrs:{maxlength:"60", placeholder: suggestChartName(b) ? `e.g. ${suggestChartName(b)}` : "Short name shown on the bar"}})),
-      !b.chartName && suggestChartName(b) ? h("button",{class:"linkish",type:"button",style:{alignSelf:"flex-start",fontSize:"12px"},onclick:()=>{ if (commit(()=>{ b.chartName = suggestChartName(b); })) focusSoon("#f-chart"); }}, `Use "${suggestChartName(b)}"`) : null,
+      field("f-chart", titleOf(b).from === "plan" ? "Chart name (optional)" : "Name on the chart (the plan's, optional)", textIn("f-chart", ()=>b.chartName || "", v=>act("initiative.set", {id:b.id, field:"chartName", value:v}), {attrs:{maxlength:"60", placeholder: suggestChartName(b) ? `e.g. ${suggestChartName(b)}` : "Short name shown on the bar"}})),
+      !b.chartName && suggestChartName(b) ? h("button",{class:"linkish",type:"button",style:{alignSelf:"flex-start",fontSize:"12px"},onclick:()=>{ if (commit(()=>act("initiative.set", {id:b.id, field:"chartName", value:suggestChartName(b)}))) focusSoon("#f-chart"); }}, `Use "${suggestChartName(b)}"`) : null,
       h("div",{class:"row2"},
         h("div",{}, field("f-jira","Jira key", textIn("f-jira", ()=>b.jira, v=>b.jira=v.trim(), {attrs:{placeholder:"PROJ-1234"}})), sideOf(b, "bar") === "jira" ? null : [jiraLink(b.jira), barEpics(b).length ? null : jiraLine(b.jira, b), lockLine(b)]),
-        field("f-status", rolls(b) ? (hasKids(b) ? "Status (from what's inside)" : "Status (from tasks)") : "Status", h("select",{id:"f-status",disabled:rolls(b) || !!jiraLockOf(b)?.status,onchange:e=>commit(()=>b.status=e.target.value)}, STATUSES.map(([v,t])=>h("option",{value:v,selected:effStatus(b)===v},t))))),
+        field("f-status", rolls(b) ? (hasKids(b) ? "Status (from what's inside)" : "Status (from tasks)") : "Status", h("select",{id:"f-status",disabled:rolls(b) || !!jiraLockOf(b)?.status,onchange:e=>commit(()=>act("initiative.setStatus", {id:b.id, status:e.target.value}))}, STATUSES.map(([v,t])=>h("option",{value:v,selected:effStatus(b)===v},t))))),
       epicsField(b), jiraDepsField(b, "bar"),
       rolls(b) ? field("f-owner", hasKids(b) ? "Owner(s) (from what's inside)" : "Owner(s) (from tasks)", h("input",{id:"f-owner",value:effOwner(b),disabled:true}))
-                  : assigneeOf(b) ? field("f-owner","Lead (the plan's, optional)", ownerPicker("f-owner", ()=>leadOf(b), v=>{ b.owners = v; }, {outside:true}))
-                  : field("f-owner","Owner(s)", ownerPicker("f-owner", ()=>own(b), v=>{ b.owners = v; }, {outside:true})),
-      field("f-lane","Workstream", h("select",{id:"f-lane",onchange:e=>{ const v = e.target.value; commit(()=>(moveBarToLane(b.id, v)) || NOCHANGE); }}, laneOpts(b.lane))),
-      hasTasks(b) && !hasKids(b) ? field("f-datesfrom","Dates", h("select",{id:"f-datesfrom",onchange:e=>commit(()=>b.datesFrom=e.target.value)}, [["manual","Planned (set here)"],["tasks","From tasks (earliest to latest)"]].map(([v,t])=>h("option",{value:v,selected:b.datesFrom===v},t)))) : null,
+                  : assigneeOf(b) ? field("f-owner","Lead (the plan's, optional)", ownerPicker("f-owner", ()=>leadOf(b), v=>act("initiative.set", {id:b.id, field:"owners", value:v}), {outside:true}))
+                  : field("f-owner","Owner(s)", ownerPicker("f-owner", ()=>own(b), v=>act("initiative.set", {id:b.id, field:"owners", value:v}), {outside:true})),
+      field("f-lane","Workstream", h("select",{id:"f-lane",onchange:e=>{ const v = e.target.value; commit(()=>act("initiative.setLane", {id:b.id, lane:v})); }}, laneOpts(b.lane))),
+      hasTasks(b) && !hasKids(b) ? field("f-datesfrom","Dates", h("select",{id:"f-datesfrom",onchange:e=>commit(()=>act("initiative.set", {id:b.id, field:"datesFrom", value:e.target.value}))}, [["manual","Planned (set here)"],["tasks","From tasks (earliest to latest)"]].map(([v,t])=>h("option",{value:v,selected:b.datesFrom===v},t)))) : null,
       h("div",{class:"row2"},
-        field("f-start","Start (week)", h("input",{id:"f-start",type:"number",step:"0.5",min:"0",max:String(W),value:snap(b.start),disabled:derived(b) || !!jiraLockOf(b)?.dates,onchange:e=>commit(()=>b.start=Math.max(0,Math.min(W-b.span,num(e.target.value,b.start))))})),
-        field("f-span","Length (weeks)", h("input",{id:"f-span",type:"number",step:"0.5",min:"0.5",max:String(W),value:snap(b.span),disabled:derived(b) || !!jiraLockOf(b)?.dates,onchange:e=>commit(()=>b.span=Math.max(.5,Math.min(W-b.start,num(e.target.value,b.span))))}))),
+        field("f-start","Start (week)", h("input",{id:"f-start",type:"number",step:"0.5",min:"0",max:String(W),value:snap(b.start),disabled:derived(b) || !!jiraLockOf(b)?.dates,onchange:e=>commit(()=>act("initiative.move", {id:b.id, start:num(e.target.value,b.start)}))})),
+        field("f-span","Length (weeks)", h("input",{id:"f-span",type:"number",step:"0.5",min:"0.5",max:String(W),value:snap(b.span),disabled:derived(b) || !!jiraLockOf(b)?.dates,onchange:e=>commit(()=>act("initiative.move", {id:b.id, span:num(e.target.value,b.span)}))}))),
       h("p",{class:"hint mono"}, `${wkDate(b.start)} → ${endDate(b)}` + (hasKids(b) ? " · spans what's inside" : derived(b) ? " · from tasks" : "")),
       (()=>{ const hol = derived(b) || b.kind === "waiting" ? [] : holidaysIn(nextWork(wkDay(b.start), new Set()), barEndDay(b));
         return hol.length ? h("p",{class:"hint"}, `${hol.map(x=>(x.name||"Holiday") + " (" + fmtDay(isoToDay(x.date)) + ")").join(", ")} ${hol.length===1?"falls":"fall"} inside, so it ends ${hol.length} working day${hol.length===1?"":"s"} later than a plain ${snap(b.span)}-week block.`) : null; })(),
@@ -8466,7 +8701,7 @@ function sideBody(put){
       h("div",{class:"row2"},
         h("button",{class:"btn",onclick:()=>addTask(b)},"+ Task"),
         h("button",{class:"btn nav",onclick:()=>openInitiative(b.id)},"Open day view")),
-      field("f-kind","Type", h("select",{id:"f-kind",onchange:e=>commit(()=>b.kind=e.target.value)}, KINDS.map(([v,t])=>h("option",{value:v,selected:b.kind===v},t)))),
+      field("f-kind","Type", h("select",{id:"f-kind",onchange:e=>commit(()=>act("initiative.set", {id:b.id, field:"kind", value:e.target.value}))}, KINDS.map(([v,t])=>h("option",{value:v,selected:b.kind===v},t)))),
       h("div",{class:"field"}, h("span",{class:"flabel"},"Starts after these finish"), depBox),
       (()=>{ const opts = liveBlocks().filter(i=>i.status !== "canceled" || (b.waitsFor||[]).includes(i.id)); if (!opts.length) return null;
         return h("div",{class:"field"}, h("span",{class:"flabel"},"Waits for process blocks"),
@@ -8504,22 +8739,22 @@ function sideBody(put){
       taskLate(t,hs) ? h("div",{class:"msg bad"}, `Late: ended ${fmtDay(sp.e)} and isn't done.`) : null,
       sl ? h("div",{class:"msg warn"}, `Baseline: end moved ${fmtD(sl)} (working days).`) : null,
       quickPanel("task:" + t.id), stickies(noteKeysOf(t, "task"), b.lane), jiraDepsField(t, "task"),
-      titleOf(t).from === "plan" ? field("f-tlabel","Task", textIn("f-tlabel", ()=>t.label, v=>t.label=v, {live:true})) : titleOf(t).from === "stale" ? jiraTitleField(t) : null,
+      titleOf(t).from === "plan" ? field("f-tlabel","Task", textIn("f-tlabel", ()=>t.label, v=>act("task.set", {id:t.id, field:"label", value:v}), {live:true})) : titleOf(t).from === "stale" ? jiraTitleField(t) : null,
       h("div",{class:"row2"},
         h("div",{}, field("f-tjira","Jira key", textIn("f-tjira", ()=>t.jira, v=>t.jira=v.trim(), {attrs:{placeholder:"PROJ-1234"}})), sideOf(t, "task") === "jira" ? null : [jiraLink(t.jira), jiraLine(t.jira, t), lockLine(t)]),
-        field("f-tstatus","Status", h("select",{id:"f-tstatus",disabled:!!jiraLockOf(t)?.status,onchange:e=>commit(()=>t.status=e.target.value)}, STATUSES.map(([v,x])=>h("option",{value:v,selected:t.status===v},x))))),
-      assigneeOf(t) ? field("f-towner","Lead (the plan's, optional)", ownerPicker("f-towner", ()=>leadOf(t), v=>{ t.owners = v; }, {outside:true}))
-        : field("f-towner","Owner(s)", ownerPicker("f-towner", ()=>own(t), v=>{ t.owners = v; }, {outside:true})),
+        field("f-tstatus","Status", h("select",{id:"f-tstatus",disabled:!!jiraLockOf(t)?.status,onchange:e=>commit(()=>act("task.setStatus", {id:t.id, status:e.target.value}))}, STATUSES.map(([v,x])=>h("option",{value:v,selected:t.status===v},x))))),
+      assigneeOf(t) ? field("f-towner","Lead (the plan's, optional)", ownerPicker("f-towner", ()=>leadOf(t), v=>act("task.set", {id:t.id, field:"owners", value:v}), {outside:true}))
+        : field("f-towner","Owner(s)", ownerPicker("f-towner", ()=>own(t), v=>act("task.set", {id:t.id, field:"owners", value:v}), {outside:true})),
       h("div",{class:"row2"},
-        field("f-tstart","Start", h("input",{id:"f-tstart",type:"date",disabled:!!jiraLockOf(t)?.dates,min:S.meta.start,value:dayToIso(sp.s),onchange:e=>commit(()=>{ if (/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) t.start = dayToIso(nextWork(Math.max(startDay(), isoToDay(e.target.value)), hs)); })})),
-        field("f-tdays","Working days", h("input",{id:"f-tdays",type:"number",disabled:!!jiraLockOf(t)?.dates,min:"1",max:"260",value:t.days,onchange:e=>commit(()=>t.days=clampInt(e.target.value,1,260,t.days))}))),
+        field("f-tstart","Start", h("input",{id:"f-tstart",type:"date",disabled:!!jiraLockOf(t)?.dates,min:S.meta.start,value:dayToIso(sp.s),onchange:e=>commit(()=>validIso(e.target.value) ? act("task.move", {id:t.id, start:e.target.value}) : NOCHANGE)})),
+        field("f-tdays","Working days", h("input",{id:"f-tdays",type:"number",disabled:!!jiraLockOf(t)?.dates,min:"1",max:"260",value:t.days,onchange:e=>commit(()=>act("task.move", {id:t.id, days:clampInt(e.target.value,1,260,t.days)}))}))),
       h("p",{class:"hint mono"}, `${fmtDay(sp.s)} → ${fmtDay(sp.e)} (weekends and holidays skipped)`),
       h("div",{class:"field"}, h("span",{class:"flabel"},"Starts after these tasks"),
-        h("div",{class:"linkchips"}, ...(t.dependsOn||[]).map(id=>{ const x = taskById(id); return x ? h("span",{class:"lchip"}, taskTitle(x.t), h("button",{type:"button",class:"ox","aria-label":"Remove link",onclick:()=>commit(()=>{ t.dependsOn = t.dependsOn.filter(y=>y!==id); })},"×")) : null; }),
-          h("select",{id:"f-tdep","aria-label":"Add a task this one waits for",onchange:e=>{ const v = e.target.value; if (!v) return; if (taskReaches(v, t.id)){ setStatus("That would create a loop."); e.target.value = ""; return; } commit(()=>{ t.dependsOn = [...new Set([...(t.dependsOn||[]), v])]; }); }},
+        h("div",{class:"linkchips"}, ...(t.dependsOn||[]).map(id=>{ const x = taskById(id); return x ? h("span",{class:"lchip"}, taskTitle(x.t), h("button",{type:"button",class:"ox","aria-label":"Remove link",onclick:()=>commit(()=>act("task.unlink", {id:t.id, after:id}))},"×")) : null; }),
+          h("select",{id:"f-tdep","aria-label":"Add a task this one waits for",onchange:e=>{ const v = e.target.value; if (!v) return; if (!commit(()=>act("task.link", {id:t.id, after:v}))) e.target.value = ""; }},
             h("option",{value:""},"+ Add…"), ...S.bars.filter(x=>(x.tasks||[]).length).map(x=>h("optgroup",{label:chartLabel(x)}, ...x.tasks.filter(y=>y.id !== t.id && !(t.dependsOn||[]).includes(y.id)).map(y=>h("option",{value:y.id}, y.label || "Untitled task"))))))),
       (()=>{ const L = linksOf("task", t.id); return L.before.length ? h("div",{class:"field"}, h("span",{class:"flabel"},"Followed by"), h("div",{class:"linkchips"}, ...L.before.map(x=>h("button",{type:"button",class:"lchip nav",onclick:()=>select("task", x.id)}, taskTitle(x))))) : null; })(),
-      field("f-tbar","Initiative", h("select",{id:"f-tbar",onchange:e=>{ const nb = barById(e.target.value); if (nb && nb !== b) commit(()=>{ b.tasks = b.tasks.filter(x=>x.id!==t.id); nb.tasks.push(t); if (!b.tasks.length) b.datesFrom = "manual"; }); }}, S.bars.filter(x=>x.kind!=="waiting" || x===b).map(x=>h("option",{value:x.id,selected:x===b}, x.label || "Untitled item")))),
+      field("f-tbar","Initiative", h("select",{id:"f-tbar",onchange:e=>{ const nb = barById(e.target.value); if (nb && nb !== b) commit(()=>act("task.moveTo", {id:t.id, bar:nb.id})); }}, S.bars.filter(x=>x.kind!=="waiting" || x===b).map(x=>h("option",{value:x.id,selected:x===b}, x.label || "Untitled item")))),
       h("div",{class:"row2"},
         h("button",{class:"btn",onclick:()=>{ const id = newId("task"); if (commit(()=>b.tasks.push({...clone(t), id, start:dayToIso(nextWork(sp.e+1,hs)), status:"notstarted", jira:""}))) select("task",id); }},"Add next task"),
         UI.zoom==="days" && UI.focus===b.id ? null : h("button",{class:"btn nav",onclick:()=>openInitiative(b.id)},"Day view")),
@@ -10482,15 +10717,14 @@ function dvSettle(x, before){
 const dvWords = x => [x.name, x.line, x.kind, x.stage];
 function ideaSource(){ const mine = UI.ideaFrom && typeof UI.ideaFrom === "object" ? UI.ideaFrom[S.meta.planId] : undefined; return mine || ""; }   // the last one you used, per plan: never guessed
 function addIdea(name, extra){ name = String(name || "").trim().slice(0, 120); if (!name) return Promise.resolve(null);
-  const id = newId("dv"), src = String(ideaSource() || "").trim().slice(0, 60), d = {id, name, stage:"idea", source: src ? `${src}, ${fmtDay(todayDay())}` : `Added ${fmtDay(todayDay())}`, ...(extra || {})};
-  if (d.target || d.release || d.date) d.stage = "planned";
-  return dvSave(`idea: ${name}`, s=>{ s.deliverables.push(d); }).then(ok=>ok ? id : null); }
+  const id = newId("dv");
+  return dvSave(`idea: ${name}`, s=>act("outcome.add", {id, name, source:String(ideaSource() || ""), ...(extra || {})}, s)).then(ok=>ok ? id : null); }
 function setDvTarget(id, target){ const d = dvById(id); if (!d) return Promise.resolve(false); const p = target === "later" ? {label:"Later"} : periodRange(target);
-  return dvEdit(id, `${d.name}: ${p ? "targets " + p.label : "no target"}`, x=>{ if (target) x.target = target; else delete x.target; delete x.release; delete x.date; if (!target && x.stage === "planned") x.stage = "idea"; }); }
+  return dvSave(`${d.name}: ${p ? "targets " + p.label : "no target"}`, s=>act("outcome.setTarget", {id, ...(target ? {target} : {})}, s)); }
 function setDvRelease(id, rid){ const d = dvById(id), r = relById(rid); if (!d || !r) return Promise.resolve(false);
-  return dvEdit(id, `${d.name}: ships in ${r.name}`, x=>{ x.release = rid; delete x.date; if (r.date) x.target = quarterOf(isoToDay(r.date)); }); }
+  return dvSave(`${d.name}: ships in ${r.name}`, s=>act("outcome.setRelease", {id, release:rid}, s)); }
 function dropDv(id){ const d = dvById(id); if (!d) return; const why = window.prompt(`Why drop "${d.name}"? (one line, for the record)`, ""); if (why === null) return;
-  dvEdit(id, `${d.name}: dropped`, x=>{ x.stage = "dropped"; if (why.trim()) x.dropReason = why.trim().slice(0, 300); }); }
+  dvSave(`${d.name}: dropped`, s=>act("outcome.drop", {id, reason:why}, s)); }
 function splitDv(id){ const d = dvById(id); if (!d) return; const raw = window.prompt(`Split "${d.name}" into smaller deliverables. Separate their names with a semicolon (;).`, ""); if (!raw) return;
   const names = [...new Set(raw.split(";").map(x=>x.trim().slice(0, 120)).filter(Boolean))]; if (names.length < 2){ setStatus("Give at least two names, separated with ;"); return; }
   const ids = names.map(()=>newId("dv")), kids = [];
@@ -10504,7 +10738,7 @@ function groupIntoDeliverable(keys){ keys = [...new Set(keys)]; if (!keys.length
   if (!name || !name.trim()) return Promise.resolve(null);
   return addIdea(name, {jira:keys}).then(id=>{ if (id){ UI.ws = "roadmap"; sel = {type:"deliverable", id}; saveUI(); render(); setStatus(`Grouped ${keys.length} into "${name.trim()}". Pick a target to put it on the roadmap.`); } return id; }); }
 function linkDvJira(id, keys){ const d = dvById(id); keys = keys.map(k=>String(k).trim().toUpperCase()).filter(k=>JKEY.test(k)); if (!d || !keys.length){ setStatus("That isn't a Jira key (like ABC-123)."); return Promise.resolve(false); }
-  return dvEdit(id, `${d.name}: linked ${keys.join(", ")}`, x=>{ const cur = new Set(x.jira || []), n0 = cur.size; keys.forEach(k=>cur.add(k)); if (cur.size === n0) return NOCHANGE; x.jira = [...cur]; }); }
+  return dvSave(`${d.name}: linked ${keys.join(", ")}`, s=>act("outcome.linkJira", {id, keys}, s)); }
 // Every target a card can take, nearest first: quarters for two years, halves, years, Later.
 function targetChoices(){ const t = dayToIso(todayDay()), y = +t.slice(0, 4), q = Math.floor((+t.slice(5, 7) - 1) / 3) + 1, out = [];
   for (let i = 0; i < 8; i++){ const qq = (q - 1 + i) % 4 + 1, yy = y + Math.floor((q - 1 + i) / 4); out.push([`${yy}-Q${qq}`, `Q${qq} ${yy}`]); }
