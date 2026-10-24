@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.99.1",
+    "date": "2026-10-24",
+    "headline": "The header holds still while Sightline checks the file",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Editing",
+        "title": "The page no longer bounces every 15 seconds",
+        "now": "The automatic check of the shared file (Check automatically) runs without touching the header or the editing bar, unless a save or check takes a while. The status line at the top says only what matters: who's editing, the last save and the lock.",
+        "before": "Each automatic check flashed \"working…\" and rewrote the status line at the top, which wrapped onto several lines and then shrank back, so the whole page jumped.",
+        "where": "The status line at the top, and the editing bar"
+      }
+    ]
+  },
+  {
     "version": "1.99.0",
     "date": "2026-10-24",
     "headline": "Your assistant can add holidays, and check its work before sending",
