@@ -24,11 +24,13 @@ main(){
     run_suite "$h" 300 node "$h.js"
   done
   run_suite harness110 60 node harness110.js
+  run_suite harness111 60 node harness111.js
   run_suite build 240 python3 test_build.py
   run_suite jira-sync 120 python3 test_jira_sync.py
   run_suite assistant 120 python3 test_assistant.py
   run_suite runner 30 python3 test_runner.py
   run_suite package 30 node test_package.js
+  run_suite bundled-skills 60 node harness-bundled-skills.js
   return "$fail"
 }
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then main "$@"; fi

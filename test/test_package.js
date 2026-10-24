@@ -1,6 +1,7 @@
 // Exercise the real CLI against disposable folders; never read a real plan.
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 const {spawnSync} = require('node:child_process');
+const yaml = require('../src/js-yaml.min.js');
 const root = path.resolve(__dirname, '..'), temp = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'sightline-package-'));
 const pkg = require('../package.json');
 let passed = 0, total = 0;
@@ -17,6 +18,14 @@ try {
   ok('installed app is the exact built HTML', fs.readFileSync(path.join(dest,'sightline.html')).equals(fs.readFileSync(path.join(root,'dist/sightline.html'))));
   const skills = fs.readdirSync(path.join(dest,'.sightline/skills'));
   ok('all six skills are installed', skills.length === 6 && skills.every(s=>fs.existsSync(path.join(dest,'.sightline/skills',s,'SKILL.md'))));
+  for (const skill of skills) {
+    const installed = fs.readFileSync(path.join(dest,'.sightline/skills',skill,'SKILL.md'),'utf8');
+    const match = /^---\n([\s\S]*?)\n---/.exec(installed), meta = match && yaml.load(match[1]);
+    ok(`${skill} retains exact instructions and discoverable metadata`,
+      installed === fs.readFileSync(path.join(root,'skills',skill,'SKILL.md'),'utf8') &&
+      meta && meta.name === skill && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(meta.name) && meta.name.length <= 64 &&
+      typeof meta.description === 'string' && meta.description.trim().length > 0 && meta.description.length <= 1024);
+  }
   ok('invented example and Jira snapshot are installed', fs.existsSync(path.join(dest,'example/plan.json')) && fs.existsSync(path.join(dest,'example/jira/status.json')));
   ok('example proposals match its plan ID', JSON.parse(fs.readFileSync(path.join(dest,'example/plan.json'))).meta.planId === JSON.parse(fs.readFileSync(path.join(dest,'example/sightline-amendments.json'))).planId);
   ok('identical install is idempotent', run('install',dest).status === 0);
