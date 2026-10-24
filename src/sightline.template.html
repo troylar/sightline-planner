@@ -1273,7 +1273,7 @@ const LEGACY_KEYS = ["timeline-planner-v2","timeline-planner-v1"];
 const MAX_BYTES = 2 * 1024 * 1024, MAX_READ_BYTES = 5 * 1024 * 1024, MAX_DEPTH = 24, MAX_NODES = 60000;   // write up to 2 MB (what copies before 1.19 can open); read up to 5 MB
 // Plan format. SCHEMA changes only for a change older copies can't read; new optional parts are named in meta.features,
 // and a copy that finds one it doesn't know opens the plan read-only instead of saving over what it can't see.
-const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide"];
+const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1"];
 // A deliverable's target: a year, a half or a quarter ("2027", "2027-H1", "2027-Q2"), or "later".
 const TARGET_RE = /^(\d{4})(?:-(Q[1-4]|H[12]))?$/;
 const PR_DRAFT_RE = /^\s*[\[(]?\s*(draft|wip)\s*[\])]?\s*[:\-]?\s/i;    // a draft pull request's title: "Draft: …", "[WIP] …"
@@ -1336,9 +1336,14 @@ function migrate(src){ const from = Number(src && src.meta && src.meta.schema) |
 // already say who wrote them).
 const STAMPED = ["lanes","bars","milestones","gates","notes","views","sprints","decisions","risks","groups","meetings","types","blocks","tags","jiraItems","proposals","cardViews","deliverables","planningGuide"];
 const TAGGED = ["bars","milestones","gates","meetings","notes","blocks","deliverables"];     // plan items that carry tags (tasks too)
+// Which app made a change for a person: {app, name, batch}, on stamps and change records. The person is still by.
+const VIA_APP = /^[a-z][a-z0-9-]{0,39}$/, VIA_BATCH = /^[A-Za-z0-9._-]{1,80}$/;
+const normVia = v => v && typeof v === "object" && VIA_APP.test(String(v.app || "")) ? {app:String(v.app), name:String(v.name || "").slice(0, 80), ...(VIA_BATCH.test(String(v.batch || "")) ? {batch:String(v.batch)} : {})} : null;
+const viaIn = plan => (plan.changes || []).some(c=>c && c.via) || STAMPED.some(k=>(plan[k] || []).some(x=>x && ((x.added || {}).via || (x.edited || {}).via))) || (plan.bars || []).some(b=>(b.tasks || []).some(t=>t && ((t.added || {}).via || (t.edited || {}).via)));
 const featuresIn = plan => { const f = [];
   if (STAMPED.some(k=>(plan[k] || []).some(x=>x.added || x.edited)) || (plan.bars || []).some(b=>(b.tasks || []).some(t=>t.added || t.edited))) f.push("added");
   if ((plan.changes || []).length) f.push("changes");
+  if (viaIn(plan)) f.push("appVia1");
   if ((plan.tags || []).length || (plan.jiraItems || []).length) f.push("tags");
   if ((plan.proposals || []).length) f.push("proposals");
   if ((plan.lanes || []).some(l=>l.from || l.until)) f.push("laneDates");
@@ -1817,12 +1822,12 @@ function normalize(input, strict){
     { const rawT = new Map(arr("bars").flatMap(b=>Array.isArray(b.tasks) ? b.tasks.filter(t=>t && typeof t === "object") : []).map(t=>[str(t.id), t])); d.bars.forEach(b=>(b.tasks || []).forEach(t=>{ const g = clean((rawT.get(t.id) || {}).tags); if (g.length) t.tags = g; })); }
     d.jiraItems = arr("jiraItems").filter(x=>/^[A-Z][A-Z0-9_]{0,19}-[1-9][0-9]{0,8}$/.test(str(x.id))).slice(0, 5000).map(x=>({id:str(x.id), tags:clean(x.tags)})).filter(x=>x.tags.length); }
   // who added and last edited each item (kept for people no longer on the team: they show as a former teammate)
-  { const stamp = v => v && typeof v === "object" && validStamp(v.at) && /^[A-Za-z0-9_-]{0,48}$/.test(str(v.by)) ? {by:str(v.by), at:str(v.at)} : null;
+  { const stamp = v => { if (!(v && typeof v === "object" && validStamp(v.at) && /^[A-Za-z0-9_-]{0,48}$/.test(str(v.by)))) return null; const via = normVia(v.via); return via ? {by:str(v.by), at:str(v.at), via} : {by:str(v.by), at:str(v.at)}; };
     const put = (list, raw) => { const byId = new Map(raw.map(x=>[str(x.id), x])); list.forEach(x=>{ const r = byId.get(x.id); if (!r) return; const a = stamp(r.added), e = stamp(r.edited); if (a) x.added = a; if (e) x.edited = e; }); };
     STAMPED.forEach(k=>{ if (Array.isArray(d[k])) put(d[k], arr(k)); });
     put(d.bars.flatMap(b=>b.tasks || []), arr("bars").flatMap(b=>Array.isArray(b.tasks) ? b.tasks.filter(t=>t && typeof t === "object") : []));
     d.notes.forEach(n=>{ if (!n.added && validStamp(n.created)) n.added = {by:n.author || "", at:n.created}; });
-    d.changes = arr("changes").slice(-1000).filter(c=>str(c.id) && validStamp(c.at)).map(c=>({id:str(c.id).slice(0,40), by:/^[A-Za-z0-9_-]{0,48}$/.test(str(c.by)) ? str(c.by) : "", at:c.at, what:str(c.what).slice(0,200),
+    d.changes = arr("changes").slice(-1000).filter(c=>str(c.id) && validStamp(c.at)).map(c=>({id:str(c.id).slice(0,40), by:/^[A-Za-z0-9_-]{0,48}$/.test(str(c.by)) ? str(c.by) : "", at:c.at, what:str(c.what).slice(0,200), ...(normVia(c.via) ? {via:normVia(c.via)} : {}),
       ops: Array.isArray(c.ops) ? c.ops.filter(o=>o && typeof o === "object").slice(0, 2000) : null, ...(c.cut === true ? {cut:true, n:clampInt(c.n,0,1e6,0)} : {})})); }
   return d;
 }
@@ -2428,12 +2433,12 @@ function histPop(){ const top = past.pop(); if (past.length) past[past.length - 
 // When auto-moving pushes work past the plan's last week, add sprints instead of pulling the work back (which would leave the conflict).
 function growToFit(){ const w0 = S.meta.weeks; if (!S.bars.some(b=>b.start + b.span > w0 + 1e-6)) return; fitAfter(S, Math.max(0, ...S.bars.map(b=>b.start + b.span))); if (S.meta.weeks > w0){ const msg = `The plan now runs ${S.meta.weeks} weeks.`; if (quickMode) mergeNote = (mergeNote ? mergeNote + " " : "") + msg; else queueMicrotask(()=>setStatus(`Linked work moved past the end. ${msg}`)); } }
 const NOCHANGE = Symbol("nochange");      // a mutator returns this when it decided not to change anything
-function stampAuthors(prev, cur){
-  const me = meId() || "", at = new Date().toISOString().slice(0, 16) + "Z";
+function stampAuthors(prev, cur, via){
+  const me = meId() || "", at0 = new Date().toISOString().slice(0, 16) + "Z", v = normVia(via), mk = () => v ? {by:me, at:at0, via:v} : {by:me, at:at0};
   const strip = y => { const {added, edited, tasks, ...r} = y; return r; };
   const check = (P, C) => { const pm = new Map(P.map(x=>[x.id, x]));
-    C.forEach(x=>{ const o = pm.get(x.id); if (!o){ x.added = {by:me, at}; delete x.edited; return; }      // new (a copy of another item is new too)
-      if (!jeq(strip(o), strip(x))) x.edited = {by:me, at}; }); };
+    C.forEach(x=>{ const o = pm.get(x.id); if (!o){ x.added = mk(); delete x.edited; return; }      // new (a copy of another item is new too)
+      if (!jeq(strip(o), strip(x))) x.edited = mk(); }); };
   STAMPED.forEach(k=>check(prev[k] || [], cur[k] || []));
   check((prev.bars || []).flatMap(b=>b.tasks || []), (cur.bars || []).flatMap(b=>b.tasks || []));
 }
@@ -2445,8 +2450,8 @@ function commit(mutator, opts={}){
   dropJiraMemos();
   if (mutator(S) === NOCHANGE){ if (pushed){ histPop(); coalesceKey = null; } return false; }
 
-  if (opts.text){ if (pushed) try { stampAuthors(JSON.parse(past[past.length-1]), S); } catch(e){} markDirty(); if (!opts.norender) opts.deferDerived ? scheduleDerived() : renderDerived(); return true; }   // a title: no dates or links change, so skip the scheduling
-  if (pushed) try { const prev = JSON.parse(past[past.length-1]); stampAuthors(prev, S); stampStatuses(prev, S); } catch(e){} rollup(S); const rs = reschedule(); syncWeeks(S); fitHorizonTasks(S); if (rs.moved || opts.grow) growToFit(); clampToRange(S);
+  if (opts.text){ if (pushed) try { stampAuthors(JSON.parse(past[past.length-1]), S, mutator.via); } catch(e){} markDirty(); if (!opts.norender) opts.deferDerived ? scheduleDerived() : renderDerived(); return true; }   // a title: no dates or links change, so skip the scheduling
+  if (pushed) try { const prev = JSON.parse(past[past.length-1]); stampAuthors(prev, S, mutator.via); stampStatuses(prev, S); } catch(e){} rollup(S); const rs = reschedule(); syncWeeks(S); fitHorizonTasks(S); if (rs.moved || opts.grow) growToFit(); clampToRange(S);
   if (pushed && !key){ const bad = (()=>{ try { return blackoutHit(JSON.parse(past[past.length-1]), S); } catch(e){ return null; } })();   // the finished change, after automatic moves
     if (bad){ S = JSON.parse(histPop()); coalesceKey = null; dropJiraMemos(); setStatus(bad); if (!opts.norender) render(); return false; } }
   markDirty();
@@ -2464,15 +2469,19 @@ function invertOps(ops){
   return ops.slice().reverse().map(o=>o.op === "set" ? {...o, value:clone(o.prev), prev:clone(o.value)} : o.op === "add" ? {op:"del", type:o.type, id:o.id, prev:clone(o.value)}
     : o.op === "del" ? {op:"add", type:o.type, id:o.id, value:clone(o.prev)} : null).filter(Boolean);
 }
-function rememberQuick(what, ops){ if (!ops || !ops.length) return; quickDone.push({what, ops, hd:file.handle}); if (quickDone.length > 20) quickDone.shift(); quickUndone = []; updateUndo(); }
+function rememberQuick(what, ops, via){ if (!ops || !ops.length) return; quickDone.push({what, ops, hd:file.handle, ...(normVia(via) ? {via:normVia(via)} : {})}); if (quickDone.length > 20) quickDone.shift(); quickUndone = []; updateUndo(); }
 const quickStack = st => st.filter(x=>x.hd === file.handle);
-function quickUndo(redo){
-  const from = redo ? quickUndone : quickDone, to = redo ? quickDone : quickUndone, i = from.map(x=>x.hd).lastIndexOf(file.handle); if (i < 0) return;
+function quickUndo(redo){ const i = (redo ? quickUndone : quickDone).map(x=>x.hd).lastIndexOf(file.handle); if (i >= 0) quickUndoAt(i, redo); }
+// Undo one batch an app applied, even with other quick updates after it: the same guarded undo, for that entry.
+function undoBatch(batch){ const i = quickDone.map(x=>x.hd === file.handle && x.via && x.via.batch === batch).lastIndexOf(true); if (i < 0) return Promise.resolve(false);
+  return quickUndoAt(i, false).then(ok=>{ render(); return ok; }); }
+function quickUndoAt(i, redo){
+  const from = redo ? quickUndone : quickDone, to = redo ? quickDone : quickUndone;
   const [x] = from.splice(i, 1), ops = redo ? x.ops : invertOps(x.ops);
-  new Promise(res=>whoAmI(null, ()=>Promise.resolve(quickSave(`${x.what}, ${redo ? "redone" : "undone"}`,
+  return new Promise(res=>whoAmI(null, ()=>Promise.resolve(quickSave(`${x.what}, ${redo ? "redone" : "undone"}`,
       st=>{ const use = stillMine(st, ops); if (use.skipped) mergeNote = `Left ${use.skipped} change${use.skipped===1?"":"s"} a teammate made since as they are.`; if (!use.ops.length) return NOCHANGE;
         const r = applyOps(st, use.ops).plan; for (const k of Object.keys(st)) delete st[k]; Object.assign(st, r); }, 0, null, true)).then(res)))
-    .then(ok=>{ if (ok) to.push(x); else from.splice(i, 0, x); updateUndo(); if (UI.ws === "plan" && UI.planTab === "epics") renderJiraWs(); });
+    .then(ok=>{ if (ok) to.push(x); else from.splice(i, 0, x); updateUndo(); if (UI.ws === "plan" && UI.planTab === "epics") renderJiraWs(); return ok; });
 }
 // Undo and redo put a field back only while it still holds what this change wrote; a field someone changed since is theirs.
 // Status and its timestamps and "blocked" go together. Lists of keys (tags, epics) already merge item by item.
@@ -2520,10 +2529,10 @@ function jiraOwnedOp(o){
   const x = o.type === "task" ? taskById(o.id)?.t : o.type === "bars" ? barById(o.id) : null, L = x && jiraLockOf(x);
   return !!L && (o.field === "status" || o.field === "abandoned" ? L.status : L.dates);
 }
-function changeRecord(what, ops){
+function changeRecord(what, ops, via){
   const mine = (ops || []).filter(o=>o.type !== "changes" && !(o.op === "set" && (o.field === "edited" || o.field === "added")) && !jiraOwnedOp(o));
   if (!mine.length) return null;
-  const rec = {id:newId("chg"), by:meId() || "", at:new Date().toISOString(), what:String(what || "").slice(0, 200), ops:mine};
+  const rec = {id:newId("chg"), by:meId() || "", at:new Date().toISOString(), what:String(what || "").slice(0, 200), ...(normVia(via) ? {via:normVia(via)} : {}), ops:mine};
   if (JSON.stringify(mine).length > 98304){ rec.ops = null; rec.cut = true; rec.n = mine.length; }      // over 96 KB: kept as a summary, and Activity says it can't be undone from there
   return rec;
 }
@@ -2908,7 +2917,7 @@ function quickSave(what, mutate, tries = 0, ops = null, isUndo = false, fromSayg
         return true; }
       render(); return false; }                                         // refused (a blackout, a limit): the edit stays unsaved here
     const myOps = ops || diffPlans(before, S);
-    const out = clone(S); { const rec = changeRecord(what, myOps); if (rec) out.changes = pruneChanges([...(out.changes || []), rec]); } out.meta.revision = (plan.meta.revision||0) + 1; out.meta.savedAt = new Date().toISOString(); out.meta.lock = theirLock;
+    const out = clone(S); { const rec = changeRecord(what, myOps, mutate && mutate.via); if (rec) out.changes = pruneChanges([...(out.changes || []), rec]); } out.meta.revision = (plan.meta.revision||0) + 1; out.meta.savedAt = new Date().toISOString(); out.meta.lock = theirLock;
     const text = serialize(out, hd.name);
     { const n = overLimit(text); if (n){ installPlan(plan, now, hd); sel = keepSel; render(); setStatus(limitMsg(n)); return false; } }
     let res; try { res = await FileStore.apply(hd, now, text, cur=>backupBeforeUpgrade(hd, cur)); }
@@ -2918,7 +2927,7 @@ function quickSave(what, mutate, tries = 0, ops = null, isUndo = false, fromSayg
       render(); setStatus("Couldn't save: the file keeps changing. Try again in a moment."); return false; }
     S.meta.revision = out.meta.revision; S.meta.savedAt = out.meta.savedAt; S.meta.lock = theirLock; S.changes = out.changes;
     file.baseText = text; file.baseHash = hashText(text); file.dirty = false; markFileChecked(hd, file.gen); resetHistory(); flushPersist();
-    if (!isUndo) rememberQuick(what, myOps);
+    if (!isUndo) rememberQuick(what, myOps, mutate && mutate.via);
     planChanged("quick"); setStatus(withMergeNote(`Saved to local file: ${what}`));
     verifyLater(hd, myOps, what, out.meta.revision);
     return true;
@@ -8519,8 +8528,9 @@ const personOrFormer = id => id ? (personById(id)?.name || "a former teammate") 
 const stampDayText = v => { const t = Date.parse(v.at); return isNaN(t) ? "" : fmtDay(isoToDay(new Date(t).toISOString().slice(0, 10))); };
 function addedLine(x, type){
   const jira = (type === "bar" || type === "task") && sideOf(x, type) === "jira";
-  const a = x.added ? `${jira ? "Put in the plan" : "Added"} by ${personOrFormer(x.added.by)}, ${stampDayText(x.added)}` : (jira ? "Put in the plan" : "Added") + " before names were tracked";
-  return h("p",{class:"hint addedby",id:"f-addedby"}, a + (x.edited ? ` · edited by ${personOrFormer(x.edited.by)}, ${stampDayText(x.edited)}` : ""));
+  const via = st => st.via ? ` via ${st.via.name || "an app"}` : "";
+  const a = x.added ? `${jira ? "Put in the plan" : "Added"} by ${personOrFormer(x.added.by)}${via(x.added)}, ${stampDayText(x.added)}` : (jira ? "Put in the plan" : "Added") + " before names were tracked";
+  return h("p",{class:"hint addedby",id:"f-addedby"}, a + (x.edited ? ` · edited by ${personOrFormer(x.edited.by)}${via(x.edited)}, ${stampDayText(x.edited)}` : ""));
 }
 function selObj(){ if (!sel) return null;
   return sel.type === "bar" ? barById(sel.id) : sel.type === "task" ? taskById(sel.id)?.t : sel.type === "ms" ? S.milestones.find(m=>m.id === sel.id) : sel.type === "gate" ? gateById(sel.id)
@@ -10266,6 +10276,7 @@ function amApply(ids, opts = {}){ const F = AM && AM.file; if (!F) return Promis
     if (candidate.deliverables.length > DV_MAX){ out.refused = `A plan holds up to ${DV_MAX} deliverables. Nothing applied.`; setStatus(out.refused); return NOCHANGE; }
     if (!out.applied.length) return NOCHANGE;
     for (const k of Object.keys(s)) delete s[k]; Object.assign(s, candidate); });
+  fn.via = {app:"assistant", name:F.source || "Your assistant", batch:F.batchId};
   return quickSave(`${want.length === 1 ? (want[0].summary || "an amendment") : want.length + " amendments"} (via ${F.source}${opts.auto ? ", applied on its own" : ""})`, fn).then(ok=>{
     [...(ok ? out.applied : []), ...out.already].forEach(id=>amMark(F.batchId, F.changes.find(c=>c.id === id), "applied"));
     const n = (ok ? out.applied.length : 0) + out.already.length;
@@ -10883,6 +10894,10 @@ function amendPanel(put){
     h("button",{type:"button",class:"linkish",id:"amDisconnect",onclick:()=>amDisconnect()},"Disconnect"))));
   if (AM.dir && can) put(field("amAuto", "When your assistant writes changes", h("select",{id:"amAuto",onchange:e=>amSetLevel(e.target.value)}, ...AM_LEVELS.map(([v, l])=>h("option",{value:v, selected:amLevel() === v}, l)))),
     amLevel() !== "review" ? h("p",{class:"hint",id:"amAutoHint"}, `Applies while this page is open, even in a background tab, and only batches written against the plan as it is now and less than ${AM_EXPIRE_MS / 60000} minutes old. Each one is a quick update you can Undo.`) : null);
+  { const done = can && file.handle ? quickDone.filter(x=>x.hd === file.handle && x.via && x.via.app === "assistant" && x.via.batch).slice(-5).reverse() : [];
+    if (done.length) put(h("div",{id:"amUndo"}, h("b",{}, "Applied by your assistant"),
+      h("ul",{class:"amundo"}, ...done.map(x=>h("li",{}, x.what, " ", h("button",{type:"button",class:"linkish","data-undo-batch":x.via.batch,onclick:e=>{ busy(e.currentTarget, "Undoing…"); undoBatch(x.via.batch); }},"Undo this batch")))),
+      h("p",{class:"hint"}, "Undo puts back what the batch changed, except anything a teammate has changed since. It's available in this browser until you reload."))); }
   if (AM.paused){ put(h("div",{class:"msg warn"}, "Paused: this browser needs permission to read the file again. ", h("button",{type:"button",class:"btn",onclick:()=>amReconnect()},"Reconnect"))); return; }
   if (AM.error){ put(h("div",{class:"msg bad",id:"amError"}, AM.error, " Nothing can be applied until the file is fixed.")); return; }
   const F = AM.file; if (!F){ if (AM.dir) put(h("p",{class:"hint"}, `Ready for your assistant. Ask it to read ${ASSISTANT_FILES.context} and write ${ASSISTANT_FILES.amendments} in this folder.`)); return; }
