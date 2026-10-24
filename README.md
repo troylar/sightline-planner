@@ -64,9 +64,17 @@ For example:
 > a decision. Suggest an arrangement around outcomes. Keep agreed commitments separate from suggestions.
 > Show what we need to know about capacity before deciding what fits. Do not change the plan yet.
 
-The useful result is a clearer set of choices: which requests describe the same need, which work has no
-clear outcome, which decisions block progress, and which capacity questions the available evidence can answer.
-You can then ask for a smaller scope, different sequencing, or proposals for the changes you choose.
+The useful result is a decision you can act on. In the [worked planning session](docs/roadmap-planning-example.md),
+ten invented notes are organized into three decisions:
+
+| What was scattered across the notes | The decision to bring back to the team |
+| --- | --- |
+| “Customer-context lookup” is agreed; someone also requested “customer history.” Search needs a clearer definition of success. | Clarify launch scope before counting every request as separate committed work. |
+| Search depends on a Platform migration. Two teams need the same specialist, and the migration has no confirmed finish date. | Resolve the shared bottleneck and sequencing before relying on the launch target. |
+| Platform has 8 points scheduled against 6 configured points in one sprint; five more issues are unestimated and support is missing. | Complete the demand picture, then choose what to reduce, defer, or retarget. |
+
+This table is an illustrative exercise, not captured model output. The full example keeps every source item
+accounted for. Once you choose a direction, ask for proposals for the supported changes.
 
 ### Capacity needs evidence
 
@@ -79,9 +87,6 @@ current public source is 1.94.0 and has narrower roadmap context; provide additi
 if you need that analysis. Even the richer export covers known scheduled Jira points and configured
 availability, not every form of demand. [Available builds](docs/availability.md) ·
 [How to reason about capacity](docs/large-roadmaps.md#3-ask-what-actually-constrains-delivery).
-
-See a [worked planning session](docs/roadmap-planning-example.md) with messy requests, shared dependencies,
-unknown capacity, and a concrete decision brief. It is an illustrative exercise, separate from the screenshot data.
 
 ## 4. Review changes before they become the plan
 
