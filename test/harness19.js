@@ -143,15 +143,30 @@ async function page(){
     ok("U1: a newly linked epic says its stories come with the next sync", /ABC-2: its stories show here after the next Jira sync/.test(d.querySelector("#f-stories-wait")?.textContent || "")); });
 
   await sec(async ()=>{ const {ev} = await page();
-    // 80 epics x 50 stories, all on the board: draw the Days view and time it
-    const ms = ev(`(()=>{ const L = S.bars.filter(b=>isLeafBar(b)); const J = JSON.parse(STATUS);
+    // Bound rendering work independently of shared-runner CPU speed; keep time as a diagnostic.
+    // 80 epics x 50 stories, all on the board, in the Days view.
+    const sample = ev(`(()=>{ const L = S.bars.filter(b=>isLeafBar(b)); const J = JSON.parse(STATUS);
       for (let e = 0; e < 80; e++){ const ek = "BIG-" + (e + 1); J.issues[ek] = {summary:"Epic " + e, status:"In Progress", category:"inprogress", type:"Feature", isEpic:true}; const kids = [];
         for (let c = 0; c < 50; c++){ const k = "BIG-" + (1000 + e * 50 + c); kids.push(k); J.issues[k] = {summary:"Story " + k, status:"In Progress", category:"inprogress", type:"Story", epic:ek, sprint:"Sprint 42", sprintId:42, sprintState:"active", sprintStart:"2026-09-28", sprintEnd:"2026-10-09", points:2}; }
         J.rollups[ek] = {total:50, todo:0, inprogress:50, done:0, unknown:0, points:100, pointsDone:0, unestimated:0, byState:{}, children:kids, childrenCut:false};
         S.bars.push({...clone(L[0]), id:"big" + e, label:"Big " + e, jira:"", epics:[ek], tasks:[], storiesOff:undefined}); }
       S = normalize(JSON.parse(JSON.stringify(S)), false); JIRA = parseJiraStatus(JSON.stringify(J)); setZoom("days");
-      const t0 = performance.now(); render(); render(); return Math.round((performance.now() - t0) / 2); })()`);
-    ok("P1: 4,000 stories draw in the Days view in reasonable time (jsdom)", ms < 4000, ms + " ms per render"); });
+      const original = storyIndex, issues = JIRA.issues; let builds = 0, reads = 0;
+      JIRA.issues = new Proxy(issues, {get(target, key){
+        if (String(key).startsWith('BIG-') && ++reads > 32000) throw new Error('Story issue read budget exceeded');
+        return Reflect.get(target, key);
+      }});
+      storyIndex = function(){ if (!storyMemo || storyMemo.J !== JIRA) builds++; return original(); };
+      try {
+        const t0 = performance.now(); render(); render(); const ms = Math.round((performance.now() - t0) / 2);
+        const nodes = [...document.querySelectorAll('#gantt .story[data-key^="story:BIG-"]')];
+        return {ms, builds, reads, nodes:nodes.length, keys:new Set(nodes.map(x=>x.dataset.key)).size,
+          days:UI.zoom === 'days' && document.querySelector('#gantt').classList.contains('days')};
+      } finally { storyIndex = original; JIRA.issues = issues; }
+    })()`);
+    ok("P1: Days renders all 4,000 stories exactly once", sample.days && sample.nodes === 4000 && sample.keys === 4000, JSON.stringify(sample));
+    ok("P2: each full render builds the story index once", sample.builds === 2, sample.builds + " builds across two renders");
+    ok("P3: Jira issue reads stay within a linear rendering budget", sample.reads <= 2 * 4000 * 4, sample.reads + " reads; " + sample.ms + " ms per render (informational)"); });
 
   await sec(async ()=>{ const {d, ev} = await page();
     // after a browser restart: the folder is remembered but not readable until the browser asks again
