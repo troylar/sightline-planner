@@ -28,10 +28,12 @@ main(){
   run_suite harness112 60 node harness112.js
   run_suite harness113 60 node harness113.js
   run_suite harness114 60 node harness114.js
+  run_suite harness115 60 node harness115.js
   run_suite build 240 python3 test_build.py
   run_suite jira-sync 120 python3 test_jira_sync.py
   run_suite assistant 120 python3 test_assistant.py
   run_suite runner 30 python3 test_runner.py
+  run_suite app 90 python3 test_app.py
   run_suite package 30 node test_package.js
   run_suite bundled-skills 60 node harness-bundled-skills.js
   return "$fail"

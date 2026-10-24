@@ -21,7 +21,7 @@ Use the notes supplied by the person; do not claim to record or transcribe a mee
 - Match named work to existing stable IDs. Ask when two items plausibly match. Keep duplicate mentions as one item.
 - Draft amendments for agreed plan changes only. Capture requested vague ideas as unscheduled idea-stage outcomes. Do not turn an idea into a scheduled initiative or task with invented dates or owners.
 - Preserve uncertainty and explain suggested workstream placement using projectGuide. A person being mentioned in the meeting does not establish ownership.
-- Decisions, risks, dependencies and guide edits may not have amendment operations. If the current guide lacks one, give a concise copy-ready draft with the appropriate UI destination, separate from supported amendments.
+- Record agreed decisions, risks, starts-after links, owners and milestones with the guide's action ops (`{op:"action", action, args}`, listed under `actions`): `decision.add`/`decision.set`, `risk.add`/`risk.set`, `link.add`/`link.remove`, `milestone.add`, `person.setAlloc`. Give each new item your own unique id. Planning-guide edits have no operation: give a concise copy-ready draft with the UI destination, separate from the amendments.
 
 Report: agreed changes proposed; ideas captured; open decisions; unsupported items for manual entry. Keep the output brief enough to review during the meeting.
 

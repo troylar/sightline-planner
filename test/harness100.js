@@ -56,7 +56,7 @@ const json = (dir, name)=>JSON.parse(dir.files.get(name).text);
     ok('U2 unsupported browser explains automatic connection and expands honest fallback', !d.querySelector('#assistantConnect') && d.querySelector('#assistantIndividualFiles').open && /Edge or Chrome/.test(d.querySelector('#assistantBrowserHelp').textContent) && d.querySelector('#amConnect2').disabled && !!d.querySelector('#amExport0'));
     w.showDirectoryPicker = directoryPicker; w.showOpenFilePicker = filePicker; ev('render()');
     await ev('assistantConnect()'); await wait(25); await exportNow(ev);
-    ok('A1 one folder connection creates context and results only', dir.files.size === 2 && !dir.files.has('sightline-amendments.json'));
+    ok('A1 one folder connection creates context, results and the heartbeat only', dir.files.size === 3 && dir.files.has('sightline-assistant-status.json') && !dir.files.has('sightline-amendments.json'));
     ev("sel = {type:'amend', id:'x'}; render()");
     ok('A1b one-click assistant handoff is available', !!d.querySelector('#assistantCopyInstructions') && ev('assistantInstructions()').includes('Never overwrite'));
     ok('A2 directory remembered per plan', ev("remembered.get('assistantDir:' + S.meta.planId) === DIR"));
