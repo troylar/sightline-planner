@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.97.1",
+    "date": "2026-10-24",
+    "headline": "The timeline stays where you scrolled",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "The timeline no longer jumps back to the top",
+        "now": "When the chart redraws, for example after a Jira sync, an assistant update, a teammate's save, or when you click Start editing or Done editing, the timeline stays on the rows you were looking at.",
+        "before": "Every redraw scrolled the timeline and the page back to the top, which looked like a jitter every minute or so.",
+        "where": "Timeline, in both Weeks and Days"
+      }
+    ]
+  },
+  {
     "version": "1.97.0",
     "date": "2026-10-24",
     "headline": "Your assistant can do the whole replan",

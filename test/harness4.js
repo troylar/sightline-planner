@@ -875,6 +875,18 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   ev(`commit(()=>moveBarTo("Bd","Big","inside") || NOCHANGE)`);
   ok("RV13: nesting a bar into the one it depends on removes the link instead of running away", ev(`barById("Bd").dependsOn.length`)===0 && ev(`barById("Big").start`) < 4, ev(`JSON.stringify([barById("Bd").start, barById("Big").start, S.meta.weeks])`));
   ok("RV14: a one-off meeting on a holiday still shows", ev(`occurrences({id:"z",date:"2026-10-12",recur:normRecur({},"2026-10-12"),skip:[]}, isoToDay("2026-10-01"), isoToDay("2026-10-31")).length`)===1);
+  // A browser moves a scrolled box to the top when the chart it holds is laid out empty (as a redraw empties it first).
+  ev(`(()=>{ const gsc = $("#gscroll"), g = $("#gantt"); let top = 0; window.__pageY = 0;
+    const layout = () => { if (!g.childElementCount){ top = 0; window.__pageY = 0; } };
+    Object.defineProperty(gsc, "scrollTop", {configurable:true, get(){ return top; }, set(v){ top = v; }});
+    Object.defineProperty(gsc, "clientWidth", {configurable:true, get(){ layout(); return 1100; }});
+    Object.defineProperty(window, "scrollY", {configurable:true, get(){ return window.__pageY; }});
+    window.scrollTo = (x, y) => { window.__pageY = y; }; })()`);
+  for (const z of ["weeks","days"]){
+    ev(`setZoom("${z}")`); ev(`$("#gscroll").scrollTop = 240; window.__pageY = 90; render()`);
+    ok(`SC1: a redraw keeps the timeline where you'd scrolled to (${z})`, ev(`$("#gscroll").scrollTop`)===240 && ev("window.scrollY")===90, ev(`JSON.stringify([$("#gscroll").scrollTop, window.scrollY])`));
+  }
+  ev(`setZoom("weeks"); delete $("#gscroll").scrollTop; delete $("#gscroll").clientWidth; delete window.scrollY`);
   ev("sel=null; render()");
   ok("no runtime errors", w.errs.length===0, w.errs.join(" | "));
   console.log(R.join("\n")); const f=R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length-f}/${R.length} passed`); process.exit(f ? 1 : 0);
