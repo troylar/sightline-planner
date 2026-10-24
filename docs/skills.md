@@ -2,7 +2,7 @@
 
 A skill is reusable instructions for an AI assistant. Sightline ships six: turn rough notes into a roadmap,
 make a precise edit, review the gaps, summarize the plan and teach the assistant your team's vocabulary.
-[Back to the tour](../README.md#six-skills-for-your-ai-assistant).
+[Back to the tour](../README.md#documentation).
 
 ## Start with your normal conversation
 

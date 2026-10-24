@@ -2,7 +2,7 @@
 
 Use Jira for the official issue facts and Sightline for the planning conversation around them. The optional
 helper supports **Jira Data Center**, uses Python's standard library and makes read-only HTTPS requests.
-The HTML never contacts Jira. [Back to the tour](../README.md#add-jira-when-youre-ready).
+The HTML never contacts Jira. [Back to the tour](../README.md#how-it-works).
 
 ## Try the example before connecting a server
 
