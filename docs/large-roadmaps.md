@@ -1,5 +1,8 @@
 # Get your arms around a large roadmap
 
+If you are new to Sightline, read the [worked planning session](roadmap-planning-example.md) first. It shows how
+a set of overlapping requests becomes a source reconciliation, a capacity question, and three decisions.
+
 Start with the mess you actually have: goals, commitments, meeting notes, questions, Jira work, and more ideas
 than the team can tackle at once. Use your external AI tool to turn that into a sequence of decisions, with
 reviewable changes attached. [Connect your assistant first](assistant-workflow.md).

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 530" role="img" aria-labelledby="title desc"><title id="title">Ten rough notes. Three decisions.</title><desc id="desc">Illustrative planning exercise: clarify overlapping scope, resolve a shared specialist and migration dependency, and complete demand evidence. In one Platform sprint, eight points scheduled exceeds six configured points; five issues are unestimated. No delivery forecast is implied.</desc>
+<style>text{font-family:"Avenir Next","Trebuchet MS",Arial,sans-serif}</style>
+<rect x="0" y="0" width="1280" height="530" rx="24" fill="#f5f8fc"/>
+<text x="40" y="66" fill="#172b4d" font-size="41" font-weight="650" text-anchor="start">Ten rough notes. Three decisions.</text>
+<text x="42" y="104" fill="#536783" font-size="21" font-weight="500" text-anchor="start">An invented planning session. See what the team needs to decide.</text>
+<path d="M427 144 V472" fill="none" stroke="#d6e1f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M853 144 V472" fill="none" stroke="#d6e1f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="42" y="170" fill="#2563eb" font-size="28" font-weight="650" text-anchor="start">Scope</text>
+<circle cx="150" cy="255" r="61" fill="#edf3ff" stroke="#2563eb" stroke-width="2"/>
+<circle cx="244" cy="255" r="61" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="107" y="249" fill="#2563eb" font-size="16" font-weight="600" text-anchor="start">Customer</text>
+<text x="107" y="272" fill="#2563eb" font-size="16" font-weight="600" text-anchor="start">context</text>
+<text x="216" y="249" fill="#2563eb" font-size="17" font-weight="600" text-anchor="start">Customer</text>
+<text x="216" y="272" fill="#2563eb" font-size="17" font-weight="600" text-anchor="start">history</text>
+<text x="42" y="369" fill="#172b4d" font-size="27" font-weight="650" text-anchor="start">Clarify what belongs</text>
+<text x="42" y="405" fill="#172b4d" font-size="27" font-weight="650" text-anchor="start">in the launch.</text>
+<text x="42" y="447" fill="#536783" font-size="18" font-weight="500" text-anchor="start">Similar requests can overlap.</text>
+<text x="42" y="472" fill="#536783" font-size="18" font-weight="500" text-anchor="start">That does not make both committed.</text>
+<text x="465" y="170" fill="#7447ba" font-size="28" font-weight="650" text-anchor="start">Sequence</text>
+<rect x="465" y="213" width="141" height="43" rx="5" fill="#e2f4f0"/>
+<text x="485" y="241" fill="#08736c" font-size="20" font-weight="600" text-anchor="start">Search</text>
+<rect x="670" y="213" width="141" height="43" rx="5" fill="#eee8f8"/>
+<text x="686" y="241" fill="#7447ba" font-size="20" font-weight="600" text-anchor="start">Migration</text>
+<text x="638" y="221" fill="#536783" font-size="15" font-weight="500" text-anchor="middle">needs</text>
+<path d="M606 235 H670" fill="none" stroke="#7447ba" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M659 227 L670 235 L659 243" fill="none" stroke="#7447ba" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M638 240 V286" fill="none" stroke="#7447ba" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="638" cy="296" r="10" fill="#fff0d3" stroke="#91600a" stroke-width="3"/>
+<text x="638" y="331" fill="#91600a" font-size="18" font-weight="600" text-anchor="middle">One shared specialist</text>
+<text x="465" y="369" fill="#172b4d" font-size="27" font-weight="650" text-anchor="start">Resolve the shared</text>
+<text x="465" y="405" fill="#172b4d" font-size="27" font-weight="650" text-anchor="start">specialist bottleneck.</text>
+<text x="465" y="447" fill="#536783" font-size="18" font-weight="500" text-anchor="start">Check the dependency and allocation</text>
+<text x="465" y="472" fill="#536783" font-size="18" font-weight="500" text-anchor="start">before relying on the target.</text>
+<text x="892" y="170" fill="#08736c" font-size="28" font-weight="650" text-anchor="start">Capacity</text>
+<text x="892" y="207" fill="#536783" font-size="18" font-weight="500" text-anchor="start">Points in one Platform sprint</text>
+<rect x="892" y="229" width="307" height="26" rx="4" fill="#d6e1f0"/>
+<rect x="892" y="229" width="230" height="26" rx="4" fill="#e2f4f0"/>
+<rect x="1122" y="229" width="77" height="26" rx="4" fill="#fff0d3"/>
+<path d="M1122 221 V265" fill="none" stroke="#91600a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="892" y="291" fill="#172b4d" font-size="23" font-weight="650" text-anchor="start">8 scheduled / 6 configured</text>
+<text x="892" y="329" fill="#536783" font-size="18" font-weight="500" text-anchor="start">5 issues unestimated; support absent</text>
+<text x="892" y="369" fill="#172b4d" font-size="25" font-weight="650" text-anchor="start">Complete the demand</text>
+<text x="892" y="405" fill="#172b4d" font-size="25" font-weight="650" text-anchor="start">picture before committing.</text>
+<text x="892" y="447" fill="#536783" font-size="18" font-weight="500" text-anchor="start">Known overload is evidence.</text>
+<text x="892" y="472" fill="#536783" font-size="18" font-weight="500" text-anchor="start">The full shortfall is still unknown.</text>
+</svg>

@@ -47,3 +47,11 @@ wide/narrow layouts and light/dark themes. The content follows `examples/northst
 `roadmap-session-amendments.json`: a Q2-to-Q1 target move plus an unscheduled idea. Its labels explicitly say
 that the proposals are prepared. It makes no capacity or live-connectivity claim. Check all variants when
 changing the example, keep text readable, and retain an accurate text equivalent beside the image.
+
+## Roadmap map and decision brief
+
+`roadmap-map-*.svg` is a conceptual map of the planning workflow, not an app screenshot.
+`planning-decisions-*.svg` illustrates the ten-note exercise in `roadmap-planning-example.md`; its capacity
+numbers belong to one invented Platform sprint, not a delivery forecast. Both sets have wide/mobile and
+light/dark variants. Keep their text equivalents in the image descriptions and the linked worked session.
+SVGs are static, self-contained source artwork with no scripts, external resources, or embedded app UI.

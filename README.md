@@ -1,46 +1,115 @@
-<div align="center">
-
 # Sightline
 
-### Big roadmap. Clear next move.
-
-**Turn scattered ideas, Jira work, and team conversations into a plan you can explain.**
-
-[Try the example](docs/getting-started.md) · [Bring your AI](docs/assistant-workflow.md) · [Tackle a large roadmap](docs/large-roadmaps.md)
-
-</div>
-
-Your next year is spread across tickets, meeting notes, and people's heads. Sightline gives it a shared shape:
-what matters, how the work connects, and what needs a decision next. Your AI assistant helps you organize it;
-you review the changes before they become the plan.
-
-- **Start with the messy version.** Bring goals, questions, and rough notes. Keep ideas distinct from commitments.
-- **Connect direction to delivery.** Move between customer outcomes, a timeline, daily attention, and updates for the team.
-- **Keep the final say.** Inspect each proposed change, edit it, apply it, or leave it. Undo remains available.
-
-The app is one HTML file. Your plan stays in a separate JSON or YAML file. Core planning needs no server or
-account; linked files work best in desktop Chrome or Edge. Jira and AI are optional.
-
-## From brain dump to reviewed plan
-
-An invented team starts with this:
-
-> Bring customer context forward to Q1 2027. Explore offline search too, but keep it as an idea with no
-> owner or date. Leave the rest of the roadmap as it is.
-
 <picture>
-  <source media="(max-width: 640px) and (prefers-color-scheme: dark)" srcset="docs/images/planning-story-mobile-dark.svg">
-  <source media="(max-width: 640px)" srcset="docs/images/planning-story-mobile-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/planning-story-dark.svg">
-  <img src="docs/images/planning-story-light.svg" alt="Prepared example: separate an agreed Q1 timing change from an unscheduled offline-search idea, review two proposals, then see the updated roadmap. Existing IDs and other outcomes stay intact." width="1320">
+  <source media="(max-width: 640px) and (prefers-color-scheme: dark)" srcset="docs/images/roadmap-map-mobile-dark.svg">
+  <source media="(max-width: 640px)" srcset="docs/images/roadmap-map-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/roadmap-map-dark.svg">
+  <img src="docs/images/roadmap-map-light.svg" alt="A big roadmap. A clearer way through. An illustrative planning map connects meeting notes, Jira work, and requests to workstreams, shared dependencies, and decisions about scope and capacity." width="1280">
 </picture>
 
-This is a prepared, inspectable example, not a claimed live model response. You can try the two changes
-**without an AI account**: [open Northstar, connect the prepared proposals, and review them](docs/getting-started.md#review-two-changes).
+**Sightline is a shared planning workspace for teams managing a large, changing roadmap—with their own AI assistant.**
 
-## Your first plan in five minutes
+You have requests in meeting notes, work in Jira, and several teams depending on one another. Everyone knows
+part of the plan. Sightline connects the outcomes, delivery work, people, and decisions so you can work through
+the whole picture together. Your assistant helps organize the complexity; you decide what changes.
 
-**Get a working copy from source.** You need Git, Node.js 18+, Python 3.10+, and Bash for this build step.
+<p align="center">
+  <a href="docs/roadmap-planning-example.md"><b>See a planning session</b></a> &nbsp; / &nbsp;
+  <a href="docs/getting-started.md"><b>Try the example</b></a> &nbsp; / &nbsp;
+  <a href="docs/assistant-workflow.md"><b>Bring your AI</b></a>
+</p>
+
+## 1. Get the whole roadmap into view
+
+What are we trying to deliver? What is agreed, and what is still an idea? Start with outcomes across quarters
+and workstreams. Keep later work recoverable without turning every rough request into a dated commitment.
+
+<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/roadmap-light.png" aria-label="Open full-size roadmap screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/roadmap-dark.png"><img src="docs/images/roadmap-light.png" alt="Actual Sightline Roadmap: customer outcomes across four quarters and workstreams, with later work counted outside the window." width="1440"></picture></a>
+
+*Actual app, invented Northstar plan. A target quarter expresses intent; it does not prove capacity.*
+
+## 2. Connect the roadmap to the work behind it
+
+Move from the quarter-level discussion to initiatives, tasks, milestones, and dependencies. Keep work
+**From Jira** alongside work **Added here**. Use saved views to focus on a team or workstream while keeping
+hidden work findable.
+
+<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/timeline-light.png" aria-label="Open full-size timeline screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/timeline-dark.png"><img src="docs/images/timeline-light.png" alt="Actual Sightline Timeline: initiatives and tasks across workstreams, with Jira context and plan work together." width="1440"></picture></a>
+
+*Jira owns issue facts. Sightline owns the plan around them. Arranging work here does not update Jira.*
+
+Roadmap uses the whole plan; Timeline and Capacity retain their own views and filters.
+[Understand views and scope](docs/workspaces.md).
+
+## 3. Use AI to work through the complexity
+
+Bring the messy version: requests, constraints, meeting notes, or a brain dump. Your external AI coding tool
+reads the supplied planning context, reconciles the input against existing work, and helps you think through choices.
+
+> Account for every request. Match it to existing work, flag a possible duplicate, retain it as an idea, or
+> identify a decision. Suggest an arrangement around outcomes. Keep commitments separate from suggestions.
+> Show what we need to know about capacity before deciding what fits. Do not change the plan yet.
+
+<picture>
+  <source media="(max-width: 640px) and (prefers-color-scheme: dark)" srcset="docs/images/planning-decisions-mobile-dark.svg">
+  <source media="(max-width: 640px)" srcset="docs/images/planning-decisions-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/planning-decisions-dark.svg">
+  <img src="docs/images/planning-decisions-light.svg" alt="Illustrative planning exercise: ten rough notes become three decisions. Clarify overlapping launch scope; resolve a shared specialist and migration dependency; complete demand evidence when 8 scheduled points exceed 6 configured points and five issues are unestimated." width="1280">
+</picture>
+
+*An invented exercise, not a screenshot or captured AI response. [Follow all ten source notes through the planning session](docs/roadmap-planning-example.md).*
+
+Compare scope, sequencing, and workload options in the conversation. Then ask for proposals for the changes
+you choose. Sightline does not provide an automatic scenario simulator.
+
+**Capacity needs evidence.** Known load, availability, missing estimates, and dependencies matter. An outcome
+count alone cannot tell you what fits. Automatic export of capacity, dependencies, risks, and decisions requires
+**1.96.0+**; public **1.94.0** has narrower roadmap context, so supply additional evidence deliberately. Even the
+richer export covers known scheduled Jira points and configured availability, not every form of demand.
+[Capacity reasoning](docs/large-roadmaps.md#3-ask-what-actually-constrains-delivery) · [Build availability](docs/availability.md).
+
+## 4. Review changes before they become the plan
+
+See before/after values. Apply, edit, or skip each proposal. Use Undo for a just-applied plan edit. Your
+assistant's conversation and proposal file do not silently change the shared plan.
+
+<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/review-light.png" aria-label="Open full-size review screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/review-dark.png"><img src="docs/images/review-light.png" alt="Actual Sightline proposal review: two prepared wording changes, their before and after values, and Apply, Skip, and Edit controls." width="1440"></picture></a>
+
+*Actual review of prepared Northstar wording changes. With an external coding tool, your conversation stays
+in that tool; the nearby in-app chat controls are optional.*
+
+[Try a prepared review yourself](docs/getting-started.md#review-two-changes): move one outcome to an earlier
+quarter and capture another as an unscheduled idea. No AI account needed.
+
+## 5. Keep the plan useful between meetings
+
+Find attention items in **Today**, current work in **Sprint**, and the delivery conversation in **Status update**.
+Use **Release notes** for customer wording. Return to Roadmap for the broader direction.
+
+<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/today-light.png" aria-label="Open full-size today screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/today-dark.png"><img src="docs/images/today-light.png" alt="Actual Sightline Today view: team attention and upcoming work, with Jira freshness and coverage." width="1440"></picture></a>
+
+*The same invented plan, viewed for daily attention. Check scope and freshness before relying on the summary.*
+
+Have your assistant prepare a review, turn meeting notes into proposed updates, or draft an explanation of what
+changed from supplied evidence. [Run a team planning session](docs/team-planning.md) · [Explore the six planning skills](docs/skills.md).
+
+## How it works
+
+**One HTML app. A separate plan file. Your own AI tool.**
+
+- Open Sightline in desktop Chrome or Edge. Your plan is JSON or YAML; share it through your team's file service.
+- Connect a private assistant folder. Sightline writes context; your file-capable assistant writes proposals; you review them here. Your tool supplies the model connection.
+- Optionally add the read-only Jira Data Center helper. The page reads its local outputs and never contacts Jira.
+
+There is no planning server or account to set up. Shared files need coordinated editing and handoffs: locks are
+advisory, author names are not verified identities, and a local save does not prove cloud delivery. Use file-service
+permissions for access. The app can request Google Fonts and falls back to system fonts.
+
+[Assistant setup](docs/assistant-workflow.md) · [Jira setup](docs/jira.md) · [Sharing and recovery](docs/onedrive.md).
+
+## Try it with an invented team plan
+
+The available public route is a source build. You need Git, Node.js 18+, Python 3.10+, and Bash:
 
 ```sh
 git clone https://github.com/troylar/sightline-planner.git sightline
@@ -49,127 +118,23 @@ npm ci
 ./build.sh
 ```
 
-Open **dist/sightline.html** in Chrome or Edge. Then choose **File → Open shared plan…** and select
-**examples/northstar/plan.json** from the checkout. The HTML is the app; the JSON is the invented team's plan.
+Open **dist/sightline.html** in Chrome or Edge. Choose **File → Open shared plan…** and select
+**examples/northstar/plan.json**. [Follow the first-session walkthrough](docs/getting-started.md).
 
-**Prefer to ask your coding assistant?** Give it the repository link and say:
+Or give your coding assistant the repository link and ask:
 
 > Clone Sightline into a new folder, read its project instructions, install its development dependencies,
 > and build the HTML. Tell me where to open it and the Northstar example. Preserve any existing checkout.
 
-There is currently no public npm package or GitHub release download. The source build above is the available
-route; it does not require an AI endpoint. See [version and download availability](docs/availability.md).
+No public npm package or GitHub release download is available yet. Newer local builds are explicitly
+version-gated in the docs. [Check version and download availability](docs/availability.md).
 
-[Follow the first-session walkthrough](docs/getting-started.md) to review the example, save your own plan,
-and reopen it. Once built, everyday planning happens in the browser.
+## Documentation
 
-## An assistant that helps you change the plan
-
-Use the file-capable AI coding tool you already work with. You do not need to configure chat inside Sightline.
-
-1. Open your plan and connect a **private assistant folder** through **Connect assistant → Connect your assistant**.
-2. Choose **Copy instructions for your assistant** and paste them into your tool with that folder's location.
-3. Ask for an analysis or a change. Sightline supplies the current context; the tool writes proposals.
-4. Review those proposals in Sightline. **Edit**, **Skip**, or **Apply**, then follow the visible save state.
-
-Start with a request like:
-
-> Read the current context and tell me what it covers. Group these notes against existing work, identify
-> possible duplicates, and separate agreed changes from suggestions. Show the three decisions I need to
-> make first. Prepare only the changes I request.
-
-Use the same conversation to refine one outcome or work through a larger planning session. Ask about
-capacity when the required evidence is available; a target quarter or count of outcomes is not an effort estimate.
-The [large-roadmap guide](docs/large-roadmaps.md) shows how to make that distinction.
-
-Sightline does not include a model or subscription. Your external tool controls its model connection.
-The optional [local companion](docs/assistant-workflow.md#talk-to-your-company-endpoint) supports in-app chat
-as a separate advanced route.
-
-[Connect your assistant and complete a first session](docs/assistant-workflow.md).
-
-## One plan, four conversations
-
-| The question | Where to start | What it helps you do |
+| Plan | Connect | Operate |
 | --- | --- | --- |
-| What are we trying to ship? | **Product updates → Roadmap** | Shape outcomes across calendar quarters and workstreams. |
-| How does the work fit together? | **Delivery → Timeline** | Inspect initiatives, tasks, milestones, and dependencies. |
-| What needs attention today? | **Work → Today**, then **Sprint** | Find blockers, upcoming work, and decisions needing an owner. |
-| What should we tell everyone else? | **Delivery → Status update**, **Product updates → Release notes** | Explain progress and prepare customer wording. |
+| [Worked planning session](docs/roadmap-planning-example.md) | [Your AI assistant](docs/assistant-workflow.md) | [Team planning](docs/team-planning.md) |
+| [Large roadmaps and capacity](docs/large-roadmaps.md) | [Jira Data Center](docs/jira.md) | [Views and scope](docs/workspaces.md) |
+| [First session](docs/getting-started.md) | [Planning skills](docs/skills.md) | [Shared-file recovery](docs/onedrive.md) |
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/roadmap-dark.png"><img src="docs/images/roadmap-light.png" alt="Actual Northstar roadmap: customer outcomes across Q4 2026 through Q3 2027, grouped by workstream, with later work still recoverable." width="1440"></picture>
-
-*Actual app, invented work. The view starts the conversation; a target is planning intent, not a delivery guarantee.*
-
-<details>
-<summary><b>See the delivery timeline and daily attention views</b></summary>
-
-<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/timeline-dark.png"><img src="docs/images/timeline-light.png" alt="Actual Northstar delivery timeline with Jira epics and plan work in separate workstreams." width="1440"></picture>
-
-<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/today-dark.png"><img src="docs/images/today-light.png" alt="Actual Today view, including attention, upcoming work, and Jira freshness." width="1440"></picture>
-
-Jira supplies the issue facts; Sightline supplies the plan around them. Freshness and incomplete coverage
-remain visible. [Find the right workspace](docs/workspaces.md).
-
-</details>
-
-## Six skills for your AI assistant
-
-The six self-contained skills give your tool reusable instructions for planning, meeting notes, precise edits,
-review, status, and team vocabulary. You can speak normally; skill names are there when you want to choose a workflow.
-
-Use the **skills/** folder in the source checkout. Point your tool at it or copy its individual `sightline-*`
-folders to the location where your tool discovers skills. No npm publication is required.
-
-[Choose a planning workflow](docs/skills.md). Builds 1.95.0 and later also include
-[skill deployment inside the HTML](docs/bundled-skills.md); check your app's version first.
-
-## Add Jira when you're ready
-
-The optional helper supports **Jira Data Center** through read-only HTTPS. It writes local JSON files that
-Sightline reads. The page never contacts Jira, and Jira Cloud support is not claimed.
-
-Jira owns titles, status, assignees, points, hierarchy, and sprint dates. Sightline owns placement, plan items,
-annotations, and proposals. Missing from the last sync does not mean deleted; the team's surrounding work stays.
-
-[Connect Jira step by step](docs/jira.md). Credentials stay in the OS credential store; helper code and
-configuration belong on a trusted local computer.
-
-## Keep the team moving
-
-Share the app and separate plan through your usual file service. Teammates open that plan from Sightline's
-**File** menu. Use **Start editing → Save → Done editing** for deliberate editing sessions; some quick updates
-save immediately, so inspect the visible save state.
-
-The [team-planning guide](docs/team-planning.md) gives a meeting rhythm, prompts, and clear handoffs.
-For file conflicts and device setup, use [shared files and recovery](docs/onedrive.md).
-
-<details>
-<summary><b>What should I know before relying on the files?</b></summary>
-
-- Browser-only work belongs to that browser. Save a shared plan or keep a JSON download before closing.
-- Unsubmitted composer drafts are separate from saved plan edits; submit or copy them before closing the tab.
-- A local save does not establish cloud delivery. Locks are advisory, and choosing a name is not a login.
-- Use OS and file-service permissions for access. Shared files and review receipts do not verify identity.
-- The HTML embeds its scripts and YAML library. It requests Google Fonts when available and falls back to
-  system fonts, so it is not a zero-network app. Jira sync and AI tools have their own network needs.
-- When updating, preserve the current plan and drafts, open the new app separately, then reopen the existing plan.
-
-[Read the recovery guide](docs/onedrive.md) before a team rollout.
-
-</details>
-
-## Go deeper
-
-| Start here | Leave with |
-| --- | --- |
-| [First session](docs/getting-started.md) | Two reviewed example changes and a plan you can reopen. |
-| [Your own AI](docs/assistant-workflow.md) | A connected private folder and a repeatable review loop. |
-| [Large roadmaps](docs/large-roadmaps.md) | A way to reconcile messy input, examine capacity, and make tradeoffs. |
-| [Team planning](docs/team-planning.md) | A useful meeting rhythm and audience-specific updates. |
-| [Workspaces](docs/workspaces.md) | The right view, with filters and hidden work understood. |
-| [Version availability](docs/availability.md) | A clear distinction between public source and newer builds. |
-| [Contributing](CONTRIBUTING.md) | Build, validation, and release instructions. |
-| [What's changed](CHANGELOG.md) | The version history. |
-
-Sightline is [MIT licensed](LICENSE). [Third-party notices](THIRD-PARTY-NOTICES.md).
+[Contributing](CONTRIBUTING.md) · [Release history](CHANGELOG.md) · [MIT license](LICENSE) · [Third-party notices](THIRD-PARTY-NOTICES.md).

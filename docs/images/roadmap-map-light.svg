@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc"><title id="title">Sightline: get your arms around a big roadmap</title><desc id="desc">Illustrative planning map: rough requests connect to Integrations, Search and Platform workstreams. Dependencies and a shared specialist lead to scope, sequencing and capacity decisions. This is a conceptual diagram, not an app screenshot.</desc>
+<style>text{font-family:"Avenir Next","Trebuchet MS",Arial,sans-serif}</style>
+<rect x="0" y="0" width="1280" height="640" rx="24" fill="#f5f8fc"/>
+<text x="44" y="86" fill="#172b4d" font-size="58" font-weight="650" text-anchor="start">A big roadmap.</text>
+<text x="44" y="156" fill="#172b4d" font-size="58" font-weight="650" text-anchor="start">A clearer way through.</text>
+<text x="790" y="80" fill="#536783" font-size="23" font-weight="500" text-anchor="start">Many teams. Competing requests.</text>
+<text x="790" y="114" fill="#536783" font-size="23" font-weight="500" text-anchor="start">Dependencies. Limited capacity.</text>
+<text x="46" y="218" fill="#536783" font-size="24" font-weight="500" text-anchor="start">Plan together. Think with AI. Review the changes.</text>
+<path d="M44 252 H1236" fill="none" stroke="#d6e1f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="46" y="306" fill="#536783" font-size="21" font-weight="600" text-anchor="start">The rough input</text>
+<rect x="46" y="344" width="214" height="44" rx="6" fill="#ffffff" stroke="#d6e1f0"/>
+<text x="63" y="373" fill="#172b4d" font-size="20" font-weight="500" text-anchor="start">Meeting notes</text>
+<path d="M260 366 H288 Q308 366 308 426" fill="none" stroke="#d6e1f0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="46" y="404" width="214" height="44" rx="6" fill="#ffffff" stroke="#d6e1f0"/>
+<text x="63" y="433" fill="#172b4d" font-size="20" font-weight="500" text-anchor="start">Jira work</text>
+<path d="M260 426 H288 Q308 426 308 426" fill="none" stroke="#d6e1f0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="46" y="464" width="214" height="44" rx="6" fill="#ffffff" stroke="#d6e1f0"/>
+<text x="63" y="493" fill="#172b4d" font-size="20" font-weight="500" text-anchor="start">New requests</text>
+<path d="M260 486 H288 Q308 486 308 426" fill="none" stroke="#d6e1f0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="308" cy="426" r="6" fill="#2563eb"/>
+<path d="M308 426 H338" fill="none" stroke="#2563eb" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="350" y="306" fill="#172b4d" font-size="24" font-weight="650" text-anchor="start">One shared plan</text>
+<path d="M350 374 H885" fill="none" stroke="#2563eb" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="350" y="340" fill="#2563eb" font-size="18" font-weight="650" text-anchor="start">Integrations</text>
+<rect x="374" y="360" width="205" height="36" rx="7" fill="#edf3ff"/>
+<text x="388" y="385" fill="#2563eb" font-size="18" font-weight="600" text-anchor="start">Customer context</text>
+<circle cx="878" cy="374" r="7" fill="#f5f8fc" stroke="#2563eb" stroke-width="3"/>
+<path d="M350 446 H885" fill="none" stroke="#08736c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="350" y="412" fill="#08736c" font-size="18" font-weight="650" text-anchor="start">Search</text>
+<rect x="563" y="432" width="177" height="36" rx="7" fill="#e2f4f0"/>
+<text x="577" y="457" fill="#08736c" font-size="18" font-weight="600" text-anchor="start">Search quality</text>
+<circle cx="878" cy="446" r="7" fill="#f5f8fc" stroke="#08736c" stroke-width="3"/>
+<path d="M350 518 H885" fill="none" stroke="#7447ba" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="350" y="484" fill="#7447ba" font-size="18" font-weight="650" text-anchor="start">Platform</text>
+<rect x="407" y="504" width="184" height="36" rx="7" fill="#eee8f8"/>
+<text x="421" y="529" fill="#7447ba" font-size="18" font-weight="600" text-anchor="start">Index migration</text>
+<circle cx="878" cy="518" r="7" fill="#f5f8fc" stroke="#7447ba" stroke-width="3"/>
+<path d="M592 522 H620 Q643 522 643 500 V484 Q643 466 663 466 H696 V448" fill="none" stroke="#7447ba" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 8"/>
+<circle cx="643" cy="487" r="13" fill="#f5f8fc" stroke="#91600a" stroke-width="3"/>
+<text x="666" y="491" fill="#91600a" font-size="17" font-weight="600" text-anchor="start">shared specialist</text>
+<path d="M891 374 H922 Q942 374 942 402 V462 Q942 482 962 482" fill="none" stroke="#d6e1f0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M891 446 H942" fill="none" stroke="#d6e1f0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M891 518 H923 Q942 518 942 498 V482" fill="none" stroke="#d6e1f0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="980" y="351" fill="#172b4d" font-size="25" font-weight="650" text-anchor="start">What needs</text>
+<text x="980" y="384" fill="#172b4d" font-size="25" font-weight="650" text-anchor="start">a decision?</text>
+<circle cx="990" cy="422" r="5" fill="#2563eb"/>
+<text x="1008" y="428" fill="#172b4d" font-size="19" font-weight="500" text-anchor="start">Scope overlap</text>
+<circle cx="990" cy="466" r="5" fill="#7447ba"/>
+<text x="1008" y="472" fill="#172b4d" font-size="19" font-weight="500" text-anchor="start">Shared capacity</text>
+<circle cx="990" cy="510" r="5" fill="#08736c"/>
+<text x="1008" y="516" fill="#172b4d" font-size="19" font-weight="500" text-anchor="start">What fits next</text>
+<text x="46" y="605" fill="#536783" font-size="18" font-weight="500" text-anchor="start">Illustrative planning map. Your plan and your assistant supply the real context.</text>
+</svg>

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 760" role="img" aria-labelledby="title desc"><title id="title">Sightline: a clearer way through a big roadmap</title><desc id="desc">Illustrative planning map: notes, Jira work and requests connect to three workstreams. See their dependencies and find the next decision. Not an app screenshot.</desc>
+<style>text{font-family:"Avenir Next","Trebuchet MS",Arial,sans-serif}</style>
+<rect x="0" y="0" width="520" height="760" rx="24" fill="#f5f8fc"/>
+<text x="28" y="68" fill="#172b4d" font-size="45" font-weight="650" text-anchor="start">A big roadmap.</text>
+<text x="28" y="123" fill="#172b4d" font-size="45" font-weight="650" text-anchor="start">A clearer way</text>
+<text x="28" y="178" fill="#172b4d" font-size="45" font-weight="650" text-anchor="start">through.</text>
+<text x="30" y="242" fill="#536783" font-size="22" font-weight="500" text-anchor="start">Plan together. Think with AI.</text>
+<text x="30" y="272" fill="#536783" font-size="22" font-weight="500" text-anchor="start">Review the changes.</text>
+<path d="M28 302 H492" fill="none" stroke="#d6e1f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="28" y="330" width="134" height="44" rx="6" fill="#ffffff" stroke="#d6e1f0"/>
+<text x="95" y="359" fill="#172b4d" font-size="19" font-weight="500" text-anchor="middle">Notes</text>
+<path d="M95 374 V394 Q95 414 260 414" fill="none" stroke="#d6e1f0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="193" y="330" width="134" height="44" rx="6" fill="#ffffff" stroke="#d6e1f0"/>
+<text x="260" y="359" fill="#172b4d" font-size="19" font-weight="500" text-anchor="middle">Jira work</text>
+<path d="M260 374 V394 Q260 414 260 414" fill="none" stroke="#d6e1f0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="358" y="330" width="134" height="44" rx="6" fill="#ffffff" stroke="#d6e1f0"/>
+<text x="425" y="359" fill="#172b4d" font-size="19" font-weight="500" text-anchor="middle">Requests</text>
+<path d="M425 374 V394 Q425 414 260 414" fill="none" stroke="#d6e1f0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="260" cy="414" r="6" fill="#2563eb"/>
+<path d="M260 414 V458 H470" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M260 414 V526 H470" fill="none" stroke="#08736c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M260 414 V594 H470" fill="none" stroke="#7447ba" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="28" y="435" width="464" height="48" rx="7" fill="#edf3ff"/>
+<text x="44" y="465" fill="#2563eb" font-size="20" font-weight="650" text-anchor="start">Integrations</text>
+<text x="234" y="465" fill="#172b4d" font-size="19" font-weight="500" text-anchor="start">Customer context</text>
+<rect x="28" y="503" width="464" height="48" rx="7" fill="#e2f4f0"/>
+<text x="44" y="533" fill="#08736c" font-size="20" font-weight="650" text-anchor="start">Search</text>
+<text x="234" y="533" fill="#172b4d" font-size="19" font-weight="500" text-anchor="start">Search quality</text>
+<rect x="28" y="571" width="464" height="48" rx="7" fill="#eee8f8"/>
+<text x="44" y="601" fill="#7447ba" font-size="20" font-weight="650" text-anchor="start">Platform</text>
+<text x="234" y="601" fill="#172b4d" font-size="19" font-weight="500" text-anchor="start">Index migration</text>
+<path d="M218 594 H205 V526 H218" fill="none" stroke="#7447ba" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 8"/>
+<circle cx="205" cy="560" r="9" fill="#f5f8fc" stroke="#91600a" stroke-width="3"/>
+<text x="30" y="678" fill="#172b4d" font-size="27" font-weight="650" text-anchor="start">See the dependencies.</text>
+<text x="30" y="712" fill="#172b4d" font-size="27" font-weight="650" text-anchor="start">Find the next decision.</text>
+<text x="30" y="741" fill="#536783" font-size="17" font-weight="500" text-anchor="start">Illustrative planning map</text>
+</svg>

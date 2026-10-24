@@ -1,6 +1,6 @@
 # Find your work in Sightline
 
-Start with the [launch instructions](../README.md#your-first-plan-in-five-minutes): open **dist/sightline.html** in Chrome or Edge, then open the separate
+Start with the [launch instructions](../README.md#try-it-with-an-invented-team-plan): open **dist/sightline.html** in Chrome or Edge, then open the separate
 plan file from Sightline's **File** menu. The source template is not the runnable release, and a plan link alone does
 not grant access to its file.
 
