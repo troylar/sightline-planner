@@ -72,6 +72,13 @@ Each principle is a test a change can pass or fail.
     and reattaches by itself when the issue comes back. Only a person, on purpose, removes plan work.
 13. **Many views, one wall.** The timeline, standup cards, retrospective and free-form canvas are different ways of
     looking at the same Jira and plan items. A view never owns data the others can't see.
+14. **A forecast is computed, never stored as dates.** Effort, capacity and skills are plan inputs; the finish dates,
+    critical chain and workstream load are worked out from them each time the page draws, and each one can say why.
+    Nothing moves on the plan until a person chooses to use a forecast date. A snapshot may record what the forecast
+    said when it was taken, labeled with that date, as history; the current forecast is always computed.
+15. **A what-if is labeled as a what-if.** A scenario is a saved set of changes on top of the plan, shown as
+    "What-if: not the plan" wherever it appears. It changes the plan only when someone makes it the plan, and then
+    each change goes through the same review (Apply, Edit, Skip) as an assistant's suggestions.
 
 ## Who owns what
 
@@ -87,6 +94,8 @@ Each principle is a test a change can pass or fail.
 | Plan items: initiatives, tasks, milestones, gates, meetings, notes, process blocks, plan timeboxes | Plan | Sightline | "Added here", with who added them |
 | A short chart label or lead for a Jira item | Plan | Sightline | Labeled as the plan's, next to Jira's title |
 | Progress counts | Computed by Sightline from Jira's facts and the plan's choices | Inputs in Jira and Sightline | Count with unit, scope and freshness |
+| Effort ranges, skills, workstream shares, scenarios | Plan | Sightline | Added here, with who added them |
+| Forecast finishes, critical chain, workstream load | Computed by Sightline from the plan's inputs and Jira's facts | Inputs in Jira and Sightline | Likely and high finish, with the reason for each wait and what the forecast assumed |
 | Saved team views and tag colors | Plan | Sightline | Named views; tag style |
 | What I've hidden from my own view | The viewer | That viewer's browser | View indicator with hidden counts |
 | Proposed changes to Jira (later) | Plan | Sightline, applied by the sync script | Shown as pending on the Jira item until Jira has them |
