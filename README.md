@@ -24,7 +24,7 @@ the whole picture together. Your assistant helps organize the complexity; you de
 What are we trying to deliver? What is agreed, and what is still an idea? Start with outcomes across quarters
 and workstreams. Keep later work recoverable without turning every rough request into a dated commitment.
 
-<a href="docs/images/roadmap-light.png?raw=true" aria-label="Open full-size roadmap screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/roadmap-dark.png"><img src="docs/images/roadmap-light.png" alt="Actual Sightline Roadmap: customer outcomes across four quarters and workstreams, with later work counted outside the window." width="1440"></picture></a>
+<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/roadmap-light.png" aria-label="Open full-size roadmap screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/roadmap-dark.png"><img src="docs/images/roadmap-light.png" alt="Actual Sightline Roadmap: customer outcomes across four quarters and workstreams, with later work counted outside the window." width="1440"></picture></a>
 
 *Actual app, invented Northstar plan. A target quarter expresses intent; it does not prove capacity.*
 
@@ -34,7 +34,7 @@ Move from the quarter-level discussion to initiatives, tasks, milestones, and de
 **From Jira** alongside work **Added here**. Use saved views to focus on a team or workstream while keeping
 hidden work findable.
 
-<a href="docs/images/timeline-light.png?raw=true" aria-label="Open full-size timeline screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/timeline-dark.png"><img src="docs/images/timeline-light.png" alt="Actual Sightline Timeline: initiatives and tasks across workstreams, with Jira context and plan work together." width="1440"></picture></a>
+<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/timeline-light.png" aria-label="Open full-size timeline screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/timeline-dark.png"><img src="docs/images/timeline-light.png" alt="Actual Sightline Timeline: initiatives and tasks across workstreams, with Jira context and plan work together." width="1440"></picture></a>
 
 *Jira owns issue facts. Sightline owns the plan around them. Arranging work here does not update Jira.*
 
@@ -73,7 +73,7 @@ richer export covers known scheduled Jira points and configured availability, no
 See before/after values. Apply, edit, or skip each proposal. Use Undo for a just-applied plan edit. Your
 assistant's conversation and proposal file do not silently change the shared plan.
 
-<a href="docs/images/review-light.png?raw=true" aria-label="Open full-size review screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/review-dark.png"><img src="docs/images/review-light.png" alt="Actual Sightline proposal review: two prepared wording changes, their before and after values, and Apply, Skip, and Edit controls." width="1440"></picture></a>
+<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/review-light.png" aria-label="Open full-size review screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/review-dark.png"><img src="docs/images/review-light.png" alt="Actual Sightline proposal review: two prepared wording changes, their before and after values, and Apply, Skip, and Edit controls." width="1440"></picture></a>
 
 *Actual review of prepared Northstar wording changes. With an external coding tool, your conversation stays
 in that tool; the nearby in-app chat controls are optional.*
@@ -86,7 +86,7 @@ quarter and capture another as an unscheduled idea. No AI account needed.
 Find attention items in **Today**, current work in **Sprint**, and the delivery conversation in **Status update**.
 Use **Release notes** for customer wording. Return to Roadmap for the broader direction.
 
-<a href="docs/images/today-light.png?raw=true" aria-label="Open full-size today screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/today-dark.png"><img src="docs/images/today-light.png" alt="Actual Sightline Today view: team attention and upcoming work, with Jira freshness and coverage." width="1440"></picture></a>
+<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/today-light.png" aria-label="Open full-size today screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/today-dark.png"><img src="docs/images/today-light.png" alt="Actual Sightline Today view: team attention and upcoming work, with Jira freshness and coverage." width="1440"></picture></a>
 
 *The same invented plan, viewed for daily attention. Check scope and freshness before relying on the summary.*
 
