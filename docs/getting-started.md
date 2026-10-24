@@ -1,91 +1,99 @@
-# Your first five minutes with Sightline
+# Your first useful planning session
 
-The goal: one useful outcome, a four-quarter view and a plan you can reopen. Jira and AI can wait until you
-want them. [Back to the tour](../README.md).
+Open an invented team plan, review two changes, and save something you can reopen. No Jira server or AI
+account is needed for this example. [Back to the tour](../README.md).
 
-## Open the app
+## Open the example
+
+Build the public source with Git, Node.js 18+, Python 3.10+, and Bash:
 
 ```sh
-npx @troylar/sightline install ./my-plan
+git clone https://github.com/troylar/sightline-planner.git sightline
+cd sightline
+npm ci
+./build.sh
 ```
 
-Open **`my-plan/sightline.html`** in desktop Chrome or Edge. Node.js 18+ is needed for this download command;
-the HTML itself needs no server or installation. You can also download the HTML from the repository's latest
-release. If you cloned the source, run `npm ci` and `./build.sh`, then open **`dist/sightline.html`**.
+Open **dist/sightline.html** in desktop Chrome or Edge. Choose **File → Open shared plan…** and select
+**examples/northstar/plan.json**. This is synthetic work, safe to explore. Choose Avery Stone for the example author stamps if asked; this is not a login. Your HTML is the app; the JSON is the plan.
+Public npm and release downloads are not available yet; [check availability](availability.md) before using other instructions.
 
-At first, the toolbar says **This browser only**. That means you have a local browser plan. Your HTML file
-is the app, not the plan. Changing the plan doesn't rewrite the HTML.
+Choose **Product updates → Roadmap**. Select **Four quarters**, starting **Q4 2026**. Find:
 
-## Make the first outcome concrete
+- **Bring customer context into everyday work**, currently targeted for Q2 2027.
+- **Explore a workspace for partners**, an idea for Later. Keep it there throughout this exercise.
 
-Choose **Product updates → Roadmap**. Type this in **New idea**:
+Jira is optional. To populate the delivery views, connect **examples/northstar/jira** through
+**Settings → Jira connection**. This is a dated documentation snapshot; freshness warnings can be expected as it ages.
 
-> New teams can create their first shared plan.
+## Start with the rough notes
 
-Choose **+ Add idea**. It starts as an idea; you can choose its timing and detail on its card. A useful outcome
-says what becomes possible for someone. “Build onboarding” is work; “New teams can get started in minutes”
-explains why that work matters. Keep unknown owners or dates unknown.
+Read [brain-dump.txt](../examples/northstar/brain-dump.txt):
 
-Set the horizon to **Four quarters**, choose a starting calendar quarter and year, then organize outcomes by
-workstream. Use **Long range** to see broad years, halves and Later. An outside-window count is a route back to
-other work; it hasn't been deleted.
+> Bring customer context forward to Q1 2027. Explore offline search too, but keep it as an idea with no
+> owner or date. Leave the rest of the roadmap as it is.
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="images/roadmap-dark.png"><img src="images/roadmap-light.png" alt="Four quarters of Northstar outcomes with an outside-window count and Show in long range." width="1440"></picture>
+A useful assistant separates the agreed timing change from the requested idea capture. It keeps the existing
+outcome's ID, leaves the new idea unassigned, and does not turn this into a wholesale reschedule.
 
-*This example is invented. The “Needs detail” badges are useful prompts for the next conversation.*
+<picture>
+  <source media="(max-width: 640px) and (prefers-color-scheme: dark)" srcset="images/planning-story-mobile-dark.svg">
+  <source media="(max-width: 640px)" srcset="images/planning-story-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="images/planning-story-dark.svg">
+  <img src="images/planning-story-light.svg" alt="Prepared example: one agreed quarter move and one unscheduled idea become two separately reviewable proposals." width="1320">
+</picture>
 
-## Save something you can hand to a teammate
+## Review two changes
 
-1. Choose **File → Save as a new shared plan…** and save a separate JSON file.
-2. Confirm the toolbar now identifies that shared file. For a detached download, use **File → Download JSON**.
-3. Keep the app and plan together in a folder if convenient. They're still different files.
-4. To reopen it, open the app, choose **File → Open shared plan…** and select that plan file.
+The repository contains [roadmap-session-amendments.json](../examples/northstar/roadmap-session-amendments.json),
+a **prepared example**, not a live model response. With the Northstar plan open:
 
-Choose yourself in the toolbar for personal views and author stamps. This isn't a login. A deep link helps
-navigate after a plan is available; it cannot open or grant access to the file by itself.
+1. Choose **Connect assistant** in the toolbar and expand **Use individual files instead**.
+2. Choose **Connect that file**, then select **examples/northstar/roadmap-session-amendments.json**.
+3. Inspect the two proposals: move **Bring customer context into everyday work** from **Q2 2027** to **Q1 2027**;
+   add **Explore offline search** as an unscheduled idea with no owner.
+4. Apply either proposal independently. You can edit or skip one without accepting the other.
+5. Check the visible save state and use normal **Save** if required. **Undo** reverses a just-applied plan edit.
 
-Before closing a tab with unsaved work, save or download JSON. Unsubmitted composer drafts belong to that tab's
-session: submit or copy their text too. See [shared files and recovery](onedrive.md) before a team rollout.
+If both changes are ready and you apply them, the result is:
 
-## Try the populated Northstar example
+| Item | Before | After |
+| --- | --- | --- |
+| Customer context, `dv-integrations` | Idea, Q2 2027 | Planned, Q1 2027; same ID and workstream |
+| Offline search, `dv-offline-search-idea` | Not in the plan | Idea; no owner or target date |
+| Partner workspace, `dv-later` | Later | Still Later |
+| Other outcomes | Existing values | Unchanged |
 
-The install command puts a complete example in **my-plan/example**. You can also download the repository's
-**[Northstar example folder](../examples/northstar/)**. It contains:
+Giving the timed customer-context idea its new target marks it **Planned**. That is a planning state, not a capacity or delivery guarantee.
 
-```text
-plan.json                 The invented team's plan and five outcomes
-jira/status.json          Synthetic Jira status, sprints and releases
-jira/issues.json          Synthetic issue details
-sightline-amendments.json Two example changes for review
-```
+The new idea may sit outside the four-quarter window. Follow the outside-window control or choose **Long range**
+to find it. Hidden does not mean lost. If a current value differs from the proposal's precondition, review the
+conflict instead of forcing it. Only a ready change can be applied.
 
-Open **plan.json** through **File → Open shared plan…**. Connect the example **jira** folder through
-**Settings → Jira connection**. These files contain invented work; no Jira credentials or live server are needed.
+The earlier **sightline-amendments.json** remains available as a separate two-change wording example.
+Do not connect both batches at once.
 
-Explore **Delivery → Timeline** and **Work → Today**. The Jira example's sync timestamp and sprint dates are a
-snapshot from the documentation capture; freshness warnings are expected as it ages. To regenerate a current
-example from source, run `python3 tools/make-docs-demo.py`. The roadmap targets stay fixed for the walkthrough.
+## Make a plan of your own
 
-## See the review loop without an AI account
+Preserve any example edits you want first. Choose **File → Open a copy…** and select
+**examples/northstar/blank-plan.json**. This opens an empty, detached plan rather than linking writes to the
+example file. In Settings, set your plan title and calendar before scheduling work. On Roadmap, add an outcome
+in **New idea**, such as “New teams can create their first shared plan.” Keep unknown timing and owners unknown.
 
-With the example plan open, choose **Connect assistant** in the toolbar. Expand **Use individual files instead**,
-choose **Connect that file**, and select the example's **sightline-amendments.json**. This is a prepared example,
-not a live AI response.
-
-<picture><source media="(prefers-color-scheme: dark)" srcset="images/review-dark.png"><img src="images/review-light.png" alt="Two synthetic proposals in Sightline's review panel, each with Apply, Skip and Edit controls." width="1440"></picture>
-
-Read the changes. You can **Edit**, **Skip**, or **Apply** a ready change. A changed precondition waits for review;
-it isn't forced through. Apply is atomic for each change. Inspect the save state, and use normal **Save** when
-required. Choose **Undo** to reverse a just-applied plan edit. A download or local save does not prove cloud sync.
+Choose **File → Save as a new shared plan…** and save a separate JSON file. Confirm that the toolbar identifies
+it as a shared plan. Close and reopen the app, choose **File → Open shared plan…**, and select that file.
+For browser-only work, keep a **Download JSON** backup before closing. Composer drafts need to be submitted or
+copied separately.
 
 ## Bring your own assistant
 
-On Roadmap choose **Plan with AI**, or open an outcome and choose **Ask assistant about this**. Check **Working on**
-before sending. A typed draft keeps its original context when you navigate; **Switch context** changes that deliberately.
+1. Open your own plan and connect a private folder using **Connect assistant → Connect your assistant**.
+2. Choose **Copy instructions for your assistant**. Paste them into your external coding tool with that folder's location.
+3. Point it at the source checkout's **skills/** folder, or install the individual skill folders where it discovers them.
+4. Start with a small real request. The assistant reads fresh context and writes proposals; you review and apply them here.
 
-- For chat inside Sightline, configure the [optional local companion](assistant-workflow.md#talk-to-your-company-endpoint).
-- For a file-capable external assistant, connect a private assistant folder and use the [planning skills](skills.md).
-- For project-specific terminology, fill in **Settings → Planning guide**. Save the guide, then save the shared plan.
+> Read my current context. Group these notes against existing outcomes, keep suggestions separate from decisions,
+> and show the three questions that matter most. Do not invent owners or dates. Prepare only the changes I request.
 
-Your next useful session: paste the team's rough notes, ask for proposed changes to the displayed four quarters,
-and review them together while the decisions are still fresh.
+You do not need to use the in-app **Send** button for an external tool. Continue in that tool's conversation.
+[Complete external setup](assistant-workflow.md) · [Work through a large roadmap](large-roadmaps.md) · [Run a planning meeting](team-planning.md).

@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "title": "My team plan",
+    "start": "2026-10-19",
+    "weeks": 52,
+    "sprintWeeks": 2,
+    "firstSprint": 0
+  },
+  "lanes": [
+    {
+      "id": "team",
+      "name": "Team work",
+      "who": "",
+      "color": "#2c6fbb"
+    }
+  ],
+  "people": [],
+  "bars": [],
+  "deliverables": [],
+  "notes": []
+}

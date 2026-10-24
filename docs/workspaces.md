@@ -1,6 +1,6 @@
 # Find your work in Sightline
 
-Start with the [launch instructions](../README.md): open **dist/sightline.html** in Chrome or Edge, then open the separate
+Start with the [launch instructions](../README.md#your-first-plan-in-five-minutes): open **dist/sightline.html** in Chrome or Edge, then open the separate
 plan file from Sightline's **File** menu. The source template is not the runnable release, and a plan link alone does
 not grant access to its file.
 
@@ -25,7 +25,7 @@ once. These actions do not send or apply anything on their own. An untouched gen
 selection. A question you have written keeps its original selection; **Switch context** deliberately changes that
 selection while keeping your text. **Test reply** checks for a response, and **Connection and setup** holds detailed
 instructions below the composer. Read the [first planning session](assistant-workflow.md#first-four-quarter-planning-session)
-before importing roadmap notes.
+for the in-app route. External tools use the [private-folder session](assistant-workflow.md#your-first-external-planning-session) and their own conversation.
 
 Unsubmitted **New idea** text stays with its plan during navigation and redraws in this tab's session. It is not
 included in the saved plan or assistant context until added. Successful submission clears only the submitted text;
@@ -57,3 +57,5 @@ Quick updates can save immediately without **Start editing**. For reading-only e
 editable, but this route does not link writes to the original file. Use **Open shared plan…** for the separate
 synthetic save/handoff exercise. A local save or handoff does not verify cloud delivery; the
 [OneDrive two-device check](onedrive.md#two-device-check-before-a-team-rollout) remains separate and not run.
+
+For the meeting workflow, use [team planning](team-planning.md). To work through a large backlog with your external assistant, use [large roadmaps](large-roadmaps.md).

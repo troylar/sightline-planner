@@ -4,24 +4,27 @@ A skill is reusable instructions for an AI assistant. Sightline ships six: turn 
 make a precise edit, review the gaps, summarize the plan and teach the assistant your team's vocabulary.
 [Back to the tour](../README.md#six-skills-for-your-ai-assistant).
 
-## Install once, use in ordinary language
+## Start with your normal conversation
+
+Use the source checkout's **skills/** folder. Point a file-capable assistant at it or copy the individual
+`sightline-*` folders wherever it discovers skills. From a trusted source checkout, this local command copies
+only the collection and refuses to overwrite different files:
 
 ```sh
-npx @troylar/sightline skills --to ./planning-skills
+node bin/sightline.js skills --to ../planning-skills
 ```
 
-Point a file-capable assistant at that folder, or install the individual self-contained skill folders wherever
-it discovers skills. Invocation syntax depends on the assistant. You can ask it to read the relevant `SKILL.md`
-directly; you don't need a slash-command system.
+This works without a public npm package. Builds 1.95.0 and later also offer
+[skill deployment from the HTML](bundled-skills.md); check [availability](availability.md) first.
 
-For example:
+You do not need to learn six command names to have a useful planning conversation. Say what you need:
 
-> Use sightline-plan-roadmap. My private assistant folder is the folder I've provided. Read its current context,
-> then organize these agreed goals across Q1 through Q4 2027. Reuse existing outcomes and leave unknown owners unknown.
+> Read the current context in my private assistant folder. Organize these notes against existing work,
+> leave unknown owners unknown, and show the three decisions that matter most. Prepare only the changes I request.
 
-The assistant needs access to the connected private folder, or a manual context export. Skills don't establish
-file permissions or connect a model. Use one private folder per person, device and plan, with one active Sightline
-tab writing its outputs. Follow [the assistant connection guide](assistant-workflow.md).
+The assistant needs access to the private folder you connected, or a manual context export. Skills do not
+establish file permissions or connect a model. Use one folder per person, device and plan, with one active
+Sightline tab writing its outputs. [Connect the folder and complete a session](assistant-workflow.md).
 
 ## Choose the job
 
@@ -39,11 +42,27 @@ tab writing its outputs. Follow [the assistant connection guide](assistant-workf
 Editing skills write only **sightline-amendments.json**. They read fresh IDs and allowed operations from
 **sightline-assistant-view.json**, and use matching **sightline-assistant-results.json** to understand this browser's
 review outcomes. An existing unresolved batch must be preserved or deliberately replaced.
+Results must match the plan, revision, Jira timestamp, proposal batch and original operations before an
+assistant attributes review outcomes to those proposals. Pending proposals do not block read-only status,
+review or Planning guide drafts. Manual exports may contain unsaved browser changes; their revision alone
+does not establish that they came from a saved shared file.
 
 Sightline checks each proposed change against the current plan before Apply. A proposal can be ready, conflicted,
 invalid or already in the plan. The assistant never overwrites the shared plan, context, results or Jira output.
 Unsupported edits become explicit manual steps. In particular, the planning-guide skill returns text for the
 editor; it does not fabricate an amendment operation for guide fields.
+
+## Work through a large roadmap
+
+On builds 1.96.0 and later, ask your external coding tool to read the fresh context and its `coverage`, then use the supplied `planning`
+data to organize a brain dump, reconcile it with stable existing IDs, review dependencies and decisions, or
+explain the calculated capacity constraints. No in-app endpoint connection is required. For example:
+
+> Read my assistant context and tell me what it covers. Group these notes against existing outcomes, keep
+> suggestions separate from agreed changes, and identify the capacity constraints and missing estimates for
+> the next known sprints. Propose a small first set of changes for review; leave unknown owners unknown.
+
+Older exports support a narrower analysis; do not claim they contain this data. See [what the planning export contains](assistant-workflow.md#planning-data-for-your-external-assistant) and the [large-roadmap workflow](large-roadmaps.md).
 
 ## Using the in-app companion instead
 
@@ -57,3 +76,9 @@ Copy a skill into your assistant's own skills location and edit that copy. Keep 
 precondition and human-review rules. Add team-specific language to the plan's **Planning guide** so UI and AI work
 from the same context. The installer refuses to overwrite a different skill file; install updates into a new
 folder and compare before carrying your edits forward.
+
+## Check a skill after changing it
+
+Use the [synthetic skill evaluation](skill-evaluation.md) to exercise all six skills with isolated assistant
+tasks. It checks proposal files and preserved inputs, with separate review criteria for the assistant's
+explanations. Installation tests alone do not establish planning quality. The evaluation tooling is maintained with newer source builds; confirm it exists in your checkout before running it.
