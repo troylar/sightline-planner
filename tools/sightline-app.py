@@ -4,6 +4,7 @@
 Works on the private assistant folder connected in Sightline (Connect assistant). Standard library only; no network.
 
   sightline-app.py status <folder>                    is a Sightline page answering for this folder?
+  sightline-app.py check <folder> <batch.json>        check a batch against the context you read, offline (no page needed)
   sightline-app.py send <folder> <batch.json>         check the heartbeat and context, then write the batch atomically
   sightline-app.py wait <folder> <batchId>            wait until every change has an outcome
   sightline-app.py run <folder> <batch.json>          send, then wait
@@ -20,6 +21,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import re
 import tempfile
 import time
 
@@ -32,6 +34,10 @@ AMENDMENTS_MAX = 512 * 1024
 # A page ticks every 30 seconds; a background tab can be slowed to once a minute. Silence past this means nobody's there.
 STALE_AFTER = 150
 DONE = {"applied", "already-in-plan"}
+OPS = {"add", "set", "link", "unlink", "propose", "action"}
+CHANGE_ID = re.compile(r"^(?!(?:__proto__|constructor|prototype|toString|valueOf|hasOwnProperty)$)[A-Za-z0-9._-]{1,80}$")
+ARG_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,79}$")
+ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 class Fail(Exception):
@@ -98,6 +104,97 @@ def check_batch(batch: dict, st: dict) -> None:
         raise Fail(1, "The batch needs createdAt (an ISO time), so Sightline can tell how old it is.")
 
 
+def arg_ok(t: str, v) -> bool:
+    t = t.rstrip("?")
+    if t == "any":
+        return True
+    if t == "id":
+        return isinstance(v, str) and bool(ARG_ID.match(v))
+    if t == "idOrBlank":
+        return v == "" or arg_ok("id", v)
+    if t in ("ids", "keys"):
+        return isinstance(v, list) and len(v) <= 500 and all(isinstance(x, str) and x for x in v)
+    if t == "str":
+        return isinstance(v, str) and len(v) <= 4000
+    if t == "iso":
+        if not (isinstance(v, str) and ISO.match(v)):
+            return False
+        try:
+            dt.date.fromisoformat(v)
+        except ValueError:
+            return False
+        return True
+    if t == "num":
+        return isinstance(v, (int, float)) and not isinstance(v, bool) and v == v and abs(v) != float("inf")
+    if t == "int":
+        return isinstance(v, int) and not isinstance(v, bool)
+    return True
+
+
+def check_offline(folder: Path, batch: dict) -> list:
+    """Problems with a batch, checked against the context file it was written from. The page checks again."""
+    ctx = read_json(folder / CONTEXT_FILE, "sightline-assistant-view")
+    if ctx is None:
+        raise Fail(1, f"{CONTEXT_FILE} isn't in this folder. Connect it in Sightline (Connect assistant), then read the context.")
+    plan = ctx.get("plan") or {}
+    if batch.get("kind") != "sightline-amendments" or batch.get("version") != 1:
+        raise Fail(1, 'The batch must have kind "sightline-amendments" and version 1.')
+    if batch.get("planId") != plan.get("id"):
+        raise Fail(1, f"The batch is for plan {batch.get('planId')!r}; the context is for {plan.get('id')!r}.")
+    based = (batch.get("basedOn") or {}).get("planRevision")
+    if not isinstance(based, int):
+        raise Fail(1, "The batch needs basedOn.planRevision: the plan revision in the context you read.")
+    if based != plan.get("revision", 0):
+        raise Fail(2, f"The batch was written against revision {based}; the context is at revision {plan.get('revision', 0)}. Read {CONTEXT_FILE} again and rewrite it.",
+                   {"basedOn": based, "planRevision": plan.get("revision", 0)})
+    actions = {a.get("id"): a.get("args") or {} for a in ctx.get("actions") or [] if isinstance(a, dict)}
+    bad, seen = [], set()
+    changes = batch.get("changes")
+    if not isinstance(changes, list) or not changes:
+        return ["The batch has no changes."]
+    for ci, c in enumerate(changes, 1):
+        cid = c.get("id") if isinstance(c, dict) else None
+        at = f"change {cid or ci}"
+        if not isinstance(cid, str) or not CHANGE_ID.match(cid):
+            bad.append(f"{at}: every change needs an id (letters, digits, . _ and -).")
+            continue
+        if cid in seen:
+            bad.append(f"{at}: the id is used twice.")
+        seen.add(cid)
+        ops = c.get("ops")
+        if not isinstance(ops, list) or not ops:
+            bad.append(f"{at}: no ops.")
+            continue
+        for oi, o in enumerate(ops, 1):
+            where = f"{at}, op {oi}"
+            if not isinstance(o, dict) or o.get("op") not in OPS:
+                bad.append(f"{where}: op is one of {', '.join(sorted(OPS))}.")
+                continue
+            if o["op"] != "action":
+                continue
+            name, args = o.get("action"), o.get("args")
+            if name not in actions:
+                bad.append(f"{where}: {name!r} isn't an action in the context.")
+                continue
+            if not isinstance(args, dict):
+                bad.append(f"{where}: args must be an object.")
+                continue
+            spec = actions[name]
+            for k in args:
+                if k not in spec:
+                    bad.append(f"{where}: {name} has no argument {k!r}.")
+            for k, t in spec.items():
+                if k not in args or (args[k] is None and t.endswith("?")):
+                    if not t.endswith("?"):
+                        bad.append(f"{where}: {name} needs {k}.")
+                    continue
+                if not arg_ok(t, args[k]):
+                    bad.append(f"{where}: {k} isn't a valid {'date (YYYY-MM-DD)' if t.startswith('iso') else t.rstrip('?')}.")
+            if name.endswith(".add") and "id" in spec and not (isinstance(args.get("id"), str) and args["id"]):
+                bad.append(f"{where}: give the new item an id (like risk-vendor-limits), so reading the file again can't add it twice.")
+    return bad
+
+
 def write_atomic(folder: Path, name: str, text: str) -> None:
     fd, tmp = tempfile.mkstemp(prefix=".sightline-", suffix=".tmp", dir=folder)
     try:
@@ -124,6 +221,9 @@ def send(folder: Path, batch_path: Path) -> dict:
     if len(text.encode("utf-8")) > AMENDMENTS_MAX:
         raise Fail(1, f"The batch is over {AMENDMENTS_MAX // 1024} KB.")
     check_batch(batch, st)
+    problems = check_offline(folder, batch)
+    if problems:
+        raise Fail(1, "The batch has problems; nothing was sent.", {"lines": problems})
     write_atomic(folder, AMENDMENTS_FILE, text if text.endswith("\n") else text + "\n")
     return {"sent": batch["batchId"], "state": st.get("state"), "autoApply": st.get("autoApply")}
 
@@ -184,6 +284,8 @@ def main(argv=None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("status", help="is a Sightline page answering for this folder?")
     s.add_argument("folder")
+    s = sub.add_parser("check", help="check a batch against the context you read, offline; nothing is written")
+    s.add_argument("folder"); s.add_argument("batch")
     s = sub.add_parser("send", help="check the heartbeat and context revision, then write the batch atomically")
     s.add_argument("folder"); s.add_argument("batch")
     s = sub.add_parser("wait", help="wait until every change in a batch has an outcome")
@@ -198,6 +300,18 @@ def main(argv=None) -> int:
         if a.cmd == "status":
             out = heartbeat(folder)
             msg = f"Sightline is {out.get('state')} (heard {out['ageSeconds']} seconds ago); changes {'wait for review' if out.get('autoApply') == 'review' else 'apply on their own'}; plan revision {out.get('planRevision')}."
+        elif a.cmd == "check":
+            try:
+                batch = json.loads(Path(a.batch).read_text(encoding="utf-8"))
+            except (OSError, ValueError) as e:
+                raise Fail(1, f"Can't read the batch {Path(a.batch).name}: {e}")
+            if not isinstance(batch, dict):
+                raise Fail(1, "The batch must be a JSON object.")
+            problems = check_offline(folder, batch)
+            if problems:
+                raise Fail(1, f"{len(problems)} problem{'' if len(problems) == 1 else 's'} in the batch.", {"lines": problems})
+            out = {"checked": batch.get("batchId"), "changes": len(batch.get("changes") or [])}
+            msg = f"The batch looks right: {out['changes']} change{'' if out['changes'] == 1 else 's'}. Sightline checks it again when it applies."
         elif a.cmd == "send":
             out = send(folder, Path(a.batch))
             msg = f"Sent {out['sent']}. Sightline is {out['state']}."

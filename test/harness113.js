@@ -136,6 +136,18 @@ setTimeout(()=>{console.log(checks.join('\n'));console.log('TIMEOUT');process.ex
     fresh(); ev(dv('dv-a') + `pick('f-dvstage', 'planned')`);
     ok('a deliverable can\'t be planned without a target, from the card', ev(`dvById('dv-a').stage`) === 'idea' && /target/.test(ev(`document.getElementById('status').textContent`)));
 
+    // Holidays
+    parity('one day off', `addDaysOff('Founders day', '2026-10-16')`, 'holiday.add', {date:'2026-10-16', name:'Founders day'});
+    parity('a range, working days only', `addDaysOff('Shutdown', '2026-11-20', '2026-11-27')`, 'holiday.addRange', {from:'2026-11-20', to:'2026-11-27', name:'Shutdown'});
+    parity('remove', `S.holidays = [{date:'2026-10-16', name:'Founders day'}]; P0 = ${plan}; UI.planTab = 'calendar'; setWs('plan'); render(); $('#t-holidays').querySelector('button.x').click()`, 'holiday.del', {date:'2026-10-16'});
+    { fresh(); const run = (id, a)=>JSON.parse(ev(`JSON.stringify((({ok, reason})=>({ok, reason}))(applyAction(planOfRecord(S), ${JSON.stringify(id)}, ${JSON.stringify(a)})))`));
+      ok('holiday.add refuses a weekend', !run('holiday.add', {date:'2026-10-17'}).ok);
+      ok('holiday.addRange refuses more than two months', !run('holiday.addRange', {from:'2026-10-01', to:'2026-12-15'}).ok);
+      { const r = JSON.parse(ev(`JSON.stringify(applyAction(planOfRecord(S), 'holiday.del', {date:'2026-10-16'}), (k, v)=>k === 'plan' ? undefined : v)`)); ok('removing a day that isn\'t a holiday is already done, so reading a batch again is safe', r.ok && r.nochange, JSON.stringify(r)); }
+      ev(`act('holiday.addRange', {from:'2026-11-23', to:'2026-11-27', name:'Shutdown'})`);
+      ok('a range is stored as its working days with the name', ev(`JSON.stringify(S.holidays)`) === JSON.stringify(['23','24','25','26','27'].map(d=>({date:'2026-11-'+d, name:'Shutdown'}))), ev('JSON.stringify(S.holidays)'));
+      ok('reading it again finds it already in the plan', ev(`planActions['holiday.addRange'].done(S, {from:'2026-11-23', to:'2026-11-27'})`) === true);
+      ok('a holiday reads plainly in review', ev(`actLine('holiday.addRange', {from:'2026-11-23', to:'2026-11-27', name:'Shutdown'}, S)`) === 'Days off "Shutdown", ' + ev(`fmtDay(isoToDay('2026-11-23'))`) + ' – ' + ev(`fmtDay(isoToDay('2026-11-27'))`)); }
     ok('no runtime errors', ev('window.errors.length') === 0, ev('window.errors.join(" | ")'));
   } catch(e){ ok('harness ran', false, e && e.message); }
   console.log(checks.join('\n')); const f = checks.filter(c=>c.startsWith('FAIL')).length;

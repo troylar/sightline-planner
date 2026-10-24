@@ -1,5 +1,27 @@
 [
   {
+    "version": "1.99.0",
+    "date": "2026-10-24",
+    "headline": "Your assistant can add holidays, and check its work before sending",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "Assistant changes can add and remove holidays",
+        "now": "An assistant can add a day off for everyone, add a range such as a winter shutdown (stored as its working days, like the Holidays table does), or remove a holiday. The review shows what each one moves.",
+        "before": "Holidays had to be added by hand in Settings, Calendar.",
+        "where": "Assistant changes; Settings, Calendar, Holidays"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "The assistant helper checks a batch before it sends it",
+        "now": "sightline-app.py check reads the batch against the context your assistant read, with no page open, and names each problem: an unknown action, a missing or extra argument, a bad date, a new item with no id, or a batch written against an older plan. send and run make the same check and send nothing if it fails.",
+        "where": "tools/sightline-app.py"
+      }
+    ]
+  },
+  {
     "version": "1.98.0",
     "date": "2026-10-24",
     "headline": "Assistant changes can apply on their own",
