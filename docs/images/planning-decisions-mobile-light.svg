@@ -5,7 +5,7 @@
 <text x="28" y="113" fill="#172b4d" font-size="39" font-weight="650" text-anchor="start">Three decisions.</text>
 <text x="30" y="153" fill="#536783" font-size="19" font-weight="500" text-anchor="start">An invented planning session</text>
 <text x="30" y="216" fill="#2563eb" font-size="28" font-weight="650" text-anchor="start">Scope</text>
-<circle cx="185" cy="283" r="56" fill="#e7efff" stroke="#2563eb" stroke-width="2"/>
+<circle cx="185" cy="283" r="56" fill="#edf3ff" stroke="#2563eb" stroke-width="2"/>
 <circle cx="274" cy="283" r="56" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
 <text x="143" y="278" fill="#2563eb" font-size="16" font-weight="600" text-anchor="start">Customer</text>
 <text x="143" y="300" fill="#2563eb" font-size="16" font-weight="600" text-anchor="start">context</text>
@@ -23,8 +23,8 @@
 <path d="M205 566 H307" fill="none" stroke="#7447ba" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M296 558 L307 566 L296 574" fill="none" stroke="#7447ba" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M256 570 V610" fill="none" stroke="#7447ba" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-<circle cx="256" cy="620" r="10" fill="#fff0d3" stroke="#a66b08" stroke-width="3"/>
-<text x="256" y="661" fill="#a66b08" font-size="20" font-weight="600" text-anchor="middle">One shared specialist</text>
+<circle cx="256" cy="620" r="10" fill="#fff0d3" stroke="#91600a" stroke-width="3"/>
+<text x="256" y="661" fill="#91600a" font-size="20" font-weight="600" text-anchor="middle">One shared specialist</text>
 <text x="30" y="708" fill="#172b4d" font-size="24" font-weight="650" text-anchor="start">Resolve the shared bottleneck</text>
 <text x="30" y="739" fill="#172b4d" font-size="24" font-weight="650" text-anchor="start">before relying on the target.</text>
 <path d="M30 777 H490" fill="none" stroke="#d6e1f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -32,7 +32,7 @@
 <text x="30" y="861" fill="#536783" font-size="19" font-weight="500" text-anchor="start">Points in one Platform sprint</text>
 <rect x="30" y="887" width="440" height="26" rx="4" fill="#e2f4f0"/>
 <rect x="360" y="887" width="110" height="26" rx="4" fill="#fff0d3"/>
-<path d="M360 880 V921" fill="none" stroke="#a66b08" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M360 880 V921" fill="none" stroke="#91600a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 <text x="30" y="959" fill="#172b4d" font-size="25" font-weight="650" text-anchor="start">8 scheduled / 6 configured</text>
 <text x="30" y="995" fill="#536783" font-size="19" font-weight="500" text-anchor="start">5 unestimated issues; support absent</text>
 <text x="30" y="1050" fill="#172b4d" font-size="25" font-weight="650" text-anchor="start">Complete the demand picture</text>

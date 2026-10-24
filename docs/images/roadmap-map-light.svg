@@ -22,7 +22,7 @@
 <text x="350" y="306" fill="#172b4d" font-size="24" font-weight="650" text-anchor="start">One shared plan</text>
 <path d="M350 374 H885" fill="none" stroke="#2563eb" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 <text x="350" y="340" fill="#2563eb" font-size="18" font-weight="650" text-anchor="start">Integrations</text>
-<rect x="374" y="360" width="205" height="36" rx="7" fill="#e7efff"/>
+<rect x="374" y="360" width="205" height="36" rx="7" fill="#edf3ff"/>
 <text x="388" y="385" fill="#2563eb" font-size="18" font-weight="600" text-anchor="start">Customer context</text>
 <circle cx="878" cy="374" r="7" fill="#f5f8fc" stroke="#2563eb" stroke-width="3"/>
 <path d="M350 446 H885" fill="none" stroke="#08736c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -36,8 +36,8 @@
 <text x="421" y="529" fill="#7447ba" font-size="18" font-weight="600" text-anchor="start">Index migration</text>
 <circle cx="878" cy="518" r="7" fill="#f5f8fc" stroke="#7447ba" stroke-width="3"/>
 <path d="M592 522 H620 Q643 522 643 500 V484 Q643 466 663 466 H696 V448" fill="none" stroke="#7447ba" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 8"/>
-<circle cx="643" cy="487" r="13" fill="#f5f8fc" stroke="#a66b08" stroke-width="3"/>
-<text x="666" y="491" fill="#a66b08" font-size="17" font-weight="600" text-anchor="start">shared specialist</text>
+<circle cx="643" cy="487" r="13" fill="#f5f8fc" stroke="#91600a" stroke-width="3"/>
+<text x="666" y="491" fill="#91600a" font-size="17" font-weight="600" text-anchor="start">shared specialist</text>
 <path d="M891 374 H922 Q942 374 942 402 V462 Q942 482 962 482" fill="none" stroke="#d6e1f0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M891 446 H942" fill="none" stroke="#d6e1f0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M891 518 H923 Q942 518 942 498 V482" fill="none" stroke="#d6e1f0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
