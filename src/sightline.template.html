@@ -5048,9 +5048,11 @@ function render(){
   if (UI.focus && !barById(UI.focus)) UI.focus = null;
   $("#zWeeks").setAttribute("aria-pressed", UI.zoom !== "days"); $("#zDays").setAttribute("aria-pressed", UI.zoom === "days");
   if (UI.ws === "timeline"){
-    const gsc = $("#gscroll"), keepX = gsc && gsc.scrollLeft ? {x:gsc.scrollLeft, z:UI.zoom, n:zoomN()} : null;   // a redraw keeps where you'd scrolled to
+    // a redraw keeps where you'd scrolled to: the chart empties while it's drawn, and the browser moves a short page to the top
+    const gsc = $("#gscroll"), keep = gsc ? {x:gsc.scrollLeft, y:gsc.scrollTop, z:UI.zoom, n:zoomN()} : null, pageY = window.scrollY;
     UI.zoom === "days" ? (renderDays(), fadeDayLanes()) : renderGantt();
-    if (keepX && keepX.z === UI.zoom && keepX.n === zoomN()) gsc.scrollLeft = keepX.x;
+    if (keep && keep.z === UI.zoom && keep.n === zoomN()){ if (keep.x) gsc.scrollLeft = keep.x; if (gsc.scrollTop !== keep.y) gsc.scrollTop = keep.y; }
+    if (window.scrollY !== pageY) window.scrollTo(window.scrollX, pageY);
     snapFit(); watchPager(); applyLaneScreen(); setTimeout(()=>{ if (UI.ws === "timeline") updatePager(); }, 0);
   }
   setTimeout(fitSide, 0);
@@ -6983,8 +6985,9 @@ function applyLaneScreen(){
 }
 function laneScrollCheck(){ clearTimeout(laneScrollT); laneScrollT = setTimeout(()=>{ if (UI.ws !== "timeline") return; if (applyLaneScreen()) renderWs(); }, 180); }
 function renderGantt(){
-  const W = S.meta.weeks, g = $("#gantt"); g.replaceChildren(); g.style.minWidth = ""; g.style.setProperty("--lw", UI.labelW.weeks + "px");
-  { const zw = zoomWeeks(), avail = Math.max(300, ($("#gscroll")?.clientWidth || 1100) - UI.labelW.weeks - 2), on = zw > 0 && zw < W;
+  const W = S.meta.weeks, g = $("#gantt"), gw = $("#gscroll")?.clientWidth || 1100;   // measure before emptying the chart
+  g.replaceChildren(); g.style.minWidth = ""; g.style.setProperty("--lw", UI.labelW.weeks + "px");
+  { const zw = zoomWeeks(), avail = Math.max(300, gw - UI.labelW.weeks - 2), on = zw > 0 && zw < W;
     g.classList.toggle("zoomed", on); if (on) g.style.minWidth = (UI.labelW.weeks + avail * W / zw) + "px"; }
   const cols = h("div",{class:"gcols",style:{gridTemplateColumns:`repeat(${W},1fr)`}});
   let w0 = 0;
@@ -7525,11 +7528,12 @@ function renderLoad(){
 let DV = null;   // current day-view geometry
 const initials = who => people(who).map(p=>{ const w = p.split(/\s+/).filter(Boolean); return w.length > 1 ? (w[0][0] + w[w.length-1][0]).toUpperCase() : p.slice(0,2); }).join(" ");
 function renderDays(){
-  const g = $("#gantt"); g.replaceChildren();
+  const g = $("#gantt"), gw = $("#gscroll")?.clientWidth || 1100;   // measure before emptying the chart
+  g.replaceChildren();
   const hs = HS(), cols = dayCols(), N = cols.length, idx = new Map(cols.map((d,i)=>[d,i])), today = todayDay();
   const colOf = d => { if (d <= cols[0]) return 0; if (d >= cols[N-1]) return N-1; let k = 0; while (!idx.has(d) && k++ < 7) d++; return idx.get(d) ?? N-1; };
   const LWd = UI.labelW.days; g.style.setProperty("--lw", LWd + "px");
-  const span = Math.min(N, zoomWeeks() * 5), avail = Math.max(300, ($("#gscroll")?.clientWidth || 1100) - LWd - 2);
+  const span = Math.min(N, zoomWeeks() * 5), avail = Math.max(300, gw - LWd - 2);
   const colW = Math.max(14, avail / Math.min(span, N));
   DV = {cols, N, colOf, colW};
   g.classList.add("days");
