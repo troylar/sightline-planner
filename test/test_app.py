@@ -45,11 +45,24 @@ def heartbeat(folder, age=0, state="ready", rev=4, level="routine"):
                                                    "everySeconds": 30, "state": state, "autoApply": level, "planRevision": rev})
 
 
-def batch(folder, rev=4, bid="b-1", **extra):
+ACTIONS = [{"id": "holiday.add", "args": {"date": "iso", "name": "str?"}}, {"id": "risk.add", "args": {"id": "id?", "text": "str", "sev": "any?"}},
+           {"id": "link.add", "args": {"id": "id", "after": "id"}}]
+HOLIDAY = [{"id": "c1", "summary": "Day off", "ops": [{"op": "action", "action": "holiday.add", "args": {"date": "2026-11-27", "name": "Shutdown"}}]}]
+
+
+def context(folder, rev=4):
+    put(folder, "sightline-assistant-view.json", {"kind": "sightline-assistant-view", "version": 1, "plan": {"id": "p-app", "revision": rev}, "actions": ACTIONS})
+
+
+def batch(folder, rev=4, bid="b-1", changes=None, **extra):
     path = folder / "batch.json"
     put(folder, "batch.json", {"kind": "sightline-amendments", "version": 1, "planId": "p-app", "batchId": bid, "createdAt": stamp(),
-                               "source": "Planning bot", "basedOn": {"planRevision": rev}, "changes": [], **extra})
+                               "source": "Planning bot", "basedOn": {"planRevision": rev}, "changes": HOLIDAY if changes is None else changes, **extra})
     return path
+
+
+def act(cid, action, args):
+    return {"id": cid, "summary": action, "ops": [{"op": "action", "action": action, "args": args}]}
 
 
 def results(folder, bid, changes, **extra):
@@ -67,6 +80,22 @@ with tempfile.TemporaryDirectory() as tmp:
     p = run("status", str(f))
     ok("a live page: status exits 0 with its state and level", p.returncode == 0 and out(p).get("state") == "ready" and out(p).get("autoApply") == "routine", p.stdout + p.stderr)
 
+    p = run("check", str(f), str(batch(f)))
+    ok("check without the context says to connect and read it", p.returncode == 1 and "Connect" in out(p).get("error", ""), p.stdout)
+    context(f)
+    p = run("check", str(f), str(batch(f)))
+    ok("check passes a good batch offline, with no page", p.returncode == 0 and out(p).get("changes") == 1, p.stdout + p.stderr)
+    p = run("check", str(f), str(batch(f, rev=3)))
+    ok("check: a batch older than the context exits 2", p.returncode == 2 and out(p).get("planRevision") == 4, p.stdout)
+    wrong = [act("u", "initiative.explode", {"id": "m1"}), act("m", "link.add", {"id": "m1"}), act("d", "holiday.add", {"date": "2026-02-30"}),
+             act("x", "holiday.add", {"date": "2026-11-27", "colour": "red"}), act("n", "risk.add", {"text": "Vendor limits"}),
+             {"id": "c1", "summary": "twice", "ops": [{"op": "explode"}]}, {"id": "c1", "summary": "dup", "ops": [{"op": "set"}]}]
+    p = run("check", str(f), str(batch(f, changes=wrong)))
+    lines = " | ".join(out(p).get("lines", []))
+    ok("check names each problem: unknown action, missing argument, bad date, unknown argument, no id on an add, unknown op, a reused id",
+       p.returncode == 1 and all(x in lines for x in ["isn't an action", "needs after", "valid date", "no argument 'colour'", "give the new item an id", "op is one of", "used twice"]), lines)
+    p = run("send", str(f), str(batch(f, changes=wrong)))
+    ok("send runs the same check and writes nothing when it fails", p.returncode == 1 and not (f / "sightline-amendments.json").exists(), p.stdout)
     p = run("send", str(f), str(batch(f, rev=2)))
     ok("send refuses a batch written against an older revision, exit 2 with both", p.returncode == 2 and out(p).get("basedOn") == 2 and out(p).get("planRevision") == 4, p.stdout)
     ok("and writes nothing", not (f / "sightline-amendments.json").exists())
