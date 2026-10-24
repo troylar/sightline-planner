@@ -1,5 +1,34 @@
 [
   {
+    "version": "1.100.0",
+    "date": "2026-10-24",
+    "headline": "See what your assistant changed, and undo a whole batch",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "Items show when your assistant added or edited them",
+        "now": "Anything your assistant adds or changes is stamped with who it acted for and which assistant and batch did it, for example \"edited by Avery via Planning bot\". The stamp is kept when the plan is saved, reopened, merged or saved as YAML.",
+        "before": "Changes your assistant applied looked like you had made them by hand.",
+        "where": "The item card, under its title; Activity"
+      },
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "Undo this batch",
+        "now": "The Assistant panel lists the last five batches your assistant applied to the shared file, each with Undo this batch. Undo puts back only what that batch changed, even if other updates came after it, and leaves anything a teammate has changed since. It's available in this browser until you reload.",
+        "where": "Assistant panel, Applied by your assistant"
+      },
+      {
+        "kind": "improved",
+        "area": "Plan file",
+        "title": "Older copies open a plan with assistant stamps read-only",
+        "now": "A plan with these stamps opens read-only in copies of Sightline older than 1.100.0, so they can't save over them. Update everyone's copy to keep editing together.",
+        "where": "Opening a plan in an older copy"
+      }
+    ]
+  },
+  {
     "version": "1.99.1",
     "date": "2026-10-24",
     "headline": "The header holds still while Sightline checks the file",

@@ -29,6 +29,7 @@ main(){
   run_suite harness113 60 node harness113.js
   run_suite harness114 60 node harness114.js
   run_suite harness115 60 node harness115.js
+  run_suite harness116 60 node harness116.js
   run_suite build 240 python3 test_build.py
   run_suite jira-sync 120 python3 test_jira_sync.py
   run_suite assistant 120 python3 test_assistant.py
