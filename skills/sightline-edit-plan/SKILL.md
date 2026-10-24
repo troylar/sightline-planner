@@ -21,7 +21,8 @@ Make the smallest coherent change that satisfies the request.
 - For each set operation, copy the exact current value into prev, using null only when empty according to the context guide. Use the current choices for people, workstreams, stages and targets.
 - Check jiraLinked and datesFromTasks before proposing dates or status. Jira facts need a permitted Jira proposal; derived dates cannot be independently edited.
 - Keep logically dependent operations in one atomic change. Separate unrelated changes so the person can accept one without another.
-- For broad requests such as “move everything back,” show scope and affected IDs before generating changes. If delete, dependencies or other fields are not in the current guide, describe the manual UI path.
+- For starts-after links, deletions, workstreams, people (role, allocation, workstream), milestones and what they're done after, gates, risks and decisions, use the guide's action ops (`{op:"action", action, args}`) with the arguments listed under `actions`. Give every new item your own unique id, and put ops that depend on each other in one change, in order.
+- For broad requests such as “move everything back,” show scope and affected IDs before generating changes. If something is in neither the guide's operations nor its actions, describe the manual UI path.
 
 Report before and after values, what remains unchanged by the requested scope, and any decision still needed. Writing proposals is not applying or saving the shared plan.
 

@@ -58,7 +58,7 @@ proof of a later version's behavior. A single successful run does not measure re
 | `guide-pending` | Return Scope and Work breakdown plus separate Integrations (`int`) and Search (`rag`) blocks. Each pasteable field is at most 4,000 UTF-16 code units. Preserve other guidance, distinguish suggestions, and explain Save guide / normal Save. Pending proposals do not block drafting. |
 | `edit-duplicate` | Ask which stable target is intended. Do not guess between identical names or write proposals yet. |
 | `edit-supported` | Produce the single requested rename with the existing ID and exact `prev`. Explain that it still needs review/apply and normal saving. |
-| `edit-unsupported` | Explain that deletion has no allowed operation and give the manual UI route. Do not create a replacement, empty batch or invented delete operation. |
+| `edit-unsupported` | Explain that merging people has no allowed operation and give the manual UI route. Do not create a replacement, empty batch or invented merge operation. |
 | `meeting` | Propose the agreed timing change separately from the requested unscheduled idea. Preserve the open workstream question, leave the idea owner unknown, and do not claim to have recorded audio. |
 | `roadmap-ambiguous` | Ask for the calendar year before assigning Q2 timing or writing proposals. |
 | `roadmap-explicit` | Propose exactly the two requested target changes; retain other work, including later work. Do not invent owners, commitments or capacity evidence. |

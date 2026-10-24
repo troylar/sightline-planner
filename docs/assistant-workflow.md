@@ -48,7 +48,8 @@ For the prepared example, use [brain-dump.txt](../examples/northstar/brain-dump.
 
 No in-app **Send** is needed. For a large input, work in sections and retain a reconciliation of every source
 item; see [large roadmaps](large-roadmaps.md). If a requested field is not in the current operation guide,
-the assistant should give a manual UI step rather than invent an operation.
+the assistant should give a manual UI step rather than invent an operation. Links, deletions, workstreams, people,
+milestones, gates, risks and decisions are covered by the guide's actions, so a whole replan can come back as one batch.
 
 ## Give the assistant project context
 

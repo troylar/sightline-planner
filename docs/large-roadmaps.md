@@ -79,8 +79,9 @@ Keep hypothetical scenarios in the conversation or a separate working document. 
 provide an automatic scenario simulator or a saved scenario workspace. Recalculate when inputs change; a
 persuasive explanation is not validation of the numbers.
 
-Choose one option, then ask for the supported changes as a proposal batch. Dependencies, people, capacity
-settings, risks and decisions may need manual UI updates; a richer read-only export does not create new edit operations.
+Choose one option, then ask for the supported changes as a proposal batch. Starts-after links, people, workstreams,
+milestones, gates, risks and decisions are actions the batch can carry; capacity rates and sprint settings still need
+manual UI updates.
 
 ## 5. Close the loop
 
