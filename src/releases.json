@@ -1,5 +1,49 @@
 [
   {
+    "version": "1.96.0",
+    "date": "2026-10-24",
+    "headline": "Give your external assistant the planning picture",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Assistant context",
+        "title": "Plan with capacity, dependencies, risks and decisions",
+        "now": "Your assistant context includes people, allocation and availability, workstream membership, dependencies, gates, milestones, risks and decisions. It calculates capacity and known Jira demand across the loaded active and future sprints. Parked work stays visible, and exact coverage counts explain any data omitted to fit the export. Notes and time-off descriptions stay excluded.",
+        "before": "Assistant context focused on roadmap edits, omitted capacity and decision data, and capped initiative and task lists without complete coverage counts.",
+        "where": "The private assistant folder and manual assistant context export"
+      }
+    ]
+  },
+  {
+    "version": "1.95.0",
+    "date": "2026-10-24",
+    "headline": "Take your planning skills straight from the app",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Planning skills",
+        "title": "Deploy planning skills directly from the HTML app",
+        "now": "The HTML includes the planning skills from its build. Download them as a ZIP or install them into a chosen folder from the Planning assistant or Planning guide, without source code, npm or Python. Existing different files are kept, and the bundle shows its Sightline version.",
+        "where": "Planning assistant → Planning skills; Settings → Planning guide → Get planning skills"
+      }
+    ]
+  },
+  {
+    "version": "1.94.1",
+    "date": "2026-10-24",
+    "headline": "Get clearer, more reliable assistant guidance",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Planning skills",
+        "title": "Match proposal results and explain the source of a plan summary",
+        "now": "The six external assistant skills check plan and proposal identities before reporting outcomes. Status summaries distinguish saved shared snapshots from browser state and manual exports. Pending proposals allow read-only reviews and guide drafts to continue, and guide text is grouped by the fields in Settings.",
+        "before": "Matching revision numbers and Jira timestamps could be mistaken for matching proposal batches, and manual exports could be described as saved.",
+        "where": "The six planning skills installed with the sightline command"
+      }
+    ]
+  },
+  {
     "version": "1.94.0",
     "date": "2026-10-24",
     "headline": "Take your plan from first idea to team conversation",

@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 mkdir -p dist
 python3 - <<'PY'
-import base64, datetime, hashlib, json, re, sys
+import base64, datetime, hashlib, io, json, pathlib, re, sys, zipfile
 
 # ---- release notes: validate, then embed. A bad entry fails the build rather than shipping a broken page. ----
 KINDS = {"new": "New", "improved": "Improved", "fixed": "Fixed"}
@@ -54,6 +54,41 @@ t = s.replace("<script>/*__JSYAML__*/</script>",
 assert t != s, "js-yaml placeholder not found in template"
 assert t.count("/*__RELEASES__*/[]") == 1, "release notes placeholder not found in template"
 t = t.replace("/*__RELEASES__*/[]", data)
+# Bundle the maintained skills into the existing application script. The HTML can
+# deploy them without the source checkout, Python, Node, or a network connection.
+skill_files = []
+skill_root = pathlib.Path("skills")
+if skill_root.is_symlink() or not skill_root.is_dir(): fail("skills folder is missing or linked")
+for folder in sorted(skill_root.iterdir()):
+    if not folder.is_dir(): continue
+    if folder.is_symlink() or not re.fullmatch(r"sightline-[a-z0-9-]{1,50}", folder.name):
+        fail("invalid skill folder")
+    path = folder / "SKILL.md"
+    if path.is_symlink() or not path.is_file(): fail("skill is missing SKILL.md")
+    raw = path.read_bytes()
+    if len(raw) > 65536: fail("skill text exceeds 64 KiB")
+    text = raw.decode("utf-8")
+    front = re.match(r"\A---\r?\n(.*?)\r?\n---", text, re.S)
+    if not front: fail("skill frontmatter is missing")
+    if not re.search(r"^name:\s*" + re.escape(folder.name) + r"\s*$", front[1], re.M): fail("skill name must match its folder")
+    description = re.search(r"^description:\s*(.+)$", front[1], re.M)
+    if not description: fail("skill description is missing")
+    skill_files.append({"name":folder.name, "description":description[1].strip().strip("\"'"), "path":folder.name + "/SKILL.md", "text":text, "sha256":hashlib.sha256(raw).hexdigest()})
+if not 1 <= len(skill_files) <= 32 or sum(len(x["text"].encode("utf-8")) for x in skill_files) > 512 * 1024:
+    fail("skill collection must contain 1-32 skills and fit within 512 KiB")
+archive = io.BytesIO()
+license_text = pathlib.Path("LICENSE").read_text(encoding="utf-8")
+if len(license_text.encode("utf-8")) > 16384: fail("license text exceeds 16 KiB")
+with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
+    for item in skill_files + [{"path":"LICENSE", "text":license_text}]:
+        info = zipfile.ZipInfo(item["path"], date_time=(1980, 1, 1, 0, 0, 0))
+        info.compress_type = zipfile.ZIP_DEFLATED
+        info.external_attr = 0o100644 << 16
+        z.writestr(info, item["text"].encode("utf-8"))
+bundle = {"version":rel[0]["version"], "files":skill_files, "license":license_text, "archive":base64.b64encode(archive.getvalue()).decode("ascii")}
+skill_data = json.dumps(bundle, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
+assert t.count('/*__SKILLS__*/{"version":"dev","files":[],"archive":""}') == 1, "skills placeholder not found"
+t = t.replace('/*__SKILLS__*/{"version":"dev","files":[],"archive":""}', skill_data)
 # The version stamp near the top of the page, which the Jira sync reads to tell an open page a newer copy is there.
 assert t.count('<meta name="sightline-version" content="dev">') == 1, "version meta placeholder not found in template"
 t = t.replace('<meta name="sightline-version" content="dev">', f'<meta name="sightline-version" content="{rel[0]["version"] if rel else "0.0.0"}">')

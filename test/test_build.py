@@ -39,11 +39,15 @@ def ok(name, cond, extra=""):
         print("  FAIL", name, extra)
 
 
-def build(releases):
+def build(releases, skill_mutator=None):
     with tempfile.TemporaryDirectory() as t:
         t = pathlib.Path(t)
         shutil.copytree(ROOT / "src", t / "src")
+        shutil.copytree(ROOT / "skills", t / "skills")
         shutil.copy(ROOT / "build.sh", t / "build.sh")
+        shutil.copy(ROOT / "LICENSE", t / "LICENSE")
+        if skill_mutator:
+            skill_mutator(t / "skills")
         (t / "src" / "releases.json").write_text(json.dumps(releases), encoding="utf-8")
         r = subprocess.run(["bash", str(t / "build.sh")], capture_output=True, text=True)
         page = (t / "dist" / "sightline.html").read_text(encoding="utf-8") if r.returncode == 0 else ""
@@ -59,6 +63,27 @@ def bad(name, mutate, expect):
 
 code, out, page = build(GOOD)
 ok("the real release notes build", code == 0, out[-200:])
+import io, zipfile, base64, hashlib
+bundle = json.loads(page.split("const BUNDLED_SKILLS = ", 1)[1].split(";\n", 1)[0])
+ok("the HTML carries versioned planning skills", bundle["version"] == GOOD[0]["version"] and len(bundle["files"]) == len(list((ROOT / "skills").glob("*/SKILL.md"))))
+with zipfile.ZipFile(io.BytesIO(base64.b64decode(bundle["archive"]))) as archive:
+    ok("a standard ZIP reader sees the exact bundled skills", all(archive.read(item["path"]) == (ROOT / "skills" / item["name"] / "SKILL.md").read_bytes() == item["text"].encode("utf-8") for item in bundle["files"]))
+    ok("the download includes the project license", archive.read("LICENSE") == (ROOT / "LICENSE").read_bytes())
+ok("bundled hashes describe exact UTF-8 bytes", all(hashlib.sha256(item["text"].encode("utf-8")).hexdigest() == item["sha256"] for item in bundle["files"]))
+def mutate_skill(root):
+    p = next(root.glob("*/SKILL.md"))
+    p.write_text(p.read_text() + '\n</script><script>window.skillPwned=1</script><!--<script>\u2028\U0001f642\n', encoding="utf-8")
+code, out, skill_page = build(GOOD, mutate_skill)
+ok("untrusted skills cannot close the script", code == 0 and skill_page.count("<script>") == 2 and "</script><script>window.skillPwned" not in skill_page)
+skill_bundle = json.loads(skill_page.split("const BUNDLED_SKILLS = ", 1)[1].split(";\n", 1)[0])
+ok("escaping keeps original skill text", any("</script><script>window.skillPwned=1</script><!--<script>\u2028\U0001f642" in item["text"] for item in skill_bundle["files"]))
+code, out, _ = build(GOOD, lambda root: next(root.glob("*/SKILL.md")).unlink())
+ok("missing skill fails the build", code != 0 and "missing SKILL.md" in out)
+def too_large_skill(root):
+    next(root.glob("*/SKILL.md")).write_text("\U0001f642" * 17000, encoding="utf-8")
+code, out, _ = build(GOOD, too_large_skill)
+ok("skill limits count bytes, not characters", code != 0 and "exceeds 64 KiB" in out)
+code, out, page = build(GOOD)
 source = (ROOT / "src" / "sightline.template.html").read_text(encoding="utf-8")
 ok("the source template has a persistent launch notice", 'id="sourceNotice"' in source and 'href="../dist/sightline.html"' in source)
 ok("the distributed app omits source-only launch guidance", 'id="sourceNotice"' not in page and "__SOURCE_NOTICE" not in page)

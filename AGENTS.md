@@ -46,6 +46,7 @@ The optional Python helper reads Jira Data Center and writes files the page read
 | `src/js-yaml.min.js` | Vendored js-yaml; embedded by the build; do not hand-edit. |
 | `src/releases.json` | Release history and application version source. |
 | `build.sh` | Validates releases, embeds assets, computes CSP hashes, and checks JavaScript syntax. |
+| `skills/*/SKILL.md` | Maintained planning skills; embedded in the HTML at build time and distributed unchanged. |
 | `dist/sightline.html`, `dist/app.js` | Generated build outputs; never hand-edit or add to Git. |
 | `CHANGELOG.md` | Generated from releases; update through `build.sh`. |
 | `test/harness*.js` | Node/jsdom regression checks using synthetic data. |
@@ -110,6 +111,7 @@ SIGHTLINE_HTML=/path/to/old.html node test/harnessN.js
 - jsdom does not enforce CSP or prove real file-picker, OS file-provider, cloud
   synchronization, cross-device conflict, or human usability behavior. Validate
   those separately in the browser or the relevant environment and state limits.
+- `test/harness-bundled-skills.js` checks embedded skill downloads, direct folder installation, conflicts, and recovery. It uses synthetic handles; native picker permissions are checked separately.
 - Workspace tables and Timeline DOM render on demand. Tests must navigate to the
   workspace they inspect rather than assume hidden screens have been populated.
 - Offline Jira tests start temporary localhost HTTP servers. If sandbox rules

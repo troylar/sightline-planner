@@ -30,3 +30,6 @@ __pycache__/
 
 # made by tools/make-demo.py (dates are relative to the day it runs)
 /demo/
+
+# browser automation output (page snapshots can hold real plan text)
+.playwright-mcp/
