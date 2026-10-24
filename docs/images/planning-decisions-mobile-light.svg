@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 1120" role="img" aria-labelledby="title desc"><title id="title">Ten rough notes. Three decisions.</title><desc id="desc">Illustrative planning exercise: clarify scope overlap, resolve a shared specialist dependency, and complete capacity evidence. Eight scheduled points versus six configured points shows overload, while five unestimated issues leave the full demand unknown. Not an app screenshot or live AI output.</desc>
+<style>text{font-family:"Avenir Next","Trebuchet MS",Arial,sans-serif}</style>
+<rect x="0" y="0" width="520" height="1120" rx="24" fill="#f5f8fc"/>
+<text x="28" y="64" fill="#172b4d" font-size="39" font-weight="650" text-anchor="start">Ten rough notes.</text>
+<text x="28" y="113" fill="#172b4d" font-size="39" font-weight="650" text-anchor="start">Three decisions.</text>
+<text x="30" y="153" fill="#536783" font-size="19" font-weight="500" text-anchor="start">An invented planning session</text>
+<text x="30" y="216" fill="#2563eb" font-size="28" font-weight="650" text-anchor="start">Scope</text>
+<circle cx="185" cy="283" r="56" fill="#e7efff" stroke="#2563eb" stroke-width="2"/>
+<circle cx="274" cy="283" r="56" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="143" y="278" fill="#2563eb" font-size="16" font-weight="600" text-anchor="start">Customer</text>
+<text x="143" y="300" fill="#2563eb" font-size="16" font-weight="600" text-anchor="start">context</text>
+<text x="246" y="278" fill="#2563eb" font-size="17" font-weight="600" text-anchor="start">Customer</text>
+<text x="246" y="300" fill="#2563eb" font-size="17" font-weight="600" text-anchor="start">history</text>
+<text x="30" y="382.0" fill="#172b4d" font-size="24" font-weight="650" text-anchor="start">Clarify what belongs in the launch.</text>
+<text x="30" y="416" fill="#536783" font-size="19" font-weight="500" text-anchor="start">Similar requests may overlap.</text>
+<path d="M30 454 H490" fill="none" stroke="#d6e1f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="30" y="505" fill="#7447ba" font-size="28" font-weight="650" text-anchor="start">Sequence</text>
+<rect x="50" y="544" width="155" height="43" rx="5" fill="#e2f4f0"/>
+<text x="72" y="573" fill="#08736c" font-size="20" font-weight="600" text-anchor="start">Search</text>
+<rect x="307" y="544" width="165" height="43" rx="5" fill="#eee8f8"/>
+<text x="326" y="573" fill="#7447ba" font-size="20" font-weight="600" text-anchor="start">Migration</text>
+<text x="256" y="551" fill="#536783" font-size="17" font-weight="500" text-anchor="middle">needs</text>
+<path d="M205 566 H307" fill="none" stroke="#7447ba" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M296 558 L307 566 L296 574" fill="none" stroke="#7447ba" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M256 570 V610" fill="none" stroke="#7447ba" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="256" cy="620" r="10" fill="#fff0d3" stroke="#a66b08" stroke-width="3"/>
+<text x="256" y="661" fill="#a66b08" font-size="20" font-weight="600" text-anchor="middle">One shared specialist</text>
+<text x="30" y="708" fill="#172b4d" font-size="24" font-weight="650" text-anchor="start">Resolve the shared bottleneck</text>
+<text x="30" y="739" fill="#172b4d" font-size="24" font-weight="650" text-anchor="start">before relying on the target.</text>
+<path d="M30 777 H490" fill="none" stroke="#d6e1f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="30" y="828" fill="#08736c" font-size="28" font-weight="650" text-anchor="start">Capacity</text>
+<text x="30" y="861" fill="#536783" font-size="19" font-weight="500" text-anchor="start">Points in one Platform sprint</text>
+<rect x="30" y="887" width="440" height="26" rx="4" fill="#e2f4f0"/>
+<rect x="360" y="887" width="110" height="26" rx="4" fill="#fff0d3"/>
+<path d="M360 880 V921" fill="none" stroke="#a66b08" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="30" y="959" fill="#172b4d" font-size="25" font-weight="650" text-anchor="start">8 scheduled / 6 configured</text>
+<text x="30" y="995" fill="#536783" font-size="19" font-weight="500" text-anchor="start">5 unestimated issues; support absent</text>
+<text x="30" y="1050" fill="#172b4d" font-size="25" font-weight="650" text-anchor="start">Complete the demand picture</text>
+<text x="30" y="1083" fill="#172b4d" font-size="25" font-weight="650" text-anchor="start">before committing.</text>
+</svg>
