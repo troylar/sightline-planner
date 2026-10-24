@@ -1,5 +1,34 @@
 [
   {
+    "version": "1.98.0",
+    "date": "2026-10-24",
+    "headline": "Assistant changes can apply on their own",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "Choose whether your assistant's changes wait for you",
+        "now": "Pick a level for each plan: wait for your review, apply routine changes on their own, or apply everything. Deletes wait for you unless you choose everything, and deleting an initiative with Jira-linked work always waits. Each batch that applies is one quick update you can Undo.",
+        "before": "Every change your assistant wrote waited for you to click Apply.",
+        "where": "Assistant panel, When your assistant writes changes"
+      },
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "A change that can't apply says why instead of waiting quietly",
+        "now": "A batch written against an older version of the plan, one more than an hour old, or one that arrives while you have unsaved edits isn't applied on its own, and your assistant is told why. While the page is open, even in a background tab, it tells your assistant every 30 seconds that it's there, so the assistant knows when nobody's listening.",
+        "where": "Assistant panel; the results and status files in your private folder"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Meeting notes skill records decisions, risks and links",
+        "now": "The meeting-to-plan skill now records agreed decisions, risks, starts-after links and milestones as changes, instead of listing them for you to enter by hand.",
+        "where": "Assistant panel, Planning skills"
+      }
+    ]
+  },
+  {
     "version": "1.97.1",
     "date": "2026-10-24",
     "headline": "The timeline stays where you scrolled",
