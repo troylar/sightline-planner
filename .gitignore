@@ -1,0 +1,32 @@
+# dependencies
+node_modules/
+
+# build output — regenerate with ./build.sh
+dist/
+
+# Backstop against committing real plans or Jira output.
+# The real control is the data rule in CLAUDE.md, not this file.
+*.plan.json
+*-timeline.json
+*-timeline.yaml
+*-timeline.yml
+jira-status.json
+*.backup.json
+*.conflict.*
+
+# local / editor
+.DS_Store
+.env
+.env.*
+assistant.json
+sightline-assistant-config.json
+sightline-chat-request.json
+sightline-chat-response.json
+*.log
+
+# python
+__pycache__/
+*.pyc
+
+# made by tools/make-demo.py (dates are relative to the day it runs)
+/demo/

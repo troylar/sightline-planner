@@ -1,0 +1,41 @@
+{
+  "kind": "sightline-amendments",
+  "version": 1,
+  "planId": "p-northstar-example",
+  "batchId": "northstar-review-example",
+  "createdAt": "2026-10-24T09:00:00Z",
+  "source": "Prepared documentation example",
+  "basedOn": {
+    "planRevision": 1
+  },
+  "changes": [
+    {
+      "id": "clarify-onboarding",
+      "summary": "Make the onboarding outcome easier to explain",
+      "ops": [
+        {
+          "op": "set",
+          "type": "deliverable",
+          "id": "dv-onboard",
+          "field": "name",
+          "prev": "Get new teams to their first shared plan",
+          "value": "Help new teams start planning together in minutes"
+        }
+      ]
+    },
+    {
+      "id": "focus-search",
+      "summary": "Clarify what better search means for customers",
+      "ops": [
+        {
+          "op": "set",
+          "type": "deliverable",
+          "id": "dv-search",
+          "field": "line",
+          "prev": "Search across the work that matters",
+          "value": "Find the answer across connected work without asking around"
+        }
+      ]
+    }
+  ]
+}

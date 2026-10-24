@@ -1,0 +1,341 @@
+{
+  "meta": {
+    "title": "Northstar \u00b7 Product delivery",
+    "start": "2026-09-21",
+    "weeks": 16,
+    "sprintWeeks": 2,
+    "firstSprint": 40,
+    "jiraBase": "https://jira.example.com/browse/",
+    "jiraSkip": [
+      "DEMO-12"
+    ],
+    "planId": "p-northstar-example",
+    "revision": 1
+  },
+  "lanes": [
+    {
+      "id": "int",
+      "name": "Integrations",
+      "who": "Avery \u00b7 Blake",
+      "note": "",
+      "color": "#2c6fbb"
+    },
+    {
+      "id": "search",
+      "name": "Search",
+      "who": "Morgan",
+      "note": "",
+      "color": "#1f8a70"
+    },
+    {
+      "id": "plat",
+      "name": "Platform",
+      "who": "Casey \u00b7 Jordan",
+      "note": "",
+      "color": "#7a4fb3"
+    }
+  ],
+  "people": [
+    {
+      "id": "p-avery",
+      "name": "Avery Stone",
+      "role": "Lead",
+      "jira": {
+        "key": "avery",
+        "user": "avery",
+        "name": "Avery Stone"
+      },
+      "capacity": 8
+    },
+    {
+      "id": "p-blake",
+      "name": "Blake Rivera",
+      "role": "Engineer",
+      "jira": {
+        "key": "blake",
+        "user": "blake",
+        "name": "Blake Rivera"
+      },
+      "capacity": 13
+    },
+    {
+      "id": "p-casey",
+      "name": "Casey Nguyen",
+      "role": "Engineer",
+      "jira": {
+        "key": "casey",
+        "user": "casey",
+        "name": "Casey Nguyen"
+      },
+      "capacity": 11
+    },
+    {
+      "id": "p-morgan",
+      "name": "Morgan Lee",
+      "role": "Engineer",
+      "jira": {
+        "key": "morgan",
+        "user": "morgan",
+        "name": "Morgan Lee"
+      },
+      "capacity": 9
+    },
+    {
+      "id": "p-riley",
+      "name": "Riley Patel",
+      "role": "QA",
+      "jira": {
+        "key": "riley",
+        "user": "riley",
+        "name": "Riley Patel"
+      },
+      "capacity": 14
+    },
+    {
+      "id": "p-jordan",
+      "name": "Jordan Kim",
+      "role": "Designer",
+      "jira": {
+        "key": "jordan",
+        "user": "jordan",
+        "name": "Jordan Kim"
+      }
+    }
+  ],
+  "bars": [
+    {
+      "id": "bar-demo-1",
+      "lane": "int",
+      "start": 1,
+      "span": 6,
+      "label": "Single sign-on",
+      "kind": "work",
+      "owners": [],
+      "jira": "DEMO-1",
+      "epics": [
+        "DEMO-1"
+      ],
+      "status": "inprogress",
+      "dependsOn": [],
+      "tasks": [],
+      "datesFrom": "manual"
+    },
+    {
+      "id": "bar-demo-2",
+      "lane": "search",
+      "start": 1,
+      "span": 6,
+      "label": "Search relevance",
+      "kind": "work",
+      "owners": [],
+      "jira": "DEMO-2",
+      "epics": [
+        "DEMO-2"
+      ],
+      "status": "inprogress",
+      "dependsOn": [],
+      "tasks": [],
+      "datesFrom": "manual"
+    },
+    {
+      "id": "bar-demo-3",
+      "lane": "plat",
+      "start": 1,
+      "span": 6,
+      "label": "Usage dashboard",
+      "kind": "work",
+      "owners": [],
+      "jira": "DEMO-3",
+      "epics": [
+        "DEMO-3"
+      ],
+      "status": "inprogress",
+      "dependsOn": [],
+      "tasks": [],
+      "datesFrom": "manual"
+    },
+    {
+      "id": "bar-demo-4",
+      "lane": "plat",
+      "start": 1,
+      "span": 6,
+      "label": "Audit log export",
+      "kind": "work",
+      "owners": [],
+      "jira": "DEMO-4",
+      "epics": [
+        "DEMO-4"
+      ],
+      "status": "inprogress",
+      "dependsOn": [],
+      "tasks": [],
+      "datesFrom": "manual"
+    },
+    {
+      "id": "bar-demo-5",
+      "lane": "int",
+      "start": 1,
+      "span": 6,
+      "label": "Legacy importer",
+      "kind": "work",
+      "owners": [],
+      "jira": "DEMO-5",
+      "epics": [
+        "DEMO-5"
+      ],
+      "status": "inprogress",
+      "dependsOn": [],
+      "tasks": [],
+      "datesFrom": "manual"
+    },
+    {
+      "id": "bar-demo-12",
+      "lane": "plat",
+      "start": 1,
+      "span": 6,
+      "label": "Billing rework",
+      "kind": "work",
+      "owners": [],
+      "jira": "DEMO-12",
+      "epics": [
+        "DEMO-12"
+      ],
+      "status": "inprogress",
+      "dependsOn": [],
+      "tasks": [],
+      "datesFrom": "manual",
+      "parked": true
+    },
+    {
+      "id": "bar-release",
+      "lane": "plat",
+      "start": 6,
+      "span": 2,
+      "label": "Release readiness",
+      "kind": "work",
+      "owners": [
+        "p-avery"
+      ],
+      "jira": "",
+      "epics": [],
+      "status": "notstarted",
+      "dependsOn": [],
+      "datesFrom": "tasks",
+      "tasks": [
+        {
+          "id": "t-notes",
+          "label": "Write the release notes",
+          "start": "2026-11-02",
+          "days": 3,
+          "status": "notstarted",
+          "owners": [
+            "p-avery"
+          ],
+          "dependsOn": []
+        },
+        {
+          "id": "t-ranking",
+          "label": "Ranking weights sign-off",
+          "jira": "DEMO-107",
+          "start": "2026-10-05",
+          "days": 2,
+          "status": "done",
+          "owners": [
+            "p-morgan"
+          ],
+          "dependsOn": []
+        }
+      ]
+    }
+  ],
+  "milestones": [],
+  "gates": [],
+  "decisions": [],
+  "risks": [],
+  "baseline": null,
+  "sprints": [
+    {
+      "id": "s40",
+      "name": "Sprint 40",
+      "weeks": 2,
+      "goal": ""
+    },
+    {
+      "id": "s41",
+      "name": "Sprint 41",
+      "weeks": 2,
+      "goal": ""
+    },
+    {
+      "id": "s42",
+      "name": "Sprint 42",
+      "weeks": 2,
+      "goal": ""
+    },
+    {
+      "id": "s43",
+      "name": "Sprint 43",
+      "weeks": 2,
+      "goal": ""
+    },
+    {
+      "id": "s44",
+      "name": "Sprint 44",
+      "weeks": 2,
+      "goal": ""
+    },
+    {
+      "id": "s45",
+      "name": "Sprint 45",
+      "weeks": 2,
+      "goal": ""
+    }
+  ],
+  "deliverables": [
+    {
+      "id": "dv-onboard",
+      "name": "Get new teams to their first shared plan",
+      "line": "Start planning together in minutes",
+      "kind": "improved",
+      "stage": "planned",
+      "target": "2026-Q4",
+      "lane": "int",
+      "owners": [
+        "p-avery"
+      ]
+    },
+    {
+      "id": "dv-search",
+      "name": "Find the right answer without asking around",
+      "line": "Search across the work that matters",
+      "kind": "new",
+      "stage": "planned",
+      "target": "2027-Q1",
+      "lane": "search"
+    },
+    {
+      "id": "dv-integrations",
+      "name": "Bring customer context into everyday work",
+      "line": "Connect the tools teams already use",
+      "kind": "new",
+      "stage": "idea",
+      "target": "2027-Q2",
+      "lane": "int"
+    },
+    {
+      "id": "dv-ai",
+      "name": "Turn meeting notes into a reviewed plan",
+      "line": "Plan with AI and stay in control",
+      "kind": "new",
+      "stage": "idea",
+      "target": "2027-Q3",
+      "lane": "search"
+    },
+    {
+      "id": "dv-later",
+      "name": "Explore a workspace for partners",
+      "stage": "idea",
+      "target": "later"
+    }
+  ]
+}

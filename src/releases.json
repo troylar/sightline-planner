@@ -1,0 +1,3538 @@
+[
+  {
+    "version": "1.94.0",
+    "date": "2026-10-24",
+    "headline": "Take your plan from first idea to team conversation",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Getting started",
+        "title": "Install the app and six reusable planning skills",
+        "now": "The public npm package installs the self-contained HTML app and six assistant skills. A visual walkthrough covers first use, four-quarter planning, Jira context, and reviewing AI proposals. Existing different files are kept; install into a new folder to update.",
+        "where": "README and the sightline command"
+      },
+      {
+        "kind": "improved",
+        "area": "Examples",
+        "title": "Start with clear, invented planning examples",
+        "now": "The idea composer uses a general onboarding example. The public guide includes an invented team plan, Jira snapshot and two prepared proposals so you can try the review loop without an AI account.",
+        "where": "Roadmap and the getting-started guide"
+      }
+    ]
+  },
+  {
+    "version": "1.93.1",
+    "date": "2026-10-23",
+    "headline": "Keep context when following up with your assistant",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Assistant",
+        "title": "Retain the selected outcome or quarters in conversation history",
+        "now": "Follow-up requests retain the stable outcome IDs or quarters that belonged to earlier questions, including when you switch outcomes. Historical selections are labeled as earlier context. Requests keep complete recent turns within the existing message limit and preserve the full question length.",
+        "before": "The visible conversation showed earlier selections, but only the latest selection reached the assistant, making cross-outcome follow-ups ambiguous."
+      },
+      {
+        "kind": "fixed",
+        "area": "Connections",
+        "title": "Reconnect the changes file or folder you already selected",
+        "now": "Reconnect in the Planning assistant requests access to the existing individual changes file or private assistant folder. Paused file connections are labeled as files.",
+        "before": "The top Reconnect button took individual-file users into folder setup instead of reconnecting their existing changes file."
+      }
+    ]
+  },
+  {
+    "version": "1.93.0",
+    "date": "2026-10-23",
+    "headline": "Describe a plan change in one message",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Start with your notes and see what the assistant is working on",
+        "now": "Plan with AI opens an empty composer with the selected quarters in Working on. Ask assistant about this selects an outcome by its stable ID. Paste notes or describe a change and Send once; the selection travels with the request. The composer comes first, with setup and file details below.",
+        "where": "Product updates → Roadmap → Plan with AI, or open an outcome → Ask assistant about this."
+      },
+      {
+        "kind": "fixed",
+        "area": "Drafts",
+        "title": "Keep roadmap ideas when opening your assistant",
+        "now": "Unsubmitted roadmap ideas stay with their plan during navigation and redraws in this tab's session. A successful submission clears only the text that was submitted. Untouched assistant starters follow a new selection; a question you have written keeps its original context until you choose Switch context.",
+        "before": "Opening Plan with AI cleared a new roadmap idea. An untouched generated assistant question could also keep pointing at an earlier outcome."
+      }
+    ]
+  },
+  {
+    "version": "1.92.0",
+    "date": "2026-10-23",
+    "headline": "Plan four quarters with your assistant",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Roadmap",
+        "title": "Focus on four quarters and ask about an outcome",
+        "now": "Choose a starting calendar quarter for a four-quarter roadmap, or switch to Long range. Work outside the window stays counted and recoverable. Plan with AI prepares a question using the displayed quarters; each outcome has Ask assistant about this. Questions keep existing drafts and wait for Send.",
+        "where": "Product updates → Roadmap. Horizon choices stay in this browser; plan contents are unchanged."
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Check for a reply before your first planning conversation",
+        "now": "Test reply sends a short question with the saved plan context through your configured companion and preserves your unfinished message. A matching response confirms a reply for that snapshot; test responses cannot introduce proposed changes. Starter questions help organize roadmap notes or review gaps.",
+        "where": "Connect assistant → Test reply, with the local companion configured and running."
+      },
+      {
+        "kind": "fixed",
+        "area": "Getting started",
+        "title": "See the welcome screen and know what Today can assess",
+        "now": "A fresh browser renders the welcome screen immediately. Today offers a planning step when no work is loaded, explains when Jira data is needed, and qualifies quiet summaries when connected data is stale or incomplete.",
+        "before": "A fresh browser could show a blank Timeline until navigation. Today could declare all clear before work or Jira status data was loaded."
+      }
+    ]
+  },
+  {
+    "version": "1.91.0",
+    "date": "2026-10-10",
+    "headline": "Talk through changes to your plan",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "Turn a planning conversation into reviewed changes",
+        "now": "Ask questions, capture ideas, and refine proposed changes in the assistant panel. An optional local companion connects to your company's Chat Completions endpoint using a separate private configuration file. Replies use the saved plan and Planning guide; proposed changes wait for review and Apply, with normal undo and shared Save controls.",
+        "where": "Connect assistant → conversation, with the local companion running against the same private assistant folder."
+      }
+    ]
+  },
+  {
+    "version": "1.90.0",
+    "date": "2026-10-10",
+    "headline": "Project guidance for your assistant",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "Explain how your project is organized",
+        "now": "Settings → Planning guide lets the team describe project scope, workstream purposes, work breakdown, vocabulary, planning rules, and examples. Save it with the plan to include it in assistant context, or preview and copy the instructions. Guide drafts wait for an explicit Save guide; older app copies open plans with saved guidance read-only.",
+        "where": "Settings → Planning guide, or Planning guide in the assistant panel."
+      }
+    ]
+  },
+  {
+    "version": "1.89.0",
+    "date": "2026-10-10",
+    "headline": "A clearer way to open Sightline",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Getting started",
+        "title": "Find the ready-to-use app",
+        "now": "The repository start page links to the built app and explains how to open your separate plan file. If you open the development template, a notice points to the app in a new tab while keeping your current work available."
+      },
+      {
+        "kind": "improved",
+        "area": "Updates",
+        "title": "See which version is open",
+        "now": "The current app version appears beside What's new without opening a dialog. The development template identifies itself and directs you to the built app instead of opening an empty release history."
+      }
+    ]
+  },
+  {
+    "version": "1.88.1",
+    "date": "2026-10-09",
+    "headline": "Safer reconnects and more reliable Find",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Recovery",
+        "title": "Keep edits with their original plan",
+        "now": "When you have browser edits, reconnecting stops if the file now contains a different plan. Your edits stay intact so you can download them before opening another plan."
+      },
+      {
+        "kind": "fixed",
+        "area": "Find",
+        "title": "Reveal milestones hidden by a people filter",
+        "now": "Finding a milestone clears a people filter when it would keep the milestone hidden. Restore previous view brings back your original filter."
+      }
+    ]
+  },
+  {
+    "version": "1.88.0",
+    "date": "2026-10-09",
+    "headline": "Safer updates and easier daily work",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Recovery",
+        "title": "Keep unsaved work during lock and reconnect problems",
+        "now": "A teammate's active edit lock leaves your plan, undo history and recovery draft intact. Reconnecting compares the saved file with your original version and preserves your current edits before merging or asking you to resolve a conflict."
+      },
+      {
+        "kind": "fixed",
+        "area": "Notes",
+        "title": "Keep the message you are writing",
+        "now": "Refreshing Jira or redrawing details keeps unsent notes, quick updates and blocker explanations for each item in this session, including your cursor position. Submitting clears only the message that was sent."
+      },
+      {
+        "kind": "improved",
+        "area": "Navigation",
+        "title": "Reach routine work directly",
+        "now": "Sort Jira work is available under Work. Choose yourself in the toolbar to use Mine and author your updates. Find reveals matching milestones, gates and notes even when filters or layers hide them, with an option to restore your previous view."
+      },
+      {
+        "kind": "improved",
+        "area": "Usability",
+        "title": "See feedback and keep your place",
+        "now": "Status messages remain visible on narrower screens. Filters retain keyboard focus after updating, and Today names the person who decides each due decision, including when no decider is set."
+      },
+      {
+        "kind": "improved",
+        "area": "Performance",
+        "title": "Refresh the screen you are using",
+        "now": "Other workspaces leave the hidden Timeline and setup tables alone. Text edits update the plan immediately and combine derived screen updates while you type; returning to a workspace renders current data."
+      },
+      {
+        "kind": "fixed",
+        "area": "Amendments",
+        "title": "Refuse oversized updates without changing the plan",
+        "now": "Deliverable limits are checked on a private candidate before an update reaches the live plan. Repeated initiative and task additions with the same details stay completed, including changes that add an item and then set its fields."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira metrics",
+        "title": "Count unfinished board work consistently",
+        "now": "Sprint history follows the board's final column when determining completed work, matching the page. An issue in a non-final review column stays unfinished even if Jira categorizes its status as done. Earlier recorded days are retained."
+      }
+    ]
+  },
+  {
+    "version": "1.87.0",
+    "date": "2026-10-08",
+    "headline": "Clearer shared-file refresh and recovery",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Shared files",
+        "title": "Check for teammates' updates automatically",
+        "now": "Shared plans check the local file every 15 seconds by default. An explicit choice to turn checks off is remembered. Automatic checks wait while you type, drag or use a dialog."
+      },
+      {
+        "kind": "improved",
+        "area": "Shared files",
+        "title": "Know what saved means",
+        "now": "Shared-file status distinguishes a local save from OneDrive synchronization and shows when the local file was last checked. Check OneDrive itself to confirm cloud synchronization."
+      },
+      {
+        "kind": "new",
+        "area": "Recovery",
+        "title": "Review another copy before recovering work",
+        "now": "Compare a recovery copy with the current shared file and download backups. Choose deliberately whether to bring that copy into the editor, then review it before saving.",
+        "where": "File, Review another copy."
+      }
+    ]
+  },
+  {
+    "version": "1.86.0",
+    "date": "2026-10-08",
+    "headline": "Clearer workspaces and a connected assistant",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Navigation",
+        "title": "Work, Delivery and Product updates",
+        "now": "Find Today and Sprint under Work; Timeline, Capacity, Status update, Decisions and Risks under Delivery; Roadmap and release notes under Product updates. Settings holds the team, calendar and Jira connection. Each group remembers where you were.",
+        "where": "The main navigation."
+      },
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "Saved views remember which sources you chose",
+        "now": "Personal and team views now save and restore All sources, Jira only or Jira + mine. Changing sources marks the view modified, and All work restores all sources.",
+        "where": "Timeline and Capacity saved views."
+      },
+      {
+        "kind": "improved",
+        "area": "Scope",
+        "title": "Controls match the view you are using",
+        "now": "View and filter controls appear on Timeline and Capacity, where they apply. Roadmap and Status update clearly describe the whole plan. Your Timeline filters stay ready for when you return."
+      },
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "Connect your assistant once",
+        "now": "Choose a private folder. Sightline keeps context and results current; your assistant writes proposed changes for you to review. Shared context comes from the confirmed saved file. Reconnect when browser permission expires.",
+        "where": "Connect assistant in the toolbar; Edge or Chrome."
+      },
+      {
+        "kind": "improved",
+        "area": "Details",
+        "title": "Common actions first",
+        "now": "Initiative and task details keep routine updates visible and put organizing or moving the item behind a disclosure. Deliverable timing explains its source and separates target windows from commitments."
+      },
+      {
+        "kind": "improved",
+        "area": "Performance",
+        "title": "Refresh only what changed for the assistant",
+        "now": "Changing views leaves unchanged assistant context alone. Export lookups are indexed, and navigation uses cached controls so it stays cheap as more screens are opened."
+      }
+    ]
+  },
+  {
+    "version": "1.85.0",
+    "date": "2026-09-30",
+    "headline": "Rows by epic follow every parent link",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Rows by epic go past the epic",
+        "now": "Rows by epic now nest by any parent link, not only epics: an epic under its feature, the feature under its initiative, as deep as Jira goes. Each row says what it is (Feature, Initiative), and a task linked to a sub-task sits on its story's epic.",
+        "where": "Timeline, By epic."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "The sync brings the parents above your epics",
+        "now": "The Jira helper now also fetches the parents above what it syncs (Parent Link or parent), up to six levels, and writes them apart from your issues, so they never show up as work to sort. Copy the new sightline-jira-sync.py next to the plan.",
+        "where": "The Jira helper."
+      }
+    ]
+  },
+  {
+    "version": "1.84.0",
+    "date": "2026-09-30",
+    "headline": "Rows by epic in the Days view",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "By epic in Days too",
+        "now": "The Days view now has rows by epic as well: the same nesting, summary bars, and Expand all and Collapse all, with each story and task on its day. Still read-only, since the tree comes from Jira.",
+        "where": "Timeline, Days, By epic (R)."
+      }
+    ]
+  },
+  {
+    "version": "1.83.0",
+    "date": "2026-09-30",
+    "headline": "Timeline rows by epic",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Rows by epic, nested",
+        "now": "By epic puts one row per Jira epic, nested the way Jira's parent links nest, each with a bar spanning everything under it. Top epics open one level down; expand or collapse any row, or all of them. Work not under an epic sits on No epic, and a parent the sync didn't bring is named. It comes from Jira, so nothing drags there.",
+        "where": "Timeline, Weeks, By epic (R)."
+      }
+    ]
+  },
+  {
+    "version": "1.82.2",
+    "date": "2026-09-30",
+    "headline": "Jira stories by person, and keys that fit",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "By person shows Jira stories",
+        "now": "Each Jira story now sits on its assignee's row, in Weeks and Days, and counts toward what they have active. Unassigned stories go on Unassigned. An initiative carried by its stories no longer also sits on Unassigned. A plan run from Jira used to show almost nothing by person.",
+        "where": "Timeline, By person."
+      },
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Jira keys no longer run into names",
+        "now": "When a task or story is too short for its name, its Jira key moves into the label to its right instead of being cut off inside the bar.",
+        "where": "Timeline, Days view."
+      }
+    ]
+  },
+  {
+    "version": "1.82.1",
+    "date": "2026-09-29",
+    "headline": "Senior review 16: safer bulk sorting",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Bulk sort never counts stories nobody picked",
+        "now": "Sorting stories only groups them into their epic's initiative when the Jira files list all of that epic's stories, and only the ones on that list. Otherwise each story goes on by itself, so an initiative never counts stories you didn't pick. A parent that isn't an epic is no longer treated as one.",
+        "where": "Plan setup, Sort Jira work."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Bulk sort respects what just changed",
+        "now": "Sorting a story from a parked epic brings the epic back with only that story. Every sort is decided again on the latest file, so a teammate's placement, epic link, parking or Not ours from a moment ago wins. Accept suggested is one save, so one Undo takes it all back, and number keys no longer also switch pages.",
+        "where": "Plan setup, Sort Jira work."
+      }
+    ]
+  },
+  {
+    "version": "1.82.0",
+    "date": "2026-09-29",
+    "headline": "Plan setup, and fewer tabs for readers",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Plan",
+        "title": "Manage is now Plan setup, in four groups",
+        "now": "Manage is now Plan setup, and its 15 sections are grouped: Lists (Milestones, Gates, Decisions, Risks, Tags), Team (Team, Calendar, Meetings, Timeboxes & ceremonies), Jira (Sort Jira work, Proposals, Jira connection) and Reports (Status update, Snapshots, Activity). Jira work is now Sort Jira work, and Jira is Jira connection. Links to the old places still open.",
+        "where": "Plan setup (was Manage)."
+      },
+      {
+        "kind": "improved",
+        "area": "Plan",
+        "title": "Fewer tabs while you're reading",
+        "now": "Someone only reading a shared plan sees Today, Timeline, Sprint and Roadmap, with People and Plan setup under More. Start editing and all six are back. The page you're on always keeps its tab.",
+        "where": "The tabs."
+      }
+    ]
+  },
+  {
+    "version": "1.81.0",
+    "date": "2026-09-29",
+    "headline": "Today at a glance",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Today",
+        "title": "A summary at the top of Today",
+        "now": "Today now opens with a summary: what needs attention (to escalate, blocked, stale, late, should have started, decisions due; each jumps to its list), what's coming up (the next milestone and Jira release, and this quarter's deliverables with how many are at risk), and buttons to the Roadmap, Sprint and Timeline. The work queue follows below.",
+        "where": "Today."
+      }
+    ]
+  },
+  {
+    "version": "1.80.0",
+    "date": "2026-09-29",
+    "headline": "A gentler first look",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Clear next steps on an empty plan",
+        "now": "Reconnecting a shared file is one clear button in the middle of the page. An empty shared plan you're reading says so and offers Start editing to set it up. An empty plan you're editing gets a short checklist (name it, name workstreams, add the first initiative, optionally bring in Jira and share it) that ticks itself off and goes away once there's work.",
+        "where": "Timeline, on an empty or reconnecting plan."
+      },
+      {
+        "kind": "improved",
+        "area": "Plan",
+        "title": "Quieter setup notes for readers",
+        "now": "Someone only reading a shared plan sees setup offers (like switching to Jira's sprints) as one quiet line, \"1 setup note for whoever runs this plan · Show\". Blockers, like reconnecting the file or recovering unsaved edits, still show in full, and editors see everything.",
+        "where": "The notices under the header."
+      }
+    ]
+  },
+  {
+    "version": "1.79.0",
+    "date": "2026-09-29",
+    "headline": "Start with your page",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Plan",
+        "title": "Start with",
+        "now": "Choose the page Sightline opens on: Today, My work (Today, just yours), Timeline, Sprint, Team capacity or Roadmap, or where you left off. It's yours, in this browser; links and reloads still open where they point.",
+        "where": "File, then Start with."
+      }
+    ]
+  },
+  {
+    "version": "1.78.0",
+    "date": "2026-09-29",
+    "headline": "What a story serves",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Sprint",
+        "title": "Serves on story cards",
+        "now": "A Sprint card now says which deliverable its story is for (\"Serves Faster checkout\"), when the deliverable links the story itself or its feature or epic, so developers see the customer-facing thing behind the work.",
+        "where": "Sprint tab cards."
+      }
+    ]
+  },
+  {
+    "version": "1.77.0",
+    "date": "2026-09-28",
+    "headline": "Sort Jira work in bulk",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Sort Jira work into the plan, in bulk",
+        "now": "Jira work now offers Sort them in bulk: everything in a sprint or your searches that isn't on the plan, grouped by epic, sprint, assignee or label. Pick whole groups or Shift-click a range, then drop on a workstream, click it, press its number, or use Move to. Accept suggested sorts each group to where its people already have work.",
+        "where": "Manage, then Jira work."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Stories from one epic become one initiative",
+        "now": "Stories you sort from the same epic become one initiative for that epic, with its other stories switched off, instead of one initiative per story: 70 stories under 10 epics are 10 initiatives. Dropping on an initiative adds them to it. Every drop is one save, with Undo.",
+        "where": "Manage, then Jira work, Sort."
+      }
+    ]
+  },
+  {
+    "version": "1.76.0",
+    "date": "2026-09-28",
+    "headline": "Smoother everyday use",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "The status line reads properly",
+        "now": "The status line ran the file's state into the buttons' labels (\"revision 73Start editingSave as you go\"). It now shows just the state: \"Read-only · Team.json · saved 3:02 PM · revision 73\".",
+        "where": "The status line at the bottom."
+      },
+      {
+        "kind": "improved",
+        "area": "Sprint",
+        "title": "Before we commit: the sprint being planned, and a check before recording",
+        "now": "Before we commit opens on the next sprint in the week before it starts, otherwise on the one running now. Recording a commitment while things are still flagged asks first and names them, so you can add an assumption.",
+        "where": "Sprint tab."
+      },
+      {
+        "kind": "improved",
+        "area": "Today",
+        "title": "What changed at a glance",
+        "now": "Today says how many things changed right under its heading, with a link to the list; past the first 12 plan changes, See all opens Activity. The time Jira is compared from is in the panel's header.",
+        "where": "Today."
+      },
+      {
+        "kind": "improved",
+        "area": "Plan",
+        "title": "Smaller touches",
+        "now": "Snapshot groups can show every item. The status update says when its draft was made. The Deliverables row keeps a Roadmap link when only broader ones exist, and reads out ship days. The amendment editor names items instead of ids. Amendments open faster: what a date change moves is only worked out while their panel is open.",
+        "where": "Manage, Timeline, Roadmap."
+      }
+    ]
+  },
+  {
+    "version": "1.75.1",
+    "date": "2026-09-28",
+    "headline": "Senior review 15",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Plan",
+        "title": "Safer handling of odd plan files",
+        "now": "A plan whose id is a reserved word gets a safe one, so it can't disturb the page's settings. If teammates' snapshots merge past the limit of 12, none are dropped (adding a new one still waits until there's room).",
+        "where": "Opening and merging plans."
+      },
+      {
+        "kind": "fixed",
+        "area": "Roadmap",
+        "title": "Amendment edits you can trust",
+        "now": "Saving the editor no longer breaks an amendment that changes owners (owner lists aren't edited as text). If this browser can't store your edits, it says so and keeps the editor open instead of saying they were saved. Only recent batches' edits are kept.",
+        "where": "Roadmap, Assistant amendments."
+      },
+      {
+        "kind": "fixed",
+        "area": "Sync",
+        "title": "check-amendments refuses NaN",
+        "now": "The offline checker now refuses NaN and Infinity in an amendments file, as the page does, instead of calling it ready.",
+        "where": "The sync script."
+      },
+      {
+        "kind": "fixed",
+        "area": "Plan",
+        "title": "Smaller fixes",
+        "now": "A plan title can't add headings to the Markdown copy of a status update. A deliverable whose release ships before its Jira work's sprints now starts at its ship day on the Timeline, so the ship mark sits on its bar.",
+        "where": "Status update; Timeline."
+      }
+    ]
+  },
+  {
+    "version": "1.75.0",
+    "date": "2026-09-28",
+    "headline": "Amendments for initiatives and tasks",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Roadmap",
+        "title": "Your assistant can amend initiatives and tasks",
+        "now": "Amendments can now add initiatives and tasks, and change their name, status, owners, workstream and dates. The review shows how many linked items a date change would move before you apply it. Jira-linked items keep Jira's status and dates (propose those in Jira instead), and dates that come from tasks can't be set directly.",
+        "where": "Roadmap, Assistant amendments; the sync's check-amendments checks them too."
+      }
+    ]
+  },
+  {
+    "version": "1.74.0",
+    "date": "2026-09-28",
+    "headline": "Check amendments offline",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Sync",
+        "title": "check-amendments in the sync script",
+        "now": "The sync script can now check an amendments file against the plan without opening Sightline: python sightline-jira-sync.py check-amendments plan.json amendments.json. It uses the same rules as the page and lists each change as ready, changed since, invalid or already in the plan, with the reason; --json prints it for your assistant. The page still checks again when you apply.",
+        "where": "The sync script; the guide in Export for your assistant says to use it."
+      }
+    ]
+  },
+  {
+    "version": "1.73.0",
+    "date": "2026-09-28",
+    "headline": "Edit an amendment before applying it",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Roadmap",
+        "title": "Edit your assistant's amendments",
+        "now": "Each waiting amendment now has Edit: fix a name, a target, the Jira keys or a proposal's value before you apply it. Your edits stay in this browser and are checked as strictly as the assistant's own; Apply writes the edited version. If your assistant rewrites that change, your edit stops applying and the change says so. Use the assistant's version puts it back.",
+        "where": "Roadmap, Assistant amendments."
+      }
+    ]
+  },
+  {
+    "version": "1.72.1",
+    "date": "2026-09-28",
+    "headline": "Deliverables in the Days view",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "The Deliverables row in the Days view",
+        "now": "The Deliverables row now shows in the Days view too, from the first working day of its linked Jira work's sprints, with its ship day marked. Click one to open it.",
+        "where": "Timeline, Days view."
+      }
+    ]
+  },
+  {
+    "version": "1.72.0",
+    "date": "2026-09-28",
+    "headline": "Before we commit",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Sprint",
+        "title": "A check before the sprint starts",
+        "now": "The Sprint tab opens with Before we commit for the sprint about to start: its goal, points against the team's capacity, and what to look at: not estimated, not assigned, people with work who are out, assignees not on the team, sprint work not on the plan, gates during the sprint, and work outside its workstream's dates.",
+        "where": "Sprint tab. Switch between this sprint and the next."
+      },
+      {
+        "kind": "new",
+        "area": "Sprint",
+        "title": "Record sprint commitment",
+        "now": "Record what the team took on (issues, points, capacity, and any assumption) in the shared file. Afterwards the check shows what changed since: points added, removed and re-estimated.",
+        "where": "Sprint tab, Before we commit."
+      }
+    ]
+  },
+  {
+    "version": "1.71.0",
+    "date": "2026-09-28",
+    "headline": "Risks and decisions that move",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Plan",
+        "title": "Next action, waiting on, escalate by, who decides",
+        "now": "Decisions now have who decides, a next action, what they're waiting on and an escalate-by date; risks get the same, plus open or closed. The status update includes them.",
+        "where": "Manage, then Decisions or Risks."
+      },
+      {
+        "kind": "new",
+        "area": "Today",
+        "title": "An Escalate list",
+        "now": "Today now opens with risks and decisions past their escalate-by date, and decisions past when they were needed: who decides, the next action, what it's waiting on, and how far over. Mine shows the ones you own or decide. The Today badge counts them.",
+        "where": "Today."
+      }
+    ]
+  },
+  {
+    "version": "1.70.0",
+    "date": "2026-09-28",
+    "headline": "Status update",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Plan",
+        "title": "Prepare a status update",
+        "now": "A draft status update from the plan: On track, Changed, At risk, Decisions needed and Next milestone, with a suggested overall status. Edit any part, copy it as text or Markdown, and save a frozen copy to the shared file. The next update's Changed compares with the last saved one (or the newest snapshot).",
+        "where": "Manage, then Status update."
+      }
+    ]
+  },
+  {
+    "version": "1.69.0",
+    "date": "2026-09-28",
+    "headline": "Snapshots",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Plan",
+        "title": "Snapshots to compare against",
+        "now": "Save a named snapshot of the plan (\"Q4 commit\") and compare today with it: what's later or earlier and by how many working days, what was added, removed or dropped, what finished, and which deliverables were retimed. Snapshots are in the shared file (up to 12), so everyone sees the same ones.",
+        "where": "Manage, then Snapshots."
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Slip marks from any snapshot",
+        "now": "Show slip on the Timeline makes a snapshot the baseline, so the Timeline's slip marks and summary compare with it by name (\"Since Q4 commit: 3 slipped\"). Set baseline still works as before.",
+        "where": "Manage, then Snapshots; Timeline."
+      }
+    ]
+  },
+  {
+    "version": "1.68.0",
+    "date": "2026-09-28",
+    "headline": "What changed",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Today",
+        "title": "What changed since your last visit",
+        "now": "Today now opens with what changed: teammates' plan changes (yours are summed up) and Jira's (done, started, changed sprint, new, release dates moved). Choose your last visit, yesterday or this week. Jira is compared with a daily summary of earlier syncs that this browser keeps; nothing goes into the plan file.",
+        "where": "Today, top of the right column. Click a line to open it."
+      }
+    ]
+  },
+  {
+    "version": "1.67.0",
+    "date": "2026-09-28",
+    "headline": "Deliverables on the Timeline",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "A Deliverables row",
+        "now": "Planned and done deliverables with a quarter, a date or a Jira release now show in a row under Releases. Each spans its linked Jira work's sprints and shows its progress; a release or date marks its ship day, and one with no sprint dates yet is a faint band across its quarter. Broader ones (a half, a year, Later) stay on the Roadmap and are counted in the row's header.",
+        "where": "Timeline, weeks view. Click one to open it."
+      }
+    ]
+  },
+  {
+    "version": "1.66.1",
+    "date": "2026-09-28",
+    "headline": "Jira's facts stay Jira's",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Saving no longer copies Jira's status and sprint dates into the plan",
+        "now": "A save used to write Jira's status and sprint dates into the plan file as if someone had edited them. They now stay on screen only: saves, drafts, backups, downloads and merges keep the plan's own values. Jira's facts are applied again on every draw, so when Jira stops covering an item, the plan's own values come back.",
+        "where": "Saving, Unsaved changes, Download JSON."
+      }
+    ]
+  },
+  {
+    "version": "1.66.0",
+    "date": "2026-09-28",
+    "headline": "Quick updates draw once",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Saving",
+        "title": "One redraw per quick update",
+        "now": "A quick update used to redraw the page twice: once while it was applied and again once it was saved. It now redraws once, when the save is confirmed, including after a retry because a teammate saved at the same moment.",
+        "where": "Quick updates: status, notes, updates."
+      },
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "A refused quick update no longer stays on screen",
+        "now": "When a quick update couldn't be saved (for example, it would push the plan over 2 MB), the page kept showing the change even though the file didn't have it. It now shows the file's version, with the reason in the status line.",
+        "where": "Quick updates."
+      }
+    ]
+  },
+  {
+    "version": "1.65.0",
+    "date": "2026-09-28",
+    "headline": "Undo that costs almost nothing",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Saving",
+        "title": "Undo kept as change records",
+        "now": "Undo used to keep a full copy of the plan for every step; older steps are now kept as the few hundred bytes that undo them, so a long editing session uses a fraction of the memory. Each step is checked when it's stored; the rare one that can't be described that way keeps its copy, so undo and redo are always exact.",
+        "where": "Undo and Redo."
+      },
+      {
+        "kind": "improved",
+        "area": "Plan",
+        "title": "Bigger changes stay undoable from Activity",
+        "now": "Activity's Undo this now works for changes up to 96 KB (it was 16 KB), which covers a large Apply of assistant amendments. Anything bigger is listed as too big to undo from there, instead of the undo quietly disappearing.",
+        "where": "Manage, Activity."
+      }
+    ]
+  },
+  {
+    "version": "1.64.0",
+    "date": "2026-09-28",
+    "headline": "How big is the plan?",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Plan",
+        "title": "Plan size",
+        "now": "Manage, Activity now shows how big the plan file is against the 2 MB a save can write, and what takes the most room (the change log, initiatives, deliverables, notes). Past 1 MB it warns that saves slow down on a synced drive; near 2 MB, that saves will stop.",
+        "where": "Manage, Activity."
+      }
+    ]
+  },
+  {
+    "version": "1.63.0",
+    "date": "2026-09-28",
+    "headline": "Data checked",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Know the numbers are complete",
+        "now": "Today, Sprint, the Roadmap and release notes now show a Data checked line: when Jira last synced, issues found against each search's total, linked keys not found, pull requests read against the sprint's issues, and whether the two Jira files are from one sync. Green is complete; amber says what's partial; red means a late or held-back sync. Check opens Jira setup.",
+        "where": "Today, Sprint, Roadmap, a release's notes."
+      },
+      {
+        "kind": "improved",
+        "area": "Views",
+        "title": "Copied notes say when data was partial",
+        "now": "When the Jira data isn't complete, copied release notes end with the Data checked line, so whoever pastes them knows. When it is complete, the notes stay clean for customers.",
+        "where": "A release's notes: Copy as text or Markdown."
+      }
+    ]
+  },
+  {
+    "version": "1.62.1",
+    "date": "2026-09-28",
+    "headline": "Senior review 13: amendments you can rely on",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "Amendments keep working",
+        "now": "An amendments file that hadn't changed stopped working after its next 30-second check; it now stays loaded. Clearing a date no longer fails, and a change applies on a copy first, so it never lands halfway. Reads don't overlap, a file that's too big is refused before it's read, and switching plans drops the other plan's file.",
+        "where": "Roadmap, Assistant amendments."
+      },
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Hostile input is refused",
+        "now": "Amendment files can't use names that would change how the page works (like __proto__), odd values are refused rather than coerced, and link limits are enforced. Invalid wins over changed since. An add for an existing item must match everything it sets. Receipts follow what a change says, so an undone or rewritten change shows as Ready again.",
+        "where": "Assistant amendments."
+      },
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "One set of rules",
+        "now": "Amendments now follow the same rules as editing a card: a target makes an idea Planned, no timing makes it an idea again, a release sets the quarter, and new wording needs approving again. Jira proposals from amendments record Jira's current value and use sprint and assignee ids, so they don't look stale at once.",
+        "where": "Assistant amendments; Roadmap."
+      },
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "Release notes and pull requests",
+        "now": "Approvals are protected from older copies (they open the plan read-only), approval needs customer wording, and Markdown notes keep names as text. Merged pull requests are those updated this sprint, and a sprint with none says so. The export leaves notes out, lists linked Jira work first and says what it left out, and is there before a file is connected.",
+        "where": "A release's card; Sprint; Assistant amendments."
+      }
+    ]
+  },
+  {
+    "version": "1.62.0",
+    "date": "2026-09-28",
+    "headline": "Amendments from your AI assistant",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Your assistant's changes, reviewed first",
+        "now": "Connect a personal amendments file that your AI assistant (like Anteroom) writes. The Roadmap shows how many are waiting, new ones as dashed Proposed cards, and a proposed mark on cards they'd change. Nothing touches the shared plan until you apply it.",
+        "where": "Roadmap: Assistant amendments."
+      },
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Ready, Changed since, Needs attention",
+        "now": "Each change is checked strictly and gets a result with a reason: Ready, Changed since (the plan moved after your assistant wrote it), Needs attention (something in it isn't allowed), or Completed. Apply one, or apply the ready ones as one quick update; each is checked again on the latest file as it saves, and Jira links merge by membership. Skip and Reopen are remembered.",
+        "where": "The Assistant amendments panel."
+      },
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "What your assistant reads",
+        "now": "Export for your assistant saves a view of this plan's deliverables, workstreams, people, releases and targets, with the rules for writing amendments, an example, and a note to treat all names and notes as data. Version 1 covers deliverables (add, change fields, link or unlink Jira work) and Jira change proposals.",
+        "where": "The Assistant amendments panel."
+      }
+    ]
+  },
+  {
+    "version": "1.61.0",
+    "date": "2026-09-28",
+    "headline": "Customer release notes",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Release notes from your deliverables",
+        "now": "A Jira release's card now shows its release notes: its deliverables grouped by New, Improved and Fixed, each in its customer wording. Final lists only Done deliverables whose wording is approved; Draft shows everything planned, marked where it isn't done or approved. Copy as text or Markdown, or print just the notes.",
+        "where": "A Jira release's card."
+      },
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Approve the wording",
+        "now": "A Done deliverable with a release has Approve for release notes, which records who approved it and when. Changing its name, customer wording or kind clears the approval, so the notes always use approved words. Its badge says Approve for notes until then, then In release notes.",
+        "where": "A deliverable's card; Roadmap."
+      }
+    ]
+  },
+  {
+    "version": "1.60.0",
+    "date": "2026-09-28",
+    "headline": "Pull requests: what's done and what's left",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Active, Merged and Drafts",
+        "now": "Sprint's pull requests widget switches between Active (waiting for review: what's left), Merged this sprint (what's done), and Drafts. The sync now reads pull requests for the sprint's done issues too (reusing them for hours, since they rarely change), so merged ones show.",
+        "where": "Sprint, Pull requests; sightline-jira-sync.py."
+      },
+      {
+        "kind": "improved",
+        "area": "Views",
+        "title": "A clearer idea form",
+        "now": "The Roadmap's quick add now labels its fields, New idea and From. From is optional, suggests your meetings, and remembers the last one you used in this plan; it no longer guesses today's meeting.",
+        "where": "Roadmap."
+      }
+    ]
+  },
+  {
+    "version": "1.59.2",
+    "date": "2026-09-28",
+    "headline": "Draft pull requests stay out of the way",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "Only active pull requests",
+        "now": "Sprint's Open pull requests now lists active ones only; drafts (marked by Bitbucket, or titled Draft: or WIP) are hidden, with Show drafts to see them, marked Draft. Card PR counts and the PR waiting 3+ days filter leave drafts out too.",
+        "where": "Sprint, Open pull requests; sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.59.1",
+    "date": "2026-09-28",
+    "headline": "Senior review 12: deliverables you can trust",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Jira sync",
+        "title": "Linked Jira work is synced",
+        "now": "The sync now fetches Jira work linked to a deliverable even when it isn't on the board or in a search, so its progress and its epics' stories show.",
+        "where": "sightline-jira-sync.py."
+      },
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "Honest progress",
+        "now": "A deliverable's progress uses the team's status mapping for epics too, says \"about\" (≈) when some stories are counted through their epic, and says how many linked issues weren't in the last sync, instead of showing 0/0.",
+        "where": "Roadmap; a deliverable's card."
+      },
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Split, delete and owners are safe to share",
+        "now": "Split builds its parts from the latest file and carries the release and date too; the original stays findable, lists its parts, and can move its Jira links to one. Delete stops if someone changed it since you opened it. Owners on a deliverable are a quick update, like its other fields.",
+        "where": "A deliverable's card."
+      },
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Limits refuse instead of dropping",
+        "now": "More deliverables or Jira links than a plan keeps are refused with a message, instead of vanishing on reload, and a plan with two deliverables sharing an id isn't opened. Chart drags' undo steps now stay within the undo memory budget.",
+        "where": "Roadmap; Timeline."
+      },
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "Smaller fixes",
+        "now": "Capacity says whose load is unknown (no Jira user) instead of counting them as within. An idea's From is remembered per plan. Many ideas get one When picker each. The Jira key box suggests as you type. A deliverable deleted elsewhere closes its panel. Timeboxes wording is consistent.",
+        "where": "Sprint, Capacity; Roadmap; Manage, Timeboxes."
+      }
+    ]
+  },
+  {
+    "version": "1.59.0",
+    "date": "2026-09-28",
+    "headline": "Roadmap and deliverables",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "A Roadmap of deliverables",
+        "now": "A new Roadmap tab (key 6) shows what we plan to ship, by workstream and time. The columns get coarser further out (this quarter, next quarter, halves, a year, Later), and a broad target is a wide card that narrows as you sharpen it. Drag a card to another time or workstream, or onto a Jira release to tie it to that release.",
+        "where": "Roadmap."
+      },
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Ideas in one line",
+        "now": "+ Add idea takes just a name, stamped with the meeting it came from (today's meeting by default), and lands in Ideas to sort. One click picks when it might ship. It's a quick update, so anyone can add ideas during the meeting without Start editing.",
+        "where": "Roadmap."
+      },
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Deliverables",
+        "now": "A deliverable is something we'll ship, in words a customer would understand: a name, release-note wording, a kind (New, Improved, Fixed), a target that sharpens from a year to a quarter to a Jira release or date, a workstream, owners, tags and notes. Stages are Idea, Planned (automatic once it has a target), Done and Dropped (with a reason).",
+        "where": "Roadmap; a deliverable's card."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Deliverables link to Jira work",
+        "now": "Link one or more Jira issues, features or epics to a deliverable, and progress rolls up (\"3 of 5 linked Jira issues done\"), counting each issue once. In Manage, Jira work, pick epics or stories and choose Group into a deliverable. Links never change Jira.",
+        "where": "A deliverable's card; Manage, Jira work."
+      },
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Badges and nudges",
+        "now": "Cards show In Jira, Needs detail (with the reason, such as pick a quarter as it comes into view, add an owner, link the Jira work), At risk (past its target, or little done close to it) and Ready for release notes (Done, with its Jira release). Split turns a broad deliverable into smaller ones.",
+        "where": "Roadmap."
+      }
+    ]
+  },
+  {
+    "version": "1.58.0",
+    "date": "2026-09-28",
+    "headline": "Clearer names: Sprint, Manage, Jira work",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Views",
+        "title": "Sprint and Manage",
+        "now": "The Cards tab is now Sprint: the current Jira sprint's work. The Plan tab is now Manage: Jira work, the team, the lists and setup. Keys 1 to 5 still go to the same places.",
+        "where": "The tabs."
+      },
+      {
+        "kind": "improved",
+        "area": "Plan",
+        "title": "Jira work and Timeboxes",
+        "now": "In Manage, Epics is now Jira work (it holds stories too), and Sprints is now Timeboxes: Jira's sprints, then the plan's own timeboxes after them, each marked Jira sprint or Plan timebox.",
+        "where": "Manage."
+      },
+      {
+        "kind": "improved",
+        "area": "Views",
+        "title": "All sources, Jira only, Jira + mine",
+        "now": "The layer buttons now say what they show: All sources (Jira and everything added here), Jira only, and Jira + mine (Jira plus what you added). Mine elsewhere means work assigned to you or owned by you.",
+        "where": "The toolbar."
+      },
+      {
+        "kind": "improved",
+        "area": "Plan",
+        "title": "One meaning of release",
+        "now": "Release means a Jira release. The Scrum pack's release block is now Release day (a plan that already has Release keeps it), and What's new is What's new in Sightline, so it isn't mistaken for your own release notes.",
+        "where": "Manage, Timeboxes; What's new."
+      }
+    ]
+  },
+  {
+    "version": "1.57.3",
+    "date": "2026-09-28",
+    "headline": "A compact capacity widget",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Views",
+        "title": "Capacity takes less room",
+        "now": "With more than 8 people, Capacity lists only who's over or close to capacity, with a line per sprint (for example, 1 over, 2 close, 12 within) and Show all to see everyone; your choice is remembered. Once the team capacity is set it's one line with Change, and rows are tighter.",
+        "where": "Cards, Capacity."
+      }
+    ]
+  },
+  {
+    "version": "1.57.2",
+    "date": "2026-09-28",
+    "headline": "The page is now sightline.html",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Saving",
+        "title": "The page file is named sightline.html",
+        "now": "The shared page is now sightline.html, with sightline.html.sha256 beside it, and the copy instructions say so. Your saved settings, who you are and your linked plan carry over; nothing needs setting up again.",
+        "where": "The page file; the damaged-copy message."
+      }
+    ]
+  },
+  {
+    "version": "1.57.1",
+    "date": "2026-09-27",
+    "headline": "Senior review 11: Saved means saved",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Save as you go says Saved only when it saved",
+        "now": "A change a rule refuses (like a workstream blackout) stays unsaved on screen instead of being reported saved. If a teammate deleted what you changed, your version downloads as a backup. When a teammate starts editing, your change waits and says so. After a failed save it waits longer before each retry.",
+        "where": "Save as you go."
+      },
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Nothing doubles or overwrites in a race",
+        "now": "Two people adding team capacity on different dates both keep theirs. Putting stories or epics on the board, and setting team capacity, are worked out again on the latest file when someone saves at the same moment, so a story is never placed twice.",
+        "where": "Cards, Capacity; Plan, Epics."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Bulk stories keep your picks",
+        "now": "Picked stories stay picked while you filter, and the bar says how many are hidden by the filter. Pick all says how many it picks, including any beyond the 300 listed. If a bulk save doesn't land, the stories stay picked. The Epics filter redraws after a short pause, which keeps big lists fast.",
+        "where": "Plan, Epics."
+      },
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "Cards and capacity read right",
+        "now": "Someone at 0% (or away all sprint) with assigned work shows against zero, as over. The team capacity figure can be removed, and Set never sticks on Saving. Jira work assigned to someone not linked here gets a row with their name and a Link action. Pull requests say when coverage was partial even with none found, and when the list is cut to 100.",
+        "where": "The Cards tab."
+      },
+      {
+        "kind": "fixed",
+        "area": "People",
+        "title": "Faster with big teams",
+        "now": "Jira user pickers show their best few choices and fill in the rest when opened, instead of building tens of thousands of options. Today's count no longer searches every task for each task on every keystroke.",
+        "where": "Plan, Team; People; Today."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira sync",
+        "title": "The pull request time limit holds",
+        "now": "After its two-minute limit, the sync keeps earlier pull request data, even if old, instead of asking Jira again, and it checks every page in the plan's folder for a newer Sightline.",
+        "where": "sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.57.0",
+    "date": "2026-09-27",
+    "headline": "Put many stories on the board at once",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Put many stories on the board at once",
+        "now": "In Plan, Epics, stories in a sprint with no epic now have checkboxes and Pick all. Put the picked stories on one workstream, or each on its suggested workstream (where its assignee already has work), in one save. Stories with no suggestion stay picked so you can place them next.",
+        "where": "Plan, Epics, In a sprint, not on the board."
+      }
+    ]
+  },
+  {
+    "version": "1.56.1",
+    "date": "2026-09-27",
+    "headline": "Pull requests show their repository",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "A Repository column for pull requests",
+        "now": "The pull request list on Cards has a Repository column (project/repo). The sync takes it from Jira's development panel, the target repository, or the pull request's Bitbucket address, so it shows even when Jira leaves the name out; files synced before this get it from the address too.",
+        "where": "Cards, Open pull requests; sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.56.0",
+    "date": "2026-09-27",
+    "headline": "Senior review 10: safer saving, truer capacity",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Save as you go never loses an edit",
+        "now": "If a Save as you go write fails, your edit stays on screen and unsaved, and it tries again. Turning it off saves any pending change first. A field left focused still saves after a pause. If a teammate changed the same thing since you started, yours is saved and theirs downloads as a backup.",
+        "where": "Save as you go."
+      },
+      {
+        "kind": "fixed",
+        "area": "People",
+        "title": "Merges are careful",
+        "now": "Merging changes only fields that hold people, never text that happens to match. If someone saves at the same moment, the merge is worked out again on the latest file, so new work isn't left with a missing owner. Merging away yourself keeps you as the person kept. Two Jira users with the same name are never offered as duplicates, and Merge all lists any Jira link it drops.",
+        "where": "Plan, Team; a person's card."
+      },
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "Capacity counts what it should",
+        "now": "Team capacity now saves and merges like other changes. A company holiday takes a day off everyone's share, and a figure dated mid-sprint applies to that sprint. With a team figure, people without a Jira user are shown too. Each heat-map cell says in words whether it's within capacity or over, for screen readers. Deactivating counts open work Jira assigns them.",
+        "where": "Cards, Capacity."
+      },
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "Cards and burndown, more honest",
+        "now": "The burndown notes work added since the sprint started and doesn't count it as slipping, and an overdue sprint's last day uses resolved dates. A person filter keeps their Jira issues that aren't on the plan. Pull requests say when they were read for only some issues. Focus stays on the control you used, and with no Jira sprint yet one line says what to set up.",
+        "where": "The Cards tab."
+      },
+      {
+        "kind": "fixed",
+        "area": "People",
+        "title": "Read-only quick controls work",
+        "now": "Allocation, team capacity and Jira linking in Plan, Team stay usable when you're not editing, as quick updates. Team and Jira users are drawn only when shown, which keeps large teams fast.",
+        "where": "Plan, Team; People."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira sync",
+        "title": "Faster, clearer sync extras",
+        "now": "Reading pull requests stops after two minutes and records how many issues it covered. The newer-page check looks only at .html files. If the newer page has another name, the banner says to open that file instead of offering a refresh that wouldn't get it.",
+        "where": "sightline-jira-sync.py; the banner."
+      }
+    ]
+  },
+  {
+    "version": "1.55.0",
+    "date": "2026-09-27",
+    "headline": "Team capacity, with allocation",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Team capacity, set from a date",
+        "now": "Set one figure for the team, points per person per sprint, and change it from a date when it changes. Each person's share is that figure times their allocation, less time off and holidays in the sprint. Each sprint column shows the figure in force. Plans without one still use each person's own points per sprint.",
+        "where": "Cards, Capacity; Plan, Team."
+      },
+      {
+        "kind": "new",
+        "area": "People",
+        "title": "Allocation",
+        "now": "Give someone who's partly on the team an allocation (for example 50%); their share of capacity follows it. Left blank, it follows their days per week. Set it in Plan, Team or right in the Capacity widget, without Start editing.",
+        "where": "Plan, Team; Cards, Capacity."
+      }
+    ]
+  },
+  {
+    "version": "1.54.1",
+    "date": "2026-09-27",
+    "headline": "Open a person from Plan, Team",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "People",
+        "title": "Names in Plan, Team open the person's card",
+        "now": "In Plan, Team a name now opens that person's card (Jira user, Merge into, Deactivate). While editing, an Open link sits beside the name box.",
+        "where": "Plan, Team."
+      }
+    ]
+  },
+  {
+    "version": "1.54.0",
+    "date": "2026-09-27",
+    "headline": "Knows when there's a newer Sightline",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Saving",
+        "title": "A newer Sightline? Refresh safely",
+        "now": "The page now says when a newer Sightline is available: a teammate saved the plan with a newer version, or the Jira sync found a newer page in the plan's folder. Refresh saves your unsaved edits first and ends editing; if the save fails or you cancel, the page stays open with your edits.",
+        "where": "The banner at the top."
+      },
+      {
+        "kind": "new",
+        "area": "Jira sync",
+        "title": "The sync spots a newer page",
+        "now": "Each sync notes the newest Sightline page among the .html files in the plan's folder (only its version stamp and file name), so an open page can offer to refresh.",
+        "where": "sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.53.0",
+    "date": "2026-09-27",
+    "headline": "Cards is Jira's sprint; outside owners",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Views",
+        "title": "Cards shows Jira's work only",
+        "now": "Cards now shows the active Jira sprint's issues, including ones not placed on the plan (marked Not on the plan; they open in Jira). Plan-only tasks and initiatives are left off, with a note that they're on Today and the Timeline.",
+        "where": "The Cards tab."
+      },
+      {
+        "kind": "new",
+        "area": "People",
+        "title": "Outside owners",
+        "now": "Add a team, vendor or group (like Platform team) as an outside owner. It can own anything and be waited on, but has no capacity, time off or sprint load. Any owner field can pick one or add one on the spot, Waiting on lists them, and they get a row by person while they own open work.",
+        "where": "Plan, Team, Outside owners; any Owner field; Mark blocked."
+      }
+    ]
+  },
+  {
+    "version": "1.52.0",
+    "date": "2026-09-27",
+    "headline": "Merge duplicate people; faster linking",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "People",
+        "title": "Merge duplicate people",
+        "now": "If you typed a first name and later added the same person from Jira with their full name, merge them: their work, notes, blockers, meetings, groups, views, history, time off, capacity and Jira link move to the one kept, and the duplicate is removed. Plan, Team lists likely duplicates with Merge all; any person's card has Merge into.",
+        "where": "Plan, Team; a person's card."
+      },
+      {
+        "kind": "new",
+        "area": "People",
+        "title": "Link all suggested at once",
+        "now": "People, Jira users has Link all suggested, which links every suggested match in one save instead of one save each. Link, Unlink and Add to team buttons now show that they're working as soon as you click.",
+        "where": "People, Jira users."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira sync",
+        "title": "Stopping a watch frees it at once",
+        "now": "Ctrl+C on watch now gives back its lock, so starting a new watch works straight away instead of saying one is already running. When one really is running, the message says which process, when it last checked in, and that it may be the minimized window that starts at sign-in.",
+        "where": "sightline-jira-sync.py watch."
+      }
+    ]
+  },
+  {
+    "version": "1.51.0",
+    "date": "2026-09-27",
+    "headline": "Deactivate people",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "People",
+        "title": "Deactivate someone who left the team",
+        "now": "Deactivate a person from Plan, Team or their card. They keep their history (past owners, notes, their Jira link) but leave owner pickers, Cards rows, load, capacity and meetings' Everyone. While they still own open work, they keep a row by person, flagged so it gets reassigned. Reactivate any time from Team, Inactive.",
+        "where": "Plan, Team; a person's card."
+      }
+    ]
+  },
+  {
+    "version": "1.50.0",
+    "date": "2026-09-27",
+    "headline": "Cards reads at a glance; add sprints through a date",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "A sprint header you can read at a glance",
+        "now": "Cards now opens with the sprint's name (without the dates in it), its dates, tiles for to do, in progress, done and blocked, and a bar for how far in it is. The burndown leads with points left and how far ahead of or behind the ideal line you are, and marks Today.",
+        "where": "The Cards tab."
+      },
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Capacity as a heat map",
+        "now": "Capacity is now a heat map: each cell is shaded by load against what the person can take (under 70%, on target, over, 30%+ over), or by relative load where that isn't set. Numbers no longer repeat \"pts\", and setting points per sprint is a quick update.",
+        "where": "Cards, Capacity."
+      },
+      {
+        "kind": "new",
+        "area": "Plan",
+        "title": "Add sprints through a date",
+        "now": "Pick a date under the sprint list and Sightline adds sprints of the default length, named on from the last one, until one reaches it. It says how many it will add before you click.",
+        "where": "Plan, Sprints."
+      },
+      {
+        "kind": "new",
+        "area": "People",
+        "title": "Link Jira users without Start editing",
+        "now": "Linking a person to their Jira user, or adding a Jira user to the team, is now a quick update that works read-only. The Team tab has a Jira user column to link from there too, and capacity's unlinked row links straight to People.",
+        "where": "Plan, Team; People, Jira users; a person's card."
+      },
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "Clearer sprint days, tidier lists",
+        "now": "\"5 of 10 days in\" now reads \"working day 5 of 10\", or \"5 of 10 working days done\" on a weekend or holiday, and the top bar follows Jira's active sprint as Cards does. A release's issue list is one left-aligned line each, and the Jira users table fits its content.",
+        "where": "The top bar, Cards, a release's card, People."
+      },
+      {
+        "kind": "new",
+        "area": "Demo",
+        "title": "The demo shows releases, pull requests and burndown",
+        "now": "tools/make-demo.py now writes Jira releases, pull requests from the development panel, burndown notes, created, updated and comment dates, and points per sprint, so every Cards widget and the release cards show without a Jira.",
+        "where": "tools/make-demo.py."
+      }
+    ]
+  },
+  {
+    "version": "1.49.1",
+    "date": "2026-09-27",
+    "headline": "Cards widgets line up",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "Burndown, capacity and pull requests as widgets",
+        "now": "On Cards, the burndown, capacity and pull requests are now widgets of one shape in one grid: aligned, with the same header, and the chart fills its widget instead of floating in a wide box.",
+        "where": "The Cards tab."
+      },
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "One sprint, and the right points left",
+        "now": "Cards now follows Jira's active sprint, as the burndown does, instead of the plan's own sprint dates. Points left counts stories that are done now as done, even without a resolved date.",
+        "where": "The Cards tab."
+      }
+    ]
+  },
+  {
+    "version": "1.49.0",
+    "date": "2026-09-27",
+    "headline": "pull requests from Bitbucket",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Pull requests on Cards",
+        "now": "Cards now has an Open pull requests panel for the sprint's open work: each PR's repository, author, when it was last updated and how many reviewers approved, oldest first, with the ones waiting 3+ days called out. Cards can show a PRs field, and a quick filter finds work with a PR waiting.",
+        "where": "The Cards tab."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "A Jira item's pull requests",
+        "now": "A Jira item's card now lists its pull requests, with links to Bitbucket.",
+        "where": "A Jira item's card."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira sync",
+        "title": "The sync reads pull requests",
+        "now": "For the active sprint's open work, the sync reads pull requests from Jira's development panel, with your Jira token: no Bitbucket token or setup. It rereads at most every 30 minutes, and stops asking if your Jira has no development panel. Copy the updated sightline-jira-sync.py.",
+        "where": "sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.48.0",
+    "date": "2026-09-27",
+    "headline": "Save as you go",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Saving",
+        "title": "Save as you go",
+        "now": "Turn on Save as you go (in the bar above the timeline) to edit without Start editing: each change saves on its own a moment after you stop, and teammates' changes merge in, the way quick updates do. Two people can edit at once. Undo works on what's saved. It waits while someone else has Start editing. It's per person, in this browser; turn it off to go back to Start editing.",
+        "where": "The bar above the timeline."
+      }
+    ]
+  },
+  {
+    "version": "1.47.0",
+    "date": "2026-09-27",
+    "headline": "review: smoother, safer, clearer",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Nothing lost in a merge or an older copy",
+        "now": "Saved card views now merge with a teammate's save instead of being dropped, and come back with Put them back. A saved view's zoom and an edited update are named for older copies, so those open the plan read-only instead of dropping them.",
+        "where": "Saving with teammates."
+      },
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Blackouts hold, and typing is light",
+        "now": "A change that the automatic scheduling would push into a workstream's blackout is refused. Typing a title no longer reschedules the plan or redraws the timeline: the chart's label updates as you type.",
+        "where": "The timeline."
+      },
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Scrolling doesn't redraw",
+        "now": "Workstreams leaving or entering the dates on screen are shown and hidden in place as you scroll, without redrawing the timeline.",
+        "where": "The timeline, zoomed in or in Days."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Sprints and numbers you can trust",
+        "now": "A long gap before Jira's first sprint no longer pulls Jira's sprints earlier. Abandoned work is left out of the burndown and capacity, and said; the sync reads statuses the way the plan does. Capacity names work assigned to people not linked here. Cards uses Jira's active sprint when the plan's sprints don't cover today.",
+        "where": "Use Jira's sprints, and Cards."
+      },
+      {
+        "kind": "improved",
+        "area": "Views",
+        "title": "Smaller touches",
+        "now": "Saved card views keep the layout and leave your quick filters yours. Fit covers gates and releases. Releases are in Find and their issues open. Move its work checks first and says what doesn't fit. Pasted tags save as one change. Activity shows the newest 50 at a time. The parked note returns when different work is parked. New Year's observed on Dec 31 is included.",
+        "where": "Throughout."
+      }
+    ]
+  },
+  {
+    "version": "1.46.0",
+    "date": "2026-09-27",
+    "headline": "card views, quick filters and aging",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Card views",
+        "now": "Lay out Cards by person, workstream or epic, and pick what each card shows: points, epic, how old it is, when it was last updated, and when it last got a comment, from Jira. Save a layout as a view for the team.",
+        "where": "The Cards tab."
+      },
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Quick filters",
+        "now": "Narrow the cards with quick filters, like Jira's: mine, unassigned, blocked, not estimated, updated in 2 days, no update in 7+ days, or one person's. They're yours, separate from the saved layout, and the board says how many they hide.",
+        "where": "The Cards tab."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira sync",
+        "title": "The sync reads last comments",
+        "now": "For the issues on Cards (this and coming sprints) the sync reads when each last got a comment, in small batches. Copy the updated sightline-jira-sync.py; no new options.",
+        "where": "sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.45.0",
+    "date": "2026-09-27",
+    "headline": "sprint burndown and capacity in points",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Sprint burndown",
+        "now": "Cards now shows a burndown for the active Jira sprint: points left each working day against the ideal line, with today marked. It uses each story's resolved date, and the sync's daily notes where it has them, which also show scope added mid-sprint. It says how many stories aren't estimated.",
+        "where": "The Cards tab."
+      },
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Capacity, in points",
+        "now": "A capacity grid shows each person's points in Jira for this and the next sprints against their points per sprint, less their time off and holidays; over is red. Set each person's points per sprint right in the grid.",
+        "where": "The Cards tab."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira sync",
+        "title": "The sync keeps a daily burndown note",
+        "now": "Each sync notes the active sprint's points in scope and points left for the day, and reads each issue's created and resolved dates. Copy the updated sightline-jira-sync.py; no new options.",
+        "where": "sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.44.0",
+    "date": "2026-09-27",
+    "headline": "workstream blackouts",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Blackouts outside a workstream's dates",
+        "now": "Before a workstream starts and after it ends is now a striped blackout. Making or moving the plan's own initiatives, tasks or milestones into it is refused with the reason, and the + to add doesn't appear there. Work already there when you set the dates stays, shown in the blackout.",
+        "where": "Workstreams with start or end dates."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Jira work and a workstream's dates",
+        "now": "An epic put in a workstream that hasn't started lands at its start, and you're told when its stories' sprints fall outside the workstream's dates. Proposing a sprint outside them says so too; Jira's sprints win.",
+        "where": "Plan, then Epics, and proposals."
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Workstreams follow what's on screen",
+        "now": "Zoomed in or in Days, a dated workstream shows while any of its dates are on screen, and the note counts the ones that aren't, as you scroll.",
+        "where": "The timeline."
+      },
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Scrolling stays put",
+        "now": "The timeline no longer jumps back to the start when it redraws while you're scrolled sideways, and the details pane now scrolls to its end without scrolling the page first.",
+        "where": "The timeline and the details pane."
+      }
+    ]
+  },
+  {
+    "version": "1.43.1",
+    "date": "2026-09-27",
+    "headline": "the details pane scrolls to the end",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "The details pane scrolls to the end",
+        "now": "On a wide screen the details pane on the right was taller than the window under the toolbar, so its last fields couldn't be reached. It now fits below the toolbar and scrolls to the bottom.",
+        "where": "The details pane."
+      },
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "A clearer note about parked initiatives",
+        "now": "The note above the timeline now says what parked means (switched off for now; nothing is lost), with Review parked, which opens Plan, then Epics at the Parked list, and Don't show this again, until another one is parked.",
+        "where": "The note above the timeline."
+      }
+    ]
+  },
+  {
+    "version": "1.43.0",
+    "date": "2026-09-27",
+    "headline": "titles as you type, and where you are",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "New items show their title as you type",
+        "now": "When you add an initiative, task, milestone or gate from the timeline, its title on the chart now follows what you type in its card, instead of saying New initiative until you click away. Made while filtering to a tag, it gets that tag, so it stays where you made it.",
+        "where": "Adding from the timeline."
+      },
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "The pager says what's on screen",
+        "now": "Next to ‹ and ›, the timeline now shows the dates on screen as you scroll, and Today is its own button (greyed out while today is in view), in Weeks and Days.",
+        "where": "The corner of the timeline."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira sync",
+        "title": "The sync says what releases it read",
+        "now": "The sync's console now lists how many releases it read and from which projects, and any it couldn't read. Copy the updated sightline-jira-sync.py.",
+        "where": "sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.42.0",
+    "date": "2026-09-27",
+    "headline": "links to everything, and Back",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Back and Forward work",
+        "now": "The browser's Back and Forward now step through where you've been: tabs, Plan tabs and the items you opened. Zooming and filtering update the place without adding steps.",
+        "where": "The browser's Back and Forward."
+      },
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "A link to anything",
+        "now": "The page's address now says exactly where you are: the tab, the open item, the zoom, the filters and the layer. Open that link and you land in the same place; an item opens only in the plan it belongs to. Each item's card has Copy link.",
+        "where": "The address bar, and Copy link on item cards."
+      }
+    ]
+  },
+  {
+    "version": "1.41.0",
+    "date": "2026-09-27",
+    "headline": "Jira releases on the timeline",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Jira releases on the timeline",
+        "now": "The sync now brings in your projects' releases (Jira's versions) with their dates, and which release each issue is in. The timeline shows the releases dated in the plan, from Jira and read-only; ones past their date and not released are marked. Click one for its dates and how its issues are going.",
+        "where": "The Releases row on the timeline."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Each Jira item names its release",
+        "now": "A Jira item's card now says which release it's in, with that release's date.",
+        "where": "A Jira item's card."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira sync",
+        "title": "The sync reads releases",
+        "now": "The sync reads each project's releases (read-only) and each issue's fix version. A project it can't read is skipped, not fatal. Copy the updated sightline-jira-sync.py.",
+        "where": "sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.40.0",
+    "date": "2026-09-27",
+    "headline": "Standup is now Cards",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Views",
+        "title": "Standup is now Cards",
+        "now": "The Standup tab is renamed Cards, since the board of cards is for more than standups. It works the same: this sprint's work by person, key 5.",
+        "where": "The Cards tab."
+      }
+    ]
+  },
+  {
+    "version": "1.39.0",
+    "date": "2026-09-27",
+    "headline": "days off in ranges, and US holidays",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Plan",
+        "title": "Days off as a range",
+        "now": "Add company days off as a range with a name (Winter shutdown, Dec 24 to Jan 2): each working day in it becomes a holiday, and the table shows the range as one row you can rename or remove together.",
+        "where": "Plan, then Calendar."
+      },
+      {
+        "kind": "new",
+        "area": "Plan",
+        "title": "US federal holidays in one click",
+        "now": "+ US federal holidays adds the eleven federal holidays that fall in the plan's dates, on the weekday they're observed. Remove any your company doesn't observe.",
+        "where": "Plan, then Calendar."
+      }
+    ]
+  },
+  {
+    "version": "1.38.0",
+    "date": "2026-09-27",
+    "headline": "see which work changes sprint",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Which work changes sprint",
+        "now": "Before you switch the plan to Jira's sprints, it lists the plan's own initiatives and tasks that will land in a sprint with other dates (Jira's S16 starts a week later than the plan's did, say). Their dates never change. A sprint that's only renamed isn't counted. The sprints banner says how many.",
+        "where": "Plan, then Jira, and the sprints banner."
+      }
+    ]
+  },
+  {
+    "version": "1.37.0",
+    "date": "2026-09-27",
+    "headline": "Jira setup moves to Plan",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Plan, then Jira",
+        "now": "The settings gear next to File is gone. Jira setup (the Jira folder, how the sync runs, your searches, the board's sprints and how Jira's statuses show here) is now a tab under Plan, next to Epics. File, then Jira status, and every Jira settings link go there. The plan's own dates stay under File, then Plan settings.",
+        "where": "Plan, then Jira."
+      }
+    ]
+  },
+  {
+    "version": "1.36.0",
+    "date": "2026-09-27",
+    "headline": "make tags as you type",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Plan",
+        "title": "Make tags as you type",
+        "now": "The tag box now suggests matching tags as you type, with Create tag at the end when the name is new. Enter or a comma adds it, a pasted list like \"a, b, c\" adds each, and the arrow keys move through the suggestions. The box stays ready for the next tag.",
+        "where": "Tags on any item's card."
+      }
+    ]
+  },
+  {
+    "version": "1.35.0",
+    "date": "2026-09-27",
+    "headline": "edit and delete updates",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Plan",
+        "title": "Edit and delete updates",
+        "now": "Each update on an initiative or task now has Edit and Delete. Your own change straight away; someone else's asks first. An edited update says who edited it and when, and deleting takes a second click. Both save as quick updates and can be undone.",
+        "where": "The Updates list on an item's card."
+      }
+    ]
+  },
+  {
+    "version": "1.34.0",
+    "date": "2026-09-27",
+    "headline": "remove a workstream without losing work",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Plan",
+        "title": "End a workstream, or move its work",
+        "now": "A workstream's card now says what it holds, and offers End it today or End when its work ends (nothing is deleted; it fades after that date), or Move its work to another workstream, keeping every item's dates, notes and links, then removing it. Undo puts it back.",
+        "where": "A workstream's card."
+      },
+      {
+        "kind": "fixed",
+        "area": "Plan",
+        "title": "No more deleting work with a workstream",
+        "now": "Deleting a workstream used to delete its initiatives, tasks and notes, and clear its milestones' dates. Now only an empty workstream can be deleted; one with work in it is ended or moved instead.",
+        "where": "A workstream's card."
+      }
+    ]
+  },
+  {
+    "version": "1.33.0",
+    "date": "2026-09-27",
+    "headline": "zoom by sprints, and Fit",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Zoom by sprints, in Weeks and Days",
+        "now": "Use − and + (or the − and + keys) to show one sprint more or fewer, the same way in Weeks and Days, and the same number when you switch. Zoomed in, Weeks scrolls sideways with the workstream names pinned, and has Today and paging.",
+        "where": "The corner of the timeline."
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Fit follows your filters",
+        "now": "Zoom all the way out to Fit: the timeline frames exactly the work your filters show, from where it starts to where it ends. Filter to one feature and Fit snaps to it; change the filter and it snaps back out.",
+        "where": "The timeline's zoom."
+      },
+      {
+        "kind": "improved",
+        "area": "Views",
+        "title": "Saved views keep their zoom",
+        "now": "A saved view remembers how many sprints it shows. Views saved before keep their Days zoom, as the nearest number of sprints.",
+        "where": "Views."
+      }
+    ]
+  },
+  {
+    "version": "1.32.0",
+    "date": "2026-09-27",
+    "headline": "workstreams with start and end dates",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Workstreams can start and end",
+        "now": "Give a workstream a start or end date in its card (a workstream that starts in 2027, say). Outside those dates its row fades, with the date at the edge, so it's clear what's happening as you scroll. Leave both empty and nothing changes.",
+        "where": "A workstream's card, and the timeline in Weeks and Days."
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Out of view, and counted",
+        "now": "A workstream the dates on screen don't reach isn't drawn, and the note above the timeline says which one and when it starts, with Show anyway. Work dated outside its workstream's dates says so in its card.",
+        "where": "The timeline and item cards."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Pickers know when a workstream starts",
+        "now": "Workstream pickers list the ones that haven't started last, with their start date.",
+        "where": "Plan, then Epics."
+      },
+      {
+        "kind": "improved",
+        "area": "Saving",
+        "title": "Older copies stay safe",
+        "now": "A plan with workstream dates opens read-only in an older Sightline, so it can't drop them.",
+        "where": "Opening the plan in an older copy."
+      }
+    ]
+  },
+  {
+    "version": "1.31.1",
+    "date": "2026-09-27",
+    "headline": "Use Jira's sprints saves",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Use Jira's sprints is saved right away",
+        "now": "Switching to Jira's sprints from the banner started editing and changed the plan, but left it unsaved, so a refresh undid it and the banner asked again. It now saves as part of the switch, and says how many sprints came from Jira and how many more follow Jira's schedule.",
+        "where": "The sprints banner, and Settings."
+      }
+    ]
+  },
+  {
+    "version": "1.31.0",
+    "date": "2026-09-27",
+    "headline": "sprints follow Jira's schedule past its last sprint",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "After Jira's last sprint, Jira's schedule",
+        "now": "When the plan runs past Jira's last dated sprint, Use Jira's sprints carries on with Jira's own schedule: sprints as long as Jira's usually are, numbered on from Jira's last (S15, then S16, S17), to the plan's end. The plan's goals for those weeks stay, and a named sprint like Hardening keeps its name.",
+        "where": "Use Jira's sprints."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Sprint numbers, not dates",
+        "now": "A Jira sprint named with its dates, like Team 2026.S15 09/17-10/02, no longer makes the next sprints 10/3 and 10/4; they're S16 and S17.",
+        "where": "Use Jira's sprints."
+      },
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "The sprint header stays on top",
+        "now": "Meetings, gates and process blocks no longer draw over the sprint names and dates as you scroll down the timeline.",
+        "where": "The timeline header."
+      }
+    ]
+  },
+  {
+    "version": "1.30.1",
+    "date": "2026-09-27",
+    "headline": "gates and milestones open on click",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Clicking a gate or milestone opens it",
+        "now": "In edit mode, a click that moved the pointer a few pixels was taken as a tiny drag, so nothing opened. A drag that ends on the same day is now a click, and a drag starts a little later. Dragging to another day still moves it.",
+        "where": "Gates, milestones and notes on the timeline."
+      }
+    ]
+  },
+  {
+    "version": "1.30.0",
+    "date": "2026-09-27",
+    "headline": "safer undo, one editor per tab, nothing lost from the sprint list",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Undo never removes a teammate's work",
+        "now": "Undoing an add leaves the item if a teammate changed it since; putting something back skips it if that id is in use again. Undo never rewrites who last edited something. It says how many it left alone.",
+        "where": "Undo after quick updates."
+      },
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "A duplicated tab doesn't share the edit lock",
+        "now": "Tabs check with each other before opening the plan. A copy of a tab that's editing becomes view-only, even if it opened the file first, and says so.",
+        "where": "Duplicating a tab while editing."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "The sprint list loses nothing",
+        "now": "Sprint stories whose parent isn't in the Jira files are listed with a note, and stories under an epic under another epic group under the top one. The sync now sends each epic's sprint stories even before it's on the board. Copy the updated sightline-jira-sync.py.",
+        "where": "Plan, then Epics."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira sync",
+        "title": "Nested epics and features count once",
+        "now": "An epic under another epic keeps its own count and adds to the top one; it's never counted as a story. A feature that holds stories frees its place in the story list and no longer stretches its epic's sprint dates.",
+        "where": "sightline-jira-sync.py."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "In a sprint, not on the board",
+        "now": "The group is renamed, parked initiatives come back where they were (no pick box), the Plan badge counts exactly what it lists with units, and after Put on the board a note offers Show on the timeline. Rows stack on a phone.",
+        "where": "Plan, then Epics, and the Plan badge."
+      },
+      {
+        "kind": "improved",
+        "area": "Views",
+        "title": "Standup counts its own hidden work",
+        "now": "Standup says how many of this sprint's items your view or filters hide, with Show everyone's or Clear filters. Every count names its unit, and opening a card moves focus to its details.",
+        "where": "The Standup tab."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Sprints banner and proposals",
+        "now": "Not now on the sprints banner is remembered per plan until the next sync; the switch applies only to the plan it was shown for, and only says it worked when it did. Proposals are checked against the Jira server they were made on in every file.",
+        "where": "The sprints banner and proposals."
+      }
+    ]
+  },
+  {
+    "version": "1.29.1",
+    "date": "2026-09-27",
+    "headline": "Jira's sprint names, and tidy rows",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Use Jira's sprints, from a banner",
+        "now": "When the synced board's sprints differ from the plan's own (S0, S1…), a banner says so with Use Jira's sprints one click away, starting editing first if needed. See the change first opens the side-by-side table; Not now hides it until the page reloads.",
+        "where": "The banner under the toolbar."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Stories with no epic line up",
+        "now": "In Plan, then Epics, stories in a sprint with no epic no longer print their key over their title.",
+        "where": "Plan, then Epics."
+      }
+    ]
+  },
+  {
+    "version": "1.29.0",
+    "date": "2026-09-27",
+    "headline": "sprint work first, and features roll up",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "In a sprint, needs a workstream",
+        "now": "Plan, then Epics now starts with the epics whose stories Jira has in the active or an upcoming sprint, soonest first, and says what's in which sprint. Pick a workstream and put one on the board, or pick several and place them together. Parked epics with sprint work are flagged here, and sprint stories with no epic are listed too.",
+        "where": "Plan, then Epics."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "A suggested workstream",
+        "now": "Each one comes with a suggested workstream: where its stories' Jira assignees already have work on the board, when one is clearly ahead. You still choose.",
+        "where": "Plan, then Epics."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira sync",
+        "title": "Features roll up to their epic",
+        "now": "Stories under a feature under an epic now count toward the epic and show under it. The feature itself isn't counted as a story. Copy the updated sightline-jira-sync.py.",
+        "where": "sightline-jira-sync.py and every epic count."
+      },
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Refreshing keeps you editing",
+        "now": "Refreshing the page while you're editing no longer says someone else is editing. The tab keeps its place as the editor. A duplicated tab gets its own, so two tabs never both think they're editing.",
+        "where": "Start editing, then refresh."
+      },
+      {
+        "kind": "improved",
+        "area": "Plan",
+        "title": "The Plan badge puts sprint work first",
+        "now": "The badge on the Plan tab says how many need a workstream because they're in a sprint, before the count of epics to sort.",
+        "where": "The Plan tab."
+      }
+    ]
+  },
+  {
+    "version": "1.28.0",
+    "date": "2026-09-27",
+    "headline": "plan format checks and a better Standup",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Saving",
+        "title": "Plan format checks everywhere",
+        "now": "The page and the sync script now agree on the plan's format. The sync won't read a plan saved in a newer format, and the page won't read Jira files from a newer sync. When a new Sightline changes the format, the first save downloads the old file as a backup and says older copies will open it read-only.",
+        "where": "Saving, and sightline-jira-sync.py."
+      },
+      {
+        "kind": "improved",
+        "area": "Views",
+        "title": "Standup opens cards beside the board",
+        "now": "Clicking a card on Standup opens it on the right and keeps you on the board, with the open card outlined. Counts say what they count, columns keep their labels on a phone, and the note about hidden items shows here as on the timeline.",
+        "where": "The Standup tab."
+      },
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Undo respects a teammate's newer change",
+        "now": "Undoing a quick update no longer overwrites a field a teammate changed since; it says how many it left alone. A quick update that had to retry reports how it finally went, so Undo and Redo stay right.",
+        "where": "Undo after quick updates."
+      },
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "Every hidden item is counted",
+        "now": "The hidden-items note now counts meetings and process blocks, notes hidden by the Notes setting, and items hidden by the Added by filter, each with a way to show them.",
+        "where": "The note above the timeline and Standup."
+      },
+      {
+        "kind": "fixed",
+        "area": "Plan",
+        "title": "Roomier Activity, Tags and Proposals",
+        "now": "More space between the heading, controls and list, and a proposal made on another Jira server says so instead of being checked against this one.",
+        "where": "Plan, then Activity, Tags or Proposals."
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Draws faster",
+        "now": "The timeline and every tab redraw faster: a color check that ran once per label now runs once per draw, and epic counts no longer rescan each epic's stories.",
+        "where": "Everywhere."
+      }
+    ]
+  },
+  {
+    "version": "1.27.1",
+    "date": "2026-09-27",
+    "headline": "safer saves and hides",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Never saves over a newer Sightline's plan",
+        "now": "If someone saved the plan with a newer Sightline since you last looked, a quick update, Start editing or a save no longer writes over it. The plan opens read-only and says why, and your unsaved edits stay here.",
+        "where": "Quick updates, Start editing and Save."
+      },
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Merges keep more of everyone's work",
+        "now": "Two people tagging the same Jira item for the first time both keep their tag. If a teammate's edit keeps an item you deleted, your version is downloaded as a backup first.",
+        "where": "Saving while someone else is making quick updates."
+      },
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Put them back restores everything",
+        "now": "After someone saves with an older Sightline, Put them back now restores tags, Jira items' tags, notes and dependencies on Jira items, and proposals, not just who added what and the activity log.",
+        "where": "The older-copy warning."
+      },
+      {
+        "kind": "fixed",
+        "area": "Views",
+        "title": "Hides that stick",
+        "now": "Hiding a person hides their notes on item cards too, with Show to see them. Hiding a tag hides an initiative even when its tasks don't carry that tag.",
+        "where": "Item cards and the timeline."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira sync",
+        "title": "Sync limits and a stronger guard",
+        "now": "The sync fetches at most 2,000 of a plan's Jira items and says so when it stops short. A sync that returns none of the plan's Jira items keeps the earlier sync, whatever the plan's size. Copy the updated sightline-jira-sync.py.",
+        "where": "sightline-jira-sync.py and Plan, then Epics."
+      }
+    ]
+  },
+  {
+    "version": "1.27.0",
+    "date": "2026-09-27",
+    "headline": "a standup board",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Views",
+        "title": "Standup",
+        "now": "A new Standup tab (or press 5) shows this sprint's work by person in To do, In progress and Done: Jira stories and Jira-linked items with their Jira assignee, and the plan's own tasks and initiatives with their people. Late, blocked, Jira-dependency, proposal and note flags show on each card. Click a card to open it.",
+        "where": "The Standup tab."
+      },
+      {
+        "kind": "improved",
+        "area": "Views",
+        "title": "The same view, every tab",
+        "now": "Standup follows your layers, hidden people and tag filters, just like the timeline, but always shows the current sprint whatever date range the timeline is set to.",
+        "where": "The Standup tab."
+      }
+    ]
+  },
+  {
+    "version": "1.26.0",
+    "date": "2026-09-27",
+    "headline": "propose changes to Jira",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Propose a change to a Jira item",
+        "now": "From a Jira item's card, anyone can propose a change: move it to another sprint, assign it, set points, change its status, or add or remove a label, with a reason. Sightline doesn't change Jira. It records the proposal, who made it, and what Jira said at the time, and the item shows a pending mark.",
+        "where": "A Jira item's card."
+      },
+      {
+        "kind": "new",
+        "area": "Plan",
+        "title": "Plan, then Proposals",
+        "now": "Every open proposal in one list for whoever maintains Jira, with Approve and Reject, and Copy as text to paste into Jira or a message. After the next sync, a proposal Jira now has is marked In Jira now; one where Jira changed another way says so.",
+        "where": "Plan, then Proposals."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira sync",
+        "title": "The sync fetches proposed items",
+        "now": "Issues that have proposals are fetched even when they aren't on the board. Copy the updated sightline-jira-sync.py and run install again.",
+        "where": "sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.25.0",
+    "date": "2026-09-27",
+    "headline": "a bad sync can't make the team's work look lost",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira sync",
+        "title": "A guard against a bad sync",
+        "before": "If Jira returned much less than usual (a permissions change, a Jira problem, a broken search), the next sync replaced the Jira files, and the plan's Jira items looked like they'd vanished.",
+        "now": "When a sync finds far fewer of the plan's Jira items than the last one, the sync keeps the earlier files and says so. If the drop is real, run the sync with --accept-drop. Copy the updated sightline-jira-sync.py and run install again.",
+        "where": "sightline-jira-sync.py."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "The page says when it's showing an earlier sync",
+        "now": "Epics and Settings say the last sync came back short, that the earlier sync is shown, and that nothing was removed. The health dot turns red.",
+        "where": "Plan, then Epics; Settings."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Missing items still read as themselves",
+        "now": "Sightline remembers, in your browser only, the last title it saw for each Jira item. An item the last sync didn't return shows as \"Faceted search (not in the last sync)\" instead of just its key, and its card shows the title it was last seen with.",
+        "where": "Everywhere a Jira item appears."
+      }
+    ]
+  },
+  {
+    "version": "1.24.0",
+    "date": "2026-09-27",
+    "headline": "notes and dependencies on Jira items",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Notes on Jira items follow the issue",
+        "now": "Add a note to a Jira story, or any Jira item, from its card. The note is kept by its Jira key, so it follows the issue to another epic or initiative. Notes added before stay where they were.",
+        "where": "The card of a Jira item or story."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Nothing is lost when a sync misses an issue",
+        "now": "If a sync stops returning an issue, notes on it are kept and listed under Notes on Jira items not in the last sync. They go back on the item by themselves when the issue returns.",
+        "where": "Plan, then Epics."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Wait for a Jira item",
+        "now": "In an initiative's or task's card, Waits for Jira items takes Jira keys. If it would start before Jira says that item finishes (its sprint's end, or its due date), the card and the bar warn you. Nothing moves on its own: Jira's dates are Jira's.",
+        "where": "Cards; the timeline."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira sync",
+        "title": "The sync fetches what the plan refers to",
+        "now": "Jira items the plan only refers to (notes on them, dependencies on them, tags kept by key) are fetched too. Copy the updated sightline-jira-sync.py and run install again.",
+        "where": "sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.23.0",
+    "date": "2026-09-27",
+    "headline": "cards that show what's Jira's and what's the plan's",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Cards in two parts",
+        "before": "A Jira item's card mixed Jira's facts with the plan's fields, so it was hard to tell what you could change here.",
+        "now": "A Jira item's card starts with From Jira: title, status, assignee, sprint and dates (or an epic's stories and sprints), points, type, labels, when it was synced, and Open in Jira, none of it editable. Then Added here has the plan's own: who put it in the plan, tags, workstream, chart name, lead, notes, dependencies. A plan item's card is all the plan's.",
+        "where": "Every card."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Says when an issue isn't in the last sync",
+        "now": "If the last sync didn't return an item's issue, its card says so, and that everything added here is kept for when it comes back.",
+        "where": "A Jira item's card."
+      },
+      {
+        "kind": "fixed",
+        "area": "Plan",
+        "title": "Removing a tag from a Jira item",
+        "before": "On a Jira item, a tag kept on the plan's initiative couldn't be removed from the card.",
+        "now": "Removing a tag takes it off wherever it was kept.",
+        "where": "A Jira item's card."
+      }
+    ]
+  },
+  {
+    "version": "1.22.0",
+    "date": "2026-09-27",
+    "headline": "tags on everything, and Jira's labels",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Plan",
+        "title": "Tags on everything",
+        "now": "Add the plan's own tags to initiatives, tasks, milestones, gates, notes, meetings and Jira items, from any card. Type a new name to create one. Anyone can add or remove tags without Start editing. On a Jira item the tag is kept with its Jira key, so it follows the issue. Tagged items show colored dots on the chart.",
+        "where": "Any card; the timeline."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Jira's labels, read-only",
+        "now": "The sync brings in each issue's Jira labels. Cards show them as Jira's, separate from the plan's tags, even when the names match. Copy the updated sightline-jira-sync.py and run install again.",
+        "where": "Jira items' cards."
+      },
+      {
+        "kind": "new",
+        "area": "Filters",
+        "title": "Filter by tag or Jira label",
+        "now": "In Filters, click a tag or label once to show only what has it, again to hide it, and again to turn it off. Filters apply to stories too, and a view can save them.",
+        "where": "Filters."
+      },
+      {
+        "kind": "new",
+        "area": "Plan",
+        "title": "Plan, then Tags",
+        "now": "See every tag and how often it's used. Rename, recolor or delete them (in an editing session); deleting a tag takes it off everything.",
+        "where": "Plan, then Tags."
+      }
+    ]
+  },
+  {
+    "version": "1.21.0",
+    "date": "2026-09-27",
+    "headline": "hide what someone added, and undo one change",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Hide what someone added, just for you",
+        "now": "In Filters, under Hide from my view, tick a person (or items with no recorded author) to hide what they added. It's your view only, remembered per plan in your browser, and it never hides what comes from Jira. A line under the view bar says how many are hidden, and whose, with Show them.",
+        "where": "Filters."
+      },
+      {
+        "kind": "new",
+        "area": "Filters",
+        "title": "Added by",
+        "now": "A filter for what one or more people added (or what has no recorded author). Like other filters, a view can save it.",
+        "where": "Filters."
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Work that waits on something hidden says so",
+        "now": "An initiative that waits on something your view hides shows \"⇠ 1 hidden\". Going to that item (from Find, for example) shows everyone's work again.",
+        "where": "Timeline."
+      },
+      {
+        "kind": "new",
+        "area": "Plan",
+        "title": "Undo one change",
+        "now": "Each change in Plan, then Activity has Undo this. It puts back only what nobody has changed since, and says what it left.",
+        "where": "Plan, then Activity."
+      }
+    ]
+  },
+  {
+    "version": "1.20.0",
+    "date": "2026-09-27",
+    "headline": "see who added what, and what changed",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Plan",
+        "title": "Who added what",
+        "now": "Everything added to the plan (initiatives, tasks, milestones, gates, notes, meetings, workstreams, sprints, views) records who added it and who last edited it. Each card says so, and initiatives added here show the initials of whoever added them. Things moved automatically, for example by a dependency, aren't counted as anyone's edit. Items from before this version say so.",
+        "where": "Every card; the timeline."
+      },
+      {
+        "kind": "new",
+        "area": "Plan",
+        "title": "Activity",
+        "now": "Plan, then Activity lists every quick update and save from the last 30 days, newest first: who, when, and what changed. You can show one person's. It's a record kept in the plan file, so it's a guide, not proof.",
+        "where": "Plan, then Activity."
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Mine",
+        "now": "Next to Everyone and Jira only, Mine shows Jira's work plus what you added. A line says how many items added by others are hidden, and how many have no recorded author.",
+        "where": "Timeline."
+      },
+      {
+        "kind": "improved",
+        "area": "Notes",
+        "title": "A note's author stays its author",
+        "before": "Anyone could change who wrote a note.",
+        "now": "The author is shown, not editable. Editing someone else's note reminds you they're their words.",
+        "where": "A note's card."
+      },
+      {
+        "kind": "improved",
+        "area": "Saving",
+        "title": "Put back what an older copy dropped",
+        "now": "If a copy of Sightline older than 1.19 saves over the plan and drops who added what or the activity log, the page offers Put them back.",
+        "where": "The banner at the top."
+      },
+      {
+        "kind": "improved",
+        "area": "Saving",
+        "title": "Everyone needs this version to edit",
+        "now": "Plans with who added what open read-only in Sightline 1.19, and older copies drop it when they save, so update every copy.",
+        "where": "Everyone's copy."
+      }
+    ]
+  },
+  {
+    "version": "1.19.0",
+    "date": "2026-09-27",
+    "headline": "groundwork: safer saves across versions, bigger plans",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Saving",
+        "title": "Plans saved by a newer Sightline open read-only",
+        "before": "An older copy of Sightline could open a plan saved by a newer one and, on saving, silently drop what it didn't understand.",
+        "now": "A copy that finds parts it doesn't know opens the plan read-only and says why, so nothing is lost. Update the copy to edit.",
+        "where": "The banner at the top."
+      },
+      {
+        "kind": "improved",
+        "area": "Saving",
+        "title": "You'll know when an older copy saved over the plan",
+        "now": "Each save records which Sightline wrote it. If a copy from before this version saves over the plan, the page says so, so you can ask everyone to update.",
+        "where": "The banner at the top."
+      },
+      {
+        "kind": "improved",
+        "area": "Saving",
+        "title": "Bigger plans open",
+        "before": "Plans over 2 MB couldn't be opened.",
+        "now": "Plans up to 5 MB open. Saving still keeps a plan under 2 MB, so every copy of Sightline can open it.",
+        "where": "Opening a plan."
+      },
+      {
+        "kind": "improved",
+        "area": "Performance",
+        "title": "Undo uses less memory on big plans",
+        "now": "Undo keeps as many steps as fit in a fixed amount of memory, newest first, instead of 200 whole copies of the plan.",
+        "where": "Undo."
+      },
+      {
+        "kind": "improved",
+        "area": "Saving",
+        "title": "Groundwork for a shared database",
+        "now": "Behind the scenes, reading, saving, merging and drafts now go through one place, so the plan can later live in a database instead of a file without changing how you work.",
+        "where": "Nothing to do."
+      }
+    ]
+  },
+  {
+    "version": "1.18.0",
+    "date": "2026-09-27",
+    "headline": "Jira's titles and assignees, always current; drag milestones and gates anywhere",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Titles and assignees always match Jira",
+        "before": "When you put an epic on the board or added an issue, Sightline copied its title and assignee into the plan. After a rename or reassignment in Jira, the plan showed the old ones.",
+        "now": "A Jira item's title and assignee are read from the latest sync everywhere: the timeline, cards, the hover, Find and Today. The card shows them read-only, marked as from Jira. Without the Jira files, the title from when it was added shows, marked as not current.",
+        "where": "Everywhere a Jira item appears."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "The plan's own name on the chart, and its own lead",
+        "now": "A Jira item can carry a short name on the chart and a lead, both the plan's. Owners that were only a copy of the assignee aren't shown as a lead. The people filter and people rows count Jira's assignee.",
+        "where": "The card of a Jira item."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Review titles that differ from Jira",
+        "now": "Plan, then Epics lists items whose stored title differs from Jira's. For each one, keep the plan's name on the chart, or let it follow Jira. Nothing is rewritten on its own.",
+        "where": "Plan, then Epics."
+      },
+      {
+        "kind": "improved",
+        "area": "Sprints",
+        "title": "Jira's sprint names can't be edited here",
+        "now": "Once the plan follows Jira's sprints, their names and goals are read-only in Sightline. The plan's own timeboxes stay editable.",
+        "where": "Plan, then Sprints."
+      },
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Drag milestones, gates and notes",
+        "before": "In the Days view, milestones, gates and notes could only be opened, not moved. Gates couldn't be dragged in Weeks either.",
+        "now": "Drag them along their row to another day. A click still opens them. A milestone that follows initiatives says so instead of moving.",
+        "where": "Timeline, Days and Weeks."
+      },
+      {
+        "kind": "fixed",
+        "area": "Editing",
+        "title": "Unsaved changes you can see, and count",
+        "before": "After undoing everything, the strip still said unsaved changes.",
+        "now": "The strip counts what's changed since the last save (\"3 unsaved changes\"), and clicking the count lists each change. Undoing all the way back, or putting something back as it was, reads as saved.",
+        "where": "The editing strip."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Nothing added around a Jira item is lost if Jira drops it",
+        "now": "If a sync stops returning an issue, everything the team added around it stays and reattaches when the issue comes back. This is now in the product charter.",
+        "where": "Everywhere."
+      }
+    ]
+  },
+  {
+    "version": "1.17.0",
+    "date": "2026-09-27",
+    "headline": "see what comes from Jira, and what was added here",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "From Jira and Added here look different",
+        "before": "An initiative or task linked to Jira looked like any other, so you couldn't tell what followed Jira from what the team had added.",
+        "now": "What comes from Jira is outlined in its workstream's color, with its Jira key. What was added here stays filled. This holds in Weeks, Days and the people rows, for initiatives, tasks and stories. The key explains both.",
+        "where": "Timeline."
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Show only what comes from Jira",
+        "now": "Everyone / Jira only, next to the other view controls, shows the official Jira work on its own. A line under the controls says how many items added here are hidden, with Show everyone. Each plan remembers its own choice in your browser, and a saved view can keep it.",
+        "where": "Timeline."
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Progress says what it counts",
+        "before": "Bars showed a bare percentage (weighted by task length) or an unlabeled 3/4.",
+        "now": "Bars show 5/9 stories for Jira work and 2/5 tasks (or items) for work added here, and the fill matches the count. The weighted percentage is in the hover and the card, marked as by task-days.",
+        "where": "Timeline."
+      },
+      {
+        "kind": "improved",
+        "area": "Sprints",
+        "title": "Jira's sprints and the plan's own timeboxes",
+        "now": "When the plan follows Jira's sprints, a timebox the plan added (after Jira's last sprint, say) shows in italics. Hovering a Jira sprint shows Jira's exact dates.",
+        "where": "Timeline sprint headers."
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Parked initiatives are counted",
+        "before": "Parked initiatives just disappeared from the timeline.",
+        "now": "A line says how many are parked, with a link to Plan, then Epics.",
+        "where": "Timeline."
+      }
+    ]
+  },
+  {
+    "version": "1.16.1",
+    "date": "2026-09-27",
+    "headline": "undo quick updates, and groups that stay open",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Undo works on Park, Put on the board, and switching stories",
+        "before": "These save straight to the shared file, so Undo had nothing to undo unless you were in an editing session.",
+        "now": "Undo (and Ctrl+Z) reverses the last quick update in the shared file, key by key, so a teammate's newer changes stay. Redo puts it back, and a toast after each decision offers Undo. The Undo button names what it will undo.",
+        "where": "Plan, then Epics; the initiative and story cards."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Epics groups stay the way you left them",
+        "before": "Clicking Back on (or anything that redraws the list) snapped the Parked and Finished groups shut.",
+        "now": "Each group remembers being opened or closed.",
+        "where": "Plan, then Epics."
+      },
+      {
+        "kind": "fixed",
+        "area": "Sprints",
+        "title": "Sprints after Jira's last one continue its numbering",
+        "before": "When the plan kept its own sprints after Jira's last one, they kept the plan's old numbers, so Sprint 45 could be followed by Sprint 48. The weeks before Jira's first sprint were called a gap between sprints.",
+        "now": "Numbered sprints continue from Jira (Sprint 46, 47…), and a named one like Hardening keeps its name. The weeks before Jira's first sprint say so, with a note on how to start the plan there instead.",
+        "where": "Settings, then Jira, then Sprints from Jira."
+      }
+    ]
+  },
+  {
+    "version": "1.16.0",
+    "date": "2026-09-26",
+    "headline": "finished epics stay out of your way",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Sightline knows when an epic is finished",
+        "before": "Old epics came in with the live ones, because teams often leave an epic open long after its stories are done, so sorting meant opening each one to check.",
+        "now": "The sync counts the stories under every epic your searches find. An epic whose stories are all done or abandoned goes into a closed Finished in Jira group: it isn't in Unsorted, isn't counted as to sort, and isn't touched by Park all. A new epic with no stories yet stays in Unsorted. Each row says how many stories are open.",
+        "where": "Plan, then Epics."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Park finished epics in one click",
+        "now": "When epics on the board are finished in Jira, Epics says how many and offers Park N finished. It keeps their initiatives and notes, and takes them off the timeline.",
+        "where": "Plan, then Epics."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira sync",
+        "title": "Counts for every epic a search finds",
+        "now": "Epics on the board are counted first (with their stories listed), then the other epics your searches found (counted only), all within the same 5,000-story limit. Copy the updated sightline-jira-sync.py and run install again.",
+        "where": "sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.15.1",
+    "date": "2026-09-26",
+    "headline": "sorting that respects your picks, and a lighter page",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Parking the rest leaves your picks alone",
+        "before": "Park the other N also parked the epics you had just ticked.",
+        "now": "With epics picked, the button parks only the ones you haven't picked, and says how many.",
+        "where": "Plan, then Epics."
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Stories are easy to find from Weeks",
+        "before": "Jira stories show only in the Days view, and nothing in Weeks said so.",
+        "now": "An initiative's card has See N on the timeline, which opens Days at its stories, and its hover card says how many are in sprints. Find says when a story is switched off, has no sprint yet, or is outside this plan.",
+        "where": "Timeline, and Find."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Shorter, clearer words",
+        "now": "Stories switch off and on with Switch off and Switch on. The health warnings are one line each, and Settings says Reconnect when the folder needs your OK.",
+        "where": "Initiative and story cards, Epics, Settings."
+      },
+      {
+        "kind": "improved",
+        "area": "Performance",
+        "title": "Less work while you wait",
+        "before": "The page reread and redrew everything every minute, even when Jira hadn't changed, which could disturb what you were typing.",
+        "now": "It redraws only when a Jira file changes. Epic counts and ownership are worked out once per draw instead of several times.",
+        "where": "Everywhere."
+      }
+    ]
+  },
+  {
+    "version": "1.15.0",
+    "date": "2026-09-26",
+    "headline": "see whether Jira is keeping up",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Sync health",
+        "before": "The page said when the Jira files were written, but not whether that was on time, so a stopped sync looked the same as a quiet week.",
+        "now": "Epics and Settings show when Jira last synced, whether by watch (and how often) or by hand, and from which server and board, with a green, amber or red dot. When a watch is more than twice its interval late, the page says so and what to check: that the computer running it is on and signed in. It updates every minute while the page is open.",
+        "where": "Plan, then Epics; and Settings."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Flags Jira files made for another plan",
+        "now": "If you copied or renamed the plan's folder, the page says the Jira files were made for the other plan and how to set up the sync for this one.",
+        "where": "Plan, then Epics; and Settings."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira sync",
+        "title": "The sync says how it runs",
+        "now": "status.json records whether watch or a one-off sync wrote it, its interval, and the plan's file name. It records no computer or user names. Copy the updated sightline-jira-sync.py and run install again.",
+        "where": "sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.14.1",
+    "date": "2026-09-26",
+    "headline": "stories: counts that agree, and switches that stick",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Reconnect Jira in one click",
+        "before": "After the browser restarted, Epics said to connect the folder in Settings, so getting Jira back took a trip through Plan, Settings and the folder picker.",
+        "now": "Epics shows a Reconnect button for your folder, and one click brings everything back. When you open the page, the status line says Jira is paused until you reconnect. Plan opens on Epics for plans that use Jira. Your browser may offer to allow the folder on every visit, so you won't be asked again.",
+        "where": "Plan, then Epics."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Two people switching stories off at once both count",
+        "before": "When two quick updates clashed, the retry could keep only one person's switched-off story. The same was true for parked epics and the status map.",
+        "now": "A retried update adds and removes just its own keys, so everyone's changes survive.",
+        "where": "Off for now, Park, and the status map."
+      },
+      {
+        "kind": "fixed",
+        "area": "Filters",
+        "title": "A date filter shows stories in that range",
+        "before": "An initiative planned outside the dates was hidden, even when one of its Jira stories fell inside them.",
+        "now": "The initiative shows with its matching stories, and Find clears a filter that would hide the story it goes to.",
+        "where": "Filters, Find."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Every count agrees",
+        "before": "An epic's row in the initiative's card counted every story while the total above it didn't. A story linked to two epics could count twice. With a very large epic, counts could go below zero.",
+        "now": "The same rule counts everywhere, off for now is shown on each epic, each story counts once, and no count goes below zero. Needs the updated sync script for the two-epics fix.",
+        "where": "The initiative's card, and Plan, then Epics."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "No silent limit on stories off",
+        "before": "Past 2,000 stories off for now, switching off another quietly switched the oldest back on.",
+        "now": "It says the limit was reached instead.",
+        "where": "Off for now."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "A new epic says its stories are coming",
+        "now": "Until the next sync lists them, the card says the stories show after the next Jira sync, and when the last one ran.",
+        "where": "The initiative's card."
+      }
+    ]
+  },
+  {
+    "version": "1.14.0",
+    "date": "2026-09-26",
+    "headline": "an epic's stories, inside its initiative",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Stories from Jira show inside their initiative",
+        "before": "An epic on the board showed only as a count of its stories.",
+        "now": "In the Days view, each story in a sprint shows inside its initiative: its sprint sets the dates and Jira sets the status. Stories have a dashed outline and their Jira key. Click one for its card. They're read-only, so change them in Jira. They aren't copied into the plan, and a story that's already a task in the plan shows as the task.",
+        "where": "Timeline, Days view."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Switch a story off for now",
+        "now": "Every initiative with epics lists its stories: in a sprint, not scheduled here, off for now, and abandoned in Jira. Off for now hides a story from the timeline and from progress, without changing Jira. Anyone can do it without Start editing, and two people's changes both count. Everyone should use this version, because older copies drop the list when they save.",
+        "where": "The initiative's card, or the story's card."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Progress counts what's switched on",
+        "before": "Progress counted every story under the epic.",
+        "now": "Only stories that are switched on count. Plan, then Epics shows how many are off for now. Switching off every story no longer marks the initiative abandoned.",
+        "where": "Initiatives, and Plan, then Epics."
+      },
+      {
+        "kind": "improved",
+        "area": "Find",
+        "title": "Find and filters include stories",
+        "now": "Find lists each story by its key, name and assignee. Status and people filters show the stories that match.",
+        "where": "Find, and Filters."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira sync",
+        "title": "The sync lists each epic's stories",
+        "now": "For epics on the board, the status file lists up to 3,000 stories with their sprint and status. Parked epics are counted but not listed. Copy the updated sightline-jira-sync.py and run install again.",
+        "where": "sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.13.1",
+    "date": "2026-09-26",
+    "headline": "epic decisions that stick, and a sync that keeps going",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Park means parked",
+        "before": "Parking an epic that an initiative was made from by its key, or one tied to a hand-made initiative, could leave it on the board while the list said Parked.",
+        "now": "Each epic belongs to one initiative, however it was linked. Park and Park all switch it off everywhere, and On… won't make a second initiative for an epic that's already on the board.",
+        "where": "Plan, then Epics."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Messages say what really happened",
+        "before": "Putting epics on the board or parking them always said it worked, even when the save didn't happen, and cleared your picks.",
+        "now": "If it didn't save, your picks stay. In an editing session it says the change waits for Save. Back on explains when the epic's initiative was removed.",
+        "where": "Plan, then Epics."
+      },
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Scheduling leaves Jira stories in their sprint",
+        "before": "A dependency could push a Jira story out of its sprint, and the next redraw put it back, so the plan never settled.",
+        "now": "Jira's sprint dates stay fixed when the plan schedules itself. A clash shows as a warning instead.",
+        "where": "Timeline."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Statuses with a | in their name",
+        "before": "A Jira status like Done | QA was misread in epic progress.",
+        "now": "It's counted under its real name. Needs the updated sync script.",
+        "where": "Epic progress and the status map."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira sync",
+        "title": "watch keeps going",
+        "before": "An unexpected error (a half-saved plan, a full disk) could stop watch for every plan, a failed sync waited the full interval to retry, and two watches could both start.",
+        "now": "A failure is reported for that plan only and retried after a minute, then less often. Only one watch runs on a computer, and one that loses the lock stops.",
+        "where": "sightline-jira-sync.py watch."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira sync",
+        "title": "sync --save changes only what you give it",
+        "before": "sync PLAN --board 8 --save replaced the saved searches and folder with nothing, and saved even if the sync then failed.",
+        "now": "Each option replaces just that setting, and settings are saved only after a sync works. When several searches fill the file, the later ones say they were skipped.",
+        "where": "sightline-jira-sync.py sync."
+      }
+    ]
+  },
+  {
+    "version": "1.13.0",
+    "date": "2026-09-26",
+    "headline": "workstreams, a Settings page, and sorting many epics at once",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Lanes are now called workstreams",
+        "before": "The rows were called lanes, which describes the drawing rather than what they mean.",
+        "now": "A workstream is an area or priority the team's work belongs to, lasting quarters. Initiatives sit inside it, and stories inside those. Only the name changed: plans and older copies keep working.",
+        "where": "Everywhere lanes used to be named."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Pick several epics, then decide once",
+        "before": "Each epic took its own round trip to the shared file, which was slow.",
+        "now": "Tick epics (or Pick all), choose a workstream, and put them all on the board, or park them all, in one save.",
+        "where": "Plan, then Epics."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Make a workstream while you sort",
+        "now": "+ New workstream is in the picked bar and in each epic's On… menu.",
+        "where": "Plan, then Epics."
+      },
+      {
+        "kind": "new",
+        "area": "Settings",
+        "title": "One Settings page",
+        "now": "The plan's dates and sprints, and everything about connecting Jira (the folder, the status map, sprints from the board, your searches), are on one page.",
+        "where": "The gear button at the top, or File, then Jira status."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Epics live under Plan",
+        "before": "Epics had a tab of their own.",
+        "now": "Sorting epics is planning work, so it's a list under Plan, next to Milestones and Risks. The Plan tab's badge counts epics waiting to be sorted.",
+        "where": "Plan, then Epics."
+      }
+    ]
+  },
+  {
+    "version": "1.12.1",
+    "date": "2026-09-26",
+    "headline": "tidier meeting attendees",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Meetings",
+        "title": "Adding a group tidies the People list",
+        "before": "Adding a group to a meeting left its members listed one by one as well.",
+        "now": "People the group already brings are taken off the People list; nobody is dropped from the meeting. A meeting that already lists group members one by one says so, with a one-click fix.",
+        "where": "A meeting's details panel, under Groups and People."
+      },
+      {
+        "kind": "fixed",
+        "area": "Meetings",
+        "title": "Names in lists no longer run together",
+        "before": "Attendee names in the meetings and groups tables had no space between them.",
+        "now": "Each name has room, and long lists wrap.",
+        "where": "Plan, then Meetings and Team."
+      }
+    ]
+  },
+  {
+    "version": "1.12.0",
+    "date": "2026-09-26",
+    "headline": "a Jira tab for putting epics on the board",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "A Jira tab: epics on the board, parked, or not sorted yet",
+        "before": "Jira issues were added one batch at a time from a pop-up.",
+        "now": "Every epic your searches find is in one of three groups. Switch one on as a new initiative in a lane, or add it to an initiative you already have (the closest names are suggested). Park the ones that don't matter right now; switch any back on later. The tab's badge counts epics nobody has sorted.",
+        "where": "The Jira tab, next to Plan (or press 5)."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Sort your epics once",
+        "now": "The first time, switch on the epics this plan tracks and park the rest in one go. After that, only new epics wait to be sorted.",
+        "where": "The Jira tab."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Parking never deletes",
+        "now": "Parking an epic that has its own initiative hides the initiative, with its notes and links kept, until you switch it back on. An initiative that holds other work just lets go of the epic.",
+        "where": "The Jira tab, Park and Back on."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Anyone can sort epics",
+        "before": "Adding issues from Jira needed Start editing.",
+        "now": "Switching epics on and off are quick updates: no Start editing, and two people's choices both count.",
+        "where": "The Jira tab."
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Epic initiatives follow their stories' sprints",
+        "before": "It suggested a stretch you had to click.",
+        "now": "An initiative made of epics covers its stories' sprints on its own, and can't be dragged away from them.",
+        "where": "Timeline."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Setup moved to the Jira tab",
+        "now": "The folder, status map, sprints and all search results are in the tab's Setup section.",
+        "where": "The Jira tab, Setup."
+      }
+    ]
+  },
+  {
+    "version": "1.11.0",
+    "date": "2026-09-26",
+    "headline": "several Jira searches per plan",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Keep several Jira searches side by side",
+        "before": "A plan could have one Jira search, so seeing epics and this sprint's stories meant switching searches.",
+        "now": "Give the sync as many named searches as you need, like Epics, This sprint and No epic. The Jira window has a button for each, with how many are new, and Today says how many are new in each.",
+        "where": "python sightline-jira-sync.py sync PLAN --search \"Epics=...\" --search \"This sprint=...\" --save"
+      }
+    ]
+  },
+  {
+    "version": "1.10.0",
+    "date": "2026-09-26",
+    "headline": "Jira keeps itself in sync, and every project carries its own jira folder",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "A plan's Jira files live in a jira folder next to it",
+        "before": "The sync wrote jira-status.json and jira-issues.json loose next to the plan, and each had to be connected separately.",
+        "now": "The sync writes the plan's Jira files into a jira folder next to the plan, so the folder can be copied for another project. Connect that folder once and Sightline reads everything in it, every minute.",
+        "where": "File, then Jira status, then Connect the Jira folder."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Clearer when nothing is linked yet",
+        "before": "The Jira window said Jira and the plan agree on every linked item even when nothing was linked.",
+        "now": "It says nothing in the plan is linked to Jira yet.",
+        "where": "File, then Jira status."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Set it up once; it keeps itself in sync",
+        "before": "Every sync meant running a long command by hand, and adding epics meant running it twice.",
+        "now": "sync --save remembers a plan's board and search on your computer. install starts watch when you sign in: every saved plan syncs on its schedule, and again shortly after anyone saves the plan.",
+        "where": "python sightline-jira-sync.py install"
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "More than one Jira",
+        "now": "Set up as many Jira servers as you need (setup --jira URL). Each plan remembers which one it uses, with that server's own fields.",
+        "where": "python sightline-jira-sync.py setup --jira https://..."
+      },
+      {
+        "kind": "improved",
+        "area": "Security",
+        "title": "Your token only runs your own copy of the sync",
+        "before": "The sync ran from the shared folder, so anyone who could edit that folder could change what ran with your Jira token.",
+        "now": "install keeps your own copy in your profile, and the sync warns when it's run from anywhere else.",
+        "where": "python sightline-jira-sync.py install"
+      }
+    ]
+  },
+  {
+    "version": "1.9.1",
+    "date": "2026-09-26",
+    "headline": "Sightline survives being copied, and says so when it can't start",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Security",
+        "title": "A copy that re-encodes the file no longer stops Sightline",
+        "before": "Sightline runs only its own code, checked by fingerprint. If a copy changed any character in that code, for example by saving it in another text encoding, the browser blocked all of it and the page stayed blank.",
+        "now": "The code is written in plain ASCII, so re-encoding the file can't change it. A checksum file comes with each copy.",
+        "where": "timeline-planner.html and timeline-planner.html.sha256."
+      },
+      {
+        "kind": "improved",
+        "area": "What's new",
+        "title": "A clear message when Sightline can't start",
+        "before": "A blocked page was blank, with the reason only in the browser's console.",
+        "now": "The page says Sightline didn't start, why that usually happens, and how to check and fix the copy. Your plan file isn't affected.",
+        "where": "Opening a damaged copy of timeline-planner.html."
+      }
+    ]
+  },
+  {
+    "version": "1.9.0",
+    "date": "2026-09-26",
+    "headline": "Jira statuses show the way your board does, and abandoned work stops counting as done",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Abandoned work is no longer counted as done",
+        "before": "Jira puts abandoned issues in its Done category, so Sightline counted them as finished.",
+        "now": "Work closed as Won't Do, Duplicate or Cancelled is shown as Abandoned: struck through, and left out of progress and story counts. Initiatives say how many were abandoned.",
+        "where": "The chart, an initiative's Jira epics, and progress."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Statuses follow your board's columns",
+        "before": "Sightline used Jira's own status categories, which put some statuses in the wrong place (Completed as in progress, Resolved as to do).",
+        "now": "Run the sync with --board and Sightline reads the board's columns: early columns are not started, middle ones are in progress (shown by the column's name, like Pending Acceptance), the last is done. Abandoned statuses in the Done column show as Abandoned.",
+        "where": "Everywhere a Jira status shows."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "A status map the team shares",
+        "now": "The Jira window lists every status and resolution your issues use, how each shows here, and why. Change any that are wrong; the whole team sees the same, and counts update at once.",
+        "where": "File, then Jira status, under How Jira statuses show in Sightline."
+      },
+      {
+        "kind": "fixed",
+        "area": "Sprints & process",
+        "title": "Parking-lot sprints don't schedule anything",
+        "before": "An issue parked in such a sprint was pinned to its old dates.",
+        "now": "A future sprint whose dates have passed (like To Be Evaluated by Leads) no longer sets an issue's dates or shapes the plan's sprints. Its issues say they're not in a scheduled sprint.",
+        "where": "Timeline, and Sprints from your Jira board."
+      }
+    ]
+  },
+  {
+    "version": "1.8.0",
+    "date": "2026-09-26",
+    "headline": "sprints from Jira, and Jira issues stay where Jira puts them",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Sprints & process",
+        "title": "The plan's sprints follow your Jira board",
+        "before": "Sprints in Sightline were set up by hand and could drift from Jira's.",
+        "now": "Run the sync with --board and the Jira window shows the plan's sprints next to Jira's. One click makes them match. Jira is the source of truth for sprint names and dates; the plan keeps its own sprints after Jira's last one.",
+        "where": "File, then Jira status, under Sprints from your Jira board."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Jira issues sit in their sprint",
+        "before": "Items linked to a Jira story could be dragged anywhere, whatever sprint Jira had them in.",
+        "now": "An initiative or task linked to a Jira issue sits in that issue's sprint, and can't be dragged or resized. To move it, change its sprint in Jira. Issues not in a sprint yet can still be moved.",
+        "where": "Timeline, on items linked to Jira."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Status comes from Jira",
+        "before": "A Jira-linked item's status was set by hand and could disagree with Jira.",
+        "now": "Its status follows Jira's. An initiative made of epics follows its stories. At risk and Blocked are still yours to set.",
+        "where": "The details panel, and Today."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Stretch an initiative to cover its stories' sprints",
+        "now": "An initiative made of epics says which sprints its stories are in, and one click stretches the bar to cover them. It never moves on its own.",
+        "where": "An initiative's Jira epics."
+      },
+      {
+        "kind": "improved",
+        "area": "Today",
+        "title": "Today sends you to Jira for Jira's items",
+        "now": "Items whose dates and status come from Jira say Update it in Jira instead of offering Start, Done or Next week. Unblock still works.",
+        "where": "Today."
+      }
+    ]
+  },
+  {
+    "version": "1.7.0",
+    "date": "2026-09-26",
+    "headline": "a review of the Jira work: fixes, and room for big backlogs",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Filter a long list of Jira issues",
+        "before": "Only the first 300 issues from a search were shown, and Select all picked all of them.",
+        "now": "Every issue is listed. Type to filter by key, summary, type, status, person or epic. Select all picks just the ones shown, and the buttons say how many you picked.",
+        "where": "File, then Jira status."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "An epic already linked isn't offered again",
+        "before": "An epic linked through an initiative's Jira epics still showed as new, and adding it made a duplicate.",
+        "now": "Epics linked either way count as in the plan.",
+        "where": "File, then Jira status."
+      },
+      {
+        "kind": "fixed",
+        "area": "People",
+        "title": "Owners come only from linked Jira users",
+        "before": "When Jira sent no user key, Sightline could make someone an owner because their display name matched.",
+        "now": "Owners are only set from a person's Jira link. Two people with the same name can't be mixed up.",
+        "where": "Adding issues from Jira, and Mine on Today."
+      },
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Skips and epic links from two people both survive",
+        "before": "If you and a teammate each skipped an issue, or each linked an epic to the same initiative, one of you could lose yours when the changes merged.",
+        "now": "Both are kept, and a skip or link you removed stays removed.",
+        "where": "When Sightline brings in a teammate's changes."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Issues with an unknown status aren't counted as to do",
+        "before": "Stories whose status Jira gave no category were counted as not started.",
+        "now": "They're counted separately, and the initiative says how many.",
+        "where": "An initiative's Jira epics."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Story counts say where they come from",
+        "before": "The counts didn't say how old they were or whose view of Jira they reflect.",
+        "now": "They show when they were counted, and that only issues the person running the sync can see are included.",
+        "where": "An initiative's Jira epics."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "The two Jira files must belong together",
+        "before": "A status file and an issues file from different sync runs, or different Jira servers, were used together without a word.",
+        "now": "Sightline says when the issues file is from an earlier sync, and refuses a pair from different Jira servers.",
+        "where": "File, then Jira status."
+      },
+      {
+        "kind": "fixed",
+        "area": "Security",
+        "title": "No email addresses in names, either",
+        "before": "If someone's Jira display name was an email address, it was written into the shared files.",
+        "now": "The sync script uses their user name instead, or \"Jira user\".",
+        "where": "The Jira sync script, tools/sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.6.0",
+    "date": "2026-09-26",
+    "headline": "see how far along each initiative's Jira epics are",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Link initiatives to their Jira epics",
+        "before": "An initiative could link to one Jira issue, and the stories under an epic didn't count.",
+        "now": "Link as many epics as the work spans. The sync script counts their stories by status and adds up story points. The initiative shows how many are done, with a progress bar.",
+        "where": "An initiative's details panel, under Jira epics."
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Stories done, right on the bar",
+        "now": "An initiative with Jira epics shows stories done out of the total, like 17/45. Hover for what's in progress and the points.",
+        "where": "Timeline, on the initiative's bar."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "An epic's own status no longer causes false alarms",
+        "before": "An epic's status often stays In Progress for months, so an initiative linked to it was flagged as disagreeing with Jira even when every story was done.",
+        "now": "Initiatives linked to epics are compared with their stories: all done means done, any started means in progress.",
+        "where": "Jira and the plan disagree, in the Jira window and on Today."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Epics are recognized even when your admins renamed the type",
+        "before": "Sightline only knew an issue was an epic if its type was called \"Epic\".",
+        "now": "The sync script knows epics by their Epic Name field, whatever the type is called. An epic added from your Jira search is linked as that initiative's epic, so its stories are counted.",
+        "where": "Run python sightline-jira-sync.py fields once to pick up the Epic Name field."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Select all issues at once",
+        "before": "Picking many issues from your Jira search meant ticking each one.",
+        "now": "A Select all checkbox heads the list. It shows when only some are picked.",
+        "where": "File, then Jira status, while you're editing."
+      }
+    ]
+  },
+  {
+    "version": "1.5.0",
+    "date": "2026-09-26",
+    "headline": "Sightline learns your Jira's fields",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "The sync script finds your Jira's Epic Link, Sprint and Story Points",
+        "before": "Every Jira server names these fields differently, so the script couldn't read them.",
+        "now": "Setup looks them up by type and saves them on your computer. Run fields to look again, or fields --set to choose one yourself.",
+        "where": "python sightline-jira-sync.py fields"
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "See each issue's epic, sprint and story points",
+        "now": "Issues from your Jira search show their epic, current sprint and points. An item's Jira line shows its sprint and points too.",
+        "where": "File, then Jira status, and the details panel under the Jira key."
+      }
+    ]
+  },
+  {
+    "version": "1.4.0",
+    "date": "2026-09-26",
+    "headline": "link your team to their Jira users",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "People",
+        "title": "Link people to their Jira users",
+        "before": "Sightline matched Jira assignees to people by display name only, so \"Avery Smith\" in Jira never matched \"Avery\" in the plan.",
+        "now": "Link each person to their Jira user once. Sightline suggests the likely match, and nothing links until you click Link. Links are saved in the plan, so the whole team shares them.",
+        "where": "The person's panel, or People, then Jira users."
+      },
+      {
+        "kind": "new",
+        "area": "People",
+        "title": "See everyone assigned in Jira",
+        "now": "People lists everyone the Jira files have work assigned to, how many issues each has, and who isn't linked yet. Link them to someone on the team, or add them to the team.",
+        "where": "People, then Jira users. It appears once a Jira file is connected."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Issues from Jira get the right owner",
+        "before": "Adding an issue from Jira set the owner only when the display name matched exactly.",
+        "now": "A linked assignee becomes the owner even when their Jira name is different. An assignee who isn't linked is never guessed from their name.",
+        "where": "File, then Jira status, then Add picked."
+      },
+      {
+        "kind": "improved",
+        "area": "Today",
+        "title": "Mine includes what Jira assigns to you",
+        "now": "Once you're linked, Today's Mine view includes plan items whose Jira issue is assigned to you, even if you're not an owner in the plan.",
+        "where": "Today, then Mine."
+      },
+      {
+        "kind": "improved",
+        "area": "Jira",
+        "title": "Spot work Jira assigns to someone else",
+        "now": "An item's Jira line says \"not an owner here\" when Jira's assignee isn't one of its owners.",
+        "where": "The details panel, under the Jira key."
+      },
+      {
+        "kind": "improved",
+        "area": "Security",
+        "title": "No email addresses in the Jira files",
+        "now": "The sync script writes each assignee's Jira key and user name, never their email. If your Jira uses email addresses as user names, the script writes a one-way code instead, which still links but can't be turned back into the address.",
+        "where": "The Jira sync script, tools/sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.3.0",
+    "date": "2026-09-26",
+    "headline": "bring in Jira issues from a filter",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Bring in issues from a Jira filter",
+        "before": "Sightline could only show the Jira status of items that were already in the plan.",
+        "now": "Give the sync script a saved filter or a search, and it writes what it finds to its own file, jira-issues.json. Connect that file in the Jira window to see the issues that aren't in the plan yet, then add them as initiatives in a lane or as tasks in an initiative. Each starts today, ends on its due date, and gets its owner when the assignee is on the team.",
+        "where": "File, then Jira status. Run the script with --filter 12345 or --jql \"...\", then Connect jira-issues.json."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Skip issues that don't belong in the plan",
+        "now": "Skip picked issues to leave them out. Skips are saved in the plan, so the whole team sees the same list. Show them again any time.",
+        "where": "File, then Jira status."
+      },
+      {
+        "kind": "new",
+        "area": "Today",
+        "title": "Today tells you when Jira has something new",
+        "now": "When the filter finds issues that aren't in the plan, Today says how many, with a Review button.",
+        "where": "Today, in the right-hand column."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "The Jira window's lists are easier to read",
+        "before": "Items in the \"Jira and the plan disagree\" list were shown in small bold capitals.",
+        "now": "They're in normal text, like the rest of the window.",
+        "where": "File, then Jira status."
+      }
+    ]
+  },
+  {
+    "version": "1.2.0",
+    "date": "2026-09-26",
+    "headline": "more room for your plan, and Today leads with what needs you",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Today",
+        "title": "Today leads with what needs you",
+        "before": "Every section had its own card, even when it only said \"Nothing here.\"",
+        "now": "Sections with work in them come first. Empty ones are named together on one line, and a clear day says so.",
+        "where": "Today."
+      },
+      {
+        "kind": "improved",
+        "area": "Details panel",
+        "title": "The details panel no longer covers other pages",
+        "before": "What you opened on the Timeline stayed open over Today, People, and Plan, and hid part of the page.",
+        "now": "Picking another tab closes it. When you open something on Today, People, or Plan, the page moves over to make room.",
+        "where": "The details panel on the right."
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Gates on the same day share one chip",
+        "before": "Gates needed on the same day stacked on top of each other, so the Gates row grew tall.",
+        "now": "They share one chip, like \"Oct 16 Admin consent +1\". Click it to pick the gate you want.",
+        "where": "Timeline, the Gates row."
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "The key folds away",
+        "before": "The key was always open at the bottom of the chart, two lines deep.",
+        "now": "It folds behind a Key button, and remembers if you leave it open. The milestone that waits on a gate is now \"Gated milestone\", so no two entries share a name.",
+        "where": "Key, at the bottom of the Timeline."
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Bars show a short name when the title doesn't fit",
+        "before": "A long title on a short bar was cut off mid-word.",
+        "now": "If you haven't set a chart name, the bar shows the part before \" · \" or \":\", the same one the panel suggests. Hover for the full title.",
+        "where": "Timeline, Weeks zoom."
+      },
+      {
+        "kind": "improved",
+        "area": "Notes",
+        "title": "One name for notes",
+        "before": "The panel said \"Sticky notes\", the toolbar \"Notes\", and a menu \"Post-it notes\", all for the same thing.",
+        "now": "They're called Notes everywhere. Updates are still separate: dated progress on an item.",
+        "where": "The details panel, and Notes in the toolbar."
+      },
+      {
+        "kind": "improved",
+        "area": "Saving",
+        "title": "It's clear when your plan isn't shared",
+        "before": "\"This browser only\" was a small gray chip, easy to miss.",
+        "now": "It's drawn as a warning and says \"Share…\". Click it to save the plan as a shared plan, or open one your team already shares.",
+        "where": "The chip at the top of the page."
+      },
+      {
+        "kind": "improved",
+        "area": "Risks",
+        "title": "Risks show how serious they are",
+        "before": "Severity was plain text, and a long risk was cut off in its box.",
+        "now": "High is red and medium is amber. The risk wraps onto more lines, and Enter finishes the edit.",
+        "where": "Plan, then Risks. Decisions wrap too."
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "The line by the tabs says where you are in the sprint",
+        "before": "It repeated \"By lane · Weeks\", which the buttons on the right already show.",
+        "now": "It says where today falls in its sprint, like \"S1 · day 4 of 10\", then any filters.",
+        "where": "Next to the Today, Timeline, People, and Plan tabs."
+      },
+      {
+        "kind": "improved",
+        "area": "Accessibility",
+        "title": "Line icons on Today and the details panel",
+        "before": "Today's sections and Mark blocked used emoji, which looked different from the rest of the page.",
+        "now": "They use Sightline's own line icons, colored by what needs attention.",
+        "where": "Today, and Mark blocked in the details panel."
+      }
+    ]
+  },
+  {
+    "version": "1.1.0",
+    "date": "2026-09-26",
+    "headline": "safer saving, a cleaner Process row, and release notes",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "What's new",
+        "title": "See what changed in each version",
+        "before": "There was no way to tell what changed between versions of Sightline.",
+        "now": "Every release is listed here, newest first. Search it, or filter by kind or area. A dot on What's new means there's a release you haven't seen yet.",
+        "where": "What's new, at the top right."
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "The Process row reads at a glance",
+        "before": "At Weeks zoom, Code freeze showed as \"C\", and each Release sat on a second line under it.",
+        "now": "Each freeze is a band as wide as its days and each release is a pin on top of it, all on one line. The header names each kind in its color.",
+        "where": "Timeline, Weeks zoom, the Process row."
+      },
+      {
+        "kind": "improved",
+        "area": "Accessibility",
+        "title": "Focus stays on the dropdown you just changed",
+        "before": "Changing a dropdown in the details panel with the keyboard moved focus off it.",
+        "now": "Focus stays on the dropdown, so you can keep working from the keyboard.",
+        "where": "The details panel on the right, for example Status."
+      },
+      {
+        "kind": "improved",
+        "area": "Security",
+        "title": "Sightline only runs its own code",
+        "before": "The page would have run any script placed inside it.",
+        "now": "The page runs only the two scripts it ships with. The browser blocks anything else.",
+        "where": "Nothing to do. It's automatic."
+      },
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "The + no longer covers what's already there",
+        "before": "Pointing at a process block, or next to one, could put the + on top of it.",
+        "now": "The + shows only in open space. If the spot is taken, it moves to the nearest open space in the row, or doesn't show.",
+        "where": "Point at an empty spot on any timeline row."
+      },
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Very large plans can't break the file anymore",
+        "before": "Saving a plan over 2 MB wrote a file Sightline couldn't open again.",
+        "now": "Sightline refuses the save and tells you how large the plan would be, so the file stays safe.",
+        "where": "Save, quick updates, and Start a new shared plan."
+      },
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Your edits are backed up when a teammate's change wins",
+        "before": "If you and a teammate changed the same thing, their newer change was kept and yours was dropped.",
+        "now": "Theirs is still kept, but your version is downloaded as a backup first.",
+        "where": "When Sightline brings in a teammate's changes."
+      },
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "A teammate's undo is no longer reversed",
+        "before": "If a teammate undid your quick update a moment after you made it, Sightline could put your update back.",
+        "now": "A change made after seeing yours is left alone.",
+        "where": "Quick updates, like marking something done."
+      },
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "When a save is refused, you can see why",
+        "before": "The reason a save was refused disappeared before you could read it.",
+        "now": "The reason stays in the status line.",
+        "where": "The status line at the bottom of the page."
+      },
+      {
+        "kind": "fixed",
+        "area": "Menus",
+        "title": "No more \"null\" in menus",
+        "before": "The word \"null\" could appear in the + menu, Notes, Filters, and the Jira window.",
+        "now": "Those menus show only what belongs there.",
+        "where": "+ on the timeline, Notes, Filters, and Jira status."
+      },
+      {
+        "kind": "fixed",
+        "area": "Sprints & process",
+        "title": "Sprint rules stay inside their sprint",
+        "before": "A rule like \"5th working day\" could land in the next sprint when a holiday made a sprint shorter.",
+        "now": "It lands on the sprint's last working day instead.",
+        "where": "Process blocks that repeat from a sprint rule."
+      },
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Tasks that wait on each other stay put",
+        "before": "If two tasks waited on each other, every edit pushed both of them later.",
+        "now": "They stay where they are and are listed as a dependency loop to fix.",
+        "where": "The review banner above the timeline."
+      },
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Your Jira token stays private",
+        "before": "If Jira redirected a request, the sync script could send your token to another address. On a Mac, other programs could briefly see it.",
+        "now": "Redirects are refused, and the token is handed over privately.",
+        "where": "The Jira sync script, tools/sightline-jira-sync.py."
+      }
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "date": "2026-09-26",
+    "headline": "the planner gets a name",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "What's new",
+        "title": "Meet Sightline",
+        "now": "The planner is now called Sightline: your team's work, in plain sight.",
+        "where": "The top left of the page and the browser tab."
+      },
+      {
+        "kind": "new",
+        "area": "Saving",
+        "title": "One plan file your whole team shares",
+        "now": "Link a plan file your team shares. One person edits at a time, anyone can make quick updates, and nothing is overwritten without a backup.",
+        "where": "File, then Link a file."
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Your plan by lane or by person",
+        "now": "See work by lane or by person, zoom from weeks to days, and plan around holidays and time off.",
+        "where": "The Timeline and People tabs."
+      },
+      {
+        "kind": "new",
+        "area": "Sprints & process",
+        "title": "Sprints, meetings, and team rhythms",
+        "now": "Set up sprints, repeating meetings, and process blocks like code freezes and releases that repeat every sprint from a rule.",
+        "where": "Plan, then Sprints."
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Jira status next to your plan",
+        "now": "Show each item's Jira status beside it. A small script fetches it, so the page never sees your token.",
+        "where": "File, then Jira status."
+      }
+    ]
+  }
+]

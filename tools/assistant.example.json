@@ -1,0 +1,9 @@
+{
+  "endpoint": "https://ai.example.com/v1/chat/completions",
+  "model": "company-model",
+  "auth": "bearer",
+  "responseFormat": "json_object",
+  "timeout": 60,
+  "maxTokens": 4096,
+  "tokenParameter": "max_tokens"
+}

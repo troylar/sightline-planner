@@ -1,0 +1,123 @@
+// First launch, honest Today coverage, and four-quarter planning through the existing assistant.
+const {JSDOM, VirtualConsole} = require('jsdom');
+const fs = require('fs'), path = require('path');
+const html = fs.readFileSync(process.env.SIGHTLINE_HTML || path.join(__dirname, '..', 'dist', 'sightline.html'), 'utf8').replace(/<link[^>]+fonts[^>]+>/, '');
+const checks = [], pages = [];
+const ok = (name, pass, detail = '') => checks.push(`${pass ? 'PASS' : 'FAIL'} ${name}${detail ? ': ' + detail : ''}`);
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+setTimeout(()=>{console.log(checks.join('\n')); console.log('TIMEOUT'); process.exit(1);}, 40000).unref();
+async function page(ui){
+  const dom = new JSDOM(html, {runScripts:'dangerously', pretendToBeVisual:true, url:'https://local.test/', virtualConsole:new VirtualConsole(), beforeParse(w){
+    const RealDate = w.Date, now = new RealDate('2026-10-23T14:00:00Z').getTime();
+    w.Date = class extends RealDate {constructor(...args){args.length ? super(...args) : super(now);} static now(){return now;}};
+    if (ui) w.localStorage.setItem('timeline-planner-ui', JSON.stringify(ui));
+    w.indexedDB = undefined; w.confirm = ()=>true; w.prompt = ()=>'Tester'; w.alert = ()=>{};
+    w.HTMLDialogElement.prototype.showModal = function(){this.open = true;}; w.HTMLDialogElement.prototype.close = function(){this.open = false;};
+    w.Element.prototype.scrollIntoView = function(){}; w.HTMLCanvasElement.prototype.getContext = ()=>({font:'',measureText:t=>({width:String(t).length * 7})});
+    w.URL.createObjectURL = ()=>'blob:test'; w.URL.revokeObjectURL = ()=>{}; w.CSS = w.CSS || {}; w.CSS.escape = s=>s;
+    w.errors = []; w.addEventListener('error', e=>w.errors.push(e.message));
+  }});
+  pages.push(dom); await wait(180);
+  return {w:dom.window, d:dom.window.document, ev:code=>dom.window.eval(code)};
+}
+(async()=>{
+  const section = async fn=>{try{await fn();}catch(e){ok('section completed',false,e.stack.slice(0,400));}};
+  await section(async()=>{
+    const {d,ev,w} = await page();
+    ok('fresh browser renders Timeline and welcome without a navigation click', ev("UI.ws === 'timeline'") && !!d.querySelector('#gantt .welcome'));
+    ev("UI.ws='today';render();");
+    ok('empty Today invites planning instead of declaring all clear', /No work to assess yet/.test(d.querySelector('#todaySum').textContent) && !/All clear|Nothing needs attention right now/.test(d.querySelector('#today').textContent));
+    ok('empty Today offers the existing Roadmap', !!d.querySelector('#tStartRoadmap'));
+    d.querySelector('#tStartRoadmap').click();
+    ok('planning invitation opens Roadmap', ev("UI.ws === 'roadmap'"));
+    ok('first launch and empty navigation raise no errors', !w.errors.length, w.errors.join(';'));
+  });
+  await section(async()=>{
+    const {ev,d} = await page({ws:'unknown-page'});
+    ok('invalid remembered workspace recovers to a visible Timeline',ev("UI.ws === 'timeline'") && !!d.querySelector('#gantt .welcome'));
+    ev("S.deliverables=[{id:'dv-linked',name:'Linked outcome',stage:'planned',target:'2027-Q1',jira:['ABC-1']}];UI.ws='today';render();");
+    ok('roadmap-only Jira links show unassessed coverage', /Jira data needed/.test(d.querySelector('#todaySum').textContent) && !/All clear/.test(d.querySelector('#today').textContent));
+    d.querySelector('#tConnectJira').click();
+    ok('coverage action opens Jira connection',ev("UI.ws === 'plan' && UI.planTab === 'jira'"));
+    ev("JIRA=parseJiraStatus(JSON.stringify({kind:'sightline-jira-status',generatedAt:'2026-10-23T13:59:00Z',jiraBase:'https://jira.example.com',missing:['ABC-1'],issues:{}}));UI.ws='today';render();");
+    ok('partial Jira coverage qualifies reassurance', /Check data coverage/.test(d.querySelector('#todaySum').textContent) && !/All clear/.test(d.querySelector('#today').textContent));
+  });
+  await section(async()=>{
+    const {ev,d,w} = await page();
+    ev("UI.ws='roadmap';S.deliverables=[{id:'dv-in',name:'In range',stage:'planned',target:'2027-Q1'},{id:'dv-before',name:'Earlier work',stage:'planned',target:'2026-Q3'},{id:'dv-after',name:'Future work',stage:'planned',target:'2028-Q1'},{id:'dv-later',name:'Untimed work',stage:'planned',target:'later'},{id:'dv-wide',name:'Broad work',stage:'planned',target:'2027-H1'}];render();window.BEFORE=JSON.stringify(S);");
+    ok('four-quarter view is the default and crosses the year boundary',ev("roadmapCols().map(c=>c.target).join('|')") === '2026-Q4|2027-Q1|2027-Q2|2027-Q3');
+    ok('four-quarter cards render only in their window',!!d.querySelector('[data-dv="dv-in"]') && !d.querySelector('[data-dv="dv-after"]'));
+    ok('outside work is counted with a recovery action', /3 deliverables outside/.test(d.querySelector('#rmOutside').textContent) && !!d.querySelector('#rmOutsideShow'));
+    ok('broad targets span the quarters they overlap',d.querySelector('[data-dv="dv-wide"]').style.gridColumn === '2 / 4');
+    ev("window.BADGES=JSON.stringify(dvBadges(S.deliverables.find(d=>d.id==='dv-wide')));");
+    d.querySelector('#rmIdea').value = 'An idea I have not submitted';
+    const start = d.querySelector('#rmStart'); start.value = '2027-Q2'; start.dispatchEvent(new w.Event('change'));
+    ok('choosing a start quarter shows four explicit calendar quarters',ev("roadmapCols().map(c=>c.target).join('|')") === '2027-Q2|2027-Q3|2027-Q4|2028-Q1');
+    ok('quarter choice persists only as a browser preference',JSON.parse(w.localStorage.getItem('timeline-planner-ui')).rmStart === '2027-Q2' && ev('JSON.stringify(S) === BEFORE'));
+    ok('quarter selector retains keyboard focus after redraw',d.activeElement.id === 'rmStart');
+    ok('changing quarters preserves an unsubmitted idea',d.querySelector('#rmIdea').value === 'An idea I have not submitted');
+    ok('attention rules use today rather than the viewed quarter',ev("JSON.stringify(dvBadges(S.deliverables.find(d=>d.id==='dv-wide'))) === BADGES"));
+    d.querySelector('#rmOutsideShow').click();
+    ok('long range recovers earlier, future and Later work', ['dv-before','dv-after','dv-later'].every(id=>d.querySelector(`[data-dv="${id}"]`)) && ev("UI.rmHorizon === 'long'"));
+    d.querySelector('#rmFour').click();
+    ok('returning to four quarters retains chosen start and the plan',ev("UI.rmStart === '2027-Q2' && JSON.stringify(S) === BEFORE"));
+    ok('horizon controls do not raise script errors',!w.errors.length,w.errors.join(';'));
+  });
+  await section(async()=>{
+    const {ev,d} = await page();
+    ev("UI.ws='roadmap';S.deliverables=[{id:'dv-ask',name:'Useful outcome',stage:'planned',target:'2027-Q1'}];render();window.BEFORE=JSON.stringify(S);");
+    d.querySelector('#rmAsk').click(); await wait(5);
+    ok('Roadmap opens assistant with exact quarter context',d.querySelector('#chatScope')?.textContent.includes('Q4 2026') && d.querySelector('#chatScope')?.textContent.includes('Q3 2027'));
+    ok('assistant starter focuses composer and leaves plan untouched',d.activeElement.id === 'chatDraft' && ev('JSON.stringify(S) === BEFORE') && !ev('chatState().active'));
+    ev("chatState().draft='My unfinished question';sel={type:'deliverable',id:'dv-ask'};render();");
+    d.querySelector('#dvAsk').click();await wait(5);
+    ok('Ask about item preserves a previous draft',d.querySelector('#chatDraft').value === 'My unfinished question' && /draft was kept/.test(d.querySelector('#chatStatus').textContent));
+    ev("chatState().draft='';sel={type:'deliverable',id:'dv-ask'};render();");
+    d.querySelector('#dvAsk').click();await wait(5);
+    ok('item context uses stable id and readable name',ev("chatState().selection?.id === 'dv-ask'") && d.querySelector('#chatScope')?.textContent.includes('Useful outcome'));
+    ok('starter cannot send or apply on its own',!ev('chatState().active') && ev('JSON.stringify(S) === BEFORE'));
+  });
+  await section(async()=>{
+    const {ev,d,w} = await page();
+    ev("UI.ws='roadmap';S.deliverables=[{id:'dv-first',name:'First outcome',stage:'planned',target:'2027-Q1'},{id:'dv-second',name:'Second outcome',stage:'planned',target:'2027-Q2'}];render();window.BEFORE=JSON.stringify(S);");
+    const input = d.querySelector('#rmIdea'); input.value = 'My unsubmitted idea'; input.dispatchEvent(new w.Event('input',{bubbles:true}));
+    d.querySelector('#rmAsk').click();await wait(5);
+    ok('AI entry preserves an unsubmitted roadmap idea',d.querySelector('#rmIdea').value === 'My unsubmitted idea');
+    ok('AI entry is ready for notes in one message',d.querySelector('#chatDraft').value === '' && /Paste/.test(d.querySelector('#chatDraft').placeholder));
+    ok('selection line contains only readable context',!d.querySelector('#chatScope').textContent.includes('null'));
+    ev("sel={type:'deliverable',id:'dv-first'};render();");d.querySelector('#dvAsk').click();await wait(5);
+    ev("sel={type:'deliverable',id:'dv-second'};render();");d.querySelector('#dvAsk').click();await wait(5);
+    ok('untouched item context follows the newly selected outcome',ev("chatState().selection?.id === 'dv-second'") && d.querySelector('#chatScope')?.textContent.includes('Second outcome'));
+    d.querySelector('#chatReviewRoadmap').click();await wait(5);
+    ok('gap review offers a short generated question',d.querySelector('#chatDraft').value.startsWith('Review this roadmap') && d.querySelector('#chatDraft').value.length<200);
+    ev("sel={type:'deliverable',id:'dv-second'};render();");d.querySelector('#dvAsk').click();await wait(5);
+    ok('an untouched generated starter yields to the selected item',d.querySelector('#chatDraft').value === '' && ev("chatState().selection?.id === 'dv-second'"));
+    const draft = d.querySelector('#chatDraft');draft.value = 'Move this to the next quarter';draft.dispatchEvent(new w.Event('input',{bubbles:true}));
+    ev("sel={type:'deliverable',id:'dv-first'};render();");d.querySelector('#dvAsk').click();await wait(5);
+    ok('a typed question keeps its original item context',ev("chatState().selection?.id === 'dv-second'") && d.querySelector('#chatDraft').value === 'Move this to the next quarter');
+    d.querySelector('#chatSwitchSelection').click();await wait(5);
+    ok('switching context is deliberate and keeps the typed question',ev("chatState().selection?.id === 'dv-first'") && d.querySelector('#chatDraft').value === 'Move this to the next quarter');
+    ev("sel=null;goWs('timeline');goWs('roadmap');");
+    ok('roadmap draft survives workspace navigation',d.querySelector('#rmIdea').value === 'My unsubmitted idea');
+    ev("window.PLAN=S;S=blankPlan();S.meta.planId='p-other-draft';render();");
+    ok('another plan does not inherit the roadmap draft',d.querySelector('#rmIdea').value === '');
+    ev("S=PLAN;render();");ok('returning to the original plan restores its draft',d.querySelector('#rmIdea').value === 'My unsubmitted idea');
+    ok('assistant and draft navigation do not change the plan',ev('JSON.stringify(S) === BEFORE'));
+    ev("sel={type:'amend',id:'x'};render();");
+    const composer = d.querySelector('#chatDraft'), setup = d.querySelector('#chatSetup');
+    ok('composer appears before collapsed setup details',!!(composer.compareDocumentPosition(setup)&w.Node.DOCUMENT_POSITION_FOLLOWING) && !setup.open);
+    ok('assistant uses a consistent readable title',d.querySelector('#side .sidehead h3').textContent === 'Planning assistant');
+    ev("sel=null;render();");
+    d.querySelector('#rmAdd').dispatchEvent(new w.Event('submit',{cancelable:true}));await wait(10);
+    ok('successful idea submission clears only its submitted draft',d.querySelector('#rmIdea').value === '' && ev("S.deliverables.some(d=>d.name==='My unsubmitted idea')"));
+  });
+  await section(async()=>{
+    const {ev,d} = await page();
+    ev("UI.ws='roadmap';AM={hash:'outside',file:{batchId:'outside',source:'Tester',changes:[{id:'add-outside',summary:'A later proposal',ops:[{op:'add',type:'deliverable',id:'dv-proposed-later',value:{name:'Later proposal',target:'2028-Q1'}}]}]}};amTried=S.meta.planId;render();");
+    ok('out-of-window assistant additions remain counted', /1 proposed addition outside/.test(d.querySelector('#rmOutside')?.textContent || '') && !d.querySelector('[data-amghost]'));
+    d.querySelector('#rmOutsideShow').click();
+    ok('long range recovers proposed additions without applying them',!!d.querySelector('[data-amghost="add-outside"]') && ev("!(S.deliverables || []).some(d=>d.id==='dv-proposed-later')"));
+  });
+  for (const dom of pages) dom.window.close(); console.log(checks.join('\n'));
+  const failures = checks.filter(x=>x.startsWith('FAIL')).length; console.log(`${checks.length-failures}/${checks.length} passed`); process.exit(failures?1:0);
+})().catch(e=>{console.log('FAIL harness completed: '+e.stack);console.log('0/1 passed');process.exit(1);});

@@ -1,0 +1,665 @@
+{
+  "meta": {
+    "title": "Sample Delivery Plan",
+    "start": "2026-09-21",
+    "weeks": 12,
+    "sprintWeeks": 2,
+    "firstSprint": 0
+  },
+  "lanes": [
+    {
+      "id": "int",
+      "name": "Integrations",
+      "who": "Avery · Blake · Morgan reviews",
+      "color": "#2c6fbb"
+    },
+    {
+      "id": "chat",
+      "name": "API v2",
+      "who": "Morgan",
+      "color": "#0e8577"
+    },
+    {
+      "id": "rag",
+      "name": "Search",
+      "who": "Harper · Indigo",
+      "color": "#7d4aa8"
+    },
+    {
+      "id": "fin",
+      "name": "Reporting",
+      "who": "Casey · Devon",
+      "color": "#5c6878"
+    },
+    {
+      "id": "ui",
+      "name": "Web App",
+      "who": "Finley · UX Emery, Gray",
+      "color": "#b23c57"
+    },
+    {
+      "id": "plat",
+      "name": "Platform gates",
+      "who": "Owners outside team",
+      "color": "#8a6d1f"
+    },
+    {
+      "id": "none",
+      "name": "Unstaffed",
+      "who": "No-code · Budget · Data automation · Routing",
+      "color": "#9aa3b2"
+    }
+  ],
+  "bars": [
+    {
+      "id": "m1",
+      "lane": "int",
+      "start": 0,
+      "span": 2,
+      "label": "Auth go/no-go · isolation test · typed tools, API client",
+      "kind": "work",
+      "owner": "Avery, Blake, Morgan",
+      "jira": "",
+      "status": "inprogress",
+      "dependsOn": []
+    },
+    {
+      "id": "m2",
+      "lane": "int",
+      "start": 2,
+      "span": 2,
+      "label": "Remaining pilot tools · v1 host · QA · pilot release",
+      "kind": "work",
+      "owner": "Avery, Blake",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "m1"
+      ]
+    },
+    {
+      "id": "m3",
+      "lane": "int",
+      "start": 4,
+      "span": 2,
+      "label": "Parity: files, sites, channels, directory · rollout",
+      "kind": "gated",
+      "owner": "Avery, Blake",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "m2"
+      ]
+    },
+    {
+      "id": "m4",
+      "lane": "int",
+      "start": 6,
+      "span": 2,
+      "label": "Hardening, evals · old path kept as fallback",
+      "kind": "work",
+      "owner": "Avery, Blake",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "m3"
+      ]
+    },
+    {
+      "id": "m5",
+      "lane": "int",
+      "start": 8,
+      "span": 2,
+      "label": "Retire old integration path once stable",
+      "kind": "work",
+      "owner": "Blake",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "m4"
+      ]
+    },
+    {
+      "id": "c1",
+      "lane": "chat",
+      "start": 1,
+      "span": 1,
+      "label": "Contracts, catalog targets, wire adapter",
+      "kind": "work",
+      "owner": "Morgan",
+      "jira": "",
+      "status": "inprogress",
+      "dependsOn": []
+    },
+    {
+      "id": "c2",
+      "lane": "chat",
+      "start": 2,
+      "span": 1,
+      "label": "Runtime library spike",
+      "kind": "work",
+      "owner": "Morgan",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "c1"
+      ]
+    },
+    {
+      "id": "c3",
+      "lane": "chat",
+      "start": 2,
+      "span": 4,
+      "label": "Core: runtime, guardrails, ledger, telemetry",
+      "kind": "work",
+      "owner": "Morgan",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "c1"
+      ]
+    },
+    {
+      "id": "c4",
+      "lane": "chat",
+      "start": 6,
+      "span": 2,
+      "label": "/tools layer · integration tools wired in · deployment prep",
+      "kind": "work",
+      "owner": "Morgan",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "c3",
+        "m3"
+      ]
+    },
+    {
+      "id": "c5",
+      "lane": "chat",
+      "start": 8,
+      "span": 2,
+      "label": "Internal canary · load test · failback",
+      "kind": "gated",
+      "owner": "Morgan",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "c4"
+      ]
+    },
+    {
+      "id": "c6",
+      "lane": "chat",
+      "start": 10,
+      "span": 2,
+      "label": "2nd caller · caching · retries",
+      "kind": "gated",
+      "owner": "Morgan",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "c5"
+      ]
+    },
+    {
+      "id": "r1",
+      "lane": "rag",
+      "start": 0,
+      "span": 2,
+      "label": "Auth + ingestion checks · retrieval trace · eval set",
+      "kind": "work",
+      "owner": "Harper, Indigo",
+      "jira": "",
+      "status": "inprogress",
+      "dependsOn": []
+    },
+    {
+      "id": "r2",
+      "lane": "rag",
+      "start": 2,
+      "span": 2,
+      "label": "Baseline · citation threshold fix · query rewrite (flag)",
+      "kind": "work",
+      "owner": "Harper, Indigo",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "r1"
+      ]
+    },
+    {
+      "id": "r3",
+      "lane": "rag",
+      "start": 4,
+      "span": 2,
+      "label": "Grounding mode (product sign-off) · rollout",
+      "kind": "work",
+      "owner": "Harper, Indigo",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "r2"
+      ]
+    },
+    {
+      "id": "r4",
+      "lane": "rag",
+      "start": 6,
+      "span": 2,
+      "label": "If eval shows gaps: merging, rerank",
+      "kind": "work",
+      "owner": "Harper, Indigo",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "r3"
+      ]
+    },
+    {
+      "id": "r5",
+      "lane": "rag",
+      "start": 8,
+      "span": 2,
+      "label": "If still needed: hybrid, chunking",
+      "kind": "work",
+      "owner": "Harper, Indigo",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "r4"
+      ]
+    },
+    {
+      "id": "r6",
+      "lane": "rag",
+      "start": 10,
+      "span": 2,
+      "label": "Harper + Indigo free",
+      "kind": "waiting",
+      "owner": "",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": []
+    },
+    {
+      "id": "f1",
+      "lane": "fin",
+      "start": 0,
+      "span": 2,
+      "label": "Scope + Jira alignment",
+      "kind": "work",
+      "owner": "Casey, Devon",
+      "jira": "",
+      "status": "inprogress",
+      "dependsOn": []
+    },
+    {
+      "id": "f2",
+      "lane": "fin",
+      "start": 2,
+      "span": 2,
+      "label": "Generate and deliver reports",
+      "kind": "work",
+      "owner": "Casey, Devon",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "f1"
+      ]
+    },
+    {
+      "id": "f3",
+      "lane": "fin",
+      "start": 4,
+      "span": 8,
+      "label": "Casey + Devon free",
+      "kind": "waiting",
+      "owner": "",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": []
+    },
+    {
+      "id": "u1",
+      "lane": "ui",
+      "start": 0,
+      "span": 2,
+      "label": "Version/env + release notes design",
+      "kind": "work",
+      "owner": "Finley, Emery, Gray",
+      "jira": "",
+      "status": "inprogress",
+      "dependsOn": []
+    },
+    {
+      "id": "u2",
+      "lane": "ui",
+      "start": 2,
+      "span": 2,
+      "label": "Build version/env + release notes",
+      "kind": "work",
+      "owner": "Finley",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "u1"
+      ]
+    },
+    {
+      "id": "u3",
+      "lane": "ui",
+      "start": 4,
+      "span": 2,
+      "label": "Integration UX states",
+      "kind": "work",
+      "owner": "Finley, Emery",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": []
+    },
+    {
+      "id": "u4",
+      "lane": "ui",
+      "start": 6,
+      "span": 2,
+      "label": "UI → API v2: sizing",
+      "kind": "gated",
+      "owner": "Finley, Morgan",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "c3"
+      ]
+    },
+    {
+      "id": "u5",
+      "lane": "ui",
+      "start": 8,
+      "span": 4,
+      "label": "UI → API v2 migration (unsized)",
+      "kind": "gated",
+      "owner": "Finley",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": [
+        "u4"
+      ]
+    },
+    {
+      "id": "p1",
+      "lane": "plat",
+      "start": 0,
+      "span": 3,
+      "label": "Identity fix · Admin consent",
+      "kind": "gated",
+      "owner": "",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": []
+    },
+    {
+      "id": "p2",
+      "lane": "plat",
+      "start": 1,
+      "span": 4,
+      "label": "V2 env owner · spend ceiling · Gateway routes · security sign-off",
+      "kind": "gated",
+      "owner": "",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": []
+    },
+    {
+      "id": "n1",
+      "lane": "none",
+      "start": 0,
+      "span": 4,
+      "label": "Waiting",
+      "kind": "waiting",
+      "owner": "",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": []
+    },
+    {
+      "id": "n2",
+      "lane": "none",
+      "start": 4,
+      "span": 8,
+      "label": "Staff from freed engineers, or defer to Q1",
+      "kind": "waiting",
+      "owner": "",
+      "jira": "",
+      "status": "notstarted",
+      "dependsOn": []
+    }
+  ],
+  "milestones": [
+    {
+      "id": "ms1",
+      "date": "Oct 2",
+      "stretch": "",
+      "what": "Auth go/no-go · isolation test",
+      "dep": "Morgan + Blake",
+      "status": "commit",
+      "lane": "int",
+      "at": 1.7,
+      "stretchAt": null
+    },
+    {
+      "id": "ms2",
+      "date": "~Oct 16",
+      "stretch": "Oct 9",
+      "what": "Pilot users on new integrations",
+      "dep": "Avery + Blake",
+      "status": "commit",
+      "lane": "int",
+      "at": 3.7,
+      "stretchAt": 2.6
+    },
+    {
+      "id": "ms3",
+      "date": "Oct 16",
+      "stretch": "",
+      "what": "Search core fix",
+      "dep": "Eval set by Oct 2",
+      "status": "commit",
+      "lane": "rag",
+      "at": 3.7,
+      "stretchAt": null
+    },
+    {
+      "id": "ms4",
+      "date": "Oct 16",
+      "stretch": "",
+      "what": "Reports delivered",
+      "dep": "Confirm with Casey",
+      "status": "unconfirmed",
+      "lane": "fin",
+      "at": 3.7,
+      "stretchAt": null
+    },
+    {
+      "id": "ms5",
+      "date": "Oct 30",
+      "stretch": "Oct 16",
+      "what": "Search fully fixed and rolled out",
+      "dep": "Grounding mode sign-off",
+      "status": "commit",
+      "lane": "rag",
+      "at": 5.7,
+      "stretchAt": null
+    },
+    {
+      "id": "ms6",
+      "date": "~Oct 30",
+      "stretch": "Oct 16",
+      "what": "Integrations for all users",
+      "dep": "Identity fix + admin consent",
+      "status": "gated",
+      "lane": "int",
+      "at": 5.7,
+      "stretchAt": null
+    },
+    {
+      "id": "ms7",
+      "date": "~Oct 30",
+      "stretch": "Oct 16",
+      "what": "API v2 core running",
+      "dep": "Morgan part-time",
+      "status": "commit",
+      "lane": "chat",
+      "at": 5.7,
+      "stretchAt": 3.7
+    },
+    {
+      "id": "ms8",
+      "date": "~Nov 13",
+      "stretch": "Oct 30",
+      "what": "API v2 production-ready with integration tools",
+      "dep": "/tools layer",
+      "status": "commit",
+      "lane": "chat",
+      "at": 7.7,
+      "stretchAt": null
+    },
+    {
+      "id": "ms9",
+      "date": "No date",
+      "stretch": "Nov 2–13",
+      "what": "API v2 canary (internal)",
+      "dep": "Env owner, spend, gateway, security",
+      "status": "gated",
+      "lane": "",
+      "at": null,
+      "stretchAt": null
+    },
+    {
+      "id": "ms10",
+      "date": "No date",
+      "stretch": "Dec 11",
+      "what": "Web users on API v2",
+      "dep": "UI migration sizing",
+      "status": "gated",
+      "lane": "",
+      "at": null,
+      "stretchAt": null
+    }
+  ],
+  "gates": [
+    {
+      "gate": "Auth exchange works for the API",
+      "neededBy": "Oct 2",
+      "blocks": "All integrations in v2",
+      "owner": "Morgan (test)"
+    },
+    {
+      "gate": "Identity-validation fix",
+      "neededBy": "Oct 16",
+      "blocks": "Integrations to all users",
+      "owner": "AppSec"
+    },
+    {
+      "gate": "Admin consent",
+      "neededBy": "Oct 16",
+      "blocks": "Team tools",
+      "owner": "Tenant admins"
+    },
+    {
+      "gate": "V2 environment owner",
+      "neededBy": "Oct 19",
+      "blocks": "API v2 canary",
+      "owner": "Platform leadership"
+    },
+    {
+      "gate": "Spend ceiling + owner",
+      "neededBy": "Oct 30",
+      "blocks": "v2 production traffic",
+      "owner": "Finance / platform"
+    },
+    {
+      "gate": "Gateway routes",
+      "neededBy": "Oct 19",
+      "blocks": "API v2 on all targets",
+      "owner": "Gateway owner"
+    },
+    {
+      "gate": "Security sign-off",
+      "neededBy": "Oct 30",
+      "blocks": "Integrations in v2 production",
+      "owner": "Security"
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Who owns latency settings: prompt size, reasoning effort, max output tokens"
+    },
+    {
+      "text": "Search grounding mode: strict or preferred"
+    },
+    {
+      "text": "Second engineer on API v2 after integration parity"
+    },
+    {
+      "text": "Which unstaffed workstreams freed engineers take"
+    }
+  ],
+  "risks": [
+    {
+      "sev": "high",
+      "text": "Morgan builds API v2 part-time; core slips unless PR review moves to Avery and Blake"
+    },
+    {
+      "sev": "high",
+      "text": "External gates can each take weeks"
+    },
+    {
+      "sev": "med",
+      "text": "Search core fix needs the eval set by Oct 2"
+    },
+    {
+      "sev": "low",
+      "text": "Thanksgiving week falls in S4"
+    }
+  ],
+  "baseline": null,
+  "sprints": [
+    {
+      "id": "s0",
+      "name": "S0",
+      "weeks": 2,
+      "goal": "Go/no-go answers · pilot code-complete"
+    },
+    {
+      "id": "s1",
+      "name": "S1",
+      "weeks": 2,
+      "goal": "Integration pilot · Search core fix · API v2 spike"
+    },
+    {
+      "id": "s2",
+      "name": "S2",
+      "weeks": 2,
+      "goal": "Integrations all users · Search rollout · API v2 core"
+    },
+    {
+      "id": "s3",
+      "name": "S3",
+      "weeks": 2,
+      "goal": "API v2 production-ready"
+    },
+    {
+      "id": "s4",
+      "name": "S4",
+      "weeks": 2,
+      "goal": "Canary (if gates clear)"
+    },
+    {
+      "id": "s5",
+      "name": "S5",
+      "weeks": 2,
+      "goal": ""
+    }
+  ]
+}

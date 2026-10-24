@@ -1,0 +1,54 @@
+{
+  "name": "@troylar/sightline",
+  "version": "1.94.0",
+  "description": "Your team's work, in plain sight. One HTML delivery planner, Jira context, and human-reviewed AI planning.",
+  "license": "MIT",
+  "keywords": [
+    "roadmap",
+    "delivery-planning",
+    "jira",
+    "agent-skills",
+    "ai-assistant",
+    "offline"
+  ],
+  "bin": {
+    "sightline": "bin/sightline.js"
+  },
+  "files": [
+    "bin/sightline.js",
+    "dist/sightline.html",
+    "skills/",
+    "tools/sightline-assistant.py",
+    "tools/sightline-jira-sync.py",
+    "docs/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "THIRD-PARTY-NOTICES.md",
+    "examples/northstar/",
+    "CONTRIBUTING.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bash ./build.sh",
+    "test": "bash ./test/run.sh",
+    "check": "bash ./build.sh && bash ./test/run.sh",
+    "prepack": "bash ./build.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/troylar/sightline-planner.git"
+  },
+  "homepage": "https://github.com/troylar/sightline-planner#readme",
+  "bugs": {
+    "url": "https://github.com/troylar/sightline-planner/issues"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  }
+}
