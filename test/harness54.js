@@ -55,6 +55,20 @@ async function page(opts = {}){
     [...d.querySelectorAll("#editstrip button")].find(b=>b.textContent === "Turn off").click(); await wait(20);
     ok("O1: turning it off goes back to Start editing", ev("editable()") === false && !!ev("document.querySelector('#editstrip [data-act=\"Start editing\"]')")); });
 
+  // The automatic file check runs every 15 seconds: a quick one must not flash "working…" or rewrite the header's status line.
+  await sec(async ()=>{ const {d, w, ev} = await page(); await ev("startEditing(false)"); await wait(1200);
+    const strip = d.querySelector("#editstrip"), first = strip.firstChild, seen = [];
+    new w.MutationObserver(()=>seen.push(d.querySelector("#status").textContent)).observe(d.querySelector("#status"), {childList:true, characterData:true, subtree:true});
+    await ev("refresh(false)"); await wait(50);
+    ok("B1: a quick file check leaves the status line alone", seen.length === 0, JSON.stringify(seen));
+    ok("B1: …and doesn't rebuild the edit strip", strip.firstChild === first && !/working/.test(strip.textContent));
+    ev("stripKey = ''; statusAt = 0; renderEditStrip(); file.dirty = true; renderEditStrip()"); await wait(20);
+    const st = d.querySelector("#status").textContent;
+    ok("B2: the status line says the editing state, without the file-check details", /You're editing/.test(st) && !/·\s*·/.test(st) && !/local file checked|cloud sync|Check automatically/.test(st), st);
+    ev("op.busy = true; op.busySince = Date.now() - 1000; renderEditStrip()"); await wait(20);
+    ok("B3: an operation that takes a while still shows working…", /working/.test(strip.textContent));
+    ev("op.busy = false; renderEditStrip()"); });
+
   await sec(async ()=>{ const {w} = await page(); ok("no page errors", !w.errs.length, w.errs.join("; ")); });
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
 })();

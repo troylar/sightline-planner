@@ -2569,9 +2569,12 @@ function openUnsaved(anchor){
 
 // ================= linked file =================
 const file = {handle:null, baseText:null, baseHash:"", dirty:false, lastErr:"", holdLock:false, gen:0, lastCheck:0};
-const op = {busy:false, chain:Promise.resolve()};
+const op = {busy:false, busySince:0, chain:Promise.resolve()};
+const BUSY_SHOWN_MS = 400;
 function exclusive(fn){           // serialize adopt / refresh / save
-  const run = async ()=>{ flushEditing(); op.busy = true; updateFileUI(); applyReadonly(); try { return await fn(); } finally { op.busy = false; updateFileUI(); applyReadonly(); } };
+  // the edit strip says "working…" only for an operation that takes a while: a quick check every 15 seconds would make it (and the header) jump
+  const run = async ()=>{ flushEditing(); op.busy = true; op.busySince = Date.now(); const slow = setTimeout(()=>{ if (op.busy) renderEditStrip(); }, BUSY_SHOWN_MS); updateFileUI(); applyReadonly();
+    try { return await fn(); } finally { clearTimeout(slow); op.busy = false; updateFileUI(); applyReadonly(); } };
   const p = op.chain.then(run, run); op.chain = p.catch(()=>{}); return p;
 }
 function idb(){ return new Promise((res,rej)=>{ const r = indexedDB.open("timeline-planner",1); r.onupgradeneeded = ()=>r.result.createObjectStore("kv"); r.onsuccess = ()=>res(r.result); r.onerror = ()=>rej(r.error); }); }
@@ -2702,18 +2705,18 @@ function renderEditStrip(){
   if (!file.handle || present){ el.hidden = true; clearInterval(stripTimer); stripTimer = null; stripKey = ""; return; }
   if (!stripTimer) stripTimer = setInterval(renderEditStrip, 30000);
   if (file.dirty && file.holdLock){ const u = unsavedOps(); if (u && !u.length){ file.dirty = false; updateUndo(); } }     // undone back to the saved file
-  const nU = file.dirty && file.holdLock ? describeUnsaved(unsavedOps() || []).length : 0;
+  const nU = file.dirty && file.holdLock ? describeUnsaved(unsavedOps() || []).length : 0, busy = op.busy && Date.now() - (op.busySince || 0) >= BUSY_SHOWN_MS;
   { const l0 = lockOf(S), left0 = file.holdLock && l0 && l0.mine ? Math.max(0, Math.ceil((Date.parse(l0.at) + LOCK_TTL_MS - Date.now())/60000)) : -1;
-    const key = [op.busy, file.holdLock, file.dirty, saygLive(), saygBusy, file.handle.name, l0 && !l0.mine && !l0.expired ? l0.by + l0.at : "", S.meta.savedAt, S.meta.revision, left0 <= 5, nU].join("|");
+    const key = [busy, file.holdLock, file.dirty, saygLive(), saygBusy, file.handle.name, l0 && !l0.mine && !l0.expired ? l0.by + l0.at : "", S.meta.savedAt, S.meta.revision, left0 <= 5, nU].join("|");
     if (key === stripKey && !el.hidden){ const t = el.querySelector(".es-left"); if (t && left0 >= 0) t.textContent = left0 <= 5 ? `lock ends in ${left0} min, save to keep it` : `lock ${left0} min left`; return; }
     // the status line gets the state only, not the buttons' labels (they ran into the text: "revision 73Start editing")
-    if (stripKey && key.split("|").slice(0,5).join("|") !== stripKey.split("|").slice(0,5).join("|")) queueMicrotask(()=>{ if (statusFromStrip || Date.now() - statusAt > 1000){ const c = el.cloneNode(true); c.querySelectorAll(".es-acts,button").forEach(x=>x.remove()); setStatus(c.textContent.replace(/\s+/g," ").replace(/\s*·\s*$/, "").trim().slice(0,160), true); } });
+    if (stripKey && key.split("|").slice(0,5).join("|") !== stripKey.split("|").slice(0,5).join("|")) queueMicrotask(()=>{ if (statusFromStrip || Date.now() - statusAt > 1000){ const c = el.cloneNode(true); c.querySelectorAll(".es-acts,button,#fileCheck,label").forEach(x=>x.remove()); setStatus(c.textContent.replace(/\s+/g," ").replace(/(\s*·\s*)+/g," · ").replace(/\s*·\s*$/, "").trim().slice(0,160), true); } });
     stripKey = key; }
   const focusedAct = el.contains(document.activeElement) ? document.activeElement.dataset.act : null;
   const l = lockOf(S), n = file.handle.name, saved = S.meta.savedAt ? `file saved ${fmtTime(S.meta.savedAt)}` + (S.meta.revision ? ` · revision ${S.meta.revision}` : "") : "not saved yet";
   const btn = (label, fn, cls) => h("button",{type:"button",class:"btn " + (cls||""),"data-act":label,onclick:fn}, label);
   let cls, kids;
-  if (op.busy && !saygBusy){ cls = "ro"; kids = [h("b",{}, n), " · working…"]; }
+  if (busy && !saygBusy){ cls = "ro"; kids = [h("b",{}, n), " · working…"]; }
   else if (saygLive()){ cls = "mine";
     kids = [h("span",{class:"es-dot"}), h("b",{}, `Saving as you go · ${n}`), " · ", saygBusy ? "saving…" : file.dirty ? "changes waiting to save" : saved,
       h("span",{class:"es-acts"}, file.dirty && !saygBusy ? btn("Save now", ()=>runSayg(), "primary") : null, h("button",{type:"button",class:"linkish","data-act":"sayg-off",onclick:()=>setSayg(false)},"Turn off"))]; }
