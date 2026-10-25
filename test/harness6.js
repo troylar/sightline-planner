@@ -261,7 +261,7 @@ setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT after " + R.len
   key("u"); ok("K10: U jumps to the update box", d.activeElement?.id === "q-upd");
   d.activeElement.blur(); key("b"); ok("K11: B opens the blocked form", d.querySelector("#side .qblock")?.open && d.activeElement?.id === "q-breason");
   d.activeElement.blur(); key("s"); ok("K12: S jumps to the sticky note box", d.activeElement?.id === "sticky-in");
-  d.activeElement.blur(); key("."); await wait(10); ok("K13: . goes to today in Days view", ev("UI.zoom") === "days");
+  d.activeElement.blur(); const z0 = ev("UI.zoom"); key("."); await wait(10); ok("K13: . goes to today and keeps the zoom (Weeks stays Weeks)", ev("UI.zoom") === z0 && ev("UI.ws") === "timeline");
   key("w"); key("t"); ok("K14: T opens Today", ev("UI.ws") === "today"); key("2");
   ev(`sel = null; openAddMenu(document.querySelector("#addBtn").getBoundingClientRect(), {day: isoToDay("2026-10-10")})`);
   ok("AM1: the Add menu says plainly where a new item goes, using the weekday it will really get", /^New item: Fri Oct 9 in /.test(d.querySelector("#addMenu .mh").textContent) && /click a workstream or item first/.test(d.querySelector("#addMenu").textContent), d.querySelector("#addMenu .mh").textContent);

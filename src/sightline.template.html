@@ -12,7 +12,7 @@
 /*__FONTS__*/
 :root{
   --paper:#f5f6f8; --surface:#fff; --ink:#1b2231; --ink-2:#434d61; --ink-3:#5f6979;
-  --rule:#d5dae2; --rule-2:#e8ebf0; --accent:#1f5fa8; --brand:#2f5fb3; --today:#c9372c; --sel:#d99a00;
+  --rule:#d5dae2; --rule-2:#e8ebf0; --accent:#1f5fa8; --brand:#2f5fb3; --today:#c9372c; --nowband:rgba(31,95,168,.075); --sel:#d99a00;
   --ok:#17744a; --warn:#94600a; --bad:#b3332a; --prog:#2f6fd0;
   --ok-bg:#e3f2ea; --warn-bg:#fbf0dc; --bad-bg:#fbe5e3;
   --on-bad:#fff; --on-accent:#fff; --tip-bg:#1b2231; --tip-ink:#fff; --tip-warn:#ffd28a; --tip-ok:#8fe3b5;
@@ -26,7 +26,7 @@
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --paper:#12161e; --surface:#1a202b; --ink:#e8ecf3; --ink-2:#c1c9d6; --ink-3:#9aa4b5;
-  --rule:#2c3442; --rule-2:#222a36; --accent:#79a8e6; --brand:#3f6fc2; --today:#ff6a5c; --sel:#f7c948;
+  --rule:#2c3442; --rule-2:#222a36; --accent:#79a8e6; --brand:#3f6fc2; --today:#ff6a5c; --nowband:rgba(121,168,230,.1); --sel:#f7c948;
   --ok:#5fd09a; --warn:#f0b54a; --bad:#ff7d72; --prog:#79a8e6;
   --ok-bg:#16352a; --warn-bg:#3a2d12; --bad-bg:#3d1c1a;
   --on-bad:#1c0705; --on-accent:#0d1420; --tip-bg:#e8ecf3; --tip-ink:#12161e; --tip-warn:#8a5200; --tip-ok:#17744a;
@@ -35,7 +35,7 @@
   --shadow:none; color-scheme:dark;}}
 :root[data-theme="dark"]{
   --paper:#12161e; --surface:#1a202b; --ink:#e8ecf3; --ink-2:#c1c9d6; --ink-3:#9aa4b5;
-  --rule:#2c3442; --rule-2:#222a36; --accent:#79a8e6; --brand:#3f6fc2; --today:#ff6a5c; --sel:#f7c948;
+  --rule:#2c3442; --rule-2:#222a36; --accent:#79a8e6; --brand:#3f6fc2; --today:#ff6a5c; --nowband:rgba(121,168,230,.1); --sel:#f7c948;
   --ok:#5fd09a; --warn:#f0b54a; --bad:#ff7d72; --prog:#79a8e6;
   --ok-bg:#16352a; --warn-bg:#3a2d12; --bad-bg:#3d1c1a;
   --on-bad:#1c0705; --on-accent:#0d1420; --tip-bg:#e8ecf3; --tip-ink:#12161e; --tip-warn:#8a5200; --tip-ok:#17744a;
@@ -245,8 +245,8 @@ body:not(.hasSel) #side{display:none}
 .gcorner{padding:10px 12px;font-size:12px;color:var(--ink-3);display:flex;align-items:flex-end;justify-content:space-between;gap:6px}
 .gcols{display:grid}
 .gsprint{padding:8px 8px 2px;border-left:1px solid var(--rule);font-family:var(--font-ui);font-stretch:85%;font-weight:600;font-size:13.5px;min-width:0}
-.spn{display:flex;min-width:0;max-width:100%;white-space:nowrap}
-.spn-a{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.spn,.spnw{display:flex;min-width:0;max-width:100%;white-space:nowrap}
+.spn-a{overflow:hidden;text-overflow:ellipsis;min-width:0;white-space:pre}
 .spn-b{flex:none}
 td.spname{width:20ch;min-width:20ch}
 td.spname input{width:100%}
@@ -324,8 +324,16 @@ td.spname input{width:100%}
 .flag.stretch{color:var(--ink-3);font-style:italic;font-weight:500}
 .flag.stretch::before{background:transparent;border:1.5px dashed var(--ink-3)}
 .flag .slip{color:var(--bad);font-weight:600;font-style:normal}
-.today{position:absolute;bottom:0;border-left:2px solid var(--today);pointer-events:none;z-index:1}
-.today::before{content:"";position:absolute;top:0;left:-6px;border:5px solid transparent;border-top:6px solid var(--today)}
+.today{position:absolute;bottom:0;border-left:2px solid var(--today);margin-left:-1px;pointer-events:none;z-index:1}
+.nowband{position:absolute;bottom:0;background:var(--nowband);border-inline:1px solid color-mix(in srgb,var(--accent) 30%,transparent);pointer-events:none;z-index:0}
+.gsprint.now{background:var(--nowband);box-shadow:inset 0 3px 0 var(--accent)}
+.nowtag{font-weight:700;color:var(--accent);flex:none;white-space:nowrap}
+.nowtag.next{font-weight:600}
+.gnow{position:relative;height:16px;min-width:0}
+.todaylab{position:absolute;bottom:0;transform:translateX(-50%);background:var(--today);color:var(--surface);font-family:var(--font-ui);font-weight:700;font-size:10px;line-height:15px;font-style:normal;padding:0 6px;border-radius:4px 4px 0 0;white-space:nowrap;pointer-events:none}
+.todaylab.edge{transform:none;border-radius:4px 4px 0 0}
+.todaylab.edge.after{left:auto;right:0}
+@media print{.nowband,.gsprint.now,.todaylab,.today,.colshade.tod{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 .gweek.tod{color:var(--today);font-weight:600}
 .holstrip{position:absolute;bottom:0;pointer-events:none;z-index:1;background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--ink-3) 22%,transparent) 0 3px,transparent 3px 6px)}
 .holdot{display:inline-block;min-width:7px;height:7px;border-radius:4px;background:var(--ink-3);margin-left:5px;vertical-align:1px;font-size:8px;line-height:7px;color:var(--surface);text-align:center;padding:0 1px}
@@ -890,6 +898,10 @@ fieldset.recur > select{align-self:flex-start}
 .tbar.init{border-radius:3px;height:22px;opacity:.85;cursor:pointer;border-left:4px solid rgba(0,0,0,.22)}
 .bar.taskbar{border-radius:11px}
 .lgrid .hd{font-size:10.5px;color:var(--ink-3);font-family:var(--font-ui);padding:0 4px 4px}
+.lgrid .hd.now{background:var(--nowband);box-shadow:inset 0 2px 0 var(--accent);padding-top:3px}
+.lgrid .hd.tod{color:var(--today);font-weight:700}
+.lgrid .hd .nowtag{color:var(--today)}
+.rmcol.now{background:var(--nowband);box-shadow:inset 0 3px 0 var(--accent)}
 
 .sections{padding:0 16px 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:16px}
 .sections .wide{grid-column:1/-1}
@@ -5258,7 +5270,7 @@ document.addEventListener("keydown", e=>{
 // ================= name, keyboard shortcuts, help =================
 const APP_NAME = "Sightline", APP_TAGLINE = "Your team's work, in plain sight.";
 const SHORTCUTS = [       // [keys (each shown as a key; alternatives joined by "or"), what it does]
-  ["Get around", [[["1","2","3","4","5","6"],"Today, Timeline, People, Settings, Sprint, Roadmap", " "],[["/","Ctrl+K"],"Find anything"],[["W","D"],"Weeks or Days view"],[["R"],"Rows by workstream, person or epic"],[["."],"Jump to today (Days view)"],[["[","]"],"Earlier / later (Days view)"],[["+","−"],"One sprint fewer or more on screen"],[["J","K"],"Next / previous item"],[["↑","↓"],"Previous / next item, while its details are open (Timeline and List)"],[["Esc"],"Close whatever is open"]]],
+  ["Get around", [[["1","2","3","4","5","6"],"Today, Timeline, People, Settings, Sprint, Roadmap", " "],[["/","Ctrl+K"],"Find anything"],[["W","D"],"Weeks or Days view"],[["R"],"Rows by workstream, person or epic"],[["."],"Jump to today"],[["[","]"],"Earlier / later (Days view)"],[["+","−"],"One sprint fewer or more on screen"],[["J","K"],"Next / previous item"],[["↑","↓"],"Previous / next item, while its details are open (Timeline and List)"],[["Esc"],"Close whatever is open"]]],
   ["Update the item you've selected", [[["I"],"In progress"],[["X"],"Done (again: back to in progress)"],[["B"],"Mark blocked"],[["U"],"Write an update"],[["S"],"Stick a note on it"],[["Enter"],"Open it"]]],
   ["Plan", [[["A"],"Add something (then a letter from the menu)"],[["←","→"],"Move the selected item (with Shift: smaller steps)"],[["Alt+←","Alt+→"],"Make it shorter / longer"],[["Delete"],"Delete it"],[["Ctrl+Z","Ctrl+Y"],"Undo / redo"]]],
   ["Show and share", [[["F"],"Filters"],[["V"],"Saved views"],[["H"],"Show menu: hide gates, meetings, done work and more, or pin the top rows"],[["G","M"],"Hide or show gates / meetings"],[["Shift+H"],"Show everything you hid"],[["N"],"Show / hide notes"],[["P"],"Present"],[["E"],"Start editing / Done editing (shared file)"],[["Ctrl+S"],"Save"],[["?"],"This help"]]],
@@ -5604,6 +5616,10 @@ function scrollViewTo(day){
   const sc = $("#gscroll"), g = $("#gantt"); if (!sc || !g) return; const tw = g.scrollWidth - UI.labelW.weeks;
   sc.scrollLeft = Math.max(0, (day - startDay()) / (S.meta.weeks * 7) * tw);
 }
+// "." in either zoom: Days shows this week; Weeks shows the sprint we're in (or the next one), so its band is on screen.
+function jumpToday(){ if (UI.ws !== "timeline") setWs("timeline");
+  setTimeout(()=>{ const t = todayDay(); if (UI.zoom === "days") return dayScrollTo(Math.max(startDay(), mondayOf(t)));
+    const n = nowSprint(); scrollViewTo(Math.max(startDay(), n ? n.a : sprintStartOf(t))); }, 0); }
 function viewPage(dir){ if (UI.zoom === "days") return dayPage(dir); const sc = $("#gscroll"); if (sc) sc.scrollLeft += dir * Math.max(80, sc.clientWidth - UI.labelW.weeks - 40); }
 const cols0 = () => DV ? DV.cols[0] : startDay();
 function dayScrollTo(day, onlyIfHidden){
@@ -6631,7 +6647,23 @@ function planSprintDays(){
     return {name: sp.name, n: workBetween(a, t, hs), of: workBetween(a, z, hs), work: isWork(t, hs), left: Math.max(0, workBetween(t + 1, z, hs))}; }
   return null;
 }
-function sprintNow(){ const D = planSprintDays(); return D ? `${D.name} · ${dayOfSprint(D.n, D.of, D.work)}` : ""; }
+// Where today falls among the plan's sprints: the one it's in (through its last weekend), or, between sprints, the next
+// one to start. The board's gap rows ("No sprint", "Before S5") are never a sprint to be in.
+const gapSprint = sp => !sp.jira && (sp.lead === true || sp.name === "No sprint" || /^Before /.test(sp.name || "")) && followsJira();
+function nowSprint(){ const t = todayDay(); let w0 = 0, next = null;
+  for (const sp of S.sprints || []){ const at = {sp, w0, weeks:sp.weeks, a:wkDay(w0), z:wkDay(w0 + sp.weeks) - 3}; w0 += sp.weeks;
+    if (gapSprint(sp)) continue;
+    if (t >= at.a && t <= at.z + 2) return {...at, now:true};
+    if (t < at.a && !next) next = {...at, now:false}; }
+  return next; }
+const nowTag = (n, sp) => n && n.sp === sp ? h("span",{class:"nowtag" + (n.now ? "" : " next")}, n.now ? "\u00a0· now" : `\u00a0· starts ${fmtDay(n.a)}`) : null;
+// The Today tab in the time header, over the line; before or after the plan's dates it waits at that edge, pointing out.
+function todayTab(frac){ const t = todayDay(), d = fmtDay(t);
+  if (frac < 0) return h("span",{class:"todaylab edge before",style:{left:"0"},title:`Today, ${d}, is before the plan starts`}, `‹ Today, ${d}`);
+  if (frac > 1) return h("span",{class:"todaylab edge after",title:`Today, ${d}, is after the plan ends`}, `Today, ${d} ›`);
+  return h("span",{class:"todaylab",style:{left:`${frac*100}%`},title:`Today, ${d}`}, "Today"); }
+function sprintNow(){ const n = nowSprint(); if (n && !n.now && todayDay() >= startDay()) return `Between sprints · ${n.sp.name} starts ${fmtDay(n.a)}`;
+  const D = planSprintDays(); return D ? `${D.name} · ${dayOfSprint(D.n, D.of, D.work)}` : ""; }
 function scopeText(){
   if (UI.ws === "plan") return "";
   const f = UI.filter, parts = [];
@@ -7994,16 +8026,18 @@ function renderGantt(){
   { const zw = zoomWeeks(), avail = Math.max(300, gw - UI.labelW.weeks - 2), on = zw > 0 && zw < W;
     g.classList.toggle("zoomed", on); if (on) g.style.minWidth = (UI.labelW.weeks + avail * W / zw) + "px"; }
   const cols = h("div",{class:"gcols",style:{gridTemplateColumns:`repeat(${W},1fr)`}});
-  let w0 = 0;
+  let w0 = 0; const NS = nowSprint();
   S.sprints.forEach(sp=>{
     { const a = wkDay(w0), z = wkDay(w0+sp.weeks)-3, hol = holidaysIn(a, z), wd = sp.weeks*5 - hol.length;
-      cols.append(h("div",{class:"gsprint" + sprintSide(sp),title:[sp.name, sprintFrom(sp), `${wkDate(w0)} – ${fmtDay(z)}`, `${wd} working days` + (hol.length ? ` (${hol.map(x=>x.name||fmtDay(isoToDay(x.date))).join(", ")})` : ""), sp.goal].filter(Boolean).join("\n"),style:{gridColumn:`${w0+1} / span ${sp.weeks}`}}, sprintLabel(sp.name), h("small",{}, `${wkDate(w0)} – ${fmtDay(z)}` + (hol.length ? ` · ${wd}d` : "")), sp.goal ? h("em",{}, sp.goal) : null)); }
+      cols.append(h("div",{class:"gsprint" + sprintSide(sp) + (NS && NS.now && NS.sp === sp ? " now" : ""),title:[sp.name, NS && NS.sp === sp ? (NS.now ? "The sprint we're in" : "The next sprint") : "", sprintFrom(sp), `${wkDate(w0)} – ${fmtDay(z)}`, `${wd} working days` + (hol.length ? ` (${hol.map(x=>x.name||fmtDay(isoToDay(x.date))).join(", ")})` : ""), sp.goal].filter(Boolean).join("\n"),style:{gridColumn:`${w0+1} / span ${sp.weeks}`}}, h("span",{class:"spnw"}, sprintLabel(sp.name), nowTag(NS, sp)), h("small",{}, `${wkDate(w0)} – ${fmtDay(z)}` + (hol.length ? ` · ${wd}d` : "")), sp.goal ? h("em",{}, sp.goal) : null)); }
     w0 += sp.weeks;
   });
   const tw = Math.floor(todayWeek());
   const holsIn = i => S.holidays.filter(x=>{ const n = isoToDay(x.date); return !isWeekend(n) && n >= wkDay(i) && n < wkDay(i) + 7; });
   for (let i=0;i<W;i++){ const hw = holsIn(i);
     cols.append(h("div",{class:"gweek" + (i===tw ? " tod" : ""),style:{gridColumn:`${i+1}`, gridRow:"2"}, title: [i===tw ? "This week" : "", ...hw.map(x=>`${fmtDay(isoToDay(x.date))}: ${x.name || "Holiday"}`)].filter(Boolean).join("\n") || null}, wkDate(i), hw.length ? h("span",{class:"holdot","aria-label":`${hw.length} holiday${hw.length===1?"":"s"}`}, hw.length > 1 ? String(hw.length) : "") : null)); }
+  const frac = (todayDay() - startDay() + .5)/7/W;
+  cols.append(h("div",{class:"gnow",style:{gridColumn:"1 / -1", gridRow:"3"}}, todayTab(frac)));
   g.classList.remove("days");
   g.append(h("div",{class:"ghead"}, h("div",{class:"gcorner wkcorner"}, h("span",{class:"wklab"}, rowsMode() === "epics" ? "Epic" : UI.rows === "people" ? "Person" : "Workstream", rowsMode() === "epics" ? epicAllBtns() : null),
     h("div",{class:"daynav"}, zoomCtl(), g.classList.contains("zoomed") ? h("div",{class:"row"},
@@ -8224,13 +8258,14 @@ function renderGantt(){
     if (!locked && !file.handle && !UI.noWelcome && S.lanes.length <= 1) g.append(welcome());
     else g.append(emptyPlan());
   }
-  const frac = todayWeek()/W;
   { const top = g.querySelector(".ghead").offsetHeight + "px", sd = startDay();
     S.holidays.forEach(x=>{ const n = isoToDay(x.date); if (isWeekend(n)) return; const f = (n - sd)/7/W; if (f < 0 || f >= 1) return;
       g.append(h("div",{class:"holstrip",title:`${fmtDay(n)}: ${x.name || "Holiday"}`,style:{left:`calc(var(--lw) + (100% - var(--lw)) * ${f})`, width:`calc((100% - var(--lw)) / ${W*7})`, top}})); }); }
   addColGrip(g);
   requestAnimationFrame(spillLabels);
-  if (frac >= 0 && frac <= 1) g.append(h("div",{class:"today",title:"Today",style:{left:`calc(var(--lw) + (100% - var(--lw)) * ${frac})`, top:g.querySelector(".ghead").offsetHeight+"px"}}));
+  { const top = g.querySelector(".ghead").offsetHeight + "px";
+    if (NS && NS.now) g.prepend(h("div",{class:"nowband","aria-hidden":"true",style:{left:`calc(var(--lw) + (100% - var(--lw)) * ${NS.w0/W})`, width:`calc((100% - var(--lw)) * ${NS.weeks/W})`, top}}));
+    if (frac >= 0 && frac <= 1) g.append(h("div",{class:"today",title:"Today",style:{left:`calc(var(--lw) + (100% - var(--lw)) * ${frac})`, top}})); }
   stickLanes(g);
   glide(g, was);
 }
@@ -8793,7 +8828,10 @@ function renderLoad(){
   const hsL = HS();
   const grid = h("div",{class:"lgrid",style:{"--w":N, minWidth: days ? (160 + N*30)+"px" : ""}});
   grid.append(h("div",{}));
-  cols.forEach(c=>grid.append(h("div",{class:"hd"}, days ? `${"MTWTF"[dow(c)-1]}${dayToDate(c).getUTCDate()}` : wkDate(c))));
+  { const NS = nowSprint(), td = todayDay(), tw = Math.floor(todayWeek()), inNow = c => !days && NS && NS.now && c >= NS.w0 && c < NS.w0 + NS.weeks;
+    cols.forEach(c=>{ const tod = days ? c === td : c === tw;
+      grid.append(h("div",{class:"hd" + (inNow(c) ? " now" : "") + (tod ? " tod" : ""),title:[tod ? (days ? "Today" : "This week") : "", inNow(c) ? "The sprint we're in" : ""].filter(Boolean).join(", ") || null},
+        days ? `${"MTWTF"[dow(c)-1]}${dayToDate(c).getUTCDate()}` : wkDate(c), tod && !days ? h("b",{class:"nowtag"}, " now") : null)); }); }
   const order = new Map(S.people.map((pp,i)=>[pp.id,i]));
   [...map.entries()].sort((x,y)=>(order.get(x[0]) ?? 1e9) - (order.get(y[0]) ?? 1e9)).forEach(([pid,arr])=>{
     const pp = personById(pid), name = pp ? pp.name + (pp.inactive ? " (inactive)" : "") : "Unknown", off = pp ? personOff(pp) : new Set();
@@ -8828,20 +8866,22 @@ function renderDays(){
   g.style.minWidth = N*colW > avail + 1 ? (LWd + N*colW) + "px" : "";
   const head = h("div",{class:"gcols",style:{gridTemplateColumns:`repeat(${N},1fr)`}});
   // row 1: sprints (same boundaries as the Weeks view)
-  const sprintStarts = [];
+  const sprintStarts = [], NS = nowSprint();
   { let w0 = 0;
     S.sprints.forEach(sp=>{
       const s0 = wkDay(w0), s1 = wkDay(w0 + sp.weeks) - 3; w0 += sp.weeks;
       const a = cols.findIndex(d=>d >= s0); let z = -1; for (let k=N-1;k>=0;k--) if (cols[k] <= s1){ z = k; break; }
       if (a < 0 || z < a) return;
       if (a > 0) sprintStarts.push(a);
-      head.append(h("div",{class:"gsprint" + sprintSide(sp),title:[sp.name, sprintFrom(sp), `${fmtDay(s0)} – ${fmtDay(s1)}`, sp.goal].filter(Boolean).join("\n"),style:{gridColumn:`${a+1} / span ${z-a+1}`, gridRow:"1"}},
-        h("span",{class:"stk"}, sprintLabel(sp.name), h("small",{}, `${fmtDay(s0)} – ${fmtDay(s1)}` + (holidaysIn(s0,s1).length ? ` · ${sp.weeks*5 - holidaysIn(s0,s1).length} working days` : "")), sp.goal ? h("em",{}, sp.goal) : null)));
+      head.append(h("div",{class:"gsprint" + sprintSide(sp) + (NS && NS.now && NS.sp === sp ? " now" : ""),title:[sp.name, NS && NS.sp === sp ? (NS.now ? "The sprint we're in" : "The next sprint") : "", sprintFrom(sp), `${fmtDay(s0)} – ${fmtDay(s1)}`, sp.goal].filter(Boolean).join("\n"),style:{gridColumn:`${a+1} / span ${z-a+1}`, gridRow:"1"}},
+        h("span",{class:"stk"}, h("span",{class:"spnw"}, sprintLabel(sp.name), nowTag(NS, sp)), h("small",{}, `${fmtDay(s0)} – ${fmtDay(s1)}` + (holidaysIn(s0,s1).length ? ` · ${sp.weeks*5 - holidaysIn(s0,s1).length} working days` : "")), sp.goal ? h("em",{}, sp.goal) : null)));
     }); }
   // row 2: weeks
   cols.forEach((d,i)=>{ if (i === 0 || dow(d) === 1){ let span = 1; while (i+span < N && dow(cols[i+span]) !== 1) span++; head.append(h("div",{class:"gwk",title:"Week of " + fmtDay(mondayOf(d)),style:{gridColumn:`${i+1} / span ${span}`, gridRow:"2"}}, h("span",{class:"stk"}, (span*colW >= 110 ? "Week of " : "") + fmtDay(mondayOf(d))))); } });
   cols.forEach((d,i)=>{ const hol = S.holidays.find(x=>isoToDay(x.date)===d);
     head.append(h("div",{class:"gday" + (dow(d)===1?" mon":"") + (hol?" hol":"") + (d===today?" tod":""), title: hol ? `${fmtDay(d)}: ${hol.name || "Holiday"}` : fmtDay(d), style:{gridColumn:`${i+1}`, gridRow:"3"}}, "MTWTF"[dow(d)-1], h("b",{}, String(dayToDate(d).getUTCDate())))); });
+  const tcol = today < cols[0] ? -1 : today > cols[N-1] + 2 ? N + 1 : today > cols[N-1] ? N : colOf(today) + (idx.has(today) ? .5 : 0), tfrac = tcol / N;   // a weekend sits on Monday's edge
+  head.append(h("div",{class:"gnow",style:{gridColumn:"1 / -1", gridRow:"4"}}, todayTab(tfrac)));
   const focus = UI.focus && barById(UI.focus);
   const zoomRow = zoomCtl();
   const pager = h("div",{class:"row"},
@@ -9087,6 +9127,10 @@ function renderDays(){
   if (fActive() && !shownAnyD && S.bars.length) g.append(filteredEmpty());
   addColGrip(g);
   if (!S.bars.length) g.append(h("div",{class:"empty"}, "No initiatives yet. Switch to Weeks and double-click a workstream to add one."));
+  { const top = g.querySelector(".ghead").offsetHeight + "px";
+    if (NS && NS.now && NS.z >= cols[0] && NS.a <= cols[N-1]){ const a = colOf(Math.max(NS.a, cols[0])), z = colOf(Math.min(NS.z, cols[N-1]));
+      g.prepend(h("div",{class:"nowband","aria-hidden":"true",style:{left:`calc(var(--lw) + (100% - var(--lw)) * ${a/N})`, width:`calc((100% - var(--lw)) * ${(z - a + 1)/N})`, top}})); }
+    if (tfrac >= 0 && tfrac <= 1) g.append(h("div",{class:"today",title:"Today",style:{left:`calc(var(--lw) + (100% - var(--lw)) * ${tfrac})`, top}})); }
   stickLanes(g);
 }
 // Drag an initiative's grip in the Days name column: above/below another row reorders, onto its middle nests, onto a lane heading makes it top level there.
@@ -12925,7 +12969,7 @@ function renderRoadmap(){
       h("ul",{}, ...ideas.map(ideaRow), ...OV.adds.filter(g=>!dvWhen(g)).map(g=>h("li",{class:"amghostidea","data-amghost":g._am}, h("span",{class:"dvb dvb-jira"}, "Proposed"), h("button",{type:"button",class:"linkish dvidea",onclick:()=>{ sel = {type:"amend", id:"x"}; render(); }}, g.name)))))
       : !list.length ? h("p",{class:"hint",id:"rmEmpty"}, "No deliverables yet. Add a one-line idea above; choose its timing and Jira work later.") : null,
     h("div",{class:"rmgrid",id:"rmGrid",role:"region","aria-label":"Roadmap by workstream and time"},
-      h("div",{class:"rmrow rmcolhead"}, h("div",{class:"rmlane"}), h("div",{class:"rmcells",style:{gridTemplateColumns:`repeat(${N}, minmax(0, 1fr))`, "--n":String(N)}}, ...cols.map(c=>h("div",{class:"rmcol"}, h("b",{}, c.label), h("small",{}, c.label === c.sub ? "" : c.sub))))),
+      h("div",{class:"rmrow rmcolhead"}, h("div",{class:"rmlane"}), h("div",{class:"rmcells",style:{gridTemplateColumns:`repeat(${N}, minmax(0, 1fr))`, "--n":String(N)}}, ...cols.map(c=>{ const now = c.s <= todayDay() && todayDay() <= c.e; return h("div",{class:"rmcol" + (now ? " now" : "")}, h("b",{}, c.label, now && c.label !== "This quarter" ? h("span",{class:"nowtag"}, "\u00a0· now") : null), h("small",{}, c.label === c.sub ? "" : c.sub)); }))),
       rels.length ? relRow : null,
       ...S.lanes.map(l=>rowFor(l.id, l.name, l.color)), rowFor("", "No workstream", null))].filter(x=>x != null));
 }
@@ -14025,7 +14069,7 @@ document.addEventListener("keydown", e=>{
   else if (k==="j" && !mod && !e.altKey){ e.preventDefault(); if (UI.ws !== "timeline") setWs("timeline"); stepItem(1); }
   else if (k==="k" && !mod && !e.altKey){ e.preventDefault(); if (UI.ws !== "timeline") setWs("timeline"); stepItem(-1); }
   else if (["i","x","b","u","s"].includes(k) && !mod && !e.altKey && !present && quickKey(k)){ e.preventDefault(); }
-  else if (e.key === "." && !mod){ if (UI.ws !== "timeline") setWs("timeline"); if (UI.zoom !== "days") setZoom("days", UI.focus); setTimeout(()=>dayScrollTo(Math.max(startDay(), mondayOf(todayDay()))), 0); }
+  else if (e.key === "." && !mod){ jumpToday(); }
   else if ((e.key === "[" || e.key === "]") && !mod && UI.zoom === "days"){ dayPage(e.key === "]" ? 1 : -1); }
   else if (k==="e" && !mod && !e.altKey && file.handle && !present){ e.preventDefault(); file.holdLock ? doneEditing() : startEditing(); }
   else if (k==="n" && !mod && !e.altKey && !e.shiftKey){ e.preventDefault(); UI.notes = (UI.notes || "all") === "none" ? "all" : "none"; saveUI(); render(); setStatus(UI.notes === "none" ? "Notes hidden (N shows them)" : "Notes shown"); }

@@ -74,6 +74,8 @@ Open the menu at the right of the header (**Choose yourself**, or your initials 
 
 **File** holds only what you do with the plan file: the shared file, importing a copy and exporting one. The plan's start date, default sprint length, whether linked items move automatically and where Jira links go are in **Settings → Plan details**. **Set baseline** is on **Delivery → Snapshots**, and the page Sightline opens on is under **Start Sightline with…** in the menu at the right of the header. Each Settings page is titled with its name in the menu.
 
+**Where we are.** The sprint we're in is a soft band behind the bars, and its header reads, for example, **Sprint 42 · now**. Today is a red line with a **Today** tab in the time header; in Weeks it sits at today inside the week. Between sprints there's no band, and the next sprint's header says when it starts. Before or after the plan's dates the tab waits at that edge with the date. Capacity's load grid marks the sprint's weeks and this week, and Roadmap marks the quarter we're in. Press **.** to jump to today in either zoom. All of it prints.
+
 On the Timeline, **View** holds the rows (by workstream, person or epic) and, when the plan has Jira work, which sources to show. The button says what's chosen, for example **View: By person · Jira only**, so a filtered review is never a surprise. R still switches rows.
 
 Today names each due decision's decider; its owners may be different people.
