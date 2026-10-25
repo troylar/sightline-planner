@@ -32,7 +32,7 @@ async function page(fileText){
     ok("R1 Work holds Today, Sprint, Sort Jira work and Jira change proposals", pagesOf("work") === "today,standup,epics,proposals", pagesOf("work"));
     ok("R2 Delivery holds every delivery page at one level", pagesOf("delivery") === "timeline,list,people,report,milestones,gates,decisions,risks,snapshots,activity", pagesOf("delivery"));
     ok("R2a Product updates holds Roadmap and the customer release notes", pagesOf("updates") === "roadmap,notes", pagesOf("updates"));
-    ok("R2b Settings holds setup only", pagesOf("settings") === "tags,guide,team,calendar,meetings,types,jira", pagesOf("settings"));
+    ok("R2b Settings holds setup only", pagesOf("settings") === "details,tags,guide,team,calendar,meetings,types,jira", pagesOf("settings"));
     const all = [...d.querySelectorAll("#sidenav .snp")].map(b=>b.dataset.ws || b.dataset.section || b.dataset.updates);
     ok("R3 every page has exactly one home in the menu", all.length === new Set(all).size && !d.querySelector(".tabs, #plannav, #primaryNav, #tabMore"), all.join());
     ok("R3a each page belongs to the group it sits under", [...d.querySelectorAll("#sidenav .snp[data-section], #sidenav .snp[data-ws]")].every(b=>ev(`workspaceGroup(${JSON.stringify(b.dataset.section ? "plan" : b.dataset.ws)}, ${JSON.stringify(b.dataset.section || "")})`) === b.closest(".sngroup").dataset.group));

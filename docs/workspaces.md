@@ -72,6 +72,8 @@ Open the menu at the right of the header (**Choose yourself**, or your initials 
 
 **Text size** makes the page's text larger or smaller without browser zoom: **A+** and **A−** move in 10% steps from 90% to 150%, and **Reset** goes back to 100%. Text never goes below 9 pixels. The setting stays in this browser and never goes in the plan. There's no keyboard shortcut, so Ctrl or Cmd with + and − still zoom the whole browser.
 
+**File** holds only what you do with the plan file: the shared file, importing a copy and exporting one. The plan's start date, default sprint length, whether linked items move automatically and where Jira links go are in **Settings → Plan details**. **Set baseline** is on **Delivery → Snapshots**, and the page Sightline opens on is under **Start Sightline with…** in the menu at the right of the header. Each Settings page is titled with its name in the menu.
+
 On the Timeline, **View** holds the rows (by workstream, person or epic) and, when the plan has Jira work, which sources to show. The button says what's chosen, for example **View: By person · Jira only**, so a filtered review is never a surprise. R still switches rows.
 
 Today names each due decision's decider; its owners may be different people.

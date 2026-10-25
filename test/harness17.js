@@ -42,8 +42,8 @@ const rows = (d, g) => [...d.querySelectorAll(`#jiraWs .egroup.${g} .erow`)].map
     ev("openEpics()");
     ok("T1: Epics is a list under Plan", ev("UI.ws") === "plan" && ev("UI.planTab") === "epics" && !!d.querySelector("#ws-plan [data-plan=epics] #jiraWs .egroup.uns"));
     ok("T1: the menu says how many epics are waiting, on Sort Jira work under Work", /Sort Jira work/.test(d.querySelector('#snp-work [data-section="epics"]')?.textContent || "") && /12 to sort/.test(d.querySelector('#snp-work [data-section="epics"]').textContent) && !d.querySelector('#snp-settings [data-section="epics"]'));
-    ev("setWs('timeline')"); d.querySelector("#jiraMenu").click();
-    ok("T1: File, then Jira status, opens Plan, then Jira", ev("UI.ws") === "plan" && ev("UI.planTab") === "jira" && !d.querySelector("#dlgJira").open);
+    ev("setWs('timeline')"); d.querySelector("#set-jira").click();
+    ok("T1: Settings, then Jira connection, opens it, and File no longer has a second way in", !d.querySelector("#fileMenu #jiraMenu") && ev("UI.ws") === "plan" && ev("UI.planTab") === "jira" && !d.querySelector("#dlgJira").open);
     ok("T1: Plan, then Jira holds all of the Jira setup", !!d.querySelector("#jiraSetupWs .jfolder") && !!d.querySelector("#jiraSetupWs #jiraMap, #jiraSetupWs .jsprints, #jiraSetupWs .jfolder"));
     ok("T1: and there's no separate settings gear", !d.querySelector("#settingsBtn") && !!d.querySelector('#snp-settings [data-section="jira"]')); });
 
