@@ -38,8 +38,8 @@ real-browser CSP, and two-device checks remain separate.
 ## Before each session
 
 1. Follow the [launch instructions](../README.md) to check the prepared build before the participant arrives:
-   **dist/sightline.html**, not **src/sightline.template.html**. Confirm the version beside **What's new** and its
-   release entries. Give the participant the normal **index.html** start page or distributed app and synthetic plan
+   **dist/sightline.html**, not **src/sightline.template.html**. Confirm the version beside **What's new** (in the menu at
+   the right of the header, under your initials or **Choose yourself**) and its release entries. Give the participant the normal **index.html** start page or distributed app and synthetic plan
    file for Task 0; do not open the app for them or explain the source/build folders. Record the expected version,
    browser, operating system, window size, and entry point.
 2. Use a separate browser profile for the session. Do not clear a person's existing site data or recovery drafts.
@@ -81,7 +81,7 @@ with a hint is useful evidence, but is not an unassisted success. Stop any attem
 > are you using, and how can you tell you opened the intended plan?"
 
 - **Unassisted success:** from the supplied start page or distributed app, they open the built application, read
-  the expected version beside **What's new**, use **File → Open a copy…** for the supplied synthetic file, and
+  the expected version beside **What's new** (in the header's menu at the right), use **File → Open a copy…** for the supplied synthetic file, and
   identify its plan title and **This browser only** state. They finish in the built app, with no linked write handle
   or submitted edit. Normal supplied instructions are allowed; a facilitator pointing to a file or control counts as a hint.
 - **Observe:** entry point chosen, help used, source-template confusion, version discoverability, wrong-file choices,
@@ -106,7 +106,7 @@ with a hint is useful evidence, but is not an unassisted success. Stop any attem
 - **Done when:** they list that person's current stories and explain at least one **Serves** line. Record missing
   links as a data gap, not as participant failure.
 - **Where the answer is:** Work → Sprint, with cards by person and **Serves …**. Today → Mine is another route for
-  the selected person; **Choose yourself** or **You: [name]** identifies the viewer in this browser.
+  the selected person; the menu at the right of the header (**Choose yourself**, or your initials for **You: [name]**) identifies the viewer in this browser.
 - **Watch for:** whether they find Sprint, understand the deliverable relationship, or assume author identity is verified.
 
 ### Task 3: how current and complete is this

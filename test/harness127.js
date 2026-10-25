@@ -42,8 +42,8 @@ async function page(opts = {}){
     ok("T1 the interface font is Instrument Sans, embedded, with tabular figures", /--font-ui:\s*"Instrument Sans"/.test(css) && /@font-face\{font-family:"Instrument Sans"[^}]*src:url\(data:font\/woff2;base64,/.test(css.replace(/\s+/g, " ").replace(/: /g, ":")) && decl(/^body$/, "font-variant-numeric").includes("tabular-nums"));
     ok("T1 …and nothing names IBM Plex or a font server", !/IBM Plex/.test(html) && !/fonts\.(googleapis|gstatic)\.com/.test(html));
     ok("T2 headings, the title and sprint names use its narrow width", ["h1, h2, h3", ".top input.title", ".gsprint"].every(sel=>decl(new RegExp("^" + sel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$"), "font-stretch").length));
-    ok("T2 bar labels use it too, and the label fit is measured in the same face", decl(/^\.bar, \.tbar$/, "font-stretch").includes("87.5%") && /11px "Instrument Sans"/.test(html) && /fontStretch = "semi-condensed"/.test(html));
-    ok("T3 code-like text (Jira keys, commands, key hints) uses the system monospace", /--font-code:\s*ui-monospace/.test(css) && decl(/^\.jkey$/, "font-family").some(v=>/var\(--font-code\)/.test(v)) && decl(/^\.jcmd$/, "font").some(v=>/var\(--font-code\)/.test(v)));
+    ok("T2 bar labels use it too, and the label fit is measured in the same face", decl(/^\.bar, \.tbar$/, "font-stretch").includes("87.5%") && /\$\{tsSize\(11\)\}px "Instrument Sans"/.test(html) && /fontStretch = "semi-condensed"/.test(html));
+    ok("T3 code-like text (Jira keys, commands, key hints) uses the system monospace", /--font-code:\s*ui-monospace/.test(css) && decl(/^\.jkey$/, "font-family").some(v=>/var\(--font-code\)/.test(v)) && decl(/^\.jcmd$/, "font-family").some(v=>/var\(--font-code\)/.test(v)));
 
     // ---- tokens ----
     const tokens = ["--track", "--edge", "--hov", "--prs", "--lift", "--ring", "--state", "--fast"];

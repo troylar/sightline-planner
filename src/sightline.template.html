@@ -44,7 +44,7 @@
   --shadow:none; color-scheme:dark;}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.45 var(--font-ui);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.45;font-family:var(--font-ui);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
 h1,h2,h3{font-family:var(--font-ui);font-stretch:85%;letter-spacing:-.01em;margin:0}
 .mono{font-family:var(--font-ui);font-variant-numeric:tabular-nums;letter-spacing:.01em}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -64,6 +64,24 @@ button:disabled{cursor:default}
 #wsbar{flex-wrap:wrap}
 .assistant-status{max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #identityBtn{display:block;max-width:min(220px,60vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mebtn{position:relative;display:inline-flex;align-items:center;gap:6px;padding-left:5px}
+.mebtn .ini{min-width:24px;height:24px;border-radius:12px;font-size:10.5px}
+.mebtn .ini:empty::before{content:"?"}
+.mebtn .melbl:empty{display:none}
+.memenu{min-width:240px}
+.memenu #identityBtn{max-width:none;font-weight:600}
+.tsrow{display:flex;align-items:center;gap:4px;padding:2px 6px 4px}
+.menu .tsrow button{width:auto;flex:none;justify-content:center;min-width:36px;border:1px solid var(--rule);font-weight:600}
+.menu .tsrow #tsReset{margin-left:auto;border-color:transparent;font-weight:500}
+.tsrow output{min-width:46px;text-align:center;font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink-2)}
+.menu .wn-dot{position:static;margin-left:auto;box-shadow:none}
+.layoutpop{min-width:300px;gap:6px;padding:6px 10px 10px}
+.layoutpop .seg{align-self:flex-start}
+.layoutpop .seg[hidden]{display:none}
+.vsum{font-weight:600}
+.menu .tsrow button[aria-disabled=true]{opacity:.45;cursor:default}
+.layoutpop .seg button{white-space:nowrap}
+#whatsNew #appVersion{color:var(--ink-3);font-variant-numeric:tabular-nums}
 .delivery-reasons{margin:0;padding:8px 10px;background:var(--paper);border-radius:6px;font-size:12.5px}
 .detail-advanced{border-top:1px solid var(--rule-2);padding-top:9px}
 .detail-advanced > summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--ink-2);padding-bottom:8px}
@@ -264,7 +282,7 @@ td.spname input{width:100%}
 .jkey{font-family:var(--font-code);font-size:10px;line-height:15px;padding:0 4px;border-radius:3px;flex:none;background:color-mix(in srgb,var(--lc,#5c6878) 16%,var(--surface));color:var(--ink)}
 .gsprint.plan{background:var(--paper);font-style:italic;color:var(--ink-2)}
 .lg-jira{display:inline-flex;align-items:center;justify-content:center;width:34px;height:14px;border:2px solid var(--accent);border-left-width:4px;border-radius:3px;background:var(--surface);vertical-align:-3px;margin-right:4px}
-.lg-jira b{font:500 7px var(--font-code);color:var(--ink-2)}
+.lg-jira b{font-style:normal;font-stretch:normal;font-weight:500;font-size:7px;font-family:var(--font-code);color:var(--ink-2)}
 .lg-tbox{display:inline-block;width:22px;height:12px;border:1px solid var(--rule);background:var(--paper);vertical-align:-2px;margin-right:4px}
 .lg-plan{display:inline-block;width:34px;height:14px;border-radius:3px;background:var(--accent);vertical-align:-3px;margin-right:4px}
 .flag.dragging{z-index:20;cursor:grabbing;opacity:.85}
@@ -274,7 +292,7 @@ td.spname input{width:100%}
 .addedby{margin:0 0 8px}.actrow>summary{cursor:pointer;padding:5px 0;font-size:13px}.actops{margin:2px 0 8px 18px;padding:0;font-size:12.5px;color:var(--ink-2)}
 .tagdots{display:inline-flex;gap:2px;flex:none;margin-left:2px}.tagdots i{width:7px;height:7px;border-radius:50%;display:inline-block}
 .tagrow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:4px}.tagpill{display:inline-flex;align-items:center;gap:3px;padding:1px 8px;border-radius:10px;font-size:12px;background:color-mix(in srgb,var(--tc) 18%,var(--surface));color:var(--ink);border:1px solid color-mix(in srgb,var(--tc) 45%,var(--surface))}
-.tagpill .x{font-size:12px;padding:0 2px}.labelpill{padding:1px 7px;border-radius:10px;font:500 11px var(--font-code);border:1px solid var(--rule);color:var(--ink-2)}
+.tagpill .x{font-size:12px;padding:0 2px}.labelpill{padding:1px 7px;border-radius:10px;font-style:normal;font-stretch:normal;font-weight:500;font-size:11px;font-family:var(--font-code);border:1px solid var(--rule);color:var(--ink-2)}
 #f-tagadd{font-size:12.5px;padding:2px 6px;width:9em}.fchip.tagchip.hide{text-decoration:line-through}
 .jfacts{border:1.5px solid color-mix(in srgb,var(--accent) 35%,var(--rule));border-radius:10px;padding:10px 12px;margin:0 0 12px;background:color-mix(in srgb,var(--accent) 4%,var(--surface))}
 .jfacts .jfhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}.jfacts .jfhead b{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent)}
@@ -659,7 +677,7 @@ textarea.celltext{field-sizing:content;min-height:0;width:100%;resize:none;font:
 .ktable{border-collapse:collapse;width:100%}
 .ktable td{padding:5px 8px;border-top:1px solid var(--rule-2);vertical-align:top;font-size:13.5px}
 .ktable td:first-child{width:190px;white-space:nowrap}
-kbd{display:inline-block;min-width:18px;padding:1px 6px;margin:0 2px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;background:var(--paper);font:500 12px/18px var(--font-code);text-align:center;color:var(--ink)}
+kbd{display:inline-block;min-width:18px;padding:1px 6px;margin:0 2px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;background:var(--paper);font-style:normal;font-stretch:normal;font-weight:500;font-size:12px;line-height:18px;font-family:var(--font-code);text-align:center;color:var(--ink)}
 .kor{color:var(--ink-3);font-size:12px;margin:0 3px}
 @media (max-width:640px){.hlp{grid-template-columns:1fr}.hlpnav{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--rule)}.hlpbrand{width:100%}}
 .ic{display:inline-flex;width:16px;height:16px;flex:none;vertical-align:-3px}
@@ -700,7 +718,7 @@ body:not(.hasSel) #side.floating{display:none}
 #dlgJira{width:min(640px,calc(100vw - 32px));max-height:86vh;overflow:auto;border:1px solid var(--rule);border-radius:12px;background:var(--surface);color:var(--ink);padding:0 20px 20px}
 #dlgJira::backdrop{background:rgba(10,14,22,.45)}
 #jiraBody{display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:1.5}
-.jcmd{font:500 12px/1.5 var(--font-code);background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:1px 5px;word-break:break-all}
+.jcmd{font-style:normal;font-stretch:normal;font-weight:500;font-size:12px;line-height:1.5;font-family:var(--font-code);background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:1px 5px;word-break:break-all}
 .jsetup summary{cursor:pointer;font-weight:600}
 .jsetup ol{padding-left:20px}.jsetup li{margin:6px 0}
 .jdiffs{display:flex;flex-direction:column;gap:4px;max-height:280px;overflow:auto}
@@ -1248,11 +1266,24 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
         <button type="button" role="menuitem" class="edit" id="baseline">Set baseline</button>
       </div>
     </div>
-    <button class="btn" id="identityBtn" type="button" aria-haspopup="menu" title="Choose who you are in this browser">Choose yourself</button>
     <button class="btn assistant-status" id="assistantChanges" type="button" title="Connect your assistant or review its changes">Connect assistant</button>
-    <button class="btn" id="whatsNew" type="button" title="What's new in Sightline">What's new<span id="appVersion"></span><span class="wn-dot" hidden></span></button>
-    <button class="btn" id="theme" type="button"></button>
-    <button class="btn" id="help" title="Help and shortcuts (?)" aria-label="Help">?</button>
+    <div class="menuwrap" id="meWrap">
+      <button class="btn mebtn" id="meBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="meMenu"><i class="ini" id="meIni" aria-hidden="true"></i><span class="melbl" id="meLbl"></span><span class="wn-dot" hidden></span></button>
+      <div class="menu memenu" id="meMenu" role="menu" aria-label="You and this browser" hidden>
+        <button type="button" role="menuitem" id="identityBtn" aria-haspopup="menu" title="Choose who you are in this browser">Choose yourself</button>
+        <div class="mh">Text size</div>
+        <div class="tsrow" role="group" aria-label="Text size">
+          <button type="button" role="menuitem" id="tsDown" aria-label="Smaller text" title="Smaller text">A&minus;</button>
+          <output id="tsVal" aria-live="polite">100%</output>
+          <button type="button" role="menuitem" id="tsUp" aria-label="Larger text" title="Larger text">A+</button>
+          <button type="button" role="menuitem" id="tsReset" title="Back to 100%">Reset</button>
+        </div>
+        <div class="mh">This browser</div>
+        <button type="button" role="menuitem" id="theme"></button>
+        <button type="button" role="menuitem" id="whatsNew" title="What's new in Sightline">What's new<span id="appVersion"></span><span class="wn-dot" hidden></span></button>
+        <button type="button" role="menuitem" id="help" title="Help and shortcuts (?)" aria-label="Help">Help and shortcuts</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1321,8 +1352,15 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
       <button type="button" class="btn" id="filterBtn" aria-haspopup="dialog" aria-expanded="false" title="Filter what's shown (F)">Filters</button>
     </span>
     <button type="button" class="btn" id="showBtn" aria-haspopup="menu" aria-controls="showMenu" aria-expanded="false" title="Hide or show gates, meetings, done work and more, or pin the top rows (H)">Show</button>
-    <span class="seg" role="group" aria-label="Show" id="layerSeg"><button type="button" id="lyAll" aria-pressed="true" title="Everything, from Jira and added here by anyone">All sources</button><button type="button" id="lyJira" aria-pressed="false" title="Only what comes from Jira">Jira only</button><button type="button" id="lyMine" aria-pressed="false" title="Jira's work, plus what you added (not teammates' additions)">Jira + mine</button></span>
-    <span class="seg" role="group" aria-label="Rows" id="rowsSeg"><button type="button" id="rLanes" aria-pressed="true" title="One row per workstream">By workstream</button><button type="button" id="rPeople" aria-pressed="false" title="One row per person: who's doing what (R)">By person</button><button type="button" id="rEpics" aria-pressed="false" hidden title="One row per Jira epic, nested by parent links: epic, feature, initiative. From Jira, so it can't be dragged (R)">By epic</button></span>
+    <div class="menuwrap" id="layoutWrap">
+      <button type="button" class="btn" id="layoutBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="layoutPop" title="Rows and sources (R switches rows)"><span id="layoutLbl">View</span><span class="vsum" id="layoutSum"></span><span aria-hidden="true">▾</span></button>
+      <div class="menu layoutpop" id="layoutPop" role="dialog" aria-label="View" hidden>
+        <div class="mh" id="rowsH">Rows</div>
+    <span class="seg" role="group" aria-labelledby="rowsH" id="rowsSeg"><button type="button" id="rLanes" aria-pressed="true" title="One row per workstream">By workstream</button><button type="button" id="rPeople" aria-pressed="false" title="One row per person: who's doing what (R)">By person</button><button type="button" id="rEpics" aria-pressed="false" hidden title="One row per Jira epic, nested by parent links: epic, feature, initiative. From Jira, so it can't be dragged (R)">By epic</button></span>
+        <div class="mh" id="layerH">Show work from</div>
+    <span class="seg" role="group" aria-labelledby="layerH" id="layerSeg"><button type="button" id="lyAll" aria-pressed="true" title="Everything, from Jira and added here by anyone">All sources</button><button type="button" id="lyJira" aria-pressed="false" title="Only what comes from Jira">Jira only</button><button type="button" id="lyMine" aria-pressed="false" title="Jira's work, plus what you added (not teammates' additions)">Jira + mine</button></span>
+      </div>
+    </div>
     <span class="seg" role="group" aria-label="Zoom" id="zoomSeg"><button type="button" id="zWeeks" aria-pressed="true" title="Initiatives by week (W)">Weeks</button><button type="button" id="zDays" aria-pressed="false" title="Tasks by working day (D)">Days</button></span>
   </div>
 </div>
@@ -1497,8 +1535,30 @@ let surfMemo = null;                     // surfaceHex: one style lookup per dra
 function applyTheme(){ surfMemo = null;
   if (theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", theme);
   const b = document.getElementById("theme"); if (!b) return;
-  b.textContent = THEMES[theme][0]; b.title = `Theme: ${THEMES[theme][1]}. Click to change.`; b.setAttribute("aria-label", `Theme: ${THEMES[theme][1]}`);
+  b.textContent = `${THEMES[theme][0]}  Theme: ${THEMES[theme][1]}`; b.title = `Theme: ${THEMES[theme][1]}. Click to change.`; b.setAttribute("aria-label", `Theme: ${THEMES[theme][1]}`);
 }
+// Text size, for this browser only: every font size in the page's own styles is scaled, and none goes below 9px
+// (a smaller one stays as it is). Layout sizes stay, so the chart's rows keep their height.
+const TS_KEY = "timeline-planner-textsize", TS_MIN = 0.9, TS_MAX = 1.5, TS_FLOOR = 9;
+let textScale = 1, tsRules = null;
+try { const v = Math.round(Number(localStorage.getItem(TS_KEY)) * 10) / 10; if (v >= TS_MIN && v <= TS_MAX) textScale = v; } catch(e){}
+function tsSize(px){ return textScale === 1 ? px : Math.max(Math.min(px, TS_FLOOR), Math.round(px * textScale * 100) / 100); }
+function applyTextSize(){
+  // A font shorthand with var() in it has no font-size a browser will report, so the page's styles never use one.
+  if (!tsRules){ tsRules = [];
+    const walk = rules => { for (const r of rules){ const fs = r.style && r.style.getPropertyValue("font-size");
+      if (fs && /^[\d.]+px$/.test(fs)) tsRules.push([r, parseFloat(fs), r.style.getPropertyPriority("font-size")]);
+      if (r.cssRules) walk(r.cssRules); } };
+    for (const sh of document.styleSheets){ if (sh.href) continue; try { walk(sh.cssRules); } catch(e){} } }
+  tsRules.forEach(([r, px, pri])=>r.style.setProperty("font-size", tsSize(px) + "px", pri));
+  measureCtx = undefined;
+  const pct = Math.round(textScale * 100), v = document.getElementById("tsVal");
+  // aria-disabled, not disabled, so a button that reaches the end keeps focus and Escape still closes the menu
+  if (v){ v.textContent = pct + "%"; [["tsDown", textScale <= TS_MIN], ["tsUp", textScale >= TS_MAX], ["tsReset", textScale === 1]].forEach(([id, off])=>document.getElementById(id).setAttribute("aria-disabled", String(off))); }
+}
+function setTextSize(x){ const v = Math.min(TS_MAX, Math.max(TS_MIN, Math.round(x * 10) / 10)); if (v === textScale) return;
+  textScale = v; try { v === 1 ? localStorage.removeItem(TS_KEY) : localStorage.setItem(TS_KEY, String(v)); } catch(e){}
+  applyTextSize(); render(); setStatus(`Text size: ${Math.round(v * 100)}%`); }
 applyTheme();
 // ================= constants =================
 const SCHEMA = 2;                       // the plan format; tools/sightline-jira-sync.py PLAN_SCHEMA must match (a test checks)
@@ -5379,10 +5439,10 @@ function showRelDetail(on){ $("#relBox").classList.toggle("detail", on); renderR
 function updateWhatsNew(){
   const fresh = semverCmp(APP_VERSION, relSeen()) > 0, b = $("#whatsNew");
   const source = document.querySelector('meta[name="sightline-version"]').content === "dev";
-  $("#appVersion").textContent = source ? " · source template" : ` · v${APP_VERSION}`;
+  $("#appVersion").textContent = source ? "source template" : `v${APP_VERSION}`;
   b.disabled = source;
   b.title = source ? "Open the ready-to-use app to read its release history" : "What's new in Sightline";
-  b.querySelector(".wn-dot").hidden = !fresh;
+  b.querySelector(".wn-dot").hidden = !fresh; $("#meBtn .wn-dot").hidden = !fresh;
   b.setAttribute("aria-label", source ? "Release history is unavailable in the Sightline source template" : fresh ? `What's new: Sightline ${APP_VERSION}, not seen yet` : `What's new in Sightline ${APP_VERSION}`);
 }
 function openReleases(version){
@@ -5556,8 +5616,8 @@ function dayPage(dir){
 let measureCtx;
 const keyW = k => k ? k.length * 6 + 13 : 0;      // a .jkey chip plus its gap
 function textW(t){
-  try { if (measureCtx === undefined){ const c = document.createElement("canvas").getContext("2d"); measureCtx = c || null; if (c) c.font = '11px "Instrument Sans", system-ui, sans-serif'; if ("fontStretch" in c) c.fontStretch = "semi-condensed"; } } catch(e){ measureCtx = null; }
-  return measureCtx ? measureCtx.measureText(t).width : t.length * 6.3;
+  try { if (measureCtx === undefined){ const c = document.createElement("canvas").getContext("2d"); measureCtx = c || null; if (c) c.font = `${tsSize(11)}px "Instrument Sans", system-ui, sans-serif`; if ("fontStretch" in c) c.fontStretch = "semi-condensed"; } } catch(e){ measureCtx = null; }
+  return measureCtx ? measureCtx.measureText(t).width : t.length * 6.3 * tsSize(11) / 11;
 }
 function dayCols(){
   let a = startDay(), b = startDay() + S.meta.weeks*7 - 1;
@@ -6644,6 +6704,11 @@ function renderMainNav(){
   identity.hidden = present; if (identity.textContent !== label) identity.textContent = label;
   identity.title = me ? `${label}. Change who you are in this browser` : "Choose who you are in this browser";
   identity.setAttribute("aria-label", me ? `${label}. Change who you are in this browser` : "Choose who you are in this browser");
+  { const mb = $("#meBtn"), pp = me && personById(me), ini = $("#meIni"), lbl = me ? "" : "Choose yourself";
+    mb.hidden = present; if (ini.textContent !== (pp?.initials || "")) ini.textContent = pp?.initials || "";
+    ini.style.background = pp?.color || "var(--ink-3)"; ini.style.color = pp ? iniFg(pp.color) : "#fff"; if ($("#meLbl").textContent !== lbl) $("#meLbl").textContent = lbl;
+    const fresh = !$("#meBtn .wn-dot").hidden, name = (me ? label : "Choose yourself") + ". Text size, theme, what's new and help" + (fresh ? ". Something new to see" : "");
+    mb.setAttribute("aria-label", name); mb.title = (me ? label : "Choose who you are") + ", text size, theme, what's new and help"; }
 }
 const WS_LIST = ["today","timeline","people","plan","standup","roadmap","settings","list"];   // the order is the number keys 1-6
 function setWs(ws){ if (ws === "settings"){ UI.planTab = "jira"; ws = "plan"; }   // Jira setup lives in Settings, then Jira connection
@@ -6715,6 +6780,11 @@ function renderWs(){
     const key = extra.map(x=>x.textContent).join("|"); if (b.dataset.extra === key) return; b.dataset.extra = key;
     b.querySelectorAll(":scope > .snc, :scope > .warnc").forEach(x=>x.remove()); b.append(...extra); });
   document.querySelectorAll("#ws-plan [data-plan]").forEach(sec=>{ sec.hidden = sec.dataset.plan !== pt; });
+  { const on = id => [...$(id).querySelectorAll("button")].find(b=>!b.hidden && b.getAttribute("aria-pressed") === "true"), rows = $("#rowsSeg").hidden ? null : on("#rowsSeg"), src = $("#layerSeg").hidden ? null : on("#layerSeg");
+    const sum = [rows?.textContent, src && src.id !== "lyAll" ? src.textContent : ""].filter(Boolean).join(" · ");
+    $("#layoutWrap").hidden = $("#rowsSeg").hidden && $("#layerSeg").hidden; if ($("#layoutWrap").hidden && !$("#layoutPop").hidden){ $("#layoutPop").hidden = true; $("#layoutBtn").setAttribute("aria-expanded", "false"); }
+    if ($("#layoutSum").textContent !== sum) $("#layoutSum").textContent = sum; $("#layoutLbl").textContent = sum ? "View:" : "View"; $("#layoutBtn").setAttribute("aria-label", "View" + (sum ? ": " + sum.replace(" · ", ", ") : "") + ". Rows and sources");
+    $("#rowsH").hidden = $("#rowsSeg").hidden; $("#layerH").hidden = $("#layerSeg").hidden; }
   document.documentElement.style.setProperty("--wsh", $("#wsbar").offsetHeight + "px");
 }
 function cleanFilter(f){
@@ -13713,7 +13783,26 @@ MAIN_NAV.nav.addEventListener("keydown", e=>{
 document.addEventListener("click", e=>{ if (!e.target.closest("#sidenav")) closeNavFly(); });
 addEventListener("resize", (()=>{ let was = navRail(), t = 0; return ()=>{ clearTimeout(t); t = setTimeout(()=>{ if (navRail() !== was){ was = navRail(); render(); } }, 150); }; })());
 $("#assistantChanges").addEventListener("click",()=>{ sel = {type:"amend",id:"x"}; render(); });
-$("#identityBtn").addEventListener("click",()=>{ closeNotesMenu(); closeFilterPop(); whoAmI($("#identityBtn").getBoundingClientRect(), ()=>render(), true, $("#identityBtn")); });
+$("#identityBtn").addEventListener("click",()=>{ closeNotesMenu(); closeFilterPop(); closeMe(); whoAmI($("#meBtn").getBoundingClientRect(), ()=>render(), true, $("#meBtn")); });
+// A small menu under its button: arrow keys move, Escape closes and returns to the button, a click outside closes it.
+function popMenu(btn, pop, opts = {}){
+  const items = () => [...pop.querySelectorAll("button")].filter(x=>!x.disabled && !x.closest("[hidden]"));
+  const close = refocus => { if (pop.hidden) return; pop.hidden = true; btn.setAttribute("aria-expanded", "false"); if (refocus) btn.focus(); };
+  const open = () => { closeMenu(); closeNotesMenu(); closeShowMenu(); closeViewMenu(); closeFilterPop(); pop.hidden = false; btn.setAttribute("aria-expanded", "true");
+    setTimeout(()=>(pop.querySelector('[aria-pressed="true"]:not([hidden])') && opts.focusPressed ? pop.querySelector('[aria-pressed="true"]:not([hidden])') : items()[0])?.focus(), 0); };
+  btn.addEventListener("click", e=>{ e.stopPropagation(); pop.hidden ? open() : close(); });
+  document.addEventListener("click", e=>{ if (!pop.hidden && e.target.isConnected && !pop.contains(e.target) && !btn.contains(e.target)) close(); });
+  pop.addEventListener("click", e=>{ const b = e.target.closest("button"); if (b && opts.closeOn && opts.closeOn(b)) setTimeout(()=>close(), 0); });
+  pop.addEventListener("keydown", e=>{ const xs = items(), i = xs.indexOf(document.activeElement);
+    if (e.key === "ArrowDown" || e.key === "ArrowRight" && opts.grid){ e.preventDefault(); xs[(i + 1) % xs.length]?.focus(); }
+    else if (e.key === "ArrowUp" || e.key === "ArrowLeft" && opts.grid){ e.preventDefault(); xs[(i - 1 + xs.length) % xs.length]?.focus(); }
+    else if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); close(true); } });
+  return {open, close};
+}
+const meMenu = popMenu($("#meBtn"), $("#meMenu"), {closeOn:b=>!b.closest(".tsrow") && b.id !== "theme"}), closeMe = r=>meMenu.close(r);
+popMenu($("#layoutBtn"), $("#layoutPop"), {grid:true, focusPressed:true});
+$("#tsDown").onclick = ()=>setTextSize(textScale - 0.1); $("#tsUp").onclick = ()=>setTextSize(textScale + 0.1); $("#tsReset").onclick = ()=>setTextSize(1);
+applyTextSize();
 $("#updates-notes").addEventListener("click",openCustomerNotes);
 
 document.body.append(addMenu);

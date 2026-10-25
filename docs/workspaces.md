@@ -68,7 +68,13 @@ an idea you start typing while the save finishes is retained. Copy or submit dra
 Today distinguishes no work loaded, missing Jira status data, and incomplete connected data. Its attention flags
 describe the available plan and sync; a quiet summary does not establish delivery feasibility.
 
-Choose **Choose yourself** or **You: [name]** in the toolbar to identify yourself for Mine and author stamps. This is a browser preference, not a verified identity. Today names each due decision's decider; its owners may be different people.
+Open the menu at the right of the header (**Choose yourself**, or your initials once you have) and choose **Choose yourself** or **You: [name]** to identify yourself for Mine and author stamps. This is a browser preference, not a verified identity. The same menu has text size, theme, **What's new** and help.
+
+**Text size** makes the page's text larger or smaller without browser zoom: **A+** and **A−** move in 10% steps from 90% to 150%, and **Reset** goes back to 100%. Text never goes below 9 pixels. The setting stays in this browser and never goes in the plan. There's no keyboard shortcut, so Ctrl or Cmd with + and − still zoom the whole browser.
+
+On the Timeline, **View** holds the rows (by workstream, person or epic) and, when the plan has Jira work, which sources to show. The button says what's chosen, for example **View: By person · Jira only**, so a filtered review is never a surprise. R still switches rows.
+
+Today names each due decision's decider; its owners may be different people.
 
 Find reveals a matching milestone, gate or note through the Timeline's filters, folded rows and hidden layers. **Restore previous view** returns to the view you had before opening the result. Filter controls retain keyboard focus when the view updates, and status messages remain visible on narrow screens.
 
