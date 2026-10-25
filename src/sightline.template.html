@@ -2275,6 +2275,130 @@ function effortOf(b, d){ if (!b) return null; if (!hasKids(b, d)) return b.effor
   return out.items || out.missing ? out : null; }
 const deliveredBy = (dvId, d) => planOf(d).bars.filter(b=>(b.delivers || []).includes(dvId));
 const pw = n => `${String(Math.round(n * 2) / 2)} person-week${n === 1 ? "" : "s"}`;
+const pw1 = n => { const x = Math.round(n * 10) / 10; return `${x} person-week${x === 1 ? "" : "s"}`; };
+// ================= forecast scheduler (docs/forecast-and-scenarios.md 1.6, 1.7) =================
+// forecastRun(level, {plan, today}): a pure function of the plan, the Jira files and today; it never writes the plan.
+// It steps day by day. Each person's capacity in each workstream (laneCap's rule) can be used once a day. Fixed items
+// book their effort first; Forecast items then take capacity in rank order once every constraint has cleared.
+// No finish (null) is unknown, never zero, and always carries a reason.
+const FC_CREW = 2, FC_HORIZON_WEEKS = 156, FC_EPS = 1e-9, FC_LEVELS = ["low", "likely", "high"];
+function forecastRun(level, opts = {}){
+  const P = planOf(opts.plan), lv = FC_LEVELS.includes(level) ? level : "likely", hs = holidaySet(P);
+  const sd = isoToDay(P.meta.start), today = opts.today ?? todayDay(), first = Math.max(today, sd);
+  const horizon = Math.max(sd + Math.round(P.meta.weeks * 7) - 3, today) + FC_HORIZON_WEEKS * 7;
+  const byId = new Map(P.bars.map(b=>[b.id, b])), kids = new Map();
+  P.bars.forEach(b=>{ if (b.parent && byId.has(b.parent)){ if (!kids.has(b.parent)) kids.set(b.parent, []); kids.get(b.parent).push(b); } });
+  const leafsOf = id => { const out = [], seen = new Set(), walk = x => { if (seen.has(x)) return; seen.add(x); const k = kids.get(x); if (!k) out.push(x); else k.forEach(c=>walk(c.id)); }; walk(id); return out; };
+  const chain = b => { const out = [], seen = new Set(); for (let x = b; x && !seen.has(x.id); x = byId.get(x.parent)){ seen.add(x.id); out.push(x); } return out; };
+  const gates = new Map((P.gates || []).map(g=>[g.id, g])), insts = P === S ? new Map(blockInstances().map(i=>[i.id, i])) : new Map();
+  const laneIdx = new Map(P.lanes.map((l, i)=>[l.id, i])), name = id => byId.has(id) ? chartLabel(byId.get(id)) : id;
+  // Capacity: people in roster order, their workstreams with open days and weights, each workstream's reserve.
+  const ppl = P.people.map(pp=>({pp, off:personOff(pp), a:pp.from ? isoToDay(pp.from) : -Infinity, z:pp.leaves ? isoToDay(pp.leaves) : Infinity,
+    day:pp.external || pp.inactive ? 0 : allocOf(pp) / 5, lanes:P.lanes.filter(l=>laneMembers(l).includes(pp.id)).map(l=>({id:l.id, a:l.from ? isoToDay(l.from) : -Infinity, z:l.until ? isoToDay(l.until) : Infinity, w:splitWeight(pp, l.id)}))}));
+  const keep = new Map(P.lanes.map(l=>[l.id, 1 - reservePct(l, P) / 100]));
+  const members = new Map(P.lanes.map(l=>[l.id, ppl.map((x, i)=>i).filter(i=>ppl[i].lanes.some(y=>y.id === l.id))]));
+  const fullCap = (i, laneId, n) => { const x = ppl[i]; if (!x.day || n < x.a || n >= x.z || !isWork(n, hs) || x.off.has(n)) return 0;
+    const on = x.lanes.filter(l=>n >= l.a && n <= l.z), me = on.find(l=>l.id === laneId); if (!me || !me.w) return 0;
+    return x.day * me.w / on.reduce((t, l)=>t + l.w, 0) * keep.get(laneId); };
+  const staffed = laneId => members.get(laneId).some(i=>{ const x = ppl[i], me = x.lanes.find(l=>l.id === laneId); return x.day > 0 && me.w > 0 && x.z > first && me.z >= first; });
+  let day = -1, left = new Map(), users = new Map();             // capacity left today, and who used each person's day
+  const capLeft = (i, laneId, n) => { if (n !== day){ day = n; left = new Map(); users = new Map(); } const k = i + "|" + laneId; if (!left.has(k)) left.set(k, fullCap(i, laneId, n)); return left.get(k); };
+  const use = (i, laneId, n, amt, id) => { const k = i + "|" + laneId; left.set(k, capLeft(i, laneId, n) - amt); if (!users.has(k)) users.set(k, new Set()); users.get(k).add(id); };
+  const booked = new Map();                                      // fixed bookings: day -> [{i, lane, amt, id}]
+  // Items: every leaf initiative, with its constraints (its own and its holders'), in one of: done, fixed, run, none.
+  const items = new Map();
+  P.bars.filter(b=>!kids.has(b.id)).forEach(b=>{
+    const st = forecastState(b, P), up = chain(b), it = {id:b.id, lane:b.lane, effort:b.effort ? b.effort[lv] : null, start:null, finish:undefined, why:null,
+      preds:[...new Set(up.flatMap(x=>x.dependsOn || []).flatMap(id=>byId.has(id) ? leafsOf(id) : []))], clear:{day:first, edge:{kind:"first"}}, people:{}, held:{}, slowed:{}, waited:0};
+    items.set(b.id, it);
+    if (b.status === "done"){ it.state = "done"; it.finish = first - 1; return; }
+    if (b.parked){ it.state = "none"; it.finish = null; it.why = {kind:"parked", text:"parked"}; return; }
+    if (st === "out"){ it.state = "none"; it.finish = null; it.why = {kind:"out", text:"out of scope"}; return; }
+    if (st === "notcounted"){ it.state = "none"; it.finish = null; it.why = {kind:"notcounted", text:"not counted: no effort"}; return; }
+    if (st === "fixed"){ const lk = jiraLockOf(b), e = lk.e; it.state = "fixed"; it.start = lk.s; it.bookFrom = Math.max(it.start, first);
+      if (e >= first || !it.effort){ it.finish = e; return; } it.overdue = true; it.start = null; }       // overdue: what's left runs as Forecast work from the first day
+    it.state = "run"; it.left = it.effort;
+    const later = (n, edge) => { if (n > it.clear.day) it.clear = {day:n, edge}; }, none = (kind, text) => { if (!it.why) it.why = {kind, text}; };
+    up.forEach(x=>{ (x.waitsFor || []).forEach(id=>{ const g = gates.get(id);
+        if (g){ if (validIso(g.date)) later(isoToDay(g.date) + 1, {kind:"gate", id, name:g.gate, day:isoToDay(g.date)}); else none("gate", `waits for ${g.gate} (no date)`); return; }
+        const bi = insts.get(id); if (bi && bi.status !== "canceled" && !bi.skip) later(bi.e + 1, {kind:"block", id, name:bi.label, day:bi.e}); });
+      (x.jiraDeps || []).forEach(k=>{ const j = jiraOf(k); if (!j) return none("jira", `waits for ${k} (not in the last sync)`); if (["done", "abandoned"].includes(jiraStateOf(j).state)) return;
+        const e = jiraEndDay(k); if (e == null) return none("jira", `waits for ${k} (no sprint)`); later(e + 1, {kind:"jira", key:k, day:e}); }); });
+    const l = P.lanes.find(x=>x.id === b.lane); if (l && l.from) later(isoToDay(l.from), {kind:"lane", name:l.name, day:isoToDay(l.from)});
+    if (!l || !staffed(l.id)){ it.state = "none"; it.finish = null; it.why = {kind:"unstaffed", text:`unstaffed: nobody in ${l ? l.name : "its workstream"} has time for it`}; return; }
+    if (it.why){ it.state = "none"; it.finish = null; }
+  });
+  // Loops, found on the leaf graph after holders are expanded: a dependency on a holder that holds its successor is one too.
+  { const idx = new Map(), low = new Map(), on = new Set(), stack = []; let n = 0;
+    const visit = v => { idx.set(v, n); low.set(v, n); n++; stack.push(v); on.add(v);
+      items.get(v).preds.forEach(w=>{ if (!items.has(w)) return; if (!idx.has(w)){ visit(w); low.set(v, Math.min(low.get(v), low.get(w))); } else if (on.has(w)) low.set(v, Math.min(low.get(v), idx.get(w))); });
+      if (low.get(v) === idx.get(v)){ const comp = []; let w; do { w = stack.pop(); on.delete(w); comp.push(w); } while (w !== v);
+        if (comp.length > 1 || items.get(v).preds.includes(v)) comp.forEach(id=>{ const it = items.get(id); if (it.state === "done") return; it.state = "none"; it.finish = null; it.why = {kind:"loop", text:"on a dependency loop"}; }); } };
+    [...items.keys()].sort().forEach(v=>{ if (!idx.has(v)) visit(v); }); }
+  // No finish passes to everything after it, naming the first item in the way.
+  for (let changed = true; changed;){ changed = false;
+    items.forEach(it=>{ if (it.finish === null || it.state === "done" || it.state === "fixed") return; const p = it.preds.map(id=>items.get(id)).find(x=>x && x.finish === null);
+      if (p){ it.state = "none"; it.finish = null; it.why = {kind:"waits", id:p.id, text:`waits for ${name(p.id)} (${p.why.kind === "waits" ? "which has no date" : p.why.text})`}; changed = true; } }); }
+  // Fixed work with effort is booked first, spread evenly over its remaining working days, from its workstream in roster order.
+  const over = {};
+  items.forEach(it=>{ if (it.state !== "fixed" || !it.effort || it.finish < first) return; const days = []; for (let n = it.bookFrom; n <= it.finish; n++) if (isWork(n, hs)) days.push(n); if (!days.length) return;
+    const per = it.effort / days.length; days.forEach(n=>{ if (!booked.has(n)) booked.set(n, []); booked.get(n).push({id:it.id, lane:it.lane, amt:per}); }); });
+  const rank = (a, b) => (laneIdx.get(a.lane) ?? 1e9) - (laneIdx.get(b.lane) ?? 1e9) || byId.get(a.id).start - byId.get(b.id).start || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const runs = [...items.values()].filter(it=>it.state === "run").sort(rank);
+  const readyAt = it => { let r = it.clear; for (const id of it.preds){ const p = items.get(id); if (!p || p.state === "none") continue; if (p.finish === undefined) return undefined;
+      if (p.finish + 1 > r.day) r = {day:p.finish + 1, edge:{kind:"dep", id, name:name(id), day:p.finish}}; } return r; };
+  let pending = runs.slice();
+  for (let n = first; n <= horizon && pending.length; n++){
+    const bk = booked.get(n); if (bk) bk.forEach(x=>{ let need = x.amt; members.get(x.lane).forEach(i=>{ const c = Math.min(capLeft(i, x.lane, n), need); if (c > FC_EPS){ use(i, x.lane, n, c, x.id); need -= c; } });
+      if (need > FC_EPS) over[x.id] = (over[x.id] || 0) + need; });
+    if (!isWork(n, hs)) continue;
+    const ready = []; let next = Infinity;
+    pending.forEach(it=>{ const r = it.ready || (it.ready = readyAt(it)); if (!r) return; if (r.day <= n) ready.push(it); else next = Math.min(next, r.day); });
+    if (!ready.length){ if (next === Infinity && !booked.size) break; if (next !== Infinity && ![...booked.keys()].some(k=>k > n && k < next)) n = Math.max(n, next - 1); continue; }
+    ready.forEach(it=>{
+      const mem = members.get(it.lane), full = mem.map(i=>[i, fullCap(i, it.lane, n)]).filter(x=>x[1] > FC_EPS).sort((a, b)=>b[1] - a[1] || a[0] - b[0]).slice(0, FC_CREW);
+      const could = Math.min(it.left, full.reduce((t, x)=>t + x[1], 0)), mine = new Set(Object.keys(it.people).map(Number));
+      const pick = mem.map(i=>[i, capLeft(i, it.lane, n)]).filter(x=>x[1] > FC_EPS).sort((a, b)=>(mine.has(b[0]) - mine.has(a[0])) || b[1] - a[1] || a[0] - b[0]).slice(0, FC_CREW);
+      let got = 0; pick.forEach(([i, c])=>{ const t = Math.min(c, it.left - got); if (t <= FC_EPS) return; use(i, it.lane, n, t, it.id); got += t; const pid = ppl[i].pp.id; it.people[pid] = (it.people[pid] || 0) + t; });
+      if (got < could - FC_EPS){ const by = new Set(); mem.forEach(i=>(users.get(i + "|" + it.lane) || new Set()).forEach(id=>{ if (id !== it.id) by.add(id); }));
+        const into = got > FC_EPS ? it.slowed : it.held; by.forEach(id=>{ into[id] = (into[id] || 0) + 1; }); if (!got){ it.waited++; it.lastHeld = [...by].sort(); } }
+      if (got > FC_EPS && it.start == null) it.start = n;
+      it.left -= got; if (it.left <= FC_EPS){ it.left = 0; it.finish = n; } });
+    if (ready.some(it=>it.finish === n)) pending = pending.filter(it=>it.finish === undefined);
+  }
+  // Past the horizon, or after something that is.
+  runs.forEach(it=>{ if (it.finish !== undefined) return; it.finish = null; it.state = "none";
+    const p = it.preds.map(id=>items.get(id)).find(x=>x && x.state === "none" && x !== it); it.why = p ? {kind:"waits", id:p.id, text:`waits for ${name(p.id)} (which has no date)`} : {kind:"horizon", text:`not finished by ${fmtDay(horizon)}`}; });
+  // Why each item starts when it does: the constraint that cleared last, or the work that held its people.
+  items.forEach(it=>{ if (it.start == null || it.state === "fixed" || it.state === "done") return; const r = readyAt(it) || it.clear;
+    it.readyDay = r.day; it.startEdge = it.start <= nextWork(r.day, hs) ? r.edge : it.lastHeld && it.lastHeld.length ? {kind:"capacity", ids:it.lastHeld, from:r.day, to:it.start - 1, days:it.waited} : {kind:"away", name:(P.lanes.find(l=>l.id === it.lane) || {}).name || "its workstream", from:r.day, to:it.start - 1};
+    const weeks = Math.max(1, (it.finish - it.start + 1) / 7); it.rate = it.effort / weeks; if (over[it.id]) it.overbooked = over[it.id]; });
+  items.forEach(it=>{ if (over[it.id]) it.overbooked = over[it.id]; });
+  const holders = {}; kids.forEach((_, id)=>{ const ls = leafsOf(id).map(x=>items.get(x)).filter(x=>x && x.state !== "done");
+    holders[id] = ls.some(x=>x.finish === null) ? {finish:null, missing:ls.filter(x=>x.finish === null).length} : {finish:ls.length ? Math.max(...ls.map(x=>x.finish)) : null, start:ls.some(x=>x.start != null) ? Math.min(...ls.filter(x=>x.start != null).map(x=>x.start)) : null}; });
+  const out = {}; items.forEach((it, id)=>{ const {preds, clear, left: _l, ready, lastHeld, bookFrom, ...rest} = it; out[id] = rest; });
+  return {level:lv, first, horizon, items:out, holders};
+}
+// The three runs, with the reported high: the later of the likely and high finishes (a high estimate can change who
+// gets a person first, so the raw high run can finish earlier). Cached per plan object, edit, Jira files and day.
+const fcMemo = new WeakMap();
+function forecastFor(opts = {}){
+  const P = planOf(opts.plan), today = opts.today ?? todayDay(), key = [P === S ? changeGen : -1, JIRA, JIRA_ISSUES, today];
+  const hit = fcMemo.get(P); if (P === S && hit && hit.key.every((k, i)=>k === key[i])) return hit.res;
+  const runs = Object.fromEntries(FC_LEVELS.map(l=>[l, forecastRun(l, {plan:P, today})]));
+  const finish = (lv, id) => { const r = runs[lv]; return id in r.items ? r.items[id].finish : (r.holders[id] || {}).finish; };
+  const res = {runs, today, finish:id=>{ const a = finish("likely", id), b = finish("high", id);
+    return {likely:a ?? null, high:a == null || b == null ? null : Math.max(a, b), highEarlier:a != null && b != null && b < a}; }};
+  if (P === S) fcMemo.set(P, {key, res}); return res;
+}
+// One line on why an item's dates are what they are.
+function fcEdgeText(e, run){ if (!e) return "";
+  const nm = id => run.items[id] ? chartLabel(planOf().bars.find(b=>b.id === id) || {label:id}) : id;
+  return e.kind === "dep" ? `waited for ${e.name} (finishes ${fmtDay(e.day)})` : e.kind === "gate" ? `waits for ${e.name} (${fmtDay(e.day)})` : e.kind === "block" ? `waits for ${e.name} (ends ${fmtDay(e.day)})`
+    : e.kind === "jira" ? `waits for ${e.key} (its sprint ends ${fmtDay(e.day)})` : e.kind === "lane" ? `${e.name} starts ${fmtDay(e.day)}`
+    : e.kind === "capacity" ? `its people were on ${e.ids.map(nm).join(" and ")}, ${fmtDay(e.from)} to ${fmtDay(e.to)}`
+    : e.kind === "away" ? `nobody in ${e.name} had time, ${fmtDay(e.from)} to ${fmtDay(e.to)}` : "starts as soon as it can";
+}
 const effOwnerIds = b => { const r = rollupOf(b); return r && r.owners.length ? r.owners : own(b); };
 const effOwner = b => effOwnerIds(b).map(personName).join(", ");
 const isLate = b => b.kind !== "waiting" && (rolls(b) ? (rollupOf(b).late || (effStatus(b) !== "done" && todayDay() > barEndDay(b))) : (b.status !== "done" && todayDay() > barEndDay(b)));
@@ -8430,9 +8554,23 @@ function del(type,id){
 const field = (id,label,input) => h("div",{class:"field"}, h("label",{for:id},label), input);
 // Forecast inputs on the initiative card. Effort is the work left; a holder shows the sum of what's inside.
 const FSTATE = {forecast:"Forecast", fixed:"Fixed: Jira's sprint sets its dates", notcounted:"Not counted: no effort yet, so the forecast can't include it", out:"Out of scope: left out of the forecast"};
+// The forecast on an initiative's card: its likely and high dates, and why they are what they are.
+function forecastLine(b){
+  const F = forecastFor(), run = F.runs.likely, f = F.finish(b.id), yr = n => dayToDate(n).getUTCFullYear() === dayToDate(F.today).getUTCFullYear() ? fmtDay(n) : fmtDayY(n);
+  const high = f.highEarlier ? " The high run finished earlier, because a higher estimate changed who got people first; showing the likely date." : "";
+  if (hasKids(b)){ const x = run.holders[b.id]; if (!x) return null;
+    return h("p",{class:"hint",id:"f-fcast"}, x.finish == null ? `No forecast date: ${x.missing} item${x.missing === 1 ? "" : "s"} inside ${x.missing === 1 ? "has" : "have"} no date.`
+      : `Forecast finish: likely ${yr(f.likely)}, high ${yr(f.high)} (if everything takes its high estimate).` + high); }
+  const it = run.items[b.id]; if (!it || it.state === "done") return null;
+  if (it.state === "fixed") return it.overbooked ? h("p",{class:"hint",id:"f-fcast"}, `Its sprint can't fit its effort: ${pw(it.overbooked)} more than its workstream has.`) : null;
+  if (it.finish == null) return h("p",{class:"hint",id:"f-fcast"}, `No forecast date: ${it.why.text}.`);
+  const who = Object.keys(it.people).map(personName).join(", ");
+  return h("p",{class:"hint",id:"f-fcast"}, `Forecast: likely ${yr(it.start)} to ${yr(f.likely)}; high finish ${yr(f.high)} (if everything takes its high estimate). `
+    + `It starts then because ${fcEdgeText(it.startEdge, run)}. About ${pw1(it.rate)} a week` + (who ? ` (${who})` : "") + "." + (it.overdue ? " Its sprint has ended, so what's left is forecast from today." : "") + high);
+}
 function effortField(b){
   if (hasKids(b)){ const e = effortOf(b); return h("div",{class:"field",id:"f-effort"}, h("span",{class:"flabel"},"Effort left (from what's inside)"),
-    h("p",{class:"hint",id:"f-effortsum"}, !e ? "Nothing inside has an effort yet." : (e.items ? `${pw(e.likely)} likely` + (e.low !== e.likely || e.high !== e.likely ? ` (${e.low} to ${e.high})` : "") + ` across ${e.items} item${e.items === 1 ? "" : "s"}` : "No effort yet") + (e.missing ? `; ${e.missing} item${e.missing === 1 ? " has" : "s have"} no effort, so ${e.missing === 1 ? "it isn't" : "they aren't"} counted` : ""))); }
+    h("p",{class:"hint",id:"f-effortsum"}, !e ? "Nothing inside has an effort yet." : (e.items ? `${pw(e.likely)} likely` + (e.low !== e.likely || e.high !== e.likely ? ` (${e.low} to ${e.high})` : "") + ` across ${e.items} item${e.items === 1 ? "" : "s"}` : "No effort yet") + (e.missing ? `; ${e.missing} item${e.missing === 1 ? " has" : "s have"} no effort, so ${e.missing === 1 ? "it isn't" : "they aren't"} counted` : "")), forecastLine(b)); }
   const e = b.effort || {}, st = forecastState(b), dis = !editable();
   const num = (id, label, key) => h("label",{class:"effin"}, label, h("input",{id, type:"number", step:"0.5", min:"0.5", max:"520", value:e[key] ?? "", placeholder:key === "likely" ? "" : "same", disabled:dis,
     onchange:()=>{ const v = k => { const x = $("#f-e" + k).value.trim(); return x === "" ? null : Math.round(+x * 2) / 2; }, likely = v("likely");
@@ -8440,6 +8578,7 @@ function effortField(b){
   return h("div",{class:"field",id:"f-effort"}, h("span",{class:"flabel"},"Effort left (person-weeks)"),
     h("div",{class:"qrow"}, num("f-elikely", "Likely ", "likely"), num("f-elow", "Low ", "low"), num("f-ehigh", "High ", "high")),
     st ? h("p",{class:"hint",id:"f-fstate"}, FSTATE[st] + (st === "forecast" && e.at ? `. Estimated ${fmtDay(isoToDay(e.at))}.` : ".")) : null,
+    st ? forecastLine(b) : null,
     h("label",{class:"fcheck"}, h("input",{type:"checkbox",id:"f-scopeout",checked:b.scope === "out",disabled:dis,onchange:ev=>commit(()=>act("initiative.setScope", {id:b.id, scope:ev.target.checked ? "out" : "in"}))}), " Leave out of the forecast"));
 }
 // A person in more than one workstream: how their time splits (weights, shown as percents). Blank everywhere: evenly.
