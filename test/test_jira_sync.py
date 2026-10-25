@@ -979,6 +979,28 @@ try:
 finally:
     js.jira_filter, js.jira_search = real_filter, real_search
 
+# A copy published beside a page is stamped with its version: check-amendments refuses a context from another version.
+import json as _vj, tempfile as _vt
+with _vt.TemporaryDirectory() as vt:
+    vt = pathlib.Path(vt)
+    src = (HERE.parent / "tools" / "sightline-jira-sync.py").read_text(encoding="utf-8")
+    (vt / "sync.py").write_text(src.replace("\nPAGE_VERSION = None\n", '\nPAGE_VERSION = "1.105.1"\n'), encoding="utf-8")
+    plan = _vj.loads((HERE / "fixtures" / "sample-plan.json").read_text(encoding="utf-8")); plan["meta"].update({"planId": "p-version", "schema": 2})
+    (vt / "plan.json").write_text(_vj.dumps(plan), encoding="utf-8")
+    am = {"kind": "sightline-amendments", "version": 1, "planId": plan["meta"]["planId"], "batchId": "b-v", "createdAt": "2026-10-25T00:00:00Z",
+          "basedOn": {"planRevision": plan["meta"].get("revision", 0)}, "changes": [{"id": "c1", "summary": "x", "ops": [{"op": "add", "type": "deliverable", "id": "dv-v1", "value": {"name": "Version check"}}]}]}
+    (vt / "am.json").write_text(_vj.dumps(am), encoding="utf-8")
+    ctx = lambda v: (vt / "sightline-assistant-view.json").write_text(_vj.dumps({"kind": "sightline-assistant-view", "version": 1, "appVersion": v}), encoding="utf-8")
+    vrun = lambda: subprocess.run([sys.executable, str(vt / "sync.py"), "check-amendments", str(vt / "plan.json"), str(vt / "am.json"), "--json"], capture_output=True, text=True, timeout=60)
+    ctx("1.106.0"); r = vrun()
+    ok("version: a stamped check-amendments refuses a context from another page version, naming both", r.returncode != 0 and "matches Sightline 1.105.1" in r.stderr and "Sightline 1.106.0" in r.stderr)
+    ctx("1.105.1"); r = vrun()
+    ok("version: and checks against its own version, saying which", r.returncode == 0 and _vj.loads(r.stdout).get("matchesPage") == "1.105.1")
+    plan["meta"]["savedWith"] = "1.200.0"; (vt / "plan.json").write_text(_vj.dumps(plan), encoding="utf-8"); r = vrun()
+    ok("version: and refuses a plan saved by a newer page", r.returncode != 0 and "saved with Sightline 1.200.0" in r.stderr)
+    v = subprocess.run([sys.executable, str(vt / "sync.py"), "--version"], capture_output=True, text=True)
+    ok("version: --version prints the page it matches", v.stdout.strip() == "sightline-jira-sync.py for Sightline 1.105.1")
+
 search.shutdown()
 other.shutdown()
 jira.shutdown()

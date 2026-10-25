@@ -137,10 +137,20 @@ open("CHANGELOG.md", "w", encoding="utf-8").write("\n".join(out).rstrip() + "\n"
 print(f"release notes: {len(rel)} releases, latest {rel[0]['version']}")
 PY
 node --check dist/app.js
-echo "built dist/sightline.html"
+# The assistant scripts, stamped with the page version they match, so a copy on another machine refuses a page it
+# doesn't know instead of checking against old actions.
+VER=$(python3 -c 'import json; print(json.load(open("src/releases.json"))[0]["version"])')
+for t in sightline-app.py sightline-jira-sync.py; do
+  sed "s/^PAGE_VERSION = None$/PAGE_VERSION = \"$VER\"/" "tools/$t" > "dist/$t"
+  grep -q "^PAGE_VERSION = \"$VER\"$" "dist/$t" || { echo "build: couldn't stamp $t with $VER" >&2; exit 1; }
+  python3 -c "import ast, sys; ast.parse(open(sys.argv[1], encoding=\"utf-8\").read())" "dist/$t"
+done
+echo "built dist/sightline.html (+ sightline-app.py, sightline-jira-sync.py for $VER)"
 if [ -n "${PUBLISH_TO:-}" ]; then
+  dest=$(dirname "$PUBLISH_TO")
   cp dist/sightline.html "$PUBLISH_TO"
-  # A checksum beside the copy: on another machine, `sha256sum -c <file>.sha256` says whether the copy is intact.
-  (cd "$(dirname "$PUBLISH_TO")" && shasum -a 256 "$(basename "$PUBLISH_TO")" > "$(basename "$PUBLISH_TO").sha256")
-  echo "published -> $PUBLISH_TO (+ .sha256)"
+  cp dist/sightline-app.py dist/sightline-jira-sync.py "$dest/"
+  # A checksum beside each copy: on another machine, `sha256sum -c <file>.sha256` says whether the copy is intact.
+  (cd "$dest" && for f in "$(basename "$PUBLISH_TO")" sightline-app.py sightline-jira-sync.py; do shasum -a 256 "$f" > "$f.sha256"; done)
+  echo "published -> $PUBLISH_TO, $dest/sightline-app.py, $dest/sightline-jira-sync.py (each + .sha256)"
 fi

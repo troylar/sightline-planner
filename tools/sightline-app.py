@@ -11,7 +11,8 @@ Works on the private assistant folder connected in Sightline (Connect assistant)
 
 Exit codes: 0 everything applied (or was already in the plan); 1 something was refused, conflicted, expired or still
 waits for a person; 2 the batch was written against an older revision of the plan (read the context again);
-3 no Sightline page is answering for this folder (closed, asleep, or its folder permission was lost).
+3 no Sightline page is answering for this folder (closed, asleep, or its folder permission was lost); 4 this copy was
+published with a different Sightline version than the page that wrote the folder's files (use the copy beside that page).
 """
 from __future__ import annotations
 
@@ -25,6 +26,9 @@ import re
 import tempfile
 import time
 
+# The Sightline page this copy matches. build.sh stamps it into the copy it publishes beside the page; None means this
+# runs from source, where nothing is stamped and nothing is compared.
+PAGE_VERSION = None
 CONTEXT_FILE = "sightline-assistant-view.json"
 AMENDMENTS_FILE = "sightline-amendments.json"
 RESULTS_FILE = "sightline-assistant-results.json"
@@ -71,6 +75,12 @@ def age_seconds(stamp) -> float | None:
     return (dt.datetime.now(dt.timezone.utc) - t).total_seconds()
 
 
+def match_page(found, where: str) -> None:
+    if PAGE_VERSION and found and found != PAGE_VERSION:
+        raise Fail(4, f"This sightline-app.py matches Sightline {PAGE_VERSION}, but {where} was written by Sightline {found}. Nothing was sent or checked. "
+                      "Use the sightline-app.py published beside that page (its .sha256 file says whether the copy is intact).", {"matchesPage": PAGE_VERSION, "page": found})
+
+
 def heartbeat(folder: Path) -> dict:
     """The page's latest status, or Fail(3) when no page is answering."""
     st = read_json(folder / STATUS_FILE, "sightline-assistant-status")
@@ -83,6 +93,7 @@ def heartbeat(folder: Path) -> dict:
         raise Fail(3, f"The Sightline page stopped responding: last heard {int(age)} seconds ago, when it was {st.get('state')}. Open the plan in Sightline, or reconnect the folder.",
                    {"lastHeardSeconds": int(age), "lastState": st.get("state")})
     st["ageSeconds"] = int(age)
+    match_page(st.get("appVersion"), STATUS_FILE)
     return st
 
 
@@ -136,6 +147,7 @@ def check_offline(folder: Path, batch: dict) -> list:
     ctx = read_json(folder / CONTEXT_FILE, "sightline-assistant-view")
     if ctx is None:
         raise Fail(1, f"{CONTEXT_FILE} isn't in this folder. Connect it in Sightline (Connect assistant), then read the context.")
+    match_page(ctx.get("appVersion"), CONTEXT_FILE)
     plan = ctx.get("plan") or {}
     if batch.get("kind") != "sightline-amendments" or batch.get("version") != 1:
         raise Fail(1, 'The batch must have kind "sightline-amendments" and version 1.')
@@ -281,6 +293,7 @@ def wait(folder: Path, batch_id: str, timeout: float, poll: float = 5.0) -> dict
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Send an assistant's changes to Sightline and wait for the outcome.")
     ap.add_argument("--json", action="store_true", help="print one JSON object")
+    ap.add_argument("--version", action="version", version=f"sightline-app.py for Sightline {PAGE_VERSION}" if PAGE_VERSION else "sightline-app.py (source copy, not stamped with a page version)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("status", help="is a Sightline page answering for this folder?")
     s.add_argument("folder")
@@ -322,11 +335,11 @@ def main(argv=None) -> int:
             sent = send(folder, Path(a.batch))
             out = {**wait(folder, sent["sent"], a.timeout), **sent}
             msg = "Applied:\n  " + "\n  ".join(out["lines"])
-        print(json.dumps({"ok": True, **out}) if a.json else msg)
+        print(json.dumps({"ok": True, "matchesPage": PAGE_VERSION, **out}) if a.json else msg)
         return 0
     except Fail as e:
         if a.json:
-            print(json.dumps({"ok": False, "exit": e.code, "error": e.message, **e.detail}))
+            print(json.dumps({"ok": False, "exit": e.code, "error": e.message, "matchesPage": PAGE_VERSION, **e.detail}))
         else:
             print(e.message, file=sys.stderr)
             for line in e.detail.get("lines", []) + e.detail.get("waiting", []):

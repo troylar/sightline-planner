@@ -1,5 +1,34 @@
 [
   {
+    "version": "1.105.1",
+    "date": "2026-10-25",
+    "headline": "People rows draw their work again, and the assistant scripts travel with the page",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Rows by person show their work",
+        "now": "With rows by person, in Weeks and in Days, each person's row draws their initiatives and tasks again.",
+        "before": "Every person row was empty, though its label counted the work: a style from the Jira proposals list squeezed the row's timeline to no width.",
+        "where": "Timeline, rows by person (R)"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "The assistant scripts are published with the page",
+        "now": "Publishing the page also copies sightline-app.py and sightline-jira-sync.py beside it, each with a checksum file. Each copy says which Sightline version it matches (--version), and refuses, with the reason, to send or check against a page of another version, so an assistant on another computer can't check a batch against old actions.",
+        "where": "Beside the published page"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Clearer instructions for assistants",
+        "now": "The instructions an assistant reads now say, near the top, to take each action's arguments exactly as listed and never guess field names, and to check a batch with sightline-app.py check before handing it over.",
+        "where": "Connect assistant, the context file"
+      }
+    ]
+  },
+  {
     "version": "1.105.0",
     "date": "2026-10-25",
     "headline": "Why an initiative finishes when it does, and who the work waits for",

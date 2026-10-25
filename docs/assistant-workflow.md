@@ -158,13 +158,16 @@ state and can include unsaved applied edits. Neither path establishes cloud fres
 
 Expand **Use individual files instead** for **Export for your assistant** and **Connect that file**. These still work when you already have an amendments JSON file or prefer manual context exports. Browsers without folder access show this alternative expanded. A browser without file access can export context, but connecting changes requires Edge or Chrome. Automatic shared-plan refresh uses **File → Check for teammates' saves every 15 s**. Folder integration does not replace existing merge, conflict, backup, undo or Jira proposal controls.
 
-The optional offline validator remains available:
+Check a batch offline before handing it over, with the `sightline-app.py` published beside the page (`PUBLISH_TO` copies it, with `sightline-jira-sync.py` and a `.sha256` for each):
 
 ```sh
-python tools/sightline-jira-sync.py check-amendments plan.json sightline-amendments.json --json
+python sightline-app.py --version          # must print the appVersion in sightline-assistant-view.json
+python sightline-app.py check <assistant folder> sightline-amendments.json --json
 ```
 
-This validator reads JSON plans. Sightline's own browser validation also supports a shared YAML plan. Every applied change is checked again against the latest plan during saving.
+It checks the batch against the context file, including each action's args as the page lists them. A published copy refuses, with exit code 4, when the page that wrote the folder's files is a different version. Copies run from the repository aren't stamped and don't compare.
+
+With a JSON plan file, `python sightline-jira-sync.py check-amendments plan.json sightline-amendments.json --json` also checks the rules that need the whole plan. A published copy refuses when the context beside the amendments file comes from another version. This validator reads JSON plans. Sightline's own browser validation also supports a shared YAML plan. Every applied change is checked again against the latest plan during saving.
 
 ## Talk to your company endpoint
 

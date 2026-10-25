@@ -134,6 +134,28 @@ with tempfile.TemporaryDirectory() as tmp:
     p = run("wait", str(f), "b-1", "--timeout", "1")
     ok("a page that stops mid-wait exits 3", p.returncode == 3 and "stopped responding" in out(p).get("error", ""), p.stdout)
 
+    # A copy published beside a page is stamped with that page's version and refuses a page of any other version.
+    stamped = f / "stamped-app.py"
+    stamped.write_text(TOOL.read_text().replace("\nPAGE_VERSION = None\n", '\nPAGE_VERSION = "1.105.1"\n'), encoding="utf-8")
+    srun = lambda *a: subprocess.run([sys.executable, str(stamped), "--json", *a], capture_output=True, text=True, timeout=60)
+    v = subprocess.run([sys.executable, str(stamped), "--version"], capture_output=True, text=True)
+    ok("a stamped copy prints the page version it matches", v.stdout.strip() == "sightline-app.py for Sightline 1.105.1", v.stdout + v.stderr)
+    heartbeat(f); st = json.loads((f / "sightline-assistant-status.json").read_text()); st["appVersion"] = "1.106.0"; put(f, "sightline-assistant-status.json", st)
+    before = (f / "sightline-amendments.json").read_text() if (f / "sightline-amendments.json").exists() else None
+    p = srun("send", str(f), str(batch(f, bid="b-v")))
+    ok("a stamped copy refuses to send to a page of another version, exit 4, naming both", p.returncode == 4 and out(p).get("page") == "1.106.0" and out(p).get("matchesPage") == "1.105.1" and "beside that page" in out(p).get("error", ""), p.stdout + p.stderr)
+    ok("…and writes nothing", ((f / "sightline-amendments.json").read_text() if (f / "sightline-amendments.json").exists() else None) == before)
+    ctx = json.loads((f / "sightline-assistant-view.json").read_text()); ctx["appVersion"] = "1.106.0"; put(f, "sightline-assistant-view.json", ctx)
+    p = srun("check", str(f), str(batch(f)))
+    ok("a stamped copy refuses to check against a context from another version", p.returncode == 4 and "sightline-assistant-view.json was written by Sightline 1.106.0" in out(p).get("error", ""), p.stdout)
+    ctx["appVersion"] = "1.105.1"; put(f, "sightline-assistant-view.json", ctx)
+    p = srun("check", str(f), str(batch(f)))
+    ok("…and checks one from its own version", p.returncode == 0 and out(p).get("matchesPage") == "1.105.1", p.stdout + p.stderr)
+    ctx["appVersion"] = "1.106.0"; put(f, "sightline-assistant-view.json", ctx)
+    p = run("check", str(f), str(batch(f)))
+    ok("the unstamped source copy doesn't compare versions", p.returncode == 0 and out(p).get("matchesPage") is None, p.stdout + p.stderr)
+    stamped.unlink()
+
     ok("the tool uses only the standard library", all(not line.startswith(("import requests", "from requests")) for line in TOOL.read_text().splitlines()))
     ok("it never touches the context or results files", '"w"' not in TOOL.read_text().split("def write_atomic")[0])
 

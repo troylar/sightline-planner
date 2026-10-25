@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """build.sh refuses bad release notes, and embeds good ones safely. Runs builds in a temp copy."""
+import hashlib
 import json
 from html.parser import HTMLParser
 import pathlib
@@ -46,6 +47,7 @@ def build(releases, skill_mutator=None):
         shutil.copytree(ROOT / "skills", t / "skills")
         shutil.copy(ROOT / "build.sh", t / "build.sh")
         shutil.copy(ROOT / "LICENSE", t / "LICENSE")
+        shutil.copytree(ROOT / "tools", t / "tools")
         if skill_mutator:
             skill_mutator(t / "skills")
         (t / "src" / "releases.json").write_text(json.dumps(releases), encoding="utf-8")
@@ -63,6 +65,22 @@ def bad(name, mutate, expect):
 
 code, out, page = build(GOOD)
 ok("the real release notes build", code == 0, out[-200:])
+# The assistant scripts are stamped with the page version and published beside the page, each with a checksum.
+with tempfile.TemporaryDirectory() as t, tempfile.TemporaryDirectory() as pub:
+    t, pub = pathlib.Path(t), pathlib.Path(pub)
+    for d in ("src", "skills", "tools"):
+        shutil.copytree(ROOT / d, t / d)
+    shutil.copy(ROOT / "build.sh", t / "build.sh"); shutil.copy(ROOT / "LICENSE", t / "LICENSE")
+    r = subprocess.run(["bash", str(t / "build.sh")], capture_output=True, text=True, env={**__import__("os").environ, "PUBLISH_TO": str(pub / "plan.html")})
+    ver = GOOD[0]["version"]
+    ok("dist carries both scripts, stamped with the page version", r.returncode == 0 and all(f'PAGE_VERSION = "{ver}"' in (t / "dist" / n).read_text() for n in ("sightline-app.py", "sightline-jira-sync.py")), (r.stdout + r.stderr)[-300:])
+    ok("the source copies stay unstamped", all("\nPAGE_VERSION = None\n" in (ROOT / "tools" / n).read_text() for n in ("sightline-app.py", "sightline-jira-sync.py")))
+    names = ["plan.html", "sightline-app.py", "sightline-jira-sync.py"]
+    ok("PUBLISH_TO copies the page and both scripts, each with a .sha256", all((pub / n).is_file() and (pub / (n + ".sha256")).is_file() for n in names), str(sorted(x.name for x in pub.iterdir())))
+    ok("each checksum matches its copy", all((pub / (n + ".sha256")).read_text().split()[0] == hashlib.sha256((pub / n).read_bytes()).hexdigest() for n in names if (pub / n).is_file()))
+    v = subprocess.run([sys.executable, str(pub / "sightline-app.py"), "--version"], capture_output=True, text=True)
+    ok("the published sightline-app.py says which page it matches", v.stdout.strip() == f"sightline-app.py for Sightline {ver}", v.stdout + v.stderr)
+    ok("no compiled files are left in dist", not (t / "dist" / "__pycache__").exists())
 import io, zipfile, base64, hashlib
 bundle = json.loads(page.split("const BUNDLED_SKILLS = ", 1)[1].split(";\n", 1)[0])
 ok("the HTML carries versioned planning skills", bundle["version"] == GOOD[0]["version"] and len(bundle["files"]) == len(list((ROOT / "skills").glob("*/SKILL.md"))))
