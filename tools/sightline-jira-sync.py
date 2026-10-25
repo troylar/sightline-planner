@@ -1788,14 +1788,17 @@ ACTIONS = {
     "workstream.rename": ({"id": "id", "name": "str"}, True),
     "workstream.addMember": ({"id": "id", "person": "id"}, False),
     "workstream.removeMember": ({"id": "id", "person": "id"}, False),
+    "workstream.setReserve": ({"id": "id", "reserve": "any"}, True),
     "person.add": ({"id": "id?", "name": "str", "role": "str?", "days": "int?", "outside": "any?"}, False),
     "person.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "person.setAlloc": ({"id": "id", "alloc": "any"}, True),
+    "person.setSplit": ({"id": "id", "lanes": "weights"}, True),
     "person.timeOff.add": ({"id": "id", "from": "iso", "to": "iso?", "note": "str?"}, False),
     "person.timeOff.del": ({"id": "id", "from": "iso"}, False),
     "holiday.add": ({"date": "iso", "name": "str?"}, False),
     "holiday.addRange": ({"from": "iso", "to": "iso", "name": "str?"}, False),
     "holiday.del": ({"date": "iso"}, False),
+    "forecast.setReserve": ({"reserve": "any"}, True),
     "milestone.add": ({"id": "id?", "what": "str", "day": "iso?", "lane": "id?", "status": "str?", "owners": "ids?", "after": "ids?"}, False),
     "milestone.move": ({"id": "id", "day": "iso", "stretch": "any?"}, True),
     "milestone.set": ({"id": "id", "field": "str", "value": "any"}, True),
@@ -1840,6 +1843,8 @@ def _act_type_ok(t: str, v) -> bool:
         return isinstance(v, list) and len(v) <= 500 and all(isinstance(k, str) and len(k) <= 40 for k in v)
     if t == "any":
         return v is None or isinstance(v, bool) or _act_type_ok("num", v) or _act_type_ok("str", v) or _act_type_ok("ids", v)
+    if t == "weights":
+        return v is None or (isinstance(v, dict) and len(v) <= 20 and all(_act_type_ok("id", k) and _act_type_ok("int", x) for k, x in v.items()))
     return False
 
 
@@ -1873,7 +1878,7 @@ def check_action_op(o, at: str, ids: dict, made: dict) -> str:
                 continue
             return f"{at}: {name} needs {k}."
         if not _act_type_ok(ty, args[k]):
-            return f"{at}: {k} isn't a valid {'date (YYYY-MM-DD)' if ty == 'iso' else 'list' if ty in ('ids', 'keys') else 'id' if ty == 'id' else 'number' if ty in ('num', 'int') else 'value'}."
+            return f"{at}: {k} isn't a valid {'date (YYYY-MM-DD)' if ty == 'iso' else 'list' if ty in ('ids', 'keys') else 'id' if ty == 'id' else 'number' if ty in ('num', 'int') else 'split ({workstream id: weight})' if ty == 'weights' else 'value'}."
     noun, verb = name.split(".", 1)
     creates = verb == "add" and noun not in ("link",)
     if creates and "id" in spec and not (isinstance(args.get("id"), str) and args["id"]):
