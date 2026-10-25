@@ -50,7 +50,7 @@ async function page(opts = {}){
     ok(`P4 ${z}: the assignee's label counts them as active`, /1 active now/.test(d.querySelector(`.personrow[data-person="${ev("P1")}"]`)?.textContent || ""), (d.querySelector(`.personrow[data-person="${ev("P1")}"]`)?.textContent || "").slice(0, 80));
     ok(`P5 ${z}: no page errors`, !ev("errs.length"), ev("errs.join('|')"));
   });
-  await sec(async ()=>{ const {d, ev} = await page(); ev(`UI.rows = "lanes"; setZoom("days"); render();`); await wait(30);
+  await sec(async ()=>{ const {d, ev} = await page(); ev(`UI.rows = "lanes"; UI.zoomN = 0; UI.zoomSp = null; setZoom("days"); render();`); await wait(30);
     const lab = [...d.querySelectorAll(".tlabel")].find(x=>x.dataset.peekId === "ABC-2"), bar = d.querySelector('.tbar[data-key="story:ABC-2"]');
     ok("N1 a narrow story's label carries its Jira key", !!lab && lab.querySelector(".jkey")?.textContent === "ABC-2", lab ? lab.textContent : "no label");
     ok("N2 the narrow bar hides its clipped key", !!bar && bar.classList.contains("narrow") && ev(`getComputedStyle(document.querySelector('.tbar[data-key="story:ABC-2"] .jkey')).display`) === "none", bar ? bar.className : "no bar");

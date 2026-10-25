@@ -46,7 +46,7 @@ async function page(opts = {}){
 (async()=>{
   const sec = async fn => { try { await fn(); } catch(e){ ok("section crashed", false, String(e.message).slice(0,140)); } };
 
-  await sec(async ()=>{ const {d, ev, w} = await page({jira:false}); ev("UI.zoomN = 0; setZoom('weeks'); setWs('timeline'); render();"); await wait(10);
+  await sec(async ()=>{ const {d, ev, w} = await page({jira:false}); ev("UI.zoomN = 0; UI.zoomSp = null; setZoom('weeks'); setWs('timeline'); render();"); await wait(10);
     ok("Z1: Weeks has the same − / + zoom, starting at Fit", d.querySelector("#gantt .gcorner #zoomLab")?.textContent === "Fit" && !!d.querySelector("#gantt .gcorner #zoomIn"));
     d.querySelector("#zoomIn").click(); await wait(10);
     const n = ev("zoomN()");

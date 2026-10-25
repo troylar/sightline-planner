@@ -9,6 +9,7 @@ See one whole sprint, edge to edge, and step sprint by sprint.
 ### New
 
 - **Fit the view to a sprint** (Timeline). Pick a sprint in the zoom control and the view fits it exactly, from its first day to its last, in Weeks and Days, for sprints of any length. The arrows and [ and ] step whole sprints, and . goes to the sprint we're in. Show two or more sprints with + and −. The choice stays in this browser and links carry it. *Where:* Timeline, the zoom control at the top left
+- **One click to this sprint, the next two, or the next three** (Timeline). This sprint, This + next, Next 3 and Fit sit beside the sprint picker, each fitted from the sprint we're in (or the next one, between sprints). Shift+1, Shift+2, Shift+3 and Shift+0 do the same. A plan with sprints opens on This + next the first time, then on your last choice. A link with a sprint still wins. *Where:* Timeline, the zoom control at the top left
 
 ## 1.120.3 · Oct 25, 2026
 
