@@ -77,8 +77,9 @@ const peek = async (type, id) => { ev(`openPeek(document.querySelector('[data-pe
     ok("S5 raw HTML and code holding HTML are text", !md.querySelector("script, b") && md.querySelector("pre code").textContent === "<script>alert(1)</script>" && /<b>raw<\/b>/.test(md.textContent));
     const links = src => { const x = d.createElement("div"); x.append(ev(`mdRender(${JSON.stringify(src)})`)); return [...x.querySelectorAll("a")].map(a=>a.getAttribute("href")); };
     ok("S5 an https link opens in a new tab, without the opener", (()=>{ const a = md.querySelector("a"); return a.href === "https://docs.example.com/search" && a.target === "_blank" && a.rel === "noopener noreferrer"; })());
-    const evil = ["javascript:alert(1)", "JaVaScRiPt:alert(1)", "data:text/html,<b>x</b>", "&#106;avascript:alert(1)", "&#x6A;avascript:alert(1)", "java%0ascript:alert(1)", " javascript:alert(1)", "http://example.com", "vbscript:x", "//example.com", "https:/x"];
-    ok("S5 every other link is text: javascript, data, mixed case, entities, whitespace and percent tricks, http", evil.every(u=>links(`[x](${u})`).length === 0), evil.filter(u=>links(`[x](${u})`).length).join(" | "));
+    const evil = ["javascript:alert(1)", "JaVaScRiPt:alert(1)", "data:text/html,<b>x</b>", "&#106;avascript:alert(1)", "&#x6A;avascript:alert(1)", "java%0ascript:alert(1)", " javascript:alert(1)", "vbscript:x", "//example.com", "https:/x", "mailto:", "mailto:not-an-address", "file:///etc/passwd", "ftp://example.com"];
+    ok("S5 every other link is text: javascript, data, mixed case, entities, whitespace and percent tricks, mail without an address", evil.every(u=>links(`[x](${u})`).length === 0), evil.filter(u=>links(`[x](${u})`).length).join(" | "));
+    ok("S5 http and mailto links are kept (1.117)", links("[x](http://example.com/a)").join() === "http://example.com/a" && links("[x](mailto:team@example.com)").join() === "mailto:team@example.com");
     ok("S5 …and an entity-encoded https link is decoded, then kept", links("[x](&#104;ttps://example.com/a)").join() === "https://example.com/a");
 
     // Jira wiki markup

@@ -11,6 +11,13 @@ Open the intended shared plan, check its local save state and Jira freshness, an
 > Review the supplied planning scope. Give me the three decisions that most affect delivery, with stable
 > item IDs, evidence and missing information. Keep ordinary updates separate from decisions. Do not change the plan.
 
+Before a first session, ask the assistant what it can't see yet:
+
+> List what `coverage.context` says is missing: workstreams without a description, people without skills,
+> and work without a story or needs. Propose descriptions for the three busiest workstreams. Do not guess skills.
+
+Point at a workstream's name to check its description, and keep the team's skills in **Settings → Team**.
+
 Use the available evidence. Older exports do not contain the richer planning data described in the
 [large-roadmap guide](large-roadmaps.md); supply missing material deliberately rather than guessing.
 
