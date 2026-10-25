@@ -42,12 +42,12 @@ async function page(opts = {}){
 (async()=>{
   const sec = async fn => { try { await fn(); } catch(e){ ok("section crashed", false, String(e.message).slice(0,140)); } };
   for (const z of ["weeks", "days"]) await sec(async ()=>{ const {d, ev} = await page(); ev(`setZoom(${JSON.stringify(z)}); render();`); await wait(30);
-    const row = sel => d.querySelector(`.prow .track[data-person="${sel}"]`), keys = el => el ? [...el.querySelectorAll("[data-peek-type=story]")].map(x=>x.dataset.peekId).sort().join(",") : "no row";
+    const row = sel => d.querySelector(`.personrow .track[data-person="${sel}"]`), keys = el => el ? [...el.querySelectorAll("[data-peek-type=story]")].map(x=>x.dataset.peekId).sort().join(",") : "no row";
     ok(`P1 ${z}: the assignee's row shows their stories`, keys(row(ev("P1"))) === "ABC-2,ABC-3", keys(row(ev("P1"))));
     ok(`P2 ${z}: an unassigned story sits on Unassigned`, keys(row("none")) === "ABC-4", keys(row("none")));
     const ep = row("none") && row("none").querySelector(`[data-peek-type=bar][data-peek-id="${ev("EPIC")}"]`);
     ok(`P3 ${z}: the epic's initiative isn't also on Unassigned`, !ep);
-    ok(`P4 ${z}: the assignee's label counts them as active`, /1 active now/.test(d.querySelector(`.prow[data-person="${ev("P1")}"]`)?.textContent || ""), (d.querySelector(`.prow[data-person="${ev("P1")}"]`)?.textContent || "").slice(0, 80));
+    ok(`P4 ${z}: the assignee's label counts them as active`, /1 active now/.test(d.querySelector(`.personrow[data-person="${ev("P1")}"]`)?.textContent || ""), (d.querySelector(`.personrow[data-person="${ev("P1")}"]`)?.textContent || "").slice(0, 80));
     ok(`P5 ${z}: no page errors`, !ev("errs.length"), ev("errs.join('|')"));
   });
   await sec(async ()=>{ const {d, ev} = await page(); ev(`UI.rows = "lanes"; setZoom("days"); render();`); await wait(30);

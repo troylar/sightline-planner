@@ -69,6 +69,10 @@ CONFIG_PATH = os.path.join(CONFIG_DIR, "jira.json")           # base URL only, n
 KEY_RE = re.compile(r"^[A-Z][A-Z0-9_]{0,19}-[1-9][0-9]{0,8}$")
 BATCH = 50                                                     # keys per JQL query
 MAX_PLAN_BYTES = 5 * 1024 * 1024
+# The Sightline page this copy matches. build.sh stamps it into the copy it publishes beside the page; None means this
+# runs from source, where nothing is stamped and nothing is compared.
+PAGE_VERSION = None
+CONTEXT_FILE = "sightline-assistant-view.json"
 PLAN_SCHEMA = 2        # the plan format this script reads; must equal SCHEMA in the page (a test checks)
 STATUS_FORMAT = 1      # the formats this script writes; the page refuses files newer than it knows (a test checks)
 ISSUES_FORMAT = 2
@@ -2298,6 +2302,30 @@ def am_check(c: dict, plan: dict, status: dict) -> dict:
     return {"id": c["id"], "summary": str(c.get("summary") or "")[:200], "status": st, "reasons": bad + stale, "notes": list(dict.fromkeys(notes))}
 
 
+def semver(v) -> tuple:
+    m = re.match(r"^(\d+)\.(\d+)\.(\d+)$", str(v or ""))
+    return tuple(int(x) for x in m.groups()) if m else ()
+
+
+def version_gate(plan: dict, amendments_path: str, context_path: str | None) -> None:
+    """Refuse when the page this copy matches isn't the one that wrote the context, or the plan is newer than it."""
+    if not PAGE_VERSION:
+        return
+    ctx = context_path or os.path.join(os.path.dirname(os.path.abspath(amendments_path)), CONTEXT_FILE)
+    try:
+        with open(ctx, encoding="utf-8") as f:
+            found = (json.load(f) or {}).get("appVersion")
+    except (OSError, ValueError, AttributeError):
+        found = None
+    if found and found != PAGE_VERSION:
+        raise SystemExit(f"This sightline-jira-sync.py matches Sightline {PAGE_VERSION}, but {os.path.basename(ctx)} was written by Sightline {found}. "
+                         "Its actions may differ, so nothing was checked. Use the scripts published beside that page (their .sha256 files say whether the copies are intact).")
+    saved = (plan.get("meta") or {}).get("savedWith")
+    if semver(saved) and semver(saved) > semver(PAGE_VERSION):
+        raise SystemExit(f"This sightline-jira-sync.py matches Sightline {PAGE_VERSION}, but the plan was saved with Sightline {saved}. "
+                         "Nothing was checked. Use the scripts published beside the newer page.")
+
+
 def cmd_check_amendments(args) -> None:
     plan_path = os.path.abspath(args.plan)
     check_plan(plan_path, args.plan)
@@ -2307,6 +2335,7 @@ def cmd_check_amendments(args) -> None:
     except (OSError, ValueError) as e:
         raise SystemExit(f"Can't read the plan {args.plan}: {e}")
     check_plan_format(plan)
+    version_gate(plan, args.amendments, args.context)
     try:
         with open(args.amendments, encoding="utf-8") as f:
             text = f.read(AM_MAX_BYTES + 1)
@@ -2323,10 +2352,11 @@ def cmd_check_amendments(args) -> None:
     rows = [am_check(c, plan, status) for c in o["changes"]]
     counts = {k: sum(1 for r in rows if r["status"] == k) for k in ("ready", "changed", "invalid", "done")}
     if args.json:
-        print(json.dumps({"ok": counts["invalid"] == 0, "batchId": o["batchId"], "counts": counts, "changes": rows,
+        print(json.dumps({"ok": counts["invalid"] == 0, "matchesPage": PAGE_VERSION, "batchId": o["batchId"], "counts": counts, "changes": rows,
                           "jiraSyncedAt": status.get("generatedAt"), "planRevision": (plan.get("meta") or {}).get("revision", 0)}, indent=2))
     else:
         label = {"ready": "READY  ", "changed": "CHANGED", "invalid": "INVALID", "done": "DONE   "}
+        print(f"Checked with the rules of Sightline {PAGE_VERSION}." if PAGE_VERSION else "Checked with the rules in this source copy (not stamped with a page version).")
         for r in rows:
             print(f"{label[r['status']]} {r['id']}" + (f"  {r['summary']}" if r["summary"] else ""))
             for x in r["reasons"]:
@@ -2340,6 +2370,7 @@ def cmd_check_amendments(args) -> None:
 
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description="Sync Jira Data Center status into a Sightline plan (read-only).")
+    ap.add_argument("--version", action="version", version=f"sightline-jira-sync.py for Sightline {PAGE_VERSION}" if PAGE_VERSION else "sightline-jira-sync.py (source copy, not stamped with a page version)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     su = sub.add_parser("setup", help="add a Jira server: its address and your personal access token")
     su.add_argument("--jira", metavar="URL", help="the Jira address (asked if left out)")
@@ -2385,6 +2416,7 @@ def main(argv=None) -> None:
     ca.add_argument("amendments", help="the amendments file your assistant wrote")
     ca.add_argument("--status", metavar="PATH", help="the Jira status file (default: jira/status.json beside the plan)")
     ca.add_argument("--json", action="store_true", help="print the result as JSON, for your assistant")
+    ca.add_argument("--context", metavar="PATH", help=f"the page's assistant context (default: {CONTEXT_FILE} beside the amendments file)")
     ca.set_defaults(fn=cmd_check_amendments)
     args = ap.parse_args(argv)
     try:

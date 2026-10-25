@@ -418,13 +418,15 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   // --- rows by person, reassign, column width, time off ---
   ev(`loadExternal(${JSON.stringify(realPlan)},"real")`); await wait(30); ev("UI.view=null; UI.filter=normFilter({}); setWs('timeline'); setZoom('weeks'); sel=null; render()");
   d.querySelector("#rPeople").click();
-  ok("By person: one row per person plus Unassigned", d.querySelectorAll("#gantt .lane.prow").length===ev("S.people.filter(pp=>personItems(pp.id, null).length).length") + (ev("personItems(null,null).length") ? 1 : 0) && /Unassigned/.test(d.querySelector("#gantt").textContent));
+  ok("By person: one row per person plus Unassigned", d.querySelectorAll("#gantt .lane.personrow").length===ev("S.people.filter(pp=>personItems(pp.id, null).length).length") + (ev("personItems(null,null).length") ? 1 : 0) && /Unassigned/.test(d.querySelector("#gantt").textContent));
   const pH = ev("S.people.find(p=>p.name==='Avery').id"), pR = ev("S.people.find(p=>p.name==='Blake').id");
+  const rowCols = () => [...d.querySelectorAll("#gantt .lane[data-person]")].map(r=>w.getComputedStyle(r).gridTemplateColumns);
+  ok("By person: each row keeps the timeline's columns (name, then the track), not another list's", rowCols().length > 0 && rowCols().every(c=>/^var\(--lw/.test(c)), rowCols().join(" / "));
   const sharedBar = ev(`S.bars.find(b=>b.owners.includes("${pH}") && b.owners.includes("${pR}") && !b.tasks.length).id`);
-  ok("shared work shows in each owner's row", !!d.querySelector(`.lane.prow[data-person="${pH}"] [data-key^="bar:${sharedBar}"]`) && !!d.querySelector(`.lane.prow[data-person="${pR}"] [data-key^="bar:${sharedBar}"]`));
-  const maxRow = d.querySelector(`.lane.prow[data-person="${ev("S.people.find(p=>p.name==='Harper').id")}"]`);
+  ok("shared work shows in each owner's row", !!d.querySelector(`.lane.personrow[data-person="${pH}"] [data-key^="bar:${sharedBar}"]`) && !!d.querySelector(`.lane.personrow[data-person="${pR}"] [data-key^="bar:${sharedBar}"]`));
+  const maxRow = d.querySelector(`.lane.personrow[data-person="${ev("S.people.find(p=>p.name==='Harper').id")}"]`);
   d.elementFromPoint = ()=>maxRow;
-  ev(`(()=>{ const el=document.querySelector('.lane.prow[data-person="${pH}"] [data-key^="bar:${sharedBar}"]'); drag={type:"bar",id:"${sharedBar}",mode:"move",x0:0,w:1000,orig:clone(barById("${sharedBar}")),moved:false,snapshot:JSON.stringify(S),el,pid:1,fromPerson:"${pH}"}; onUp({clientX:5,clientY:5}); })()`);
+  ev(`(()=>{ const el=document.querySelector('.lane.personrow[data-person="${pH}"] [data-key^="bar:${sharedBar}"]'); drag={type:"bar",id:"${sharedBar}",mode:"move",x0:0,w:1000,orig:clone(barById("${sharedBar}")),moved:false,snapshot:JSON.stringify(S),el,pid:1,fromPerson:"${pH}"}; onUp({clientX:5,clientY:5}); })()`);
   ok("drag onto another person reassigns (undoable)", !ev(`barById("${sharedBar}").owners.includes("${pH}")`) && ev(`barById("${sharedBar}").owners.map(personName).includes("Harper")`));
   ev("undo()"); ok("undo restores the owner", ev(`barById("${sharedBar}").owners.includes("${pH}")`));
   d.elementFromPoint = ()=>null;
@@ -443,11 +445,12 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   ev(`commit(()=>{ personById("${pH}").off.push({from:"2026-10-06", to:"2026-10-06", note:"dentist"}); })`);
   ok("time off pushes that person's task out a day", offEnd0==="2026-10-07" && ev(`dayToIso(taskSpan(taskById("${offTask}").t, HS()).e)`)==="2026-10-08");
   ok("capacity drops for that week", ev(`availDays(personById("${pH}"), isoToDay("2026-10-05"))`)===4 && ev(`availDays(personById("${pH}"), isoToDay("2026-10-12"))`)===5);
-  ev("render()"); ok("person row shows the day off", !!d.querySelector(`.lane.prow[data-person="${pH}"] .offstrip`));
+  ev("render()"); ok("person row shows the day off", !!d.querySelector(`.lane.personrow[data-person="${pH}"] .offstrip`));
   ev("setWs('people')"); ok("load grid shows reduced capacity", /·4d/.test(d.querySelector("#load").textContent));
   ev("setWs('timeline'); UI.dayZoom=5; setZoom('days')");
-  ok("Days by person: rows with tasks, draggable", d.querySelectorAll("#gantt .lane.prow").length>0 && !!d.querySelector(`.lane.prow[data-person="${pH}"] .tbar`) && !!d.querySelector(`.lane.prow[data-person="${pH}"] .colshade.off`));
-  const robRow = d.querySelector(`.lane.prow[data-person="${pR}"]`);
+  ok("Days by person: rows with tasks, draggable", d.querySelectorAll("#gantt .lane.personrow").length>0 && !!d.querySelector(`.lane.personrow[data-person="${pH}"] .tbar`) && !!d.querySelector(`.lane.personrow[data-person="${pH}"] .colshade.off`));
+  ok("Days by person: each row keeps the timeline's columns too", rowCols().length > 0 && rowCols().every(c=>/^var\(--lw/.test(c)), rowCols().join(" / "));
+  const robRow = d.querySelector(`.lane.personrow[data-person="${pR}"]`);
   d.elementFromPoint = ()=>robRow;
   ev(`(()=>{ const el=document.querySelector('[data-key^="task:${offTask}"]'); tdrag={tid:"${offTask}",mode:"move",x0:0,colW:20,orig:{},snapshot:JSON.stringify(S),el,moved:false,fromPerson:"${pH}"}; onTaskUp({clientX:3,clientY:3}); })()`);
   ok("drag a task onto another person reassigns it", ev(`taskById("${offTask}").t.owners.map(personName).join()`)==="Blake");
@@ -608,7 +611,7 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   d.body.click();
   ok("notes survive save/load", ev("parseText(serialize(S,'x.json')).notes.length")===2);
   ok("notes setting saved in views", ev("currentDef().notes")==="all");
-  ev("setRows('people')"); ok("By person shows notes in the author's row", !!d.querySelector(`.lane.prow[data-person="${ev("meId()")}"] .note`)); ev("setRows('lanes')");
+  ev("setRows('people')"); ok("By person shows notes in the author's row", !!d.querySelector(`.lane.personrow[data-person="${ev("meId()")}"] .note`)); ev("setRows('lanes')");
   ev("UI.dayZoom=5; setZoom('days')"); ok("Days view has a notes row per lane", [...d.querySelectorAll("#gantt .markrow .flag.notechip")].length>=1); ev("setZoom('weeks')");
   const pvN = (el, type) => { const ev0 = new w.MouseEvent(type,{bubbles:true,clientX:300,clientY:300}); Object.defineProperty(ev0, "pointerType", {value:"mouse"}); el.dispatchEvent(ev0); };
   pvN(d.querySelector("#gantt .note"), "pointerover"); await wait(420);
@@ -624,7 +627,7 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   ev(`S = normalize({meta:{start:"2026-10-05",weeks:12},lanes:[{id:"a",name:"A"},{id:"b",name:"B"}],people:[{id:"p1",name:"Pat"},{id:"p2",name:"Sam"}],notes:[{id:"na",text:"in A",date:"2026-10-07",lane:"a",author:"p1"},{id:"nb",text:"in B",date:"2026-10-08",lane:"b",author:"p2"}],sprints:[{name:"S0",weeks:2},{name:"S1",weeks:2},{name:"S2",weeks:2},{name:"S3",weeks:2},{name:"S4",weeks:2},{name:"S5",weeks:2}]},false); resetHistory(); UI.filter=normFilter({}); UI.view=null; UI.notes="all"; file.handle=null; setWs('timeline'); setRows('lanes'); setZoom('weeks'); render()`);
   ok("N4: a lane with only notes still shows (weeks)", !!d.querySelector('#gantt .lane[data-lane="b"] .note'));
   ev("UI.dayZoom=5; setZoom('days')"); ok("N4: … and in Days", [...d.querySelectorAll("#gantt .flag.notechip")].length===2);
-  ev("setRows('people')"); ok("N4: Days by person shows the author's notes", !!d.querySelector('.lane.prow[data-person="p2"] .note')); ev("setRows('lanes'); setZoom('weeks')");
+  ev("setRows('people')"); ok("N4: Days by person shows the author's notes", !!d.querySelector('.lane.personrow[data-person="p2"] .note')); ev("setRows('lanes'); setZoom('weeks')");
   { const n0 = ev("S.notes.length"); ev(`del("lane","b")`); ok("N2: a workstream with notes in it isn't deleted outright", ev("S.notes.length")===n0 && ev("S.lanes.some(l=>l.id==='b')"));
     ev(`window.confirm = ()=>true; moveLaneWork("b", S.lanes.find(l=>l.id!=="b").id)`); ok("N2: moving its work keeps its notes, in the other workstream", ev("S.notes.length")===n0 && !ev("S.lanes.some(l=>l.id==='b')") && ev("S.notes.every(n=>S.lanes.some(l=>l.id===n.lane))")); ev("undo()"); }
   d.querySelector("#settings").click(); d.querySelector("#dStart").value="2026-10-12"; d.querySelector("#dDatesOk").click();

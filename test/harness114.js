@@ -115,6 +115,8 @@ const act = (action, args)=>({op:'action', action, args});
     fresh();
     const view = JSON.parse(ev(`JSON.stringify(assistantView())`));
     ok('the context lists every action with its arguments', Array.isArray(view.actions) && view.actions.some(a=>a.id === 'link.add' && a.args.after === 'id') && view.actions.some(a=>a.id === 'decision.set' && a.args.prev), JSON.stringify((view.actions || []).slice(0, 2)));
+    ok('the context says which page wrote it, and the guide says to use the listed args exactly and to check with sightline-app.py', view.appVersion === ev('APP_VERSION') && /^Read each action's args from actions in this file and use them exactly; never guess field names\.$/m.test(view.guide) && /python sightline-app\.py check <this folder> <your file> --json/.test(view.guide) && !/check-amendments/.test(view.guide), view.guide.split('\n').slice(0, 2).join(' / '));
+    ok('the guide says it near the top', view.guide.split('\n').findIndex(l=>/never guess field names/.test(l)) === 1);
     ok('the guide no longer sends links, people, risks and decisions to the UI', !/require manual UI changes/.test(view.guide) && /op:'action'/.test(view.guide));
     ok('the example shows an action op', JSON.stringify(view.example).includes('"op":"action"'));
 
