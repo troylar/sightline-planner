@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.114.0",
+    "date": "2026-10-25",
+    "headline": "A calmer planning assistant panel",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "The conversation comes first",
+        "before": "The panel stacked the connection, the message box, setup steps, privacy notes, skills and files at the same weight, with two lines saying the folder was connected.",
+        "now": "One line at the top says whether your assistant is connected, with a dot that pulses while a reply is on its way. Your messages and the assistant's read as a conversation, an empty one offers two ways to start, and the message box shows what you're asking about.",
+        "where": "Planning assistant panel"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Setup and files, out of the way",
+        "before": "Opening a setup section ran its text into the next one.",
+        "now": "Connection steps, what's kept where, planning skills and the assistant's files are quiet rows under Setup and files at the end of the panel. An open row is set apart, and the commands sit in their own box.",
+        "where": "Planning assistant panel, Setup and files"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "You can tell what to click",
+        "before": "Some actions were buttons and others underlined text, and the older-tools warning was one long sentence of file names.",
+        "now": "Every action in the panel is a button: Refresh, Export, Disconnect, Skip and Edit included. Pause and when changes apply sit together in one box, and the older-tools warning names the version once, shows the files as chips and offers Replace or Keep.",
+        "where": "Planning assistant panel"
+      }
+    ]
+  },
+  {
     "version": "1.113.1",
     "date": "2026-10-25",
     "headline": "Edit your assistant's milestone moves",

@@ -163,7 +163,7 @@ const byId = (rs, id) => rs.find(r=>r.id === id) || {};
     dir.files.get("sightline-jira-sync.py").text = tools.files[1].text.replace(`PAGE_VERSION = "${tools.version}"`, 'PAGE_VERSION = "1.100.0"');
     const appWrites = dir.files.get("sightline-app.py").writes;
     d.querySelector("#amToolsPut").click(); await wait(40);
-    ok("T4 an older copy asks first, naming its version, and nothing is written yet", /sightline-jira-sync\.py \(Sightline 1\.100\.0\)/.test(d.querySelector("#amToolsConfirm")?.textContent || "") && dir.files.get("sightline-jira-sync.py").text.includes('"1.100.0"'));
+    ok("T4 an older copy asks first, naming its version, and nothing is written yet", [...d.querySelectorAll("#amToolsConfirm .asfiles li")].some(li=>li.textContent === "sightline-jira-sync.py") && /from Sightline 1\.100\.0/.test(d.querySelector("#amToolsConfirm p")?.textContent || "") && dir.files.get("sightline-jira-sync.py").text.includes('"1.100.0"'));
     await exportNow(); cx = P.context();
     ok("T4 the context says the folder's copies are different, and which version", cx.tools.files.find(f=>f.name === "sightline-jira-sync.py").inFolder === "different" && cx.tools.files.find(f=>f.name === "sightline-jira-sync.py").folderVersion === "1.100.0" && cx.tools.files.find(f=>f.name === "sightline-app.py").inFolder === "different");
     d.querySelector("#amToolsReplace").click(); await wait(60);

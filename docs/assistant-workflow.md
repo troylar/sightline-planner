@@ -205,7 +205,7 @@ context, and clears a stretch date with `stretch: true, day: null`.
 
 ### Assistant tools
 
-**Put assistant tools in this folder** (Files and assistant handoff) writes `sightline-app.py` and
+**Put assistant tools in this folder** (Setup and files → Files and assistant handoff) writes `sightline-app.py` and
 `sightline-jira-sync.py`, stamped for this page, each with a `.sha256` in `sha256sum` format. It never replaces a
 file it doesn't recognize, asks before replacing an older copy, checks each file again just before writing, reads
 it back after, and says when only part of the tools went in. Keep these tools in a private folder, and never run a
