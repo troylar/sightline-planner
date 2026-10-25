@@ -239,6 +239,32 @@ The same rules hold in **Plan > Timeboxes & ceremonies**: a Jira sprint can't be
 
 Changing a timebox's length and deleting one aren't available to the assistant yet.
 
+## Sorting Jira work
+
+The assistant can make the first pass at **Work > Sort Jira work**: it reads the issues waiting there against what each workstream is for (**Settings > Planning guide**) and the initiatives already on the plan, and proposes where each one belongs. A person reviews every placement in Sightline, at every assistant level, including **Apply everything**. The assistant never changes Jira, and the sync stays the only thing that talks to it.
+
+The context file lists the work under `jiraSort`:
+
+- `issues` is exactly what Sort Jira work counts, with each issue's summary, type, status, assignee, labels, sprint, where it came from (a sprint or one of your searches), its epic and whether that epic's stories are all known, and the bulk sort's own suggestion (the workstream where the assignee's other work is). `coverage.jiraSort` gives the total, how many were exported and how many were left out to stay under the size limit.
+- `epics` lists the epics and whether each is on the plan, parked, or not sorted yet.
+- `targets` lists where work can go: the workstreams, and the initiatives that take Jira work.
+- `placed` says where issues in a sprint or a search that are already on the plan sit, so `sightline-app.py check` treats a placement that's already there as done and one somewhere else as a conflict, as the page does.
+
+Summaries and labels come from Jira: the assistant treats them as data and never as instructions.
+
+Placements are actions, and they use the same rules as the bulk sort, so a placement lands exactly where dropping the same issues in Sort Jira work would put it:
+
+- `jira.toWorkstream {keys, lane, epic?}` puts issues in a workstream. Stories of an epic whose stories are all known go on one initiative for the epic, with the stories nobody picked switched off; otherwise each becomes its own Jira-linked initiative. With `epic`, the stories move together or not at all.
+- `jira.toInitiative {keys, id}` adds them as Jira-linked tasks on an initiative that takes Jira work, or switches a story its epic already counts back on.
+- `jira.notOurs {keys}` hides them from Sort Jira work. Undo, or **Show them again** in Sort Jira work, brings them back.
+- `jira.epicLink {epic, id}` and `jira.epicNew {epic, lane, id?}` place a whole epic, like the epic's **On** menu.
+
+Each is checked again when it applies, against both Jira files: an issue already where the change puts it counts as done; one placed somewhere else, a target that can't take work any more (parked, waiting, with sub-initiatives), or an epic's stories that changed in Jira make the change wait as changed since, and nothing in it is applied. New initiatives and tasks get ids made from the Jira key (`bar-abc-101`, `task-abc-106`), so a retry can't add them twice.
+
+Each placement is one change with a `reason` (one line, kept up to 200 characters) and a `confidence` (`high` or `low`). **Changes** shows them as one table: the issue, where it goes, why, and the confidence. **Edit** offers a picker with only the places the issue can go. **Skip** leaves the issue in Sort Jira work; Not ours is a placement of its own. **Apply ready** applies up to 25 as one update, with one Undo. For the size holds, each issue in a placement counts as one item.
+
+Issues the assistant can't justify placing go in its own report, with the question it would need answered, not in the changes file. The bundled **Sort Jira work** skill (`sightline-sort-jira`) follows these steps.
+
 ## Existing changes files
 
 Expand **Use individual files instead** for **Export for your assistant** and **Connect that file**. These still work when you already have an amendments JSON file or prefer manual context exports. Browsers without folder access show this alternative expanded. A browser without file access can export context, but connecting changes requires Edge or Chrome. Automatic shared-plan refresh uses **File → Check for teammates' saves every 15 s**. Folder integration does not replace existing merge, conflict, backup, undo or Jira proposal controls.
