@@ -1836,6 +1836,7 @@ ACTIONS = {
     "workstream.setReserve": ({"id": "id", "reserve": "any"}, True),
     "workstream.set": ({"id": "id", "field": "str", "value": "str"}, True),
     "workstream.move": ({"id": "id", "index": "int"}, True),
+    "workstream.reid": ({"lane": "id", "id": "id"}, True),
     "workstream.del": ({"id": "id"}, False),
     "guide.set": ({"section": "str", "value": "str"}, True),
     "guide.setWorkstream": ({"lane": "id", "value": "str"}, True),
@@ -1958,7 +1959,7 @@ def check_action_op(o, at: str, ids: dict, made: dict) -> str:
             kind = "bar"
         if name == "initiative.waitFor" and k == "gate":
             kind = "gate|block"
-        if not kind or (k == "id" and (creates or name == "jira.epicNew")) or name.endswith(".remove") and k != "id" or name in ("link.remove", "initiative.unwait", "task.unlink", "milestone.doneWhen.remove", "workstream.removeMember", "outcome.unlinkJira") and k != "id":
+        if not kind or (k == "id" and (creates or name in ("jira.epicNew", "workstream.reid"))) or name.endswith(".remove") and k != "id" or name in ("link.remove", "initiative.unwait", "task.unlink", "milestone.doneWhen.remove", "workstream.removeMember", "outcome.unlinkJira") and k != "id":
             continue
         vals = v if isinstance(v, list) else [v]
         for x in vals:
@@ -1966,6 +1967,10 @@ def check_action_op(o, at: str, ids: dict, made: dict) -> str:
                 continue
             if not any(x in ids.get(kd, set()) or x in made.get(kd, set()) for kd in kind.split("|")):
                 return f"{at}: {x[:60]} isn't in the plan (for {k})"
+    if name == "workstream.reid":
+        e = _reid_problem(ids, args)
+        if e:
+            return f"{at}: {e}"
     if noun == "jira" and isinstance(args.get("keys"), list) and len({str(k).strip().upper() for k in args["keys"]}) > 100:
         return f"{at}: one change places up to 100 issues"
     if creates and isinstance(args.get("id"), str):
@@ -1973,12 +1978,46 @@ def check_action_op(o, at: str, ids: dict, made: dict) -> str:
     return ""
 
 
+# A workstream id the page accepts: one in use, or a former id the plan keeps on its workstream (lane.was), which the page
+# reads as the id now. A new id (workstream.reid) follows the rules for a new workstream's and is never one of these.
+LANE_ID = re.compile(r"^(?!(?:constructor|prototype|toString|valueOf|hasOwnProperty)$)[A-Za-z0-9][A-Za-z0-9_.-]{0,59}$")
+
+
+def _lane_ids(plan) -> set:
+    lanes = [l for l in plan.get("lanes") or [] if isinstance(l, dict)]
+    return {l.get("id") for l in lanes} | {x for l in lanes for x in (l.get("was") if isinstance(l.get("was"), list) else []) if isinstance(x, str)}
+
+
+def _lane_of(plan) -> dict:
+    """Each id and former id -> the workstream's id now."""
+    out = {}
+    for l in plan.get("lanes") or []:
+        if isinstance(l, dict) and isinstance(l.get("id"), str):
+            out[l["id"]] = l["id"]
+            for x in l.get("was") if isinstance(l.get("was"), list) else []:
+                if isinstance(x, str):
+                    out.setdefault(x, l["id"])
+    return out
+
+
+def _reid_problem(ids: dict, args: dict) -> str:
+    new, lane_of = args.get("id"), ids.get("laneOf") or {}
+    if not isinstance(new, str) or not LANE_ID.match(new):
+        return "a workstream id is 1 to 60 letters, digits, dots, dashes or underscores, and starts with a letter or digit"
+    if new in lane_of:
+        return "" if lane_of[new] == lane_of.get(args.get("lane")) else f"{new} is, or was, another workstream's id, so it isn't used again"
+    if any(new in ids.get(k, set()) for k in ("bar", "task", "dv", "person", "ms", "gate", "risk", "dec")):
+        return f"{new} is already used"
+    return ""
+
+
 def _plan_ids(plan) -> dict:
     bars = [b for b in plan.get("bars") or [] if isinstance(b, dict)]
     pick = lambda key: {x.get("id") for x in plan.get(key) or [] if isinstance(x, dict)}
     return {"bar": {b.get("id") for b in bars}, "task": {t.get("id") for b in bars for t in b.get("tasks") or [] if isinstance(t, dict)},
-            "dv": pick("deliverables"), "lane": pick("lanes"), "person": pick("people"), "ms": pick("milestones"), "gate": pick("gates"),
-            "block": pick("blocks"), "risk": pick("risks"), "dec": pick("decisions"), "sprint": pick("sprints"), "skill": pick("skills"), "meeting": pick("meetings")}
+            "dv": pick("deliverables"), "lane": _lane_ids(plan), "person": pick("people"), "ms": pick("milestones"), "gate": pick("gates"),
+            "block": pick("blocks"), "risk": pick("risks"), "dec": pick("decisions"), "sprint": pick("sprints"), "skill": pick("skills"), "meeting": pick("meetings"),
+            "laneOf": _lane_of(plan)}
 
 
 def _plan_start(plan) -> _dt.date:
@@ -2009,7 +2048,7 @@ def _item_err(fields, field, v, plan) -> str:
         ids = {p.get("id") for p in plan.get("people") or [] if isinstance(p, dict)}
         return "" if isinstance(v, list) and all(x in ids for x in v) else "owners must be ids of people in the plan"
     if t == "lane":
-        return "" if any(isinstance(l, dict) and l.get("id") == v for l in plan.get("lanes") or []) else f'workstream "{str(v)[:40]}" isn\'t in the plan'
+        return "" if v in _lane_ids(plan) else f'workstream "{str(v)[:40]}" isn\'t in the plan'
     weeks = (plan.get("meta") or {}).get("weeks") or 0
     if t == "start":
         if not _iso_ok(v):
@@ -2063,7 +2102,7 @@ def _value_err(field, v, plan, status) -> str:
     if t == "release":
         return "" if any(str(r.get("id")) == str(v) for r in status.get("releases") or [] if isinstance(r, dict)) else f"release {str(v)[:30]} isn't in the last Jira sync"
     if t == "lane":
-        return "" if any(isinstance(l, dict) and l.get("id") == v for l in plan.get("lanes") or []) else f'workstream "{str(v)[:40]}" isn\'t in the plan'
+        return "" if v in _lane_ids(plan) else f'workstream "{str(v)[:40]}" isn\'t in the plan'
     if t == "people":
         ids = {p.get("id") for p in plan.get("people") or [] if isinstance(p, dict)}
         return "" if isinstance(v, list) and all(x in ids for x in v) else "owners must be ids of people in the plan"
