@@ -3444,7 +3444,7 @@ function backupBeforeUpgrade(hd, before){
   download(before, backupName(`format${from}`, hd.name).replace(/\.json$/, yaml ? ".yaml" : ".json"), yaml ? "text/yaml" : "application/json"); upgradedFiles.add(hd);
   mergeNote = (mergeNote ? mergeNote + " " : "") + `Saved in plan format ${SCHEMA} (was ${from}); the old file was downloaded as a backup. Older copies of Sightline will open it read-only.`;
 }
-function quickSave(what, mutate, tries = 0, ops = null, isUndo = false, fromSayg = false){
+function quickSave(what, mutate, tries = 0, ops = null, isUndo = false, fromSayg = false, putBacks = 0){
   if (present) return Promise.resolve(false);
   if (tooNew()){ setStatus(newerMsg()); return Promise.resolve(false); }
   if (file.handle && file.holdLock && !editable()) return op.chain.then(()=>editable() ? commit(mutate, {grow:true}) : (setStatus("Couldn't apply that right now. Try again."), false));   // my own save is running: apply after it
@@ -3495,15 +3495,18 @@ function quickSave(what, mutate, tries = 0, ops = null, isUndo = false, fromSayg
     file.baseText = text; file.baseHash = hashText(text); file.dirty = false; markFileChecked(hd, file.gen); resetHistory(); flushPersist();
     if (!isUndo) rememberQuick(what, myOps, mutate && mutate.via);
     planChanged("quick"); setStatus(withMergeNote(`Saved to local file: ${what}`));
-    verifyLater(hd, myOps, what, out.meta.revision);
+    verifyLater(hd, myOps, what, out.meta.revision, 1500, putBacks, hashText(text));
     return true;
-  }).then(r=>r && typeof r === "object" && "retry" in r ? quickSave(what, mutate, tries + 1, r.retry, isUndo, fromSayg) : r && typeof r === "object" && r.wait ? false : r);
+  }).then(r=>r && typeof r === "object" && "retry" in r ? quickSave(what, mutate, tries + 1, r.retry, isUndo, fromSayg, putBacks) : r && typeof r === "object" && r.wait ? false : r);
 }
-// Two saves in the same instant can both pass the checks. Look again shortly after; if our change was overwritten, put it back.
-function verifyLater(hd, ops, what, rev, delay = 1500){
+// Two saves in the same instant can both pass the checks. Look again shortly after; if our change was overwritten, put it back,
+// once. Overwritten again after that, something keeps restoring an older file (another open copy, a sync tool): putting it
+// back again would only fight it, save after save, so stop, keep a copy and say so.
+function verifyLater(hd, ops, what, rev, delay = 1500, putBacks = 0, wrote = null){
   setTimeout(async ()=>{
     if (file.handle !== hd || file.holdLock || file.dirty || !ops.length) return;
     let cur, p; try { cur = await readFile(hd); p = parseText(cur); } catch(e){ return; }
+    if (wrote && hashText(cur) === wrote) return;           // still exactly what I wrote: nothing overwrote it, whatever reading it back shows
     // A newer revision was written on top of mine, so whatever it says now was decided after seeing my change: leave it.
     // Only a save that never saw my write (same or older revision) can have overwritten it by accident.
     if ((p.meta.revision || 0) > rev) return;
@@ -3517,8 +3520,19 @@ function verifyLater(hd, ops, what, rev, delay = 1500){
     const decided = new Set(ops.filter(o=>o.op === "set" && GROUP.includes(o.field) && !missing(o) && !present(o)).map(o=>o.type + ":" + o.id));
     const redo = ops.filter(o=>missing(o) && !(GROUP.includes(o.field) && decided.has(o.type + ":" + o.id)));
     if (!redo.length) return;
-    quickSave(what, null, 0, redo).then(ok=>{ if (ok) setStatus(`Put back your update (${what}): a save at the same moment had overwritten it.`); });
+    if (putBacks >= 1){ putBackGaveUp(p, redo, what); return; }
+    quickSave(what, null, 0, redo, false, false, putBacks + 1).then(ok=>{ if (ok) setStatus(`Put back your update (${what}): a save at the same moment had overwritten it.`); });
   }, delay);
+}
+function putBackGaveUp(p, redo, what){
+  let mine = null; try { mine = applyOps(clone(p), redo).plan; } catch(e){}
+  if (mine) backup(mine, "mine");
+  const last = (p.changes || []).slice(-1)[0], by = last && last.by && last.by !== meId() ? (p.people || []).find(x=>x.id === last.by) || personById(last.by) : null;
+  const who = by ? ` The file's last save was by ${by.name}: ask them to close the plan and open it again.` : " Check for another open copy of this plan (another tab, browser or computer) or a sync tool such as OneDrive putting back an older version.";
+  setBanner("putback", "bad", [h("b",{}, `Your update (${what}) didn't stay saved.`), ` It was put back once, and the file changed back again, so Sightline stopped trying.${who}`,
+    mine ? " Your version was downloaded as a backup; make the change again once that's fixed." : " Make the change again once that's fixed.", " ",
+    h("button",{type:"button",class:"btn",id:"putBackDismiss",onclick:()=>clearBanner("putback")}, "Dismiss")]);
+  setStatus(`Not saved: your update (${what}) keeps being overwritten. Stopped putting it back.`);
 }
 // Replay my unsaved edits on top of the file's newer version (teammates' quick saves). False if someone else took over editing.
 // Merge my edits (base -> mine) onto a teammate's newer file (theirs). Pure: returns {plan, kept, keptDel, skipped}, or

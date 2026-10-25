@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.119.2",
+    "date": "2026-10-25",
+    "headline": "An update that keeps being overwritten no longer saves over and over",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Saving",
+        "title": "Putting back an overwritten update can't loop",
+        "before": "When something kept restoring an older copy of the plan file, such as another open copy or a sync tool, the page put the update back again and again, saving every couple of seconds without end. A change that read back slightly differently could do the same with nobody else involved.",
+        "now": "An overwritten update is put back once. If the file changes back again, Sightline stops, downloads your version as a backup, and says what to check, naming whoever saved the file last when the file says. A file that still holds exactly what you saved is never saved again.",
+        "where": "Any quick update to a shared plan"
+      }
+    ]
+  },
+  {
     "version": "1.119.1",
     "date": "2026-10-25",
     "headline": "Assistant changes apply whole, or say why not",
