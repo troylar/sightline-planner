@@ -1,5 +1,34 @@
 [
   {
+    "version": "1.105.0",
+    "date": "2026-10-25",
+    "headline": "Why an initiative finishes when it does, and who the work waits for",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Forecast",
+        "title": "Follow the chain that sets a finish date",
+        "now": "An initiative's card has a \"Why it finishes then\" list. It walks back through what held the initiative up: the work it waited for, and the work that had or shared its people, each with dates, until it reaches the first day, a gate, a Jira sprint or a workstream's start.",
+        "where": "Initiative card, under the forecast dates (open \"Why it finishes then\")"
+      },
+      {
+        "kind": "new",
+        "area": "Forecast",
+        "title": "See which workstream the work is waiting for",
+        "now": "Under the chain, the card names the workstream, and its people, that most of the waiting was for, with the number of working days. When nobody on the chain waited for people, it names the busiest workstream instead: how much work it had against how much time its people had, and over which dates.",
+        "where": "Initiative card, at the end of \"Why it finishes then\""
+      },
+      {
+        "kind": "improved",
+        "area": "Forecast",
+        "title": "Waits are dated by working days",
+        "now": "When an initiative waited for its people, the dates given for the wait start and end on working days, not on a weekend or holiday.",
+        "before": "A wait could be dated from a Saturday when the forecast was worked out on a weekend.",
+        "where": "Initiative card, forecast line"
+      }
+    ]
+  },
+  {
     "version": "1.104.0",
     "date": "2026-10-24",
     "headline": "A forecast date on every initiative, with the reason for it",
