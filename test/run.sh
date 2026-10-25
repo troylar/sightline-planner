@@ -51,6 +51,7 @@ run_suite harness134 90 node harness134.js
 run_suite harness135 90 node harness135.js
 run_suite harness136 90 node harness136.js
 run_suite harness137 90 node harness137.js
+run_suite harness138 90 node harness138.js
 run_suite harness141 90 node harness141.js
 run_suite harness142 90 node harness142.js
 run_suite harness139 90 node harness139.js

@@ -1,5 +1,34 @@
 [
   {
+    "version": "1.122.0",
+    "date": "2026-10-25",
+    "headline": "Change a workstream's ID so it says what the workstream is",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Workstreams",
+        "title": "A workstream's ID can be changed",
+        "before": "A workstream kept its first ID forever, so after a rename or a restructure the ID could say something else.",
+        "now": "Change it in the workstream's panel, under ID. Everything that uses it changes in the same update: work, milestones, notes, meetings, process blocks, deliverables, time splits, guidance, saved views, the baseline, snapshots and the last status update. One Undo puts it all back.",
+        "where": "Click a workstream's name on the Timeline, then ID"
+      },
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "Assistants can propose an ID change, and you always review it",
+        "now": "An assistant can propose a workstream's new ID. It always waits for you, at every review level. A change an assistant wrote before the ID changed still applies: review says it used the old ID.",
+        "where": "The assistant's Changes"
+      },
+      {
+        "kind": "improved",
+        "area": "Plan file",
+        "title": "Old IDs keep working",
+        "now": "The plan remembers a workstream's old IDs, so files and copies that still use them find it, and an old ID is never given to another workstream. Older versions of Sightline open a plan with a changed ID read-only.",
+        "where": "The plan file"
+      }
+    ]
+  },
+  {
     "version": "1.121.0",
     "date": "2026-10-25",
     "headline": "See one whole sprint, edge to edge, and step sprint by sprint",

@@ -1045,6 +1045,34 @@ with _vt.TemporaryDirectory() as bt:
     r = run()
     ok("batch: and so does the text output", "Checked here: " in r.stdout and "Not checked here: " in r.stdout and "checks those when it applies the batch" in r.stdout)
 
+# workstream.reid, offline: the new id follows the page's rules, is never one in use or one a workstream had, and a former
+# id a plan keeps (lane.was) still resolves in other actions, as the page reads it
+with _vt.TemporaryDirectory() as rt:
+    rt = pathlib.Path(rt)
+    plan = _vj.loads((HERE / "fixtures" / "sample-plan.json").read_text(encoding="utf-8")); plan["meta"].update({"planId": "p-reid", "schema": 2})
+    for l in plan["lanes"]:
+        if l["id"] == "rag":
+            l["id"], l["was"] = "search", ["rag"]
+    (rt / "plan.json").write_text(_vj.dumps(plan), encoding="utf-8")
+    A = lambda name, args: {"op": "action", "action": name, "args": args}
+    am = {"kind": "sightline-amendments", "version": 1, "planId": "p-reid", "batchId": "b-reid", "createdAt": "2026-10-25T00:00:00Z", "basedOn": {"planRevision": 0}, "changes": [
+        {"id": "r1", "summary": "Match the name", "ops": [A("workstream.reid", {"lane": "chat", "id": "api-v2", "prev": "chat"})]},
+        {"id": "r2", "summary": "Taken", "ops": [A("workstream.reid", {"lane": "fin", "id": "int"})]},
+        {"id": "r3", "summary": "Another's former id", "ops": [A("workstream.reid", {"lane": "fin", "id": "rag"})]},
+        {"id": "r4", "summary": "Bad id", "ops": [A("workstream.reid", {"lane": "fin", "id": "a b"})]},
+        {"id": "r5", "summary": "An initiative's id", "ops": [A("workstream.reid", {"lane": "fin", "id": "m1"})]},
+        {"id": "r6", "summary": "Old id still works", "ops": [A("initiative.setLane", {"id": "m1", "lane": "rag"})]},
+        {"id": "r7", "summary": "Back to its own former id", "ops": [A("workstream.reid", {"lane": "search", "id": "rag"})]}]}
+    (rt / "am.json").write_text(_vj.dumps(am), encoding="utf-8")
+    r = subprocess.run([sys.executable, str(HERE.parent / "tools" / "sightline-jira-sync.py"), "check-amendments", str(rt / "plan.json"), str(rt / "am.json"), "--json"], capture_output=True, text=True, timeout=60)
+    out = _vj.loads(r.stdout) if r.stdout.strip().startswith("{") else {}
+    st = {c["id"]: c["status"] for c in out.get("changes", [])}
+    print("reid statuses:", st) if any(v != w for v, w in zip([st.get(k) for k in ("r1","r2","r3","r4","r5","r6","r7")], ["ready","invalid","invalid","invalid","invalid","ready","ready"])) else None
+    ok("reid: a new id that follows the rules is ready", st.get("r1") == "ready")
+    ok("reid: an id another workstream has, or had, is refused", st.get("r2") == "invalid" and st.get("r3") == "invalid")
+    ok("reid: an id that breaks the rules, or an initiative has, is refused", st.get("r4") == "invalid" and st.get("r5") == "invalid")
+    ok("reid: a former id still resolves in other actions, and a workstream can take its own back", st.get("r6") == "ready" and st.get("r7") == "ready")
+
 search.shutdown()
 other.shutdown()
 jira.shutdown()
