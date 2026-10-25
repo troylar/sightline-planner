@@ -4,10 +4,17 @@ Start with the [launch instructions](../README.md#try-it-with-an-invented-team-p
 plan file from Sightline's **File** menu. The source template is not the runnable release, and a plan link alone does
 not grant access to its file.
 
-- **Work**: Today shows attention and next actions. Sprint shows the current sprint by person, workstream or epic. Sort Jira work places synced issues on the plan; the Jira connection remains in Settings.
-- **Delivery**: Timeline shows planned work. List shows the same work as rows. Capacity shows the forecast, people and time off. Status update, Decisions and Risks support delivery reviews. Supporting lists hold milestones, gates, snapshots and activity.
-- **Product updates**: Roadmap explains what the team plans to ship. Release notes opens the customer wording approved for each Jira release.
-- **Settings**: Team, calendar, meetings, process types, the Jira connection, and the project Planning guide.
+The menu runs down the left side. Every page has one home:
+
+- **Work**: Today shows attention and next actions. Sprint shows the current sprint by person, workstream or epic. Sort Jira work places synced issues on the plan, and Jira change proposals reviews what the sync suggests.
+- **Delivery**: Timeline shows planned work. List shows the same work as rows. Capacity shows the forecast, people and time off. Status update, Decisions and Risks support delivery reviews. Milestones, Gates, Snapshots and Activity hold the supporting lists.
+- **Product updates**: Roadmap explains what the team plans to ship. Customer release notes opens the customer wording approved for each Jira release.
+- **Settings**: Plan (Tags, Planning guide), Team (Team, Work calendar, Meetings, Timeboxes and ceremonies) and Connections (Jira connection).
+
+Counts and warnings sit on the page they belong to, such as open risks on Risks. Click a group's heading to fold it;
+the group you're in stays open. The button at the top of the menu, or the `\` key, collapses the menu to a rail of
+icons, and hovering or focusing an icon opens that group beside it. Sightline remembers the choice in this browser.
+On a narrow window the menu starts as a rail.
 
 Each group remembers your last page. Existing saved startup choices and links still open their original destinations. Views express audience preferences; file permissions control access.
 

@@ -30,11 +30,10 @@ const checks = [], ok = (name, pass)=>checks.push(`${pass ? 'PASS' : 'FAIL'} ${n
     ok('D4 task movement is behind disclosure', !!d.querySelector('#itemOptions #f-tbar') && !d.querySelector('#itemOptions').open);
     for(const section of ['report','decisions','risks']){
       ev(`sel=null;UI.planTab='${section}';goWs('plan')`);
-      const first=d.querySelector('#plannav [tabindex="0"]');
-      ok(`D5 ${section}: supporting lists reachable by Tab`,!!first);
-      first?.focus();first?.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
-      await new Promise(r=>setTimeout(r,10));
-      ok(`D6 ${section}: ArrowRight opens Gates`,ev("UI.planTab==='gates'") && d.activeElement.dataset.pt==='gates');
+      const cur=d.querySelector('#sidenav [aria-current="page"]'), gates=d.querySelector('#delivery-gates');
+      ok(`D5 ${section}: supporting lists sit beside it in the menu, reachable by Tab`,!!cur && cur.dataset.section===section && cur.closest('.sngroup')===gates.closest('.sngroup') && gates.closest('.sngroup').classList.contains('open') && gates.tabIndex>=0);
+      gates.focus();gates.click();await new Promise(r=>setTimeout(r,10));
+      ok(`D6 ${section}: the menu opens Gates`,ev("UI.planTab==='gates'") && d.querySelector('#delivery-gates').getAttribute('aria-current')==='page');
     }
     ev("JIRA=null;goWs('roadmap')");d.querySelector('#updates-notes').click();
     ok('D7 release notes explain empty connection',d.querySelector('#customerReleasesDialog')?.open && d.querySelector('#customerReleasesDialog').textContent.includes('No Jira releases'));

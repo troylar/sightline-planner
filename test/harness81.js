@@ -37,7 +37,7 @@ async function page(fileText){
       s.decisions.push({id:"dec-z", text:"Pick the auth provider", state:"open", owners:[], due:dayToIso(todayDay() + 3), item:""});
       s.milestones.push({id:"ms-z", date:"", owners:[], stretch:"", what:"Beta launch", dep:"", status:"commit", lane:s.lanes[0].id, at:dayToAt(todayDay() + 14), stretchAt:null}); })`); await wait(40);
     d.querySelector("#delivery-status").click(); await wait(20);
-    ok("R1 Delivery has a Status update tab with five parts", !d.querySelector("#delivery-status").hidden && d.querySelector("#delivery-status").getAttribute("aria-selected") === "true" && ["ontrack","changed","risk","decisions","next"].every(k=>!!d.querySelector("#rep-" + k)));
+    ok("R1 Delivery has a Status update tab with five parts", d.querySelector("#delivery-status").getAttribute("aria-current") === "page" && ["ontrack","changed","risk","decisions","next"].every(k=>!!d.querySelector("#rep-" + k)));
     ok("R2 the draft lists what's blocked, the open decision and the next milestone", /blocked: Waiting on the vendor/.test(val("risk")) && /Pick the auth provider/.test(val("decisions")) && /Beta launch/.test(val("next")), val("risk").slice(0, 120));
     ok("R3 with nothing saved yet, it says Changed starts next time", /Nothing to compare with yet/.test(d.querySelector("#repBasis").textContent) && /First update/.test(val("changed")));
     ok("R4 a blocked item suggests At risk", d.querySelector("#repStatus").value === "atrisk", d.querySelector("#repStatus").value);

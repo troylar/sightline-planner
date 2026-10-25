@@ -38,14 +38,14 @@ const rows = (d, g) => [...d.querySelectorAll(`#jiraWs .egroup.${g} .erow`)].map
 
   // ---- T1: where it lives ----
   await sec(async ()=>{ const {d, ev} = await page();
-    ok("T1: the Plan tab's badge counts epics nobody has sorted", d.querySelector("#tab-plan #jiraBadge .vh")?.textContent === "12 to sort" && !d.querySelector("#tab-jira"));
+    ok("T1: Sort Jira work's badge counts epics nobody has sorted", d.querySelector("#work-sort #jiraBadge .vh")?.textContent === "12 to sort" && !d.querySelector("#tab-plan #jiraBadge") && !d.querySelector("#tab-jira"));
     ev("openEpics()");
     ok("T1: Epics is a list under Plan", ev("UI.ws") === "plan" && ev("UI.planTab") === "epics" && !!d.querySelector("#ws-plan [data-plan=epics] #jiraWs .egroup.uns"));
-    ok("T1: the Manage list says how many epics are waiting", /Jira work/.test(d.querySelector('#plannav [data-pt="epics"]')?.textContent || "") && /12 to sort/.test(d.querySelector('#plannav [data-pt="epics"]').textContent));
+    ok("T1: the menu says how many epics are waiting, on Sort Jira work under Work", /Sort Jira work/.test(d.querySelector('#snp-work [data-section="epics"]')?.textContent || "") && /12 to sort/.test(d.querySelector('#snp-work [data-section="epics"]').textContent) && !d.querySelector('#snp-settings [data-section="epics"]'));
     ev("setWs('timeline')"); d.querySelector("#jiraMenu").click();
     ok("T1: File, then Jira status, opens Plan, then Jira", ev("UI.ws") === "plan" && ev("UI.planTab") === "jira" && !d.querySelector("#dlgJira").open);
     ok("T1: Plan, then Jira holds all of the Jira setup", !!d.querySelector("#jiraSetupWs .jfolder") && !!d.querySelector("#jiraSetupWs #jiraMap, #jiraSetupWs .jsprints, #jiraSetupWs .jfolder"));
-    ok("T1: and there's no separate settings gear", !d.querySelector("#settingsBtn") && !!d.querySelector('#plannav [data-pt="jira"]')); });
+    ok("T1: and there's no separate settings gear", !d.querySelector("#settingsBtn") && !!d.querySelector('#snp-settings [data-section="jira"]')); });
 
   // ---- T2: the three groups and the one-time sort ----
   await sec(async ()=>{ const {d, ev} = await page();

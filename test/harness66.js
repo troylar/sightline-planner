@@ -45,13 +45,13 @@ async function page(opts = {}){
 (async()=>{
   const sec = async fn => { try { await fn(); } catch(e){ ok("section crashed", false, String(e.message).slice(0,140)); } };
   await sec(async ()=>{ const {d, ev} = await page({jira:false}); ev(`goWs("timeline"); render();`); await wait(10);
-    const workspaceLabels = ["today","timeline","people","plan","standup"].map(k=>d.querySelector("#tab-" + k).childNodes[0].textContent.trim()).join();
+    const workspaceLabels = ["today","timeline","people","plan","standup"].map(k=>d.querySelector("#tab-" + k + " .snl").textContent.trim()).join();
     ok("N1: workspace labels read Today, Timeline, Capacity, Settings, Sprint", workspaceLabels === "Today,Timeline,Capacity,Settings,Sprint", workspaceLabels);
     ok("N2: the layers read All sources, Jira only, Jira + mine", ["lyAll","lyJira","lyMine"].map(k=>d.querySelector("#" + k).textContent).join() === "All sources,Jira only,Jira + mine");
     ok("N3: What's new says it's about Sightline", /What's new in Sightline/.test(d.querySelector("#relTitle").textContent));
     ev(`UI.planTab = "types"; setWs("plan"); render();`); await wait(10);
-    const tabs = [...d.querySelectorAll("#plannav [data-pt]")].map(b=>b.dataset.pt + ":" + b.childNodes[0].textContent.trim());
-    ok("N4: Settings lists Sort Jira work, Jira connection and Timeboxes & ceremonies", tabs.includes("epics:Sort Jira work") && tabs.includes("jira:Jira connection") && tabs.includes("types:Timeboxes & ceremonies"), tabs.join(" "));
+    const tabs = [...d.querySelectorAll("#snp-settings [data-section]")].map(b=>b.dataset.section + ":" + b.querySelector(".snl").textContent.trim()), work = [...d.querySelectorAll("#snp-work [data-section]")].map(b=>b.dataset.section);
+    ok("N4: Settings lists Jira connection and Timeboxes and ceremonies; Sort Jira work lives in Work", !tabs.some(t=>t.startsWith("epics:")) && work.includes("epics") && tabs.includes("jira:Jira connection") && tabs.includes("types:Timeboxes and ceremonies"), tabs.join(" "));
     ok("N5: each timebox says whether it's a Jira sprint or the plan's own", /Plan timebox|Jira sprint/.test(d.querySelector("#t-sprints tbody")?.textContent || "") && /From/.test(d.querySelector("#t-sprints thead").textContent));
     ev(`S.types = S.types.filter(t=>!/release/i.test(t.name)); addScrumPack();`);
     ok("P1: the Scrum pack's release block is Release day", ev(`S.types.some(t=>t.name === "Release day")`));

@@ -84,7 +84,7 @@ quarter and capture another as an unscheduled idea. No AI account needed.
 ## 5. Keep the plan useful between meetings
 
 Find attention items in **Today**, current work in **Sprint**, and the delivery conversation in **Status update**.
-Use **Release notes** for customer wording. Return to Roadmap for the broader direction.
+Use **Customer release notes** for customer wording. Return to Roadmap for the broader direction.
 
 <a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/today-light.png" aria-label="Open full-size today screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/today-dark.png"><img src="docs/images/today-light.png" alt="Actual Sightline Today view: team attention and upcoming work, with Jira freshness and coverage." width="1440"></picture></a>
 

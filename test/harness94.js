@@ -1,4 +1,5 @@
-// Workspaces sit under three jobs with contextual tabs. Old workspace links and Plan sections still work.
+// The menu: every page has one home under Work, Delivery, Product updates or Settings; it collapses to a rail whose pages
+// fly out, remembered in this browser. Number keys and old links still land in the right place.
 const {JSDOM} = require("jsdom"); const fs = require("fs"); const path = require("path");
 const html = fs.readFileSync(process.env.SIGHTLINE_HTML || path.join(__dirname,"..","dist","sightline.html"),"utf8").replace(/<link[^>]+fonts[^>]+>/,"");
 const plan = fs.readFileSync(path.join(__dirname,"fixtures","sample-plan.json"),"utf8");
@@ -26,30 +27,43 @@ async function page(fileText){
 
 (async()=>{
   const sec = async fn => { try { await fn(); } catch(e){ ok("section crashed", false, String(e.message).slice(0,140)); } };
-  await sec(async ()=>{ const {ev, d} = await page(); await wait(300); ev(`UI.ws = "today"; render();`); await wait(10);
-    const vis = () => [...d.querySelectorAll(".tabs [role=tab][data-ws]")].filter(t=>!t.hidden).map(t=>t.dataset.ws).join();
-    ok("R1 Work offers Today, Sprint and Sort Jira work without More", vis() === "today,standup" && !d.querySelector("#work-sort").hidden && d.querySelector("#tabMore").hidden, vis());
+  await sec(async ()=>{ const {ev, d, w} = await page(); await wait(300); ev(`UI.navOpen = {}; UI.navRail = false; UI.ws = "today"; render();`); await wait(10);
+    const pagesOf = g => [...d.querySelectorAll(`#snp-${g} .snp`)].map(b=>b.dataset.ws || b.dataset.section || b.dataset.updates).join();
+    ok("R1 Work holds Today, Sprint, Sort Jira work and Jira change proposals", pagesOf("work") === "today,standup,epics,proposals", pagesOf("work"));
+    ok("R2 Delivery holds every delivery page at one level", pagesOf("delivery") === "timeline,list,people,report,milestones,gates,decisions,risks,snapshots,activity", pagesOf("delivery"));
+    ok("R2a Product updates holds Roadmap and the customer release notes", pagesOf("updates") === "roadmap,notes", pagesOf("updates"));
+    ok("R2b Settings holds setup only", pagesOf("settings") === "tags,guide,team,calendar,meetings,types,jira", pagesOf("settings"));
+    const all = [...d.querySelectorAll("#sidenav .snp")].map(b=>b.dataset.ws || b.dataset.section || b.dataset.updates);
+    ok("R3 every page has exactly one home in the menu", all.length === new Set(all).size && !d.querySelector(".tabs, #plannav, #primaryNav, #tabMore"), all.join());
+    ok("R3a each page belongs to the group it sits under", [...d.querySelectorAll("#sidenav .snp[data-section], #sidenav .snp[data-ws]")].every(b=>ev(`workspaceGroup(${JSON.stringify(b.dataset.section ? "plan" : b.dataset.ws)}, ${JSON.stringify(b.dataset.section || "")})`) === b.closest(".sngroup").dataset.group));
+    d.querySelector("#work-sort").click(); await wait(10);
+    ok("R4 Sort Jira work opens in Work and stays there", ev("UI.ws") === "plan" && ev("UI.planTab") === "epics" && ev("workspaceGroup()") === "work" && d.querySelector("#work-sort").getAttribute("aria-current") === "page" && d.querySelector('.sngroup[data-group="work"]').classList.contains("here"));
+    d.querySelector("#work-proposals").click(); await wait(10);
+    ok("R4a Jira change proposals is a Work page", ev("UI.planTab") === "proposals" && ev("workspaceGroup()") === "work");
+    d.querySelector("#set-calendar").click(); await wait(10);
+    ok("R4b a Settings page opens Settings and opens its group", ev("UI.planTab") === "calendar" && ev("workspaceGroup()") === "settings" && d.querySelector("#tab-plan").getAttribute("aria-expanded") === "true" && d.querySelector("#set-calendar").getAttribute("aria-current") === "page");
+    d.querySelector("#tab-plan").click(); await wait(5);
+    ok("R4c the group you're in stays open when you click its heading", d.querySelector("#tab-plan").getAttribute("aria-expanded") === "true");
+    d.querySelector("#nav-updates").click(); await wait(5);
+    ok("R4d another group's heading folds it, and that's remembered", d.querySelector("#nav-updates").getAttribute("aria-expanded") === "false" && ev("UI.navOpen.updates") === false && ev("UI.ws") === "plan");
+    d.querySelector("#tab-timeline").click(); await wait(10);
+    ok("R5 Timeline is current; only one page is ever current", ev("UI.ws") === "timeline" && d.querySelectorAll('#sidenav [aria-current="page"]').length === 1);
+    d.querySelector("#tab-timeline").focus(); d.querySelector("#sidenav").dispatchEvent(new w.KeyboardEvent("keydown", {key:"ArrowDown", bubbles:true}));
+    ok("R5a Down moves to the next page in the menu", d.activeElement === d.querySelector("#tab-list"));
+    d.dispatchEvent(new w.KeyboardEvent("keydown", {key:"4", bubbles:true})); await wait(10);
+    ok("R6 4 opens Settings, never a Delivery or Work page", ev("workspaceGroup()") === "settings" && ev("UI.ws") === "plan" && !["epics","proposals","report","milestones"].includes(ev("UI.planTab")), ev("UI.planTab"));
+    d.dispatchEvent(new w.KeyboardEvent("keydown", {key:"2", bubbles:true})); await wait(10);
+    d.dispatchEvent(new w.KeyboardEvent("keydown", {key:"\\", bubbles:true})); await wait(10);
+    ok("R7 backslash collapses the menu to a rail, remembered in this browser", ev("UI.navRail") === true && d.body.classList.contains("navrail") && ev("JSON.parse(localStorage.getItem('timeline-planner-ui')).navRail") === true);
     d.querySelector("#nav-delivery").click(); await wait(5);
-    ok("R2 Delivery offers Timeline, List and People", vis() === "timeline,list,people", vis());
-    ok("R2a Delivery also offers status, decisions and risks", [...d.querySelectorAll('.tabs [data-section]')].filter(t=>!t.hidden).map(t=>t.dataset.section).join() === "report,decisions,risks");
-    d.querySelector('#tab-timeline').focus(); d.querySelector('.tabs').dispatchEvent(new d.defaultView.KeyboardEvent('keydown', {key:'End', bubbles:true})); await wait(10);
-    ok("R2b keyboard navigation reaches Delivery sections", ev("UI.ws") === "plan" && ev("UI.planTab") === "risks");
-    d.querySelector('#tab-people').click(); await wait(10);
-    ok("R3 People remains accessible within Delivery", ev("UI.ws") === "people" && !d.querySelector("#tab-people").hidden && d.querySelector("#moreMenu").hidden);
-    d.querySelector("#nav-work").click(); await wait(5);
-    d.querySelector("#tab-today").focus(); d.querySelector(".tabs").dispatchEvent(new d.defaultView.KeyboardEvent("keydown", {key:"End", bubbles:true})); await wait(10);
-    ok("R4 End reaches the direct Work sorting tab", ev("UI.ws") === "plan" && ev("UI.planTab") === "epics" && d.activeElement === d.querySelector("#work-sort") && d.querySelector("#work-sort").getAttribute("aria-selected") === "true", ev("UI.ws"));
-    d.querySelector(".tabs").dispatchEvent(new d.defaultView.KeyboardEvent("keydown", {key:"ArrowLeft", bubbles:true})); await wait(10);
-    ok("R4a ArrowLeft returns from sorting to Sprint", ev("UI.ws") === "standup" && d.activeElement === d.querySelector("#tab-standup"));
-    await ev("startEditing(false)"); await wait(40); ev("render()"); await wait(10);
-    ok("R5 editing retains the same contextual navigation", vis() === "today,standup" && !d.querySelector("#work-sort").hidden && d.querySelector("#tabMore").hidden, vis());
-    ev(`UI.ws = "plan"; UI.planTab = "epics"; render();`); await wait(10);
-    const groups = [...d.querySelectorAll("#plannav .pgroup")].map(g=>g.querySelector(".pglabel").textContent + ":" + [...g.querySelectorAll("[data-pt]")].map(b=>b.dataset.pt).join("|"));
-    ok("R6 Settings excludes Delivery sections", groups.join(" ") === "Lists:tags Team:team|calendar|meetings|types Jira:epics|proposals|jira Assistant:guide", groups.join(" "));
-    ok("R7 configuration is named Settings", /Sort Jira work/.test(d.querySelector('[data-pt="epics"]').textContent) && /Jira connection/.test(d.querySelector('[data-pt="jira"]').textContent) && d.querySelector("#tab-plan").childNodes[0].textContent === "Settings");
-    d.querySelector('#delivery-status').click(); await wait(10);
-    const deliveryGroups = [...d.querySelectorAll('#plannav .pgroup')].map(g=>g.querySelector('.pglabel').textContent + ':' + [...g.querySelectorAll('[data-pt]')].map(b=>b.dataset.pt).join('|'));
-    ok("R7a Delivery keeps its supporting lists without duplicate shortcuts", deliveryGroups.join(' ') === 'Lists:milestones|gates Reports:snapshots|activity', deliveryGroups.join(' '));
+    ok("R7a in the rail, a group icon opens its pages as a flyout", d.querySelector('.sngroup[data-group="delivery"]').classList.contains("fly") && d.querySelector("#nav-delivery").getAttribute("aria-expanded") === "true" && d.activeElement === d.querySelector("#tab-timeline"));
+    d.querySelector("#tab-timeline").dispatchEvent(new w.KeyboardEvent("keydown", {key:"Escape", bubbles:true}));
+    ok("R7b Esc closes the flyout and returns to its icon", !d.querySelector(".sngroup.fly") && d.activeElement === d.querySelector("#nav-delivery"));
+    d.querySelector("#navToggle").click(); await wait(10);
+    ok("R7c the toggle pins it open again", ev("UI.navRail") === false && !d.body.classList.contains("navrail") && d.querySelector("#navToggle").getAttribute("aria-label") === "Collapse the menu");
+    ev("present = true; render()"); await wait(5);
+    ok("R8 presenting hides the menu", d.querySelector("#sidenav").hidden && !d.body.classList.contains("hasnav")); ev("present = false; render()");
+    ok("R9 no page errors", !w.errs.length, w.errs.join(" | "));
   });
   await sec(async ()=>{ const {ev} = await page(); await wait(300); ev(`applyNav({ws:"plan", pt:"epics", plan:S.meta.planId}); render();`); await wait(10);
     ok("R8 an old link to Manage, Jira work still lands there", ev("UI.ws") === "plan" && ev("UI.planTab") === "epics"); });

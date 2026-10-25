@@ -57,7 +57,7 @@ async function page(opts = {}){
     ok("C1 …it's a track, and the selected segment is a raised pill drawn inside it", decl(/^\.seg$/, "background").includes("var(--track)") && has(/\.seg button\[aria-pressed="true"\]::before/, r=>/background:\s*var\(--surface\)/.test(r.text) && /box-shadow/.test(r.text)));
     ok("C1 …List's layout control uses the same pill, not its own accent fill", !/\.listbar \.seg \.btn\.on/.test(css) && has(/\.seg button\.on::before/));
     ok("C2 hovering a filled button keeps its own color: no gray ring around primary or on", has(/^\.btn\.primary:hover:not\(:disabled\)$/, r=>/border-color:\s*transparent/.test(r.text)) && has(/^\.btn\.on:hover:not\(:disabled\)$/, r=>/border-color:\s*transparent/.test(r.text)));
-    ok("C3 selected and hover differ in the main nav (an underline, not the bar's own background)", has(/^\.primarynav button\[aria-pressed="true"\]$/, r=>/inset 0 -2px 0 var\(--accent\)/.test(r.text) && /background:\s*transparent/.test(r.text)) && has(/^\.primarynav button:hover:not\(\[aria-pressed="true"\]\)$/, r=>/var\(--hov\)/.test(r.text)));
+    ok("C3 the current page and hover differ in the menu (a tint and an edge, not the hover's gray)", has(/^\.snp\[aria-current="page"\]$/, r=>/inset 2px 0 0 var\(--accent\)/.test(r.text) && /--accent\) 14%/.test(r.text)) && rules.some(r=>/^:is\(\.fchip/.test(r.sel) && /:hover/.test(r.sel) && r.sel.includes(".snp")));
     ok("C4 a wrapped link-style button reads left to right everywhere", decl(/^\.linkish$/, "text-align").includes("left") && !/\.lwaits \.linkish\{text-align:left\}/.test(css));
 
     // ---- every family answers ----
@@ -66,11 +66,11 @@ async function page(opts = {}){
     const pressRule = rules.find(r=>/:active:not\(:disabled\)/.test(r.sel) && /scale\(0?\.97\)/.test(r.text));
     ok("H2 every chip, toggle, tab and icon button gets press feedback", !!pressRule && pressFam.every(f=>pressRule.sel.includes(f)), pressRule ? "" : "no press rule");
     const hovRule = rules.find(r=>/^:is\(\.fchip/.test(r.sel) && /:hover/.test(r.sel));
-    ok("H3 the families with no hover before now have one", !!hovRule && [".fchip", ".qchip", ".rn-chip", "button.lchip", ".wdbtn", ".icb", ".icon-btn", ".hlpnav button", ".plannav [role=\"tab\"]", ".tabs [role=\"tab\"]"].every(f=>hovRule.sel.includes(f)));
+    ok("H3 the families with no hover before now have one", !!hovRule && [".fchip", ".qchip", ".rn-chip", "button.lchip", ".wdbtn", ".icb", ".icon-btn", ".hlpnav button", ".snh", ".snp"].every(f=>hovRule.sel.includes(f)));
     ok("H4 menus, rows and links press too", has(/\.menu button:active:not\(:disabled\)/) && has(/\.urow, \.oopt/, r=>/:active/.test(r.sel)) && has(/^\.linkish:active:not\(:disabled\)$/) && has(/^\.ltable tr\.lrow:active > td$/));
     ok("H5 inputs: hover darkens the border; focus is a soft ring in the accent", has(/select, textarea\):not\(:disabled\):not\(\[readonly\]\):hover/) && has(/select, textarea\):focus-visible$/, r=>/box-shadow:\s*var\(--ring\)/.test(r.text)));
     ok("H6 timeline bars: hover and press tint, a dragged bar lifts", has(/^:is\(\.bar, \.tbar, \.minibar/, r=>/:hover/.test(r.sel) && /brightness/.test(r.text)) && has(/^:is\(\.bar, \.tbar\):active$/) && has(/^\.bar\.dragging, \.tbar\.dragging$/, r=>/box-shadow/.test(r.text)));
-    ok("H7 focus stays visible inside controls that sit edge to edge", has(/\.seg button, \.tabs \[role="tab"\], \.primarynav button, \.ltable tr\.lrow, \.bar, \.tbar\):focus-visible/, r=>/outline-offset:\s*-2px/.test(r.text)));
+    ok("H7 focus stays visible inside controls that sit edge to edge", has(/\.seg button, \.snh, \.snp, \.ltable tr\.lrow, \.bar, \.tbar\):focus-visible/, r=>/outline-offset:\s*-2px/.test(r.text)));
     ok("H8 transitions are on color, shadow and transform only, and fast", rules.some(r=>/transition:/.test(r.text) && /background-color var\(--state\)/.test(r.text) && !/(?:^|[ ,])(width|left|top|height) /.test(r.text.split("transition:")[1].split(";")[0])));
     ok("H9 the interaction block is screen only, so print is unchanged", rules.filter(r=>/:active/.test(r.sel) && /scale|translateY/.test(r.text) && !/^\.btn/.test(r.sel)).every(r=>/screen/.test(r.media)));
     ok("H10 reduced motion turns transitions, animations and the press step off", /@media \(prefers-reduced-motion:\s*reduce\)\s*\{\s*\*, \*::before, \*::after\s*\{[^}]*transition-duration:\s*0s\s*!important/.test(css.replace(/\s+/g, " ").replace(/,(\S)/g, ", $1").replace(/\{ /g, "{").replace(/ \}/g, "}").replace(/\{/g, " { ").replace(/\s+/g, " ")) || /prefers-reduced-motion:reduce\)\{\s*\*,\*::before,\*::after\{transition-duration:0s!important/.test(css.replace(/\s+/g, "")));
@@ -105,8 +105,8 @@ async function page(opts = {}){
     const jb = d.querySelector("#jiraBadge");
     ok("B1 the Settings badge is a short count; the words go to the tooltip and screen readers", !jb.hidden && jb.firstChild.nodeType === 3 && jb.firstChild.textContent === "7" && jb.querySelector(".vh").textContent === "7 to sort" && /7 epics to sort/.test(jb.title), jb.textContent);
     ok("B1 …the words are hidden visually, not removed", has(/^\.vh$/, r=>/clip-path:\s*inset\(50%\)/.test(r.text) && /position:\s*absolute/.test(r.text)));
-    ok("B2 the warning sign on Settings has room from the word", has(/^\.primarynav \.warnc$/, r=>/margin-left:\s*4px/.test(r.text)));
-    ok("B3 the main nav's focus ring sits inside the tab, like its underline", has(/\.primarynav button/, r=>/:focus-visible/.test(r.sel) && /outline-offset:\s*-2px/.test(r.text)));
+    ok("B2 counts and warnings in the menu stay on one line", has(/^\.snp \.warnc$/, r=>/white-space:\s*nowrap/.test(r.text)));
+    ok("B3 the menu's focus ring sits inside its rows", has(/\.snh, \.snp/, r=>/:focus-visible/.test(r.sel) && /outline-offset:\s*-2px/.test(r.text)));
     ev(`S.sprints.forEach((x, i)=>{ x.name = "Platform team 2026.S" + (15 + i); }); goWs('timeline'); render();`);
     const heads = [...d.querySelectorAll("#gantt .gsprint .spn")];
     ok("N1 similar long sprint names keep their distinguishing end whole in the timeline header", heads.length >= 3 && heads.every((x, i)=>x.querySelector(".spn-b").textContent === "S" + (15 + i) && x.querySelector(".spn-a").textContent === "Platform team 2026."), heads.slice(0, 3).map(x=>x.textContent).join(" | "));

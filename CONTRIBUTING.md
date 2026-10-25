@@ -24,6 +24,11 @@ For behavior changes add regression coverage in the relevant harness, and prove 
 build. Keep unrelated refactors out. User-visible changes need an entry in **src/releases.json**; the build
 generates the changelog. The npm version must match the newest release.
 
+Every feature that lets people create, edit or delete something must be doable by external assistants too. In the
+same change, add the matching assistant actions (stable ids, preconditions, how Sightline detects they're done, and a
+review level), export the data in the assistant context, update the companion skill and the protocol docs, and test
+it at each assistant level.
+
 Use `type(scope): description` commits. Describe the problem, resulting behavior and validation in the PR.
 Report local tests, CI, deployment and real-world validation separately.
 
