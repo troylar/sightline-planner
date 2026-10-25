@@ -1,5 +1,51 @@
 [
   {
+    "version": "1.120.0",
+    "date": "2026-10-25",
+    "headline": "See where we are: the sprint we're in and today, on every timeline",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "The sprint we're in is shaded, and its header says now",
+        "before": "Nothing on the chart showed which sprint was the current one.",
+        "now": "A soft band runs behind the bars for the sprint we're in, and its header reads, for example, \"Sprint 42 · now\". Between sprints there's no band, the next sprint's header says when it starts, and the line above the chart says we're between sprints.",
+        "where": "Timeline, in Weeks and Days"
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Today has a line and a Today tab in both zooms",
+        "before": "Weeks had a line with no label, and Days only tinted today's column.",
+        "now": "A red line marks today, with a Today tab in the time header. In Weeks it sits at today inside the week. When today is before or after the plan's dates, the tab waits at that edge with the date.",
+        "where": "Timeline"
+      },
+      {
+        "kind": "improved",
+        "area": "Shortcuts",
+        "title": "Jump to today works in Weeks too",
+        "before": "Pressing . always switched to Days.",
+        "now": "Pressing . keeps your zoom: in Weeks it scrolls to the sprint we're in, or the next one between sprints.",
+        "where": "Timeline, the . key"
+      },
+      {
+        "kind": "improved",
+        "area": "Capacity and Roadmap",
+        "title": "Now shows in the load grid and the roadmap",
+        "now": "The load grid marks the sprint's weeks and this week, and the roadmap marks the quarter we're in.",
+        "where": "Capacity, then People, and Roadmap"
+      },
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Sprint names keep their space",
+        "before": "A sprint called \"Sprint 42\" showed as \"Sprint42\" in the timeline header.",
+        "now": "Sprint names show as written.",
+        "where": "Timeline header"
+      }
+    ]
+  },
+  {
     "version": "1.119.2",
     "date": "2026-10-25",
     "headline": "An update that keeps being overwritten no longer saves over and over",
