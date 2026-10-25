@@ -778,6 +778,9 @@ fieldset.recur > select{align-self:flex-start}
 .peek .pk-note{white-space:pre-wrap}
 .vcount{color:var(--ink-3)}
 #notesBtn .nmode{font-size:12px}
+.showmenu .vname{display:flex;align-items:center;gap:8px}.showmenu kbd{margin-left:auto;font-size:11px;color:var(--ink-3)}
+.showmenu [aria-checked="false"]{color:var(--ink-3)}
+.gantt .pinned{position:sticky;z-index:7;background:var(--surface)}.gantt .lanehdr.pinned{background:var(--paper);opacity:1}.gantt .pinned.pinlast{box-shadow:0 3px 4px -2px rgba(0,0,0,.18)}
 .legend .lg-dk{font-weight:700;color:var(--ink-2);margin-right:-2px}
 .bar .dk{flex:none;font-weight:700;opacity:.85;margin-right:-1px}
 .legend i.lg-init{border-radius:2px;height:12px}
@@ -1104,6 +1107,7 @@ dialog textarea{width:100%;height:50vh;font-family:"IBM Plex Mono",monospace;fon
       <button type="button" class="btn" id="notesBtn" aria-haspopup="menu" aria-controls="notesMenu" aria-expanded="false" title="Show or hide notes (N)">Notes</button>
       <button type="button" class="btn" id="filterBtn" aria-haspopup="dialog" aria-expanded="false" title="Filter what's shown (F)">Filters</button>
     </span>
+    <button type="button" class="btn" id="showBtn" aria-haspopup="menu" aria-controls="showMenu" aria-expanded="false" title="Hide or show gates, meetings, done work and more, or pin the top rows (H)">Show</button>
     <span class="seg" role="group" aria-label="Show" id="layerSeg"><button type="button" id="lyAll" aria-pressed="true" title="Everything, from Jira and added here by anyone">All sources</button><button type="button" id="lyJira" aria-pressed="false" title="Only what comes from Jira">Jira only</button><button type="button" id="lyMine" aria-pressed="false" title="Jira's work, plus what you added (not teammates' additions)">Jira + mine</button></span>
     <span class="seg" role="group" aria-label="Rows" id="rowsSeg"><button type="button" id="rLanes" aria-pressed="true" title="One row per workstream">By workstream</button><button type="button" id="rPeople" aria-pressed="false" title="One row per person: who's doing what (R)">By person</button><button type="button" id="rEpics" aria-pressed="false" hidden title="One row per Jira epic, nested by parent links: epic, feature, initiative. From Jira, so it can't be dragged (R)">By epic</button></span>
     <span class="seg" role="group" aria-label="Zoom" id="zoomSeg"><button type="button" id="zWeeks" aria-pressed="true" title="Initiatives by week (W)">Weeks</button><button type="button" id="zDays" aria-pressed="false" title="Tasks by working day (D)">Days</button></span>
@@ -1127,6 +1131,7 @@ dialog textarea{width:100%;height:50vh;font-family:"IBM Plex Mono",monospace;fon
 <div class="menu viewmenu" id="viewMenu" role="menu" aria-label="Views" hidden></div>
 <div class="menu filterpop" id="filterPop" role="dialog" aria-label="Filters" hidden></div>
 <div class="menu viewmenu" id="notesMenu" role="menu" aria-label="Notes" hidden></div>
+<div class="menu viewmenu showmenu" id="showMenu" role="menu" aria-label="Show" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <div id="ws-timeline" role="tabpanel" aria-labelledby="tab-timeline">
@@ -1290,7 +1295,7 @@ const LEGACY_KEYS = ["timeline-planner-v2","timeline-planner-v1"];
 const MAX_BYTES = 2 * 1024 * 1024, MAX_READ_BYTES = 5 * 1024 * 1024, MAX_DEPTH = 24, MAX_NODES = 60000;   // write up to 2 MB (what copies before 1.19 can open); read up to 5 MB
 // Plan format. SCHEMA changes only for a change older copies can't read; new optional parts are named in meta.features,
 // and a copy that finds one it doesn't know opens the plan read-only instead of saving over what it can't see.
-const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1"];
+const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1"];
 // A deliverable's target: a year, a half or a quarter ("2027", "2027-H1", "2027-Q2"), or "later".
 const TARGET_RE = /^(\d{4})(?:-(Q[1-4]|H[12]))?$/;
 const PR_DRAFT_RE = /^\s*[\[(]?\s*(draft|wip)\s*[\])]?\s*[:\-]?\s/i;    // a draft pull request's title: "Draft: …", "[WIP] …"
@@ -1379,6 +1384,7 @@ const featuresIn = plan => { const f = [];
   if ((plan.people || []).some(p=>p.capacity)) f.push("capacity");
   if ((plan.cardViews || []).length) f.push("cardViews");
   if ((plan.views || []).some(v=>v && v.def && v.def.zoomN != null)) f.push("viewZoom");
+  if ((plan.views || []).some(v=>v && v.def && normKinds(v.def.hide).length)) f.push("viewHide1");
   if ((plan.updates || []).some(u=>u && u.edited)) f.push("updateEdits");
   if ((plan.people || []).some(p=>p && p.inactive)) f.push("inactive");
   if (((plan.meta || {}).capRates || []).length || (plan.people || []).some(p=>p && p.alloc != null)) f.push("teamCapacity");
@@ -1553,6 +1559,12 @@ const personName = id => personById(id)?.name || "Unknown";
 const ownerNames = x => own(x).map(personName);
 // ---------- filters & views (a view = saved filter + zoom + workspace) ----------
 const FILTER_KINDS = [["work","Work"],["gated","Gated work"],["waiting","Waiting"],["milestone","Milestones"],["gate","Gates"],["meeting","Meetings"],["process","Process blocks"]];
+// Kinds you can hide to declutter: a view preference, per plan in this browser, and kept with a saved view. Hide wins over Show only.
+const HIDE_KINDS = [...FILTER_KINDS, ["release","Releases"], ["deliverable","Deliverables"], ["done","Done work"]];
+const SHOW_MENU = [["gate","g"], ["release","r"], ["deliverable","d"], ["meeting","m"], ["process","p"], ["milestone","i"], ["done","x"]];   // the Show menu, with each one's letter there
+const FOCUS_KINDS = ["meeting", "process", "done"];
+const kindName = k => (HIDE_KINDS.find(x=>x[0] === k) || [k, k])[1];
+const normKinds = a => [...new Set((Array.isArray(a) ? a : []).filter(k=>HIDE_KINDS.some(x=>x[0] === k)))];
 const RANGES = [["all","All dates"],["sprint","Current sprint"],["next4","Next 4 weeks"],["custom","Custom"]];
 function normFilter(f){
   f = f && typeof f === "object" ? f : {};
@@ -1565,7 +1577,7 @@ const LW_DEFAULT = {weeks:160, days:220};
 const normLW = v => { v = v && typeof v === "object" ? v : {}; const c = x => Number.isFinite(Number(x)) ? Math.round(Math.min(480, Math.max(120, Number(x)))) : null; return {weeks:c(v.weeks) ?? LW_DEFAULT.weeks, days:c(v.days) ?? LW_DEFAULT.days}; };
 function normViewDef(v){ v = v && typeof v === "object" ? v : {}; const zoom = v.zoom === "days" ? "days" : "weeks";
   return {filter:normFilter(v.filter), zoom, dayZoom: zoom === "days" && Number.isInteger(v.dayZoom) && v.dayZoom >= 0 && v.dayZoom < 6 ? v.dayZoom : null, ...(Number.isInteger(v.zoomN) && v.zoomN >= 0 && v.zoomN <= 200 ? {zoomN:v.zoomN} : {}), ws: v.ws === "people" ? "people" : "timeline",
-    rows: ["people","epics"].includes(v.rows) ? v.rows : "lanes", labelW: normLW(v.labelW), notes: NOTE_MODES.some(x=>x[0]===v.notes) ? v.notes : "all", ...(v.layer === "jira" || v.layer === "mine" ? {layer:v.layer} : {})}; }
+    rows: ["people","epics"].includes(v.rows) ? v.rows : "lanes", labelW: normLW(v.labelW), notes: NOTE_MODES.some(x=>x[0]===v.notes) ? v.notes : "all", ...(v.layer === "jira" || v.layer === "mine" ? {layer:v.layer} : {}), ...(normKinds(v.hide).length ? {hide:normKinds(v.hide)} : {})}; }
 const normViews = arr => (Array.isArray(arr) ? arr : []).filter(v=>v && typeof v === "object").slice(0,50);
 function checkShape(obj){
   // size/depth/cycle guard for anything parsed from outside
@@ -3851,6 +3863,7 @@ function storyIndex(){
 const storiesOf = b => b ? storyIndex().byBar.get(b.id) || [] : [];
 const storyByKey = k => storyIndex().byKey.get(k) || null;
 function storyVisible(x, f = UI.filter, R = fRangeDays(f)){
+  if (hidKind("done") && x.status === "done") return false;
   if (tagHides(x, "story", f)) return false;
   if (f.status.length && !statusHit({}, x.status, f)) return false;
   if (f.people.length && !(x.owner && peopleMatch([x.owner], f))) return false;
@@ -4903,7 +4916,7 @@ const SHORTCUTS = [       // [keys (each shown as a key; alternatives joined by 
   ["Get around", [[["1","2","3","4","5","6"],"Today, Timeline, People, Settings, Sprint, Roadmap", " "],[["/","Ctrl+K"],"Find anything"],[["W","D"],"Weeks or Days view"],[["R"],"Rows by workstream, person or epic"],[["."],"Jump to today (Days view)"],[["[","]"],"Earlier / later (Days view)"],[["+","−"],"One sprint fewer or more on screen"],[["J","K"],"Next / previous item"],[["Esc"],"Close whatever is open"]]],
   ["Update the item you've selected", [[["I"],"In progress"],[["X"],"Done (again: back to in progress)"],[["B"],"Mark blocked"],[["U"],"Write an update"],[["S"],"Stick a note on it"],[["Enter"],"Open it"]]],
   ["Plan", [[["A"],"Add something (then a letter from the menu)"],[["←","→"],"Move the selected item (with Shift: smaller steps)"],[["Alt+←","Alt+→"],"Make it shorter / longer"],[["Delete"],"Delete it"],[["Ctrl+Z","Ctrl+Y"],"Undo / redo"]]],
-  ["Show and share", [[["F"],"Filters"],[["V"],"Saved views"],[["N"],"Show / hide notes"],[["P"],"Present"],[["E"],"Start editing / Done editing (shared file)"],[["Ctrl+S"],"Save"],[["?"],"This help"]]],
+  ["Show and share", [[["F"],"Filters"],[["V"],"Saved views"],[["H"],"Show menu: hide gates, meetings, done work and more, or pin the top rows"],[["G","M"],"Hide or show gates / meetings"],[["Shift+H"],"Show everything you hid"],[["N"],"Show / hide notes"],[["P"],"Present"],[["E"],"Start editing / Done editing (shared file)"],[["Ctrl+S"],"Save"],[["?"],"This help"]]],
 ];
 const HELP = [
   ["start", "Getting started", ()=>[
@@ -4941,6 +4954,7 @@ const HELP = [
     h("ul",{}, h("li",{}, h("b",{},"Weeks / Days"), " (W, D): the big picture, or day by day with tasks."), h("li",{}, h("b",{},"By workstream / By person / By epic"), " (R): rows per workstream, per person with their load, or per Jira epic, nested."),
       h("li",{}, h("b",{},"Find"), " (/ or Ctrl+K): any item, person, meeting, note or Jira key. It unfolds and un-filters what's hiding the result."),
       h("li",{}, h("b",{},"Filters"), " (F): by person, workstream, status (including Blocked), kind, dates. ", h("b",{},"Views"), " (V) save a filter and layout, for you or the team."),
+      h("li",{}, h("b",{},"Show"), " (H): hide gates, releases, deliverables, meetings, process blocks, milestones or done work, just for you in this plan. ", h("b",{},"Focus"), " hides meetings, process and done work; G and M toggle gates and meetings; Shift+H shows everything. ", h("b",{},"Pin the top rows"), " keeps them in view while you scroll."),
       h("li",{}, h("b",{},"Notes"), " (N): show all, only yours, only others', or hide them."), h("li",{}, h("b",{},"Present"), " (P): a clean, read-only view for reviews."),
       h("li",{}, "Set a ", h("b",{},"Jira link"), " in File, Plan settings, and Jira keys become links."))]],
   ["share", "Sharing and saving", ()=>[
@@ -5179,7 +5193,7 @@ const UI = {ws:"timeline", zoom:"weeks", focus:null, collapsed:{}};
 try { Object.assign(UI, JSON.parse(localStorage.getItem("timeline-planner-ui") || "{}")); } catch(e){}
 if (!["today","timeline","list","people","plan","standup","roadmap","settings"].includes(UI.ws)) UI.ws = "timeline";
 UI.rmHorizon = UI.rmHorizon === "long" ? "long" : "four";
-UI.filter = normFilter(UI.filter); UI.labelW = normLW(UI.labelW); UI.notes = ["all","mine","others","none"].includes(UI.notes) ? UI.notes : "all"; UI.rows = ["people","epics"].includes(UI.rows) ? UI.rows : "lanes"; if (!UI.epicOpen || typeof UI.epicOpen !== "object") UI.epicOpen = {};
+UI.filter = normFilter(UI.filter); UI.pinTop = UI.pinTop === true; UI.labelW = normLW(UI.labelW); UI.notes = ["all","mine","others","none"].includes(UI.notes) ? UI.notes : "all"; UI.rows = ["people","epics"].includes(UI.rows) ? UI.rows : "lanes"; if (!UI.epicOpen || typeof UI.epicOpen !== "object") UI.epicOpen = {};
 UI.view = UI.view && typeof UI.view === "object" && ["team","personal"].includes(UI.view.src) ? {src:UI.view.src, id:str(UI.view.id)} : null;
 function saveUI(){ try { localStorage.setItem("timeline-planner-ui", JSON.stringify(UI)); } catch(e){} }
 function setZoom(z, focus){
@@ -5291,7 +5305,7 @@ function dayCols(){
 // ================= rendering =================
 function remember(){ const a = document.activeElement; if (!a || !a.dataset) return null; return a.dataset.key || (a.id && a.closest("#side") ? "#" + a.id : null); }
 function restore(key){ if (!key) return; const el = key[0] === "#" ? document.getElementById(key.slice(1)) : document.querySelector(`[data-key="${CSS.escape(key)}"]`); if (el && !el.disabled) el.focus({preventScroll:true}); }
-const dropJiraMemos = () => { fitMemo = null; storyMemo = null; countMemo = new Map(); epicListMemo = null; layerMemo = null; hideMemo = null; tagMemo = null; seenMemo = null; };   // after any change to the plan, Jira data or the day
+const dropJiraMemos = () => { fitMemo = null; storyMemo = null; countMemo = new Map(); epicListMemo = null; layerMemo = null; hideMemo = null; kindsMemo = null; tagMemo = null; seenMemo = null; };   // after any change to the plan, Jira data or the day
 function render(){
   cancelDerived();
   closePeek(); dropJiraMemos(); surfMemo = null;
@@ -5416,6 +5430,7 @@ const peopleMatch = (ids, f = UI.filter) => !f.people.length || (ids||[]).some(i
 const gateOwnerMatch = (text, f = UI.filter) => !f.people.length || people(text||"").some(n=>f.people.some(id=>lc(personName(id)) === lc(n)));
 const statusHit = (x, st, f) => f.status.includes(st) || (f.status.includes("blocked") && isBlocked(x));
 function taskVisible(t, f = UI.filter, R = fRangeDays(f)){
+  if (hidKind("done") && t.status === "done") return false;
   if (tagHides(t, "task", f)) return false;
   if (viewNarrowed() && sideOf(t, "task") === "plan" && viewHidesPlan(t)) return false;
   if (f.status.length && !statusHit(t, t.status, f)) return false;
@@ -5424,6 +5439,7 @@ function taskVisible(t, f = UI.filter, R = fRangeDays(f)){
 }
 function barVisible(b, f = UI.filter, R = fRangeDays(f)){
   if (b.parked) return false;                          // switched off in the Jira tab: kept, not shown
+  if (hidKind(b.kind) || (hidKind("done") && effStatus(b) === "done")) return false;   // hidden to declutter: hide wins
   if (sideOf(b, "bar") === "plan" && viewNarrowed() && viewHidesPlan(b) && !(b.tasks || []).some(t=>sideOf(t, "task") === "jira" || !viewHidesPlan(t)) && !kidsOf(b.id).some(k=>barVisible(k, f, R))) return false;   // a plan holder of shown work stays
   if (!fActive(f)) return true;
   if (hasKids(b) && !hasTasks(b) && kidsOf(b.id).some(x=>barVisible(x, f, R))) return true;   // a holder shows when something inside it does (or on its own terms below)
@@ -5438,9 +5454,10 @@ function barVisible(b, f = UI.filter, R = fRangeDays(f)){
   if (f.people.length && !peopleMatch(peopleOf(b), f)) return false;
   return true;
 }
-const tasksFiltered = (f = UI.filter) => viewNarrowed() || (fActive(f) && (f.people.length || f.status.length || f.range.type !== "all" || (f.tags || []).length || (f.hideTags || []).length || (f.labels || []).length || (f.hideLabels || []).length));
+const tasksFiltered = (f = UI.filter) => viewNarrowed() || hidKind("done") || (fActive(f) && (f.people.length || f.status.length || f.range.type !== "all" || (f.tags || []).length || (f.hideTags || []).length || (f.labels || []).length || (f.hideLabels || []).length));
 function msVisible(m, f = UI.filter, R = fRangeDays(f)){
   if (viewNarrowed() && viewHidesPlan(m)) return false;
+  if (hidKind("milestone")) return false;
   if (!fActive(f)) return true;
   if (f.kinds.length && !f.kinds.includes("milestone")) return false;
   if (f.lanes.length && !f.lanes.includes(m.lane)) return false;
@@ -5451,6 +5468,7 @@ function msVisible(m, f = UI.filter, R = fRangeDays(f)){
 }
 function gateVisible(g, f = UI.filter, R = fRangeDays(f)){       // g from gateItems()
   if (viewNarrowed() && viewHidesPlan(g.x)) return false;
+  if (hidKind("gate")) return false;
   if (!fActive(f)) return true;
   if (f.kinds.length && !f.kinds.includes("gate")) return false;
   if (f.people.length && !peopleMatch(own(g.x), f)) return false;
@@ -5612,7 +5630,7 @@ function allOccurrences(m){
 function occurrences(m, from, to){ return allOccurrences(m).filter(n=>n >= from && n <= to); }
 // Meetings shown in one lane ("" = team-wide, their own row). Empty when the filter hides meetings.
 function meetingsIn(laneId){
-  if (fActive() && UI.filter.kinds.length && !UI.filter.kinds.includes("meeting")) return [];
+  if (hidKind("meeting") || (fActive() && UI.filter.kinds.length && !UI.filter.kinds.includes("meeting"))) return [];
   return S.meetings.filter(m=>(m.lane || "") === laneId && meetingShown(m));
 }
 function meetWeekChips(track, ms, laneId, top){
@@ -5630,6 +5648,7 @@ function meetFlags(ms, from, to){
 // ---------- process blocks on the chart ----------
 function blockShown(inst, f = UI.filter){
   if (viewNarrowed() && viewHidesPlan(inst.block || null)) return false;
+  if (hidKind("process")) return false;
   if (!fActive(f)) return true;
   if (f.kinds.length && !f.kinds.includes("process")) return false;
   if (f.lanes.length && inst.lane && !f.lanes.includes(inst.lane)) return false;
@@ -5696,6 +5715,7 @@ let meetOcc = null;   // the occurrence last clicked, so the editor can offer "s
 function openMeeting(id, day){ meetOcc = day != null ? {id, day} : null; select("meeting", id); }
 function meetingShown(m, f = UI.filter){
   if (viewNarrowed() && viewHidesPlan(m)) return false;
+  if (hidKind("meeting")) return false;
   if (!fActive(f)) return true;
   if (f.kinds.length && !f.kinds.includes("meeting")) return false;
   if (f.lanes.length && m.lane && !f.lanes.includes(m.lane)) return false;
@@ -5967,19 +5987,19 @@ const PV_KEY = "timeline-planner-views";
 function readPV(){ try { const o = JSON.parse(localStorage.getItem(PV_KEY) || "{}"); return o && typeof o === "object" ? o : {}; } catch(e){ return {}; } }
 function personalViews(){ return normViews(readPV()[S.meta.planId]).map(v=>({id:str(v.id) || newId("pv"), name:str(v.name).slice(0,60) || "View", def:normViewDef(v.def)})); }
 function savePersonalViews(list){ try { const o = readPV(); o[S.meta.planId] = list; localStorage.setItem(PV_KEY, JSON.stringify(o)); return true; } catch(e){ setStatus("Couldn't save personal views in this browser."); return false; } }
-const currentDef = () => normViewDef({filter:UI.filter, zoom:UI.zoom, dayZoom: null, zoomN: zoomN(), ws: UI.ws === "people" ? "people" : UI.ws === "plan" ? (activeView() ? normViewDef(activeView().def).ws : "timeline") : "timeline", rows:UI.rows, labelW:UI.labelW, notes:UI.notes || "all", layer:layerOf()});
+const currentDef = () => normViewDef({filter:UI.filter, zoom:UI.zoom, dayZoom: null, zoomN: zoomN(), ws: UI.ws === "people" ? "people" : UI.ws === "plan" ? (activeView() ? normViewDef(activeView().def).ws : "timeline") : "timeline", rows:UI.rows, labelW:UI.labelW, notes:UI.notes || "all", layer:layerOf(), hide:hiddenKinds()});
 function activeView(){ if (!UI.view) return null; return (UI.view.src === "team" ? S.views : personalViews()).find(v=>v.id === UI.view.id) || null; }
-const defKey = d => JSON.stringify([d.filter, d.zoom, d.dayZoom, d.zoomN ?? null, d.rows, d.labelW, d.ws, d.notes, d.layer || "all"]);
+const defKey = d => JSON.stringify([d.filter, d.zoom, d.dayZoom, d.zoomN ?? null, d.rows, d.labelW, d.ws, d.notes, d.layer || "all", (d.hide || []).join()]);
 function viewModified(){ const v = activeView(); return v ? defKey(normViewDef(v.def)) !== defKey(currentDef()) : false; }
 function viewLabel(){ const v = activeView(); return v ? v.name : fActive() ? "Custom filter" : "All work"; }
 function applyView(src, v){
   const d = normViewDef(v.def);
   UI.filter = cleanFilter(clone(d.filter)); UI.zoom = d.zoom; if (d.zoomN != null) UI.zoomN = d.zoomN; else if (d.dayZoom != null){ UI.zoomN = [1, 1, 1, 2, 3, 0][d.dayZoom] ?? 0; } const onList = UI.ws === "list"; UI.ws = onList ? "list" : d.ws; UI.rows = d.rows; UI.labelW = clone(d.labelW); UI.notes = d.notes; UI.focus = null; UI.view = {src, id:v.id};
-  saveUI(); if (!onList) sel = null; setLayer(d.layer || "all");
+  saveUI(); if (!onList) sel = null; setHiddenQuiet(d.hide || []); setLayer(d.layer || "all");
   if (UI.zoom === "days" && !onList){ const R = fRangeDays(); dayScrollTo(R && Number.isFinite(R[0]) ? Math.max(startDay(), R[0]) : Math.max(startDay(), mondayOf(todayDay()))); }
   setStatus(`Showing ${v.name}`);
 }
-function clearView(){ UI.view = null; UI.filter = normFilter({}); UI.rows = "lanes"; setLayerQuiet("all"); saveUI(); render(); setStatus("Showing all work"); }
+function clearView(){ UI.view = null; UI.filter = normFilter({}); UI.rows = "lanes"; setLayerQuiet("all"); setHiddenQuiet([]); saveUI(); render(); setStatus("Showing all work"); }
 function saveCurrentView(){
   const v = activeView(); if (!v) return;
   if (UI.view.src === "personal"){ const list = personalViews().map(x=>x.id === v.id ? {...x, def:currentDef()} : x); if (savePersonalViews(list)){ render(); setStatus(`Saved ${v.name}`); } }
@@ -6117,6 +6137,10 @@ function renderFind(q){
 function goTo(kind, id){
   const scrollTo = sel0 => setTimeout(()=>{ const el = document.querySelector(sel0); if (el){ el.scrollIntoView({block:"center", inline:"center", behavior:"smooth"}); el.classList.add("flash"); setTimeout(()=>el.classList.remove("flash"), 1600); } }, 60);
   const unfold = b => { ancestorsOf(b).forEach(a=>{ delete UI.collapsed[a.id]; }); saveUI(); };
+  { const b = kind === "bar" ? barById(id) : kind === "task" ? taskById(id)?.b : kind === "story" ? storyByKey(id)?.b : null, t = kind === "task" ? taskById(id)?.t : null, x = kind === "story" ? storyByKey(id) : null;
+    const done = kind === "bar" ? !!b && effStatus(b) === "done" : t ? t.status === "done" : x ? x.status === "done" : false;
+    const drop = [b ? b.kind : null, {ms:"milestone", gate:"gate", meeting:"meeting", block:"process", release:"release"}[kind], done ? "done" : null].filter(k=>k && hidKind(k));
+    if (drop.length){ setHiddenQuiet(hiddenKinds().filter(k=>!drop.includes(k))); setStatus(`Showing ${drop.map(k=>kindName(k).toLowerCase()).join(" and ")} so you can see it.`); } }
   if (kind === "bar" || kind === "task"){
     const b = kind === "bar" ? barById(id) : taskById(id)?.b; if (!b) return;
     unfold(b); if (kind === "task") delete UI.collapsed[b.id];
@@ -6192,6 +6216,14 @@ document.addEventListener("keydown", e=>{
   const typing = e.target.closest?.("input, textarea, select, [contenteditable]");
   if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") || (e.key === "/" && !typing && !e.ctrlKey && !e.metaKey && !e.altKey)){ e.preventDefault(); openFind(); }
 });
+// A kind in Filters cycles: off, show only, hide (releases, deliverables and done work: off, hide). Hiding is the per-plan declutter choice.
+function kindChip(v, label){
+  const only = FILTER_KINDS.some(x=>x[0] === v), st = hidKind(v) ? "hide" : UI.filter.kinds.includes(v) ? "only" : "off";
+  return h("button",{type:"button",class:"fchip tagchip " + st,"data-fkey":"kinds:" + v,"aria-pressed":String(st !== "off"),title:st === "only" ? "Showing only these" : st === "hide" ? "Hidden" : "Off",
+    onclick:()=>{ const next = st === "off" ? (only ? "only" : "hide") : st === "only" ? "hide" : "off";
+      setHiddenQuiet(next === "hide" ? [...hiddenKinds(), v] : hiddenKinds().filter(k=>k !== v)); setFilter(x=>{ x.kinds = x.kinds.filter(k=>k !== v); if (next === "only") x.kinds.push(v); }); }},
+    (st === "hide" ? "not " : st === "only" ? "only " : "") + label);
+}
 // A tag in Filters cycles: off, show only, hide.
 function tagFilterChip(onKey, hideKey, val, label, color){
   const f = UI.filter, st = (f[onKey] || []).includes(val) ? "only" : (f[hideKey] || []).includes(val) ? "hide" : "off";
@@ -6218,7 +6250,8 @@ function renderFilterPop(){
         h("label",{class:"fcheck"}, h("input",{type:"checkbox","data-hide":"unknown","data-fkey":"hide:unknown",checked:hideOf().unknown,onchange:e=>setHide(x=>{ x.unknown = e.target.checked; })}), " Items with no recorded author"))) : null,
     group("Workstreams", S.lanes.map(l=>chip("lanes", l.id, l.name, h("i",{class:"fdot",style:{background:l.color}})))),
     group("Status", [...STATUSES, ["blocked","Blocked"]].map(([v,t])=>chip("status", v, t))),
-    group("Show only", FILTER_KINDS.map(([v,t])=>chip("kinds", v, t))),
+    h("div",{class:"fgroup",id:"fKinds"}, h("div",{class:"fh"}, "Kinds", h("span",{class:"hint"}, " · click: show only, again: hide, again: off. Hide wins")),
+      h("div",{class:"fchips"}, ...HIDE_KINDS.map(([v, t])=>kindChip(v, t)))),
     group("Milestone status", MSTATUS.map(v=>chip("mstatus", v, v[0].toUpperCase() + v.slice(1)))),
     group("Dates", [...RANGES.map(([v,t])=>h("button",{type:"button",class:"fchip","data-fkey":"range:" + v,"aria-pressed":String(f.range.type === v),onclick:()=>setFilter(x=>{ x.range = v === "custom" ? {type:v, from:x.range.from||"", to:x.range.to||""} : {type:v}; })}, t)),
       f.range.type === "custom" ? h("span",{class:"frange"},
@@ -6226,7 +6259,7 @@ function renderFilterPop(){
         h("input",{type:"date","aria-label":"To","data-fkey":"range:to",value:f.range.to||"",onchange:e=>setFilter(x=>{ x.range.to = e.target.value; })})) : null]),
     h("label",{class:"fcheck"}, h("input",{type:"checkbox","data-fkey":"showEmpty",checked:f.showEmpty,onchange:e=>setFilter(x=>{ x.showEmpty = e.target.checked; })}), " Keep workstreams with nothing matching"),
     h("div",{class:"ffoot"},
-      h("button",{type:"button",class:"linkish","data-fkey":"clear",disabled:!fActive(),onclick:()=>setFilter(x=>{ Object.assign(x, normFilter({})); })},"Clear filters"),
+      h("button",{type:"button",class:"linkish","data-fkey":"clear",disabled:!fActive() && !hiddenKinds().length,onclick:()=>{ setHiddenQuiet([]); setFilter(x=>{ Object.assign(x, normFilter({})); }); }},"Clear filters"),
       h("span",{class:"hint"}, fActive() ? `${visibleCount()} of ${S.bars.length} initiatives shown` : "Showing everything"),
       h("button",{type:"button",class:"btn","data-fkey":"done",onclick:()=>closeFilterPop(true)},"Done"))));
   restoreFilterFocus(focus);
@@ -6269,7 +6302,8 @@ function scopeText(){
 function renderViewBar(){
   { const open = UI.legend === "open"; $("#legend").classList.toggle("closed", !open); $("#legendTg").setAttribute("aria-expanded", String(open)); }
   const filtered = ["timeline","people","list"].includes(UI.ws);
-  ["viewBtn","filterBtn"].forEach(id=>$("#" + id).hidden = !filtered);
+  ["viewBtn","filterBtn","showBtn"].forEach(id=>$("#" + id).hidden = !filtered);
+  { const hk = hiddenKinds().length; $("#showBtn").replaceChildren(...["Show", hk ? h("span",{class:"fcount"}, `${hk} hidden`) : null, UI.pinTop ? h("span",{class:"nmode"}, " · pinned") : null].filter(Boolean)); $("#showBtn").classList.toggle("factive", hk > 0); }
   $("#scopeLine").textContent = UI.ws === "roadmap" ? "Whole plan · Roadmap" : UI.ws === "plan" ? `Whole plan · ${(PLAN_TABS.find(([k])=>k === UI.planTab) || ["","Settings"])[1]}` : filtered ? scopeText() : "";
   { const mode = UI.notes || "all", nb = $("#notesBtn");
     nb.replaceChildren(...["✎ Notes", mode === "all" ? null : h("span",{class:"nmode"}, mode === "none" ? " hidden" : mode === "mine" ? " mine" : " others'")].filter(Boolean));
@@ -6403,6 +6437,8 @@ function renderWs(){
       h("button",{type:"button",class:"linkish",id:"hsParkedOff",onclick:()=>{ try { const o = JSON.parse(localStorage.getItem(PARKED_NOTE) || "{}") || {}; o[S.meta.planId] = parkedSig(); localStorage.setItem(PARKED_NOTE, JSON.stringify(o)); } catch(e){} render(); }},"Don't show this again")));
     if (t && t.filter) parts.push(h("span",{}, `${t.filter} item${t.filter===1?"":"s"} hidden by the Added by filter. `, h("button",{type:"button",class:"linkish",id:"hsAuthors",onclick:()=>{ UI.filter.authors = []; saveUI(); render(); }},"Clear it")));
     if (t && t.notes && !t.layer) parts.push(h("span",{}, `${t.notes} note${t.notes===1?"":"s"} hidden by the Notes setting. `, h("button",{type:"button",class:"linkish",onclick:()=>{ UI.notes = "all"; saveUI(); render(); }},"Show all notes")));
+    { const hk = ["timeline","people","list"].includes(ws) ? hiddenKinds() : [];
+      if (hk.length) parts.unshift(h("span",{id:"hsKinds"}, `${hk.length} hidden: ${hk.map(k=>kindName(k).toLowerCase()).join(", ")}. `, h("button",{type:"button",class:"linkish",id:"hsShowAll",onclick:showEverything},"Show everything"))); }
     hs.replaceChildren(...parts); hs.hidden = !parts.length; }
   const pt = PLAN_TABS.some(x=>x[0]===UI.planTab) ? UI.planTab : jiraDir || JIRA || S.bars.some(b=>(b.epics || []).length) ? "epics" : "milestones";
   const mis = S.milestones.filter(m=>labelMismatch(m,false) || labelMismatch(m,true)).length, hi = S.risks.filter(r=>r.sev==="high").length;
@@ -7183,6 +7219,48 @@ function setHide(fn){
   hideMemo = cur; render(); if (!$("#filterPop").hidden) renderFilterPop();
 }
 const hideActive = () => { const hd = hideOf(); return hd.people.length > 0 || hd.unknown; };
+// Kinds hidden to declutter (gates, meetings, done work...): per plan, in this browser. A saved view carries its own.
+const KINDS_KEY = "sightline-declutter";
+let kindsMemo = null;
+function hiddenKinds(){
+  if (kindsMemo) return kindsMemo;
+  try { const o = JSON.parse(localStorage.getItem(KINDS_KEY) || "{}"); kindsMemo = normKinds(o && o[S.meta.planId]); } catch(e){ kindsMemo = []; }
+  return kindsMemo;
+}
+const DECLUTTER_WS = ["timeline", "people", "list"];   // the pages that offer Show; Today and Sprint always show everything
+const hidKind = k => DECLUTTER_WS.includes(UI.ws) && hiddenKinds().includes(k);
+function setHiddenQuiet(list){ const L = normKinds(list);
+  try { const o = JSON.parse(localStorage.getItem(KINDS_KEY) || "{}") || {}; if (L.length) o[S.meta.planId] = L; else delete o[S.meta.planId]; localStorage.setItem(KINDS_KEY, JSON.stringify(o)); } catch(e){}
+  kindsMemo = L; }
+function setHiddenKinds(list, say){ setHiddenQuiet(list); render(); if (!$("#filterPop").hidden) renderFilterPop(); if (!$("#showMenu").hidden) openShowMenu(document.activeElement?.dataset?.show); if (say) setStatus(say); }
+function toggleKind(k){ const hid = hiddenKinds(), on = hid.includes(k); setHiddenKinds(on ? hid.filter(x=>x !== k) : [...hid, k], `${kindName(k)} ${on ? "shown" : "hidden. Shift+H shows everything"}`); }
+const focusPreset = () => setHiddenKinds([...hiddenKinds(), ...FOCUS_KINDS], "Focus: meetings, process blocks and done work are hidden. Shift+H shows everything");
+function showEverything(){ if (!hiddenKinds().length){ setStatus("Nothing is hidden"); return; } setHiddenKinds([], "Showing every kind of item"); }
+function openShowMenu(focusKind){
+  closeViewMenu(); closeFilterPop(); closeAddMenu(false); closeNotesMenu();
+  const m = $("#showMenu"), hid = hiddenKinds();
+  const item = (attrs, label, letter) => h("button",{type:"button",class:"vname","data-letter":letter,"aria-keyshortcuts":letter.toUpperCase(),...attrs}, label, h("kbd",{}, letter.toUpperCase()));
+  m.replaceChildren(h("div",{class:"mh"}, "Show on the chart"),
+    ...SHOW_MENU.map(([k, letter])=>item({role:"menuitemcheckbox","aria-checked":String(!hid.includes(k)),"data-show":k,onclick:()=>toggleKind(k)}, kindName(k), letter)),
+    h("div",{class:"mh"}, "Quick choices"),
+    item({role:"menuitem",id:"showFocus",title:"Hide meetings, process blocks and done work",onclick:()=>{ closeShowMenu(true); focusPreset(); }}, "Focus: hide meetings, process and done", "f"),
+    item({role:"menuitem",id:"showAll",disabled:!hid.length,onclick:()=>{ closeShowMenu(true); showEverything(); }}, "Show everything", "a"),
+    h("div",{class:"mh"}, "While scrolling"),
+    item({role:"menuitemcheckbox","aria-checked":String(!!UI.pinTop),id:"showPin",title:"Keep gates, releases, deliverables, meetings and process in view while you scroll the workstreams, up to half the chart's height. Fold or hide one to make room for the next",onclick:()=>{ UI.pinTop = !UI.pinTop; saveUI(); render(); openShowMenu(); $("#showPin")?.focus(); setStatus(UI.pinTop ? "The top rows stay in view while you scroll" : "The top rows scroll with the chart"); }}, "Pin the top rows", "t"));
+  placePop(m, $("#showBtn")); $("#showBtn").setAttribute("aria-expanded", "true");
+  (focusKind && m.querySelector(`[data-show="${CSS.escape(focusKind)}"]`) || m.querySelector("button"))?.focus();
+}
+function closeShowMenu(refocus){ const m = $("#showMenu"); if (m.hidden) return; m.hidden = true; $("#showBtn").setAttribute("aria-expanded", "false"); if (refocus) $("#showBtn").focus(); }
+// Pinned top rows stick under the dates as you scroll, each below the last: whole sections (a header and its rows), up to
+// half the chart's height (its max-height: the rows below aren't drawn yet). Folding or hiding a section makes room for the next.
+function pinTop(g, from){
+  if (!UI.pinTop) return;
+  const secs = []; [...g.children].slice(from).forEach(el=>{ if (el.classList.contains("sechdr") || !secs.length) secs.push([]); secs[secs.length - 1].push(el); });
+  const sc = g.closest(".gscroll"), max = ((sc && parseFloat(getComputedStyle(sc).maxHeight)) || window.innerHeight) / 2; let y = g.querySelector(":scope > .ghead")?.offsetHeight || 0, last = null;
+  for (const sec of secs){ const ht = sec.reduce((a, el)=>a + el.offsetHeight, 0); if (last && y + ht > max) break;
+    sec.forEach(el=>{ el.classList.add("pinned"); el.style.top = y + "px"; y += el.offsetHeight; last = el; }); }
+  if (last) last.classList.add("pinlast");
+}
 // Why the current view leaves out a plan item, or null: the layer, a person you've hidden, or the Added by filter.
 function hideReason(x){
   const L = layerOf(), by = x && x.added ? x.added.by || "" : null;
@@ -7337,8 +7415,9 @@ function renderGantt(){
       h("button",{class:"btn",type:"button",id:"pgToday",title:"Scroll to this sprint",onclick:()=>scrollViewTo(sprintStartOf(todayDay()))},"Today"),
       h("button",{class:"btn",type:"button","aria-label":"Later",title:"Later",onclick:()=>viewPage(1)},"›")) : null)), cols));
 
+  const top0 = g.children.length;
   { const all = gateItems(), gs = all.filter(g=>g.day!=null && gateVisible(g)).map(g=>({...g, at: dayToAt(g.day)})).filter(g=>g.at >= 0 && g.at <= W);
-    const gatesHidden = fActive() && UI.filter.kinds.length && !UI.filter.kinds.includes("gate");
+    const gatesHidden = hidKind("gate") || (fActive() && UI.filter.kinds.length && !UI.filter.kinds.includes("gate"));
     if (!gatesHidden && (gs.length || (editable() && !fActive()))) g.append(secHdr("sec:gates", "Gates", h("i",{class:"gh-ic"}), `${gs.length} with dates`));
     if (!gatesHidden && (gs.length || (editable() && !fActive())) && !folded("sec:gates")){
       const grps = gateGroups(gs).map(x=>({...x, at:x.gates[0].at}));
@@ -7349,7 +7428,7 @@ function renderGantt(){
         "aria-label":(x.gates.length > 1 ? `${x.gates.length} gates needed ${fmtDay(x.day)}. ` : "") + x.title.replace(/\n+/g,". "),style:{left:`${x.at/W*100}%`,top:(6+gp.pos.get(x.key)*22)+"px"},onpointerdown:x.gates.length === 1 ? e=>markerDrag(e, day=>moveGate(x.gates[0].id, day)) : null,onclick:e=>{ if (dragJustEnded) return; openGroup(x, e.currentTarget); },class:"flag gate" + (x.selected ? " selected" : "")}, x.text)));
       g.append(h("div",{class:"lane gaterow"}, gateLabelCell(all, gs.length, false), track));
     } }
-  { const rels = releasesInPlan().map(r=>({r, at: dayToAt(isoToDay(r.date)), text:`${fmtDay(isoToDay(r.date))} ${r.name}`})).filter(x=>x.at >= 0 && x.at <= W);
+  { const rels = (hidKind("release") ? [] : releasesInPlan()).map(r=>({r, at: dayToAt(isoToDay(r.date)), text:`${fmtDay(isoToDay(r.date))} ${r.name}`})).filter(x=>x.at >= 0 && x.at <= W);
     if (rels.length){ g.append(secHdr("sec:releases", "Releases", h("i",{class:"rel-ic","aria-hidden":"true"}, "◆"), `${rels.length} from Jira`));
       if (!folded("sec:releases")){ const rp = packRows(rels.map(x=>({id:x.r.id, a:x.at, z:x.at + Math.max(1.2, x.text.length * 0.075)})), x=>x.a, x=>x.z);
         const track = h("div",{class:"track",style:{height:(10 + Math.max(1, rp.count) * 22) + "px",minHeight:"34px"}});
@@ -7358,7 +7437,7 @@ function renderGantt(){
           "aria-label":`Jira release ${x.r.name}, ${fmtDay(isoToDay(x.r.date))}. ${relStateText(x.r)}.`,title:`${x.r.name} (${x.r.project}), from Jira\n${fmtDay(isoToDay(x.r.date))} · ${relStateText(x.r)}`,
           style:{left:`${x.at/W*100}%`,top:(6 + rp.pos.get(x.r.id) * 22) + "px"},onclick:()=>select("release", x.r.id)}, x.text)));
         g.append(h("div",{class:"lane relrow"}, h("div",{class:"glabel"}, h("b",{}, "Releases"), h("span",{}, "from Jira, read-only")), track)); } } }
-  { const {items, broad} = dvTimeline();
+  { const {items, broad} = hidKind("deliverable") ? {items:[], broad:0} : dvTimeline();
     if (!items.length && broad) g.append(secHdr("sec:deliverables", "Deliverables", h("i",{class:"dv-ic","aria-hidden":"true"}, "▰"), h("span",{}, `${broad} broader, on the Roadmap · `, h("button",{type:"button",class:"linkish",onclick:()=>goWs("roadmap")}, "Open the Roadmap"))));
     if (items.length){ g.append(secHdr("sec:deliverables", "Deliverables", h("i",{class:"dv-ic","aria-hidden":"true"}, "▰"), [`${items.filter(x=>x.d.stage !== "done").length} planned`, items.some(x=>x.d.stage === "done") ? `${items.filter(x=>x.d.stage === "done").length} done` : "", broad ? `${broad} broader, on the Roadmap` : ""].filter(Boolean).join(" · ")));
       if (!folded("sec:deliverables")){
@@ -7384,6 +7463,7 @@ function renderGantt(){
       track.prepend(h("div",{class:"grid",style:{backgroundImage:`repeating-linear-gradient(to right, transparent 0, transparent calc(${100/W}% - 1px), var(--rule-2) calc(${100/W}% - 1px), var(--rule-2) ${100/W}%)`}}));
       const nb = new Set(tb.map(i=>i.type.id)).size;
       g.append(h("div",{class:"lane blkrow"}, h("div",{class:"glabel"}, h("b",{}, icon("flag"), "Process"), h("span",{}, "team-wide")), track)); } }
+  pinTop(g, top0);
   const laneName = id => S.lanes.find(l=>l.id===id)?.name || "another workstream";
   const FR = fRangeDays(); let shownAny = false;
   if (UI.rows === "people"){
@@ -7930,9 +8010,10 @@ function renderDays(){
     g.append(h("div",{class:"lane markrow" + (onRow ? " "+onRow : "")}, labelCell, track));
     return true;
   };
+  const top0 = g.children.length;
   if (!focus){
     const all = gateItems();
-    const gatesHidden = fActive() && UI.filter.kinds.length && !UI.filter.kinds.includes("gate");
+    const gatesHidden = hidKind("gate") || (fActive() && UI.filter.kinds.length && !UI.filter.kinds.includes("gate"));
     { const meetHidden = fActive() && UI.filter.kinds.length && !UI.filter.kinds.includes("meeting");
       const allTM = meetHidden ? [] : meetingsIn(""), serTM = seriesIn(allTM, cols[0], cols[N-1]);
       const items = meetFlags(allTM.filter(m=>!serTM.includes(m)), cols[0], cols[N-1]);
@@ -7946,11 +8027,11 @@ function renderDays(){
     if (!gatesHidden) g.append(secHdr("sec:gates", "Gates", h("i",{class:"gh-ic"}), `${all.filter(x=>x.day!=null).length} with dates`));
     if (!gatesHidden && !folded("sec:gates")) markerRow(gateLabelCell(all, all.filter(x=>x.day!=null).length, true),
       gateGroups(all.filter(x=>x.day!=null && gateVisible(x)).map(x=>({...x, day:nearWeekday(x.day)}))).map(x=>({key:x.key, day:x.day, text:x.text, cls:"gate" + (x.selected ? " selected" : ""), color:"var(--warn)", title:x.title, peek:x.gates.length === 1 ? ["gate", x.gates[0].id] : null, click:e=>openGroup(x, e.currentTarget), drop: x.gates.length === 1 ? day=>moveGate(x.gates[0].id, day) : null})), "gaterow", "gates", editable() && !fActive());
-    { const rels = releasesInPlan();
+    { const rels = hidKind("release") ? [] : releasesInPlan();
       if (rels.length){ g.append(secHdr("sec:releases", "Releases", h("i",{class:"rel-ic","aria-hidden":"true"}, "◆"), `${rels.length} from Jira`));
         if (!folded("sec:releases")) markerRow(h("div",{class:"glabel wide"}, h("b",{}, "Releases"), h("span",{}, "from Jira, read-only")),
           rels.map(r=>({key:"rel:" + r.id, day:nearWeekday(isoToDay(r.date)), text:r.name, cls:"release " + relState(r) + (sel && sel.type === "release" && sel.id === r.id ? " selected" : ""), color:"var(--accent)", title:`${r.name} (${r.project}), from Jira: ${relStateText(r)}`, click:()=>select("release", r.id)})), "relrow", "releases"); } }
-    { const {items, broad} = dvTimeline(), vis = items.filter(x=>x.e >= cols[0] && x.s <= cols[N - 1]);
+    { const {items, broad} = hidKind("deliverable") ? {items:[], broad:0} : dvTimeline(), vis = items.filter(x=>x.e >= cols[0] && x.s <= cols[N - 1]);
       if (!vis.length && broad) g.append(secHdr("sec:deliverables", "Deliverables", h("i",{class:"dv-ic","aria-hidden":"true"}, "▰"), h("span",{}, `${broad} broader, on the Roadmap · `, h("button",{type:"button",class:"linkish",onclick:()=>goWs("roadmap")}, "Open the Roadmap"))));
       if (vis.length){ g.append(secHdr("sec:deliverables", "Deliverables", h("i",{class:"dv-ic","aria-hidden":"true"}, "▰"), [`${vis.filter(x=>x.d.stage !== "done").length} planned`, vis.some(x=>x.d.stage === "done") ? `${vis.filter(x=>x.d.stage === "done").length} done` : "", broad ? `${broad} broader, on the Roadmap` : ""].filter(Boolean).join(" · ")));
         if (!folded("sec:deliverables")){
@@ -7963,6 +8044,7 @@ function renderDays(){
             if (x.ship != null && x.ship >= cols[0] && x.ship <= cols[N - 1]) track.append(h("i",{class:"dvtl-ship","aria-hidden":"true",title:`Ships ${fmtDay(x.ship)}`,style:{left:`calc(${(colOf(x.ship) + 0.5) / N * 100}% - 4px)`,top:(6 + pk.pos.get(x.id) * 24 + 16) + "px"}})); });
           g.append(h("div",{class:"lane dvrow"}, h("div",{class:"glabel wide"}, h("b",{}, "Deliverables"), h("span",{}, "from the Roadmap")), track)); } } }
   }
+  if (!focus) pinTop(g, top0);
   const lanes = focus ? S.lanes.filter(l=>l.id===focus.lane) : S.lanes;
   let shownAnyD = false;
   if (UI.rows === "people" && !focus){
@@ -9188,6 +9270,9 @@ function renderSide0(){
   const titles = {amend:"Planning assistant", deliverable:"Deliverable", release:"Jira release", help:"How it works", bar:"Initiative", task:"Task", story:"Jira story", ms:"Milestone", lane:"Workstream", gate:"Gate", person:"Person", note:"Note", meeting:"Meeting", group:"Group", type:"Process block type", block:(()=>{ const i = sel && sel.type === "block" ? instById(sel.id) : null; return i ? i.type.name : "Process block"; })()};
   put(h("div",{class:"sidehead"}, h("h3",{}, sideIcon(), titles[sel.type] || "Edit"), NAV_SEL.includes(sel.type) ? h("button",{type:"button",class:"linkish sidelink",id:"sideLink",title:"Copy a link that opens this, in this plan",onclick:linkHere},"Copy link") : null, h("button",{class:"x nav",type:"button","aria-label":"Close panel",title:"Close (Esc)",onclick:()=>{ sel=null; render(); }},"×")));
   if (sel.type !== "help" && !present && !editable() && file.handle && !file.holdLock) put(h("div",{class:"viewonly"}, (sel.type === "bar" || sel.type === "task") ? "Quick updates below save right away. To change anything else, click " : "View only. Click ", h("b",{},"Start editing"), (sel.type === "bar" || sel.type === "task") ? "." : " in the toolbar to make changes."));
+  { const hk = {meeting:"meeting", gate:"gate", block:"process", release:"release", ms:"milestone", deliverable:"deliverable"}[sel.type];
+    if (hk && ["timeline","people","list"].includes(UI.ws)) put(h("div",{class:"sidehide"}, h("button",{type:"button",class:"linkish",id:"sideHideKind",title:"Just for you, in this plan. Show everything (Shift+H) brings them back",
+      onclick:()=>{ sel = null; setHiddenKinds([...hiddenKinds(), hk], `${kindName(hk)} hidden. Shift+H shows everything`); showToast(`${kindName(hk)} hidden.`, "Show them", ()=>setHiddenKinds(hiddenKinds().filter(x=>x !== hk), `${kindName(hk)} shown`)); }}, `Hide all ${kindName(hk).toLowerCase()}`))); }
   if (sel.type === "amend"){ amendPanel(put); return; }
   if (sel.type === "deliverable"){
     const d = dvById(sel.id); if (!d){ sel = null; return; }
@@ -12492,6 +12577,14 @@ $("#notesMenu").addEventListener("keydown", e=>{
   if (e.key === "ArrowDown"){ e.preventDefault(); items[(i+1) % items.length]?.focus(); } else if (e.key === "ArrowUp"){ e.preventDefault(); items[(i-1+items.length) % items.length]?.focus(); }
 });
 document.addEventListener("click", e=>{ if (!$("#notesMenu").hidden && !e.target.closest("#notesMenu,#notesBtn")) closeNotesMenu(); });
+$("#showBtn").onclick = e=>{ e.stopPropagation(); $("#showMenu").hidden ? openShowMenu() : closeShowMenu(true); };
+$("#showMenu").addEventListener("keydown", e=>{
+  if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); closeShowMenu(true); return; }
+  const items = [...$("#showMenu").querySelectorAll("button:not([disabled])")], i = items.indexOf(document.activeElement);
+  if (e.key === "ArrowDown"){ e.preventDefault(); items[(i+1) % items.length]?.focus(); } else if (e.key === "ArrowUp"){ e.preventDefault(); items[(i-1+items.length) % items.length]?.focus(); }
+  else if (!e.ctrlKey && !e.metaKey && !e.altKey){ const it = items.find(b=>b.dataset.letter === e.key.toLowerCase()); if (it){ e.preventDefault(); e.stopPropagation(); it.click(); } }
+});
+document.addEventListener("click", e=>{ if (!$("#showMenu").hidden && e.target.isConnected && !e.target.closest("#showMenu,#showBtn")) closeShowMenu(); });   // an eye rebuilds the menu, so its click lands on a detached button
 $("#viewBtn").onclick = e=>{ e.stopPropagation(); $("#viewMenu").hidden ? openViewMenu() : closeViewMenu(true); };
 $("#viewSave").onclick = ()=>saveCurrentView();
 $("#filterBtn").onclick = e=>{ e.stopPropagation(); $("#filterPop").hidden ? openFilterPop() : closeFilterPop(true); };
@@ -12659,9 +12752,12 @@ document.addEventListener("keydown", e=>{
   else if (k==="a" && !mod && !e.altKey && editable()){ e.preventDefault(); openAddMenu($("#addBtn").getBoundingClientRect(), {}); }
   else if (UI.ws === "timeline" && !mod && !e.altKey && (e.key==="+" || e.key==="=")){ zoomIn(); }
   else if (UI.ws === "timeline" && !mod && !e.altKey && (e.key==="-" || e.key==="_")){ zoomOut(); }
+  else if ((k==="g" || k==="m") && !mod && !e.altKey && ["timeline","people","list"].includes(UI.ws)){ e.preventDefault(); toggleKind(k === "g" ? "gate" : "meeting"); }
+  else if (k==="h" && !mod && !e.altKey && ["timeline","people","list"].includes(UI.ws)){ e.preventDefault(); if (e.shiftKey) showEverything(); else if ($("#showMenu").hidden) openShowMenu(); else closeShowMenu(true); }
   else if (k==="d" && !mod && !e.altKey){ setZoom("days", UI.focus); }
   else if (e.key==="Escape" && !$("#peek").hidden){ closePeek(); }
   else if (e.key==="Escape" && !$("#notesMenu").hidden){ closeNotesMenu(true); }
+  else if (e.key==="Escape" && !$("#showMenu").hidden){ closeShowMenu(true); }
   else if (e.key==="Escape"){ if (!$("#filterPop").hidden) closeFilterPop(true); else if (!$("#viewMenu").hidden) closeViewMenu(true); else if (!addMenu.hidden) closeAddMenu(true); else if (!menu.hidden) closeMenu(true); else if (sel){ sel=null; render(); } else if (present) setPresent(false); }
 });
 document.addEventListener("visibilitychange", ()=>{ if (document.hidden) flushPersist(); else checkSharedWhenReady(); });
