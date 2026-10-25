@@ -136,6 +136,12 @@ setTimeout(()=>{console.log(checks.join('\n'));console.log('TIMEOUT');process.ex
     fresh(); ev(dv('dv-a') + `pick('f-dvstage', 'planned')`);
     ok('a deliverable can\'t be planned without a target, from the card', ev(`dvById('dv-a').stage`) === 'idea' && /target/.test(ev(`document.getElementById('status').textContent`)));
 
+    // Forecast inputs (effort, scope, delivers)
+    parity('effort, likely only', sel('bar','m2') + `typeIn('f-elikely', '4')`, 'initiative.setEffort', {id:'m2', likely:4});
+    parity('effort with low and high', sel('bar','m2') + `document.getElementById('f-elow').value = '3'; document.getElementById('f-ehigh').value = '6.5'; typeIn('f-elikely', '4')`, 'initiative.setEffort', {id:'m2', likely:4, low:3, high:6.5});
+    parity('leave out of the forecast', sel('bar','m3') + `click('#f-scopeout')`, 'initiative.setScope', {id:'m3', scope:'out'});
+    parity('delivers', sel('bar','m2') + `pick('f-delivers-add', 'dv-a')`, 'initiative.delivers.add', {id:'m2', outcome:'dv-a'});
+    parity('stops delivering', `barById('m2').delivers = ['dv-a']; P0 = ${plan}; ` + sel('bar','m2') + `click('#f-delivers .lchip .ox')`, 'initiative.delivers.remove', {id:'m2', outcome:'dv-a'});
     // Holidays
     parity('one day off', `addDaysOff('Founders day', '2026-10-16')`, 'holiday.add', {date:'2026-10-16', name:'Founders day'});
     parity('a range, working days only', `addDaysOff('Shutdown', '2026-11-20', '2026-11-27')`, 'holiday.addRange', {from:'2026-11-20', to:'2026-11-27', name:'Shutdown'});
