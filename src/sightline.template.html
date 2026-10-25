@@ -792,6 +792,13 @@ body:not(.hasSel) #side.floating{display:none}
 .foldb:hover,.foldb:focus-visible{color:var(--ink);background:var(--rule-2)}
 .lnwrap{display:flex;align-items:stretch;border-right:1px solid var(--rule-2);min-width:0;padding-left:4px}
 .lnwrap .lname{flex:1;border-right:0;min-width:0;padding-left:4px}
+/* Workstream names stay in view while their rows scroll (stickLanes sets --lhtop under the dates and pinned rows) */
+.gantt:not(.days) .lane>.lnwrap{align-items:flex-start}
+.gantt:not(.days) .lane>.lnwrap>*,.gantt:not(.days) .lane>.eplabel>*,.gantt:not(.days) .lane>.plabel>.lstick{position:sticky;top:var(--lhtop,0px)}
+.gantt:not(.days) .lane>.lnwrap>.lname,.gantt:not(.days) .lane>.lnwrap>.foldb{min-height:47px}.gantt:not(.days) .lane>.lnwrap>.lname{flex:1 1 auto}.gantt:not(.days) .lane>.plabel{justify-content:flex-start}
+.lname .lstick{display:flex;flex-direction:column;gap:1px;font-size:inherit;color:inherit}
+.gantt.days>.lanehdr[data-ohdr]{position:sticky;top:var(--lhtop,0px);z-index:6}
+@media print{.gantt .lane>.lnwrap>*,.gantt .lane>.eplabel>*,.gantt .lane>.plabel>.lstick,.gantt.days>.lanehdr[data-ohdr]{position:static}}
 .sechdr .shn{text-transform:none;letter-spacing:0;font-weight:400;margin-left:4px}
 .sechdr .ic,.sechdr .mi-cal{color:var(--ink-3)}
 .gh-ic{display:inline-block;width:3px;height:11px;background:var(--warn);box-shadow:4px 0 0 var(--warn);margin-right:6px}
@@ -6152,10 +6159,10 @@ function personRows(){
 const itemDone = it => it.type === "task" ? it.t.status === "done" : it.type === "story" ? it.x.status === "done" : effStatus(it.b) === "done";
 function personLabel(pp, items){
   const now = items.filter(it=>!itemDone(it) && it.s <= todayDay() && it.e >= todayDay()).length;
-  if (!pp) return h("div",{class:"lname plabel unassigned"}, h("b",{}, "Unassigned"), h("span",{}, `${items.length} item${items.length===1?"":"s"} with no owner`));
+  if (!pp) return h("div",{class:"lname plabel unassigned"}, h("span",{class:"lstick"}, h("b",{}, "Unassigned"), h("span",{}, `${items.length} item${items.length===1?"":"s"} with no owner`)));
   return h("button",{class:"lname plabel" + (sel && sel.type==="person" && sel.id===pp.id ? " selected" : ""),type:"button","data-key":"person:"+pp.id,"data-peek-type":"person","data-peek-id":pp.id,onclick:()=>select("person", pp.id)},
-    h("b",{}, h("i",{class:"ini",style:{background:pp.color, color:iniFg(pp.color)}}, pp.initials), pp.name),
-    h("span",{}, [pp.inactive ? "inactive: reassign their work" : pp.external ? "outside owner" : pp.role, now ? `${now} active now` : "nothing active now", pp.days < 5 ? `${pp.days}d/wk` : ""].filter(Boolean).join(" · ")));
+    h("span",{class:"lstick"}, h("b",{}, h("i",{class:"ini",style:{background:pp.color, color:iniFg(pp.color)}}, pp.initials), pp.name),
+    h("span",{}, [pp.inactive ? "inactive: reassign their work" : pp.external ? "outside owner" : pp.role, now ? `${now} active now` : "nothing active now", pp.days < 5 ? `${pp.days}d/wk` : ""].filter(Boolean).join(" · "))));
 }
 function filteredEmpty(){
   return h("div",{class:"empty"}, `No items match ${activeView() ? activeView().name : "these filters"}. `,
@@ -7544,6 +7551,14 @@ function pinTop(g, from){
     sec.forEach(el=>{ el.classList.add("pinned"); el.style.top = y + "px"; y += el.offsetHeight; last = el; }); }
   if (last) last.classList.add("pinlast");
 }
+// Workstream names stay in view as you scroll the chart: each one sticks just under the dates (and any pinned top rows)
+// while its rows are on screen. In Days the next workstream's header slides over it; in Weeks the name rides down its
+// tall row and leaves with it. Pure CSS sticky; this only says how far down "just under" is.
+function stickLanes(g){
+  const pins = [...g.querySelectorAll(":scope > .pinned")], last = pins[pins.length - 1];
+  const y = last ? (parseFloat(last.style.top) || 0) + last.offsetHeight : g.querySelector(":scope > .ghead")?.offsetHeight || 0;
+  g.style.setProperty("--lhtop", y + "px");
+}
 // Why the current view leaves out a plan item, or null: the layer, a person you've hidden, or the Added by filter.
 function hideReason(x){
   const L = layerOf(), by = x && x.added ? x.added.by || "" : null;
@@ -7935,6 +7950,7 @@ function renderGantt(){
   addColGrip(g);
   requestAnimationFrame(spillLabels);
   if (frac >= 0 && frac <= 1) g.append(h("div",{class:"today",title:"Today",style:{left:`calc(var(--lw) + (100% - var(--lw)) * ${frac})`, top:g.querySelector(".ghead").offsetHeight+"px"}}));
+  stickLanes(g);
   glide(g, was);
 }
 // A segmented control's pill slides from the option that was on to the one picked.
@@ -8709,6 +8725,7 @@ function renderDays(){
   if (fActive() && !shownAnyD && S.bars.length) g.append(filteredEmpty());
   addColGrip(g);
   if (!S.bars.length) g.append(h("div",{class:"empty"}, "No initiatives yet. Switch to Weeks and double-click a workstream to add one."));
+  stickLanes(g);
 }
 // Drag an initiative's grip in the Days name column: above/below another row reorders, onto its middle nests, onto a lane heading makes it top level there.
 function startOutlineDrag(e, id){

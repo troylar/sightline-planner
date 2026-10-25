@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.115.0",
+    "date": "2026-10-25",
+    "headline": "Workstream names stay in view",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Workstream names stay in view as you scroll",
+        "before": "Scrolling down a long workstream, especially in Days, moved its name off the screen, so you lost track of which workstream you were in.",
+        "now": "Each workstream's name stays just under the dates while its rows are on screen. In Days the next workstream's header slides over it as you reach it; in Weeks the name moves down with its row. It also stays below any rows you've pinned with Show, then While scrolling. Printing is unchanged.",
+        "where": "Timeline, Weeks and Days"
+      }
+    ]
+  },
+  {
     "version": "1.114.0",
     "date": "2026-10-25",
     "headline": "A calmer planning assistant panel",
