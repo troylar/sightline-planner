@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.119.0",
+    "date": "2026-10-25",
+    "headline": "Settings pages that say where you are, and a File menu for files",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Settings",
+        "title": "Plan details has its own page",
+        "before": "The plan's start date, sprint length, automatic moves and Jira link address were behind File, then Plan settings.",
+        "now": "Settings, then Plan details shows them, with Edit plan details to change them.",
+        "where": "Settings, then Plan details"
+      },
+      {
+        "kind": "improved",
+        "area": "Settings",
+        "title": "Every Settings page is titled with its name",
+        "before": "Some pages had no title, or one that didn't match the menu, like Jira for Jira connection.",
+        "now": "Each page starts with its name exactly as the menu says it, and the menu's group names (Plan, Team, Connections) are read out by screen readers.",
+        "where": "Settings"
+      },
+      {
+        "kind": "improved",
+        "area": "File",
+        "title": "File holds only file actions",
+        "before": "File also had Jira setup, Plan settings, Set baseline and Start with.",
+        "now": "File has the shared file, importing a copy and exporting one. Set baseline is on Delivery, then Snapshots, and Start Sightline with is in the menu at the right of the header. Jira setup is Settings, then Jira connection.",
+        "where": "File menu"
+      }
+    ]
+  },
+  {
     "version": "1.118.0",
     "date": "2026-10-25",
     "headline": "Text size, and a tidier header",

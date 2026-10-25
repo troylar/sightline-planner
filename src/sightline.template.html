@@ -759,7 +759,9 @@ body:not(.hasSel) #side.floating{display:none}
 .jsearches{margin:4px 0 2px;flex-wrap:wrap}.jsearches button b{margin-left:6px;font-size:11px;font-weight:700;opacity:.8}
 .jiraws{padding:16px;display:flex;flex-direction:column;gap:12px;max-width:1100px}.jiraws.sorting{max-width:none}.jhead h2{margin:0}
 .planpane{display:flex;flex-direction:column;gap:16px;max-width:1100px;padding-block:4px 8px}
-.jhead{display:flex;flex-direction:column;gap:6px}.jhead p{margin:0;line-height:1.5;max-width:75ch}
+.jhead{display:flex;flex-direction:column;gap:6px}
+.pagetitle{margin:18px 16px 2px;font-size:22px;font-weight:650;line-height:1.25;letter-spacing:-.01em}
+.snapbl{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:4px 16px 16px;border-top:1px solid var(--rule-2);margin-top:6px}.snapbl h3{margin:10px 0 0}.snapbl p{margin:0;max-width:75ch}.jhead p{margin:0;line-height:1.5;max-width:75ch}
 .planpane .qrow{gap:8px 10px;font-size:13px}
 .planpane .qrow select{border:1px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:6px;padding:5px 8px;font:inherit}
 .planpane>p.hint{margin:0;padding:14px 16px;border:1px dashed var(--rule);border-radius:8px;line-height:1.5}
@@ -1247,23 +1249,19 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
         <div class="mh">Shared file</div>
         <button type="button" role="menuitem" id="link">Open shared plan…</button>
         <button type="button" role="menuitem" id="newShared">Save as a new shared plan…</button>
-        <button type="button" role="menuitem" id="jiraMenu">Jira setup…</button>
         <div id="linkedMenu" hidden>
           <label class="mi"><input type="checkbox" id="auto"> Check for teammates' saves every 15 s</label>
           <button type="button" role="menuitem" id="reviewCopy">Review another copy…</button>
           <button type="button" role="menuitem" id="unlink">Stop using the shared file</button>
         </div>
-        <div class="mh">Copies</div>
+        <div class="mh">Import a copy</div>
         <label class="mi edit" for="fileIn" role="menuitem" tabindex="0">Open a copy…</label>
         <input type="file" id="fileIn" accept=".json,.yaml,.yml,application/json,text/yaml" hidden>
         <button type="button" role="menuitem" class="edit" id="paste">Paste JSON or YAML…</button>
+        <div class="mh">Export a copy</div>
         <button type="button" role="menuitem" id="saveJson">Download JSON</button>
         <button type="button" role="menuitem" id="saveYaml">Download YAML</button>
         <button type="button" role="menuitem" id="copy">Copy JSON</button>
-        <div class="mh edit">Plan</div>
-        <button type="button" role="menuitem" id="startWith">Start with…</button>
-        <button type="button" role="menuitem" class="edit" id="settings">Plan settings…</button>
-        <button type="button" role="menuitem" class="edit" id="baseline">Set baseline</button>
       </div>
     </div>
     <button class="btn assistant-status" id="assistantChanges" type="button" title="Connect your assistant or review its changes">Connect assistant</button>
@@ -1279,6 +1277,7 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
           <button type="button" role="menuitem" id="tsReset" title="Back to 100%">Reset</button>
         </div>
         <div class="mh">This browser</div>
+        <button type="button" role="menuitem" id="startWith">Start Sightline with…</button>
         <button type="button" role="menuitem" id="theme"></button>
         <button type="button" role="menuitem" id="whatsNew" title="What's new in Sightline">What's new<span id="appVersion"></span><span class="wn-dot" hidden></span></button>
         <button type="button" role="menuitem" id="help" title="Help and shortcuts (?)" aria-label="Help">Help and shortcuts</button>
@@ -1327,15 +1326,16 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
     <button type="button" class="snh" id="tab-plan" data-group="settings" aria-expanded="true" aria-controls="snp-settings"><svg class="sni" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4L18 18M6 18l1.6-1.6M16.4 7.6L18 6"/></svg><span class="snl">Settings</span><span class="sndot" hidden></span></button>
     <div class="snpages" id="snp-settings" role="group" aria-labelledby="tab-plan">
       <span class="snfly" aria-hidden="true">Settings</span>
-      <span class="snsub" aria-hidden="true">Plan</span>
+      <span class="snsub">Plan</span>
+      <button type="button" class="snp" id="set-details" data-section="details"><span class="snl">Plan details</span></button>
       <button type="button" class="snp" id="set-tags" data-section="tags"><span class="snl">Tags</span></button>
       <button type="button" class="snp" id="set-guide" data-section="guide"><span class="snl">Planning guide</span></button>
-      <span class="snsub" aria-hidden="true">Team</span>
+      <span class="snsub">Team</span>
       <button type="button" class="snp" id="set-team" data-section="team"><span class="snl">Team</span></button>
       <button type="button" class="snp" id="set-calendar" data-section="calendar"><span class="snl">Work calendar</span></button>
       <button type="button" class="snp" id="set-meetings" data-section="meetings"><span class="snl">Meetings</span></button>
       <button type="button" class="snp" id="set-types" data-section="types"><span class="snl">Timeboxes and ceremonies</span></button>
-      <span class="snsub" aria-hidden="true">Connections</span>
+      <span class="snsub">Connections</span>
       <button type="button" class="snp" id="set-jira" data-section="jira"><span class="snl">Jira connection</span></button>
     </div>
   </div>
@@ -1431,8 +1431,12 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
 
 <div id="ws-settings" role="region" aria-label="Settings" hidden><div id="settingsWs" class="jiraws"></div></div>
 <div id="ws-plan" role="region" aria-labelledby="tab-plan" hidden>
+<h1 class="pagetitle" id="planTitle" hidden></h1>
 <div class="sections">
-  <section class="panel sec wide" data-plan="team"><header><h2>Team</h2><button class="btn edit" id="addPerson">+ Person</button></header>
+  <section class="panel sec wide" data-plan="details"><header><h2>Dates and scheduling</h2><button class="btn edit" id="settings">Edit plan details…</button></header>
+    <dl class="setlist" id="detailsList"></dl>
+    <p class="hint" id="detailsHint">Jira connection, tags and the planning guide have their own pages in Settings.</p></section>
+  <section class="panel sec wide" data-plan="team"><header><h2>People</h2><button class="btn edit" id="addPerson">+ Person</button></header>
     <p class="hint">Owners are picked from this list. Working days per week and time off feed people load, and a person's time off pushes their tasks out, like a holiday.</p>
     <div class="tbl" id="t-team"></div>
     <header style="margin-top:14px"><h2>Groups</h2><button class="btn edit" id="addGroup">+ Group</button></header>
@@ -1447,7 +1451,8 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
   <section class="panel sec wide" data-plan="activity"><div id="activityWs" class="planpane"></div></section>
   <section class="panel sec wide" data-plan="tags"><div id="tagsWs" class="planpane"></div></section>
   <section class="panel sec wide" data-plan="report"><div id="reportWs" class="planpane"></div></section>
-  <section class="panel sec wide" data-plan="snapshots"><div id="snapWs" class="planpane"></div></section>
+  <section class="panel sec wide" data-plan="snapshots"><div id="snapWs" class="planpane"></div>
+    <div class="snapbl"><h3>Baseline</h3><p class="hint" id="baselineHint">The baseline is the plan as it was when you set it. Once it's set, moved items show a dashed outline and how far they slipped.</p><button class="btn edit" id="baseline">Set baseline</button></div></section>
   <section class="panel sec wide" data-plan="proposals"><div id="proposalsWs" class="planpane"></div></section>
   <section class="panel sec wide" data-plan="types"><header><h2>Ceremonies</h2><div class="edit" style="display:flex;gap:6px"><button class="btn" id="addPack">Add the Scrum pack</button><button class="btn" id="addCeremony">+ Ceremony</button></div></header>
     <p class="hint">Meetings that happen every sprint (planning, review, retro). Each follows a sprint rule, like "the last day of every sprint". To move or skip one just for a crisis, click it on the chart.</p>
@@ -1455,7 +1460,7 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
   <section class="panel sec wide" data-plan="types"><header><h2>Process blocks</h2><button class="btn edit" id="addType">+ Type</button></header>
     <p class="hint">Your own building blocks: code freeze, release, hardening, demo day. Give a type a sprint rule ("the 3rd-last working day of every sprint") and there's one every sprint, which you can move or skip just for that sprint.</p>
     <div class="tbl" id="t-types"></div></section>
-  <section class="panel sec wide" data-plan="meetings"><header><h2>Meetings</h2><button class="btn edit" id="addMeeting">+ Meeting</button></header>
+  <section class="panel sec wide" data-plan="meetings"><header><h2>Meetings on the plan</h2><button class="btn edit" id="addMeeting">+ Meeting</button></header>
     <p class="hint">One-off or repeating. Meetings on holidays are skipped. They show on the timeline in a Meetings row, and in each attendee's row in the Days view.</p>
     <div class="tbl" id="t-meetings"></div></section>
   <section class="panel sec wide setup" data-plan="types"><header><h2>Timeboxes</h2><div class="edit" style="display:flex;gap:6px"><button class="btn" id="addSprint">+ Timebox</button><button class="btn" id="regenSprints" title="Rebuild evenly sized sprints from the default length">Even out…</button></div></header>
@@ -1513,7 +1518,7 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
   <div id="jiraBody"></div>
 </dialog>
 <dialog id="dlgDates">
-  <h3>Plan settings</h3>
+  <h3>Plan details</h3>
   <div class="row2" style="margin-top:10px">
     <div class="field"><label for="dStart">Start (Monday)</label><input type="date" id="dStart"></div>
     <div class="field"><label class="fcheck" for="dAuto"><input type="checkbox" id="dAuto"> Move linked items automatically</label></div>
@@ -4511,13 +4516,19 @@ function epicOnMenu(k, el){
     addMenu.style.top = (r.bottom + 4 + hgt > innerHeight ? Math.max(8, r.top - hgt - 4) : r.bottom + 4) + "px"; addMenu.querySelector("button")?.focus(); }, 0);
 }
 // Settings, then Jira connection: connecting the Jira folder, how the sync runs, your searches, the board's sprints and how Jira's
-// statuses show here. (The plan's own dates are under File, then Plan settings.)
+// statuses show here. (The plan's own dates are under Settings, then Plan details.)
 function renderJiraSetup(){
   const host = $("#jiraSetupWs"); if (!host) return;
   if (!$("#dlgJira").open) $("#jiraBody").replaceChildren();          // one copy of the Jira controls on the page at a time
   const jira = h("div",{class:"jsetuphost"}); openJiraDialog(jira);
-  host.replaceChildren(h("div",{class:"jhead"}, h("h2",{}, "Jira"), h("p",{class:"hint"}, "Set up once; rarely changed. Sorting Jira's epics and stories is in Jira work; the plan's own dates are under File, then Plan settings.")),
+  host.replaceChildren(h("div",{class:"jhead"}, h("p",{class:"hint"}, "Set up once; rarely changed. Sorting Jira's epics and stories is in Work, then Sort Jira work; the plan's own dates are under Settings, then Plan details.")),
     h("p",{class:"hint"}, "Jira links go to ", S.meta.jiraBase || "no address yet", "."), jira);
+}
+function renderDetails(){
+  const m = S.meta, sp = S.sprints || [];
+  $("#detailsList").replaceChildren(h("dt",{},"Starts"), h("dd",{}, fmtDay(isoToDay(m.start))), h("dt",{},"Sprints"), h("dd",{}, `${sp.length} (${m.sprintWeeks} weeks by default)`),
+    h("dt",{},"Moves linked items"), h("dd",{}, m.autoSchedule === false ? "No" : "Yes: work moves when what it waits on moves"), h("dt",{},"Jira links go to"), h("dd",{}, m.jiraBase || "Not set"));
+  $("#detailsHint").textContent = editable() && !present ? "Jira connection, tags and the planning guide have their own pages in Settings." : "Choose Start editing to change these. Jira connection, tags and the planning guide have their own pages in Settings.";
 }
 function renderSettings(){
   const host = $("#settingsWs"); if (!host) return;
@@ -5152,7 +5163,6 @@ function openJiraDialog(host){
     setup));
   if (!inTab && !dl.open) dl.showModal();
 }
-$("#jiraMenu").onclick = ()=>{ closeMenu?.(false); goWs("settings"); };
 const openEpics = () => { UI.planTab = "epics"; saveUI(); goWs("plan"); };
 $("#jiraClose").onclick = ()=>$("#dlgJira").close();
 $("#dlgJira").addEventListener("click", e=>{ if (e.target.id === "dlgJira") e.target.close(); });
@@ -5270,14 +5280,14 @@ const HELP = [
     h("h3",{},"Dependencies"),
     h("p",{}, "Drag from an item's dot to another item, or tick \"Starts after these finish\" in its panel. When something runs longer, what waits for it moves later automatically (you can turn that off with Move linked items automatically, in an initiative's panel). If the warning bar says items start before what they wait for, click ", h("b",{},"Move them later"), "."),
     h("h3",{},"Calendar"),
-    h("p",{}, "Holidays (Settings → Calendar) and each person's time off (Delivery → Capacity) are skipped when counting working days. ", h("b",{},"Set baseline"), " before a review; afterwards moved items show how far they slipped.")]],
+    h("p",{}, "Holidays (Settings → Work calendar) and each person's time off (Delivery → Capacity) are skipped when counting working days. ", h("b",{},"Set baseline"), " (Delivery → Snapshots) before a review; afterwards moved items show how far they slipped.")]],
   ["views", "Views and finding", ()=>[
     h("ul",{}, h("li",{}, h("b",{},"Weeks / Days"), " (W, D): the big picture, or day by day with tasks."), h("li",{}, h("b",{},"By workstream / By person / By epic"), " (R): rows per workstream, per person with their load, or per Jira epic, nested."),
       h("li",{}, h("b",{},"Find"), " (/ or Ctrl+K): any item, person, meeting, note or Jira key. It unfolds and un-filters what's hiding the result."),
       h("li",{}, h("b",{},"Filters"), " (F): by person, workstream, status (including Blocked), kind, dates. ", h("b",{},"Views"), " (V) save a filter and layout, for you or the team."),
       h("li",{}, h("b",{},"Show"), " (H): hide gates, releases, deliverables, meetings, process blocks, milestones or done work, just for you in this plan. ", h("b",{},"Focus"), " hides meetings, process and done work; G and M toggle gates and meetings; Shift+H shows everything. ", h("b",{},"Pin the top rows"), " keeps them in view while you scroll."),
       h("li",{}, h("b",{},"Notes"), " (N): show all, only yours, only others', or hide them."), h("li",{}, h("b",{},"Present"), " (P): a clean, read-only view for reviews."),
-      h("li",{}, "Set a ", h("b",{},"Jira link"), " in File, Plan settings, and Jira keys become links."))]],
+      h("li",{}, "Set a ", h("b",{},"Jira link"), " in Settings, Plan details, and Jira keys become links."))]],
   ["share", "Sharing and saving", ()=>[
     h("ul",{}, h("li",{}, "The plan lives in one file. Everyone who opens it sees the same thing; click ↻ or turn on auto-refresh to pick up changes."),
       h("li",{}, h("b",{},"Start editing"), " marks the file as yours for 30 minutes. Each Save renews it. ", h("b",{},"Done editing"), " releases it. If someone forgets, you can take over from the banner."),
@@ -6653,7 +6663,7 @@ function availDays(pp, ws){
 }
 // Load: concurrent items scaled by how much of the week the person has. Amber ≈ 2 full-week items, red ≈ 3.
 function loadClass(n, avail){ if (!n) return ""; if (avail <= 0) return "n3"; const score = n * 5 / avail; return score >= 3 ? "n3" : score >= 2 ? "n2" : "n1"; }
-const PLAN_TABS = [["milestones","Milestones"],["gates","Gates"],["decisions","Decisions"],["risks","Risks"],["tags","Tags"],["team","Team"],["calendar","Calendar"],["meetings","Meetings"],["types","Timeboxes & ceremonies"],["epics","Sort Jira work"],["proposals","Proposals"],["jira","Jira connection"],["guide","Planning guide"],["report","Status update"],["snapshots","Snapshots"],["activity","Activity"]];
+const PLAN_TABS = [["details","Plan details"],["milestones","Milestones"],["gates","Gates"],["decisions","Decisions"],["risks","Risks"],["tags","Tags"],["team","Team"],["calendar","Calendar"],["meetings","Meetings"],["types","Timeboxes & ceremonies"],["epics","Sort Jira work"],["proposals","Proposals"],["jira","Jira connection"],["guide","Planning guide"],["report","Status update"],["snapshots","Snapshots"],["activity","Activity"]];
 // Group the setup sections; the keys (and links to them) stay stable.
 const PLAN_GROUPS = [["Lists", ["milestones","gates","decisions","risks","tags"]], ["Team", ["team","calendar","meetings","types"]], ["Jira", ["epics","proposals","jira"]], ["Assistant", ["guide"]], ["Reports", ["report","snapshots","activity"]]];
 const DELIVERY_SECTIONS = ["milestones","gates","decisions","risks","report","snapshots","activity"], WORK_SECTIONS = ["epics","proposals"];
@@ -6780,6 +6790,10 @@ function renderWs(){
     const key = extra.map(x=>x.textContent).join("|"); if (b.dataset.extra === key) return; b.dataset.extra = key;
     b.querySelectorAll(":scope > .snc, :scope > .warnc").forEach(x=>x.remove()); b.append(...extra); });
   document.querySelectorAll("#ws-plan [data-plan]").forEach(sec=>{ sec.hidden = sec.dataset.plan !== pt; });
+  // A Settings page's title is its name in the menu, word for word; Delivery and Work pages carry their own.
+  { const t = $("#planTitle"), nm = ws === "plan" ? document.querySelector(`#snp-settings [data-section="${CSS.escape(pt)}"] .snl`)?.textContent || "" : "";
+    t.hidden = !nm; if (t.textContent !== nm) t.textContent = nm; $("#ws-plan").setAttribute("aria-labelledby", nm ? "planTitle" : "tab-plan"); }
+  if (ws === "plan" && pt === "details") renderDetails();
   { const on = id => [...$(id).querySelectorAll("button")].find(b=>!b.hidden && b.getAttribute("aria-pressed") === "true"), rows = $("#rowsSeg").hidden ? null : on("#rowsSeg"), src = $("#layerSeg").hidden ? null : on("#layerSeg");
     const sum = [rows?.textContent, src && src.id !== "lyAll" ? src.textContent : ""].filter(Boolean).join(" · ");
     $("#layoutWrap").hidden = $("#rowsSeg").hidden && $("#layerSeg").hidden; if ($("#layoutWrap").hidden && !$("#layoutPop").hidden){ $("#layoutPop").hidden = true; $("#layoutBtn").setAttribute("aria-expanded", "false"); }
@@ -10043,7 +10057,7 @@ function renderReport(){
 function renderTags(){
   const host = $("#tagsWs"); if (!host) return; const can = editable() && !present;
   const uses = id => TAGGED.reduce((a, k)=>a + (S[k] || []).filter(x=>(x.tags || []).includes(id)).length, 0) + S.bars.flatMap(b=>b.tasks || []).filter(t=>(t.tags || []).includes(id)).length + (S.jiraItems || []).filter(x=>x.tags.includes(id)).length;
-  host.replaceChildren(h("div",{class:"jhead"}, h("h2",{}, "Tags"), h("p",{class:"hint"}, "The plan's own tags, on anything: initiatives, tasks, milestones, notes, and Jira items (kept with their Jira key). Add them from any card. Jira's labels come from Jira and are separate.")),
+  host.replaceChildren(h("div",{class:"jhead"}, h("p",{class:"hint"}, "The plan's own tags, on anything: initiatives, tasks, milestones, notes, and Jira items (kept with their Jira key). Add them from any card. Jira's labels come from Jira and are separate.")),
     (S.tags || []).length ? h("table",{class:"tbl",id:"tagTable"}, h("thead",{}, h("tr",{}, h("th",{},"Tag"), h("th",{},"Color"), h("th",{},"Used on"), h("th",{}))),
       h("tbody",{}, ...S.tags.map(t=>h("tr",{"data-tag":t.id},
         h("td",{}, h("input",{"aria-label":"Tag name",value:t.name,disabled:!can,onchange:e=>{ const v = e.target.value.trim().slice(0,40); if (v) commit(s=>{ s.tags.find(x=>x.id === t.id).name = v; }); }})),
@@ -10209,7 +10223,7 @@ function renderSide0(){
       h("p",{class:"hint"},"Double-click an empty spot in a workstream to add an initiative. Click a bar, milestone or workstream name to open it. The key under the chart explains the bar styles."),
       h("p",{class:"hint"},"Days view (D): each initiative's tasks by working day. Double-click an initiative to zoom into it. Tasks roll up into their initiative: progress, status, owners, and optionally its dates."),
       h("p",{class:"hint"},"Keyboard: Tab to an item, Enter to open it, ← → to move, Alt + ← → to resize, Delete to remove, Ctrl+Z to undo. W and D switch views, + and − zoom the Days view, P presents, ? opens this help, Esc closes the panel."),
-      h("p",{class:"hint"},"Set baseline before a review. Afterwards, moved items show a dashed outline and how far they slipped."),
+      h("p",{class:"hint"},"Set baseline (Delivery, then Snapshots) before a review. Afterwards, moved items show a dashed outline and how far they slipped."),
       h("p",{class:"hint"}, FS_OK ? "Sharing: File → Open shared plan picks a JSON or YAML file in your OneDrive folder (or Save as a new shared plan creates one). Click Start editing so teammates see you're editing, Save as you go (Ctrl+S; each save keeps your lock for 30 minutes), then Done editing. Refresh or Auto pulls teammates' saves. If a conflict still happens, you choose which version wins and the other is downloaded as a backup." : "Use Edge or Chrome to share a plan file on OneDrive. Here, use File → Open a copy and Download."));
     return;
   }
@@ -13503,7 +13517,7 @@ function renderPlanningGuide(){
   };
   const laneIds = new Set(S.lanes.map(l=>"lane:" + l.id));
   const orphanIds = [...new Set([...(S.planningGuide || []).map(row=>row.id), ...(drafts ? drafts.keys() : [])])].filter(id=>id.startsWith("lane:") && !laneIds.has(id));
-  host.replaceChildren(h("div",{class:"jhead"},h("h2",{},"Planning guide"),h("p",{class:"hint"},"Describe how your team organizes work so an assistant can interpret ideas consistently. This shared guide provides planning context; Sightline's rules still apply."),
+  host.replaceChildren(h("div",{class:"jhead"},h("p",{class:"hint"},"Describe how your team organizes work so an assistant can interpret ideas consistently. This shared guide provides planning context; Sightline's rules still apply."),
     h("button",{type:"button",class:"btn",id:"pgSkills",onclick:()=>openPlanningSkills()},"Get planning skills"),
       h("p",{class:"hint"},"The guide supplies context. Optional chat uses a separately configured local companion; saving this guide does not connect an endpoint or organize ideas automatically. Avoid secrets: anyone who can open the plan can read this guide.")),
     !can ? h("p",{class:"hint",id:"pgReadonly"},present ? "Leave presentation mode to edit the planning guide." : tooNew() || locked ? "Guide editing is unavailable while this plan is read-only." : "Click Start editing to change the planning guide.") : null,
