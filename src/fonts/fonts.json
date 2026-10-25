@@ -1,0 +1,28 @@
+{
+  "family": "Instrument Sans",
+  "version": "Google Fonts v4",
+  "license": "SIL Open Font License 1.1 (OFL.txt)",
+  "source": "https://github.com/Instrument/instrument-sans",
+  "weight": "400 700",
+  "stretch": "75% 100%",
+  "files": [
+    {
+      "file": "instrument-sans-latin.woff2",
+      "style": "normal",
+      "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+      "sha256": "19f8ec3200550a11859c7e52d7378354bf71bc6dd0441fdde79b9a660513f5e4"
+    },
+    {
+      "file": "instrument-sans-latin-ext.woff2",
+      "style": "normal",
+      "unicodeRange": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF",
+      "sha256": "7bb9921f2ead639bc15e3650f4e5b62ec2573abab3c57b732d155d0dc8b98016"
+    },
+    {
+      "file": "instrument-sans-latin-italic.woff2",
+      "style": "italic",
+      "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+      "sha256": "2e3ef807d5908dafa9d02c8707337ecb0aecc3a126d5196ca894506dbdca2853"
+    }
+  ]
+}

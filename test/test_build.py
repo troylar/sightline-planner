@@ -40,7 +40,7 @@ def ok(name, cond, extra=""):
         print("  FAIL", name, extra)
 
 
-def build(releases, skill_mutator=None, tool_mutator=None):
+def build(releases, skill_mutator=None, tool_mutator=None, src_mutator=None):
     with tempfile.TemporaryDirectory() as t:
         t = pathlib.Path(t)
         shutil.copytree(ROOT / "src", t / "src")
@@ -52,6 +52,8 @@ def build(releases, skill_mutator=None, tool_mutator=None):
             skill_mutator(t / "skills")
         if tool_mutator:
             tool_mutator(t / "tools")
+        if src_mutator:
+            src_mutator(t / "src")
         (t / "src" / "releases.json").write_text(json.dumps(releases), encoding="utf-8")
         r = subprocess.run(["bash", str(t / "build.sh")], capture_output=True, text=True)
         page = (t / "dist" / "sightline.html").read_text(encoding="utf-8") if r.returncode == 0 else ""
@@ -162,6 +164,20 @@ h = lambda x: "'sha256-" + base64.b64encode(hashlib.sha256(x.encode("utf-8")).di
 csp = re.search(r"script-src ([^;]+);", page).group(1)
 ok("a re-encoded copy still matches the page's CSP", all(h(x) in csp for x in re.findall(r"<script>(.*?)</script>", mangled, re.S)))
 ok("the page says so if its code is blocked", 'id="bootfail"' in page and "Sightline didn't start" in page and 'getElementById("bootfail")?.remove()' in page)
+
+# The font is embedded from src/fonts, pinned by SHA-256: no font request, and a changed file fails the build.
+code, out, page = build(GOOD)
+fm = json.loads((ROOT / "src" / "fonts" / "fonts.json").read_text(encoding="utf-8"))
+faces = re.findall(r'@font-face\{font-family:"Instrument Sans";font-style:(\w+);[^}]*src:url\(data:font/woff2;base64,([A-Za-z0-9+/=]+)\)', page)
+ok("the page embeds each pinned font file, byte for byte", len(faces) == len(fm["files"]) == 3 and all(base64.b64decode(b) == (ROOT / "src" / "fonts" / f["file"]).read_bytes() and st == f["style"] for (st, b), f in zip(faces, fm["files"])), str(len(faces)))
+pol = re.search(r'http-equiv="Content-Security-Policy" content="([^"]+)"', page).group(1)
+ok("fonts come only from the page itself (font-src data:)", re.search(r"font-src ([^;]+);", pol).group(1).strip() == "data:" and "googleapis" not in pol and "gstatic" not in pol, pol)
+ok("the page names no font server at all", "fonts.googleapis.com" not in page and "fonts.gstatic.com" not in page)
+ok("the font's copyright and license travel with it", "Copyright 2022 The Instrument Sans Project Authors" in page and "SIL Open Font License 1.1" in page)
+def swap_font(src):
+    f = src / "fonts" / fm["files"][0]["file"]; b = bytearray(f.read_bytes()); b[-1] ^= 1; f.write_bytes(bytes(b))
+code, out, _ = build(GOOD, src_mutator=swap_font)
+ok("refuses a font file that doesn't match its pin", code != 0 and "doesn't match its pinned SHA-256" in out, out.strip().splitlines()[-1] if out.strip() else "")
 
 print(f"{passed}/{passed + failed} passed")
 sys.exit(1 if failed else 0)

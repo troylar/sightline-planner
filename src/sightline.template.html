@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="sightline-version" content="dev">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data: blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data: blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Sightline</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232f5fb3'/%3E%3Cpath d='M6 20h20' stroke='%23fff' stroke-width='2.6' stroke-linecap='round'/%3E%3Cpath d='M6 20l9-7' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' opacity='.55'/%3E%3Ccircle cx='23' cy='11' r='3.6' fill='%23ffd54a'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <script>/*__JSYAML__*/</script>
 <style>
+/*__FONTS__*/
 :root{
   --paper:#f5f6f8; --surface:#fff; --ink:#1b2231; --ink-2:#434d61; --ink-3:#5f6979;
   --rule:#d5dae2; --rule-2:#e8ebf0; --accent:#1f5fa8; --brand:#2f5fb3; --today:#c9372c; --sel:#d99a00;
@@ -18,6 +18,10 @@
   --on-bad:#fff; --on-accent:#fff; --tip-bg:#1b2231; --tip-ink:#fff; --tip-warn:#ffd28a; --tip-ok:#8fe3b5;
   --drawer-shadow:0 12px 40px rgba(15,20,30,.22);
   --shadow:0 1px 2px rgba(20,30,50,.06),0 4px 14px rgba(20,30,50,.05);
+  --font-ui:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --font-code:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --track:#eceff4; --edge:#dde2ea; --hov:color-mix(in srgb,var(--ink) 6%,transparent); --prs:color-mix(in srgb,var(--ink) 12%,transparent);
+  --lift:0 1px 2px rgb(16 24 40 / .07),0 1px 1px rgb(16 24 40 / .04); --ring:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent);
+  --glow:color-mix(in srgb,var(--sel) 55%,transparent); --fast:90ms; --state:150ms; --glide:240ms; --ease:cubic-bezier(.2,.7,.2,1);
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -27,6 +31,7 @@
   --ok-bg:#16352a; --warn-bg:#3a2d12; --bad-bg:#3d1c1a;
   --on-bad:#1c0705; --on-accent:#0d1420; --tip-bg:#e8ecf3; --tip-ink:#12161e; --tip-warn:#8a5200; --tip-ok:#17744a;
   --drawer-shadow:0 12px 40px rgba(0,0,0,.55);
+  --track:#222a36; --edge:#323b4b; --hov:color-mix(in srgb,#fff 7%,transparent); --prs:color-mix(in srgb,#fff 13%,transparent); --lift:0 1px 2px rgb(0 0 0 / .45);
   --shadow:none; color-scheme:dark;}}
 :root[data-theme="dark"]{
   --paper:#12161e; --surface:#1a202b; --ink:#e8ecf3; --ink-2:#c1c9d6; --ink-3:#9aa4b5;
@@ -35,12 +40,13 @@
   --ok-bg:#16352a; --warn-bg:#3a2d12; --bad-bg:#3d1c1a;
   --on-bad:#1c0705; --on-accent:#0d1420; --tip-bg:#e8ecf3; --tip-ink:#12161e; --tip-warn:#8a5200; --tip-ok:#17744a;
   --drawer-shadow:0 12px 40px rgba(0,0,0,.55);
+  --track:#222a36; --edge:#323b4b; --hov:color-mix(in srgb,#fff 7%,transparent); --prs:color-mix(in srgb,#fff 13%,transparent); --lift:0 1px 2px rgb(0 0 0 / .45);
   --shadow:none; color-scheme:dark;}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.45 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
-h1,h2,h3{font-family:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;margin:0}
-.mono{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums}
+body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.45 var(--font-ui);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--font-ui);font-stretch:85%;letter-spacing:-.01em;margin:0}
+.mono{font-family:var(--font-ui);font-variant-numeric:tabular-nums;letter-spacing:.01em}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 button:disabled{cursor:default}
@@ -52,14 +58,14 @@ button:disabled{cursor:default}
 @media (max-width:700px){.brand b{display:none}}
 .welcome .tagline{font-size:16px;color:var(--ink);font-weight:500;margin-top:-6px}
 .top{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--rule);padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
-.top input.title{font-family:"IBM Plex Sans Condensed",sans-serif;font-size:20px;font-weight:700;border:1px solid transparent;background:transparent;padding:2px 6px;border-radius:5px;min-width:0;width:clamp(180px,26vw,420px);flex:none}
+.top input.title{font-family:var(--font-ui);font-stretch:85%;letter-spacing:-.01em;font-size:20px;font-weight:700;border:1px solid transparent;background:transparent;padding:2px 6px;border-radius:5px;min-width:0;width:clamp(180px,26vw,420px);flex:none}
 .top input.title:hover:not(:disabled),.top input.title:focus{border-color:var(--rule)}
 .tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-left:auto}
 .primarynav{display:flex;align-items:center;gap:4px;flex:1 0 100%;border-bottom:1px solid var(--rule-2);padding-bottom:6px}
 #wsbar{flex-wrap:wrap}
 .primarynav button{border:0;border-radius:6px;background:transparent;padding:7px 14px;font-weight:600;color:var(--ink-2)}
-.primarynav button[aria-pressed="true"]{background:var(--paper);color:var(--accent)}
-.primarynav button:hover{background:var(--paper)}
+.primarynav button[aria-pressed="true"]{background:transparent;color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent);border-radius:6px 6px 0 0}
+.primarynav button:hover:not([aria-pressed="true"]){background:var(--hov);color:var(--ink)}
 .primarynav #tab-plan{margin-left:auto;font-weight:400}
 .assistant-status{max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #identityBtn{display:block;max-width:min(220px,60vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -69,11 +75,15 @@ button:disabled{cursor:default}
 .detail-advanced .field{margin-bottom:9px}
 @media (max-width:700px){.primarynav button{padding:7px 10px}.assistant-status{max-width:150px}}
 .grp{display:contents}
-.btn{border:1px solid var(--rule);background:var(--surface);border-radius:6px;padding:5px 10px;font-size:13px;display:inline-flex;align-items:center;gap:5px}
-.btn:hover:not(:disabled){border-color:var(--ink-3)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn{border:1px solid var(--edge);background:var(--surface);border-radius:8px;box-shadow:var(--lift);padding:5px 10px;font-size:13px;display:inline-flex;align-items:center;gap:5px}
+.btn:hover:not(:disabled){background:color-mix(in srgb,var(--ink) 4%,var(--surface));border-color:color-mix(in srgb,var(--ink) 22%,var(--edge))}
+.btn:active:not(:disabled){background:color-mix(in srgb,var(--ink) 9%,var(--surface));box-shadow:none;transform:translateY(1px)}
+.btn.primary{background:var(--accent);border-color:transparent;color:var(--on-accent);box-shadow:0 1px 2px rgb(16 24 40 / .2),inset 0 1px 0 rgb(255 255 255 / .12)}
+.btn.primary:hover:not(:disabled){background:color-mix(in srgb,var(--accent) 88%,#000);border-color:transparent}
+.btn.primary:active:not(:disabled){background:color-mix(in srgb,var(--accent) 78%,#000)}
 .btn.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
-.btn:disabled{opacity:.4}
+.btn.on:hover:not(:disabled){background:color-mix(in srgb,var(--ink) 86%,var(--surface));border-color:transparent}
+.btn:disabled{opacity:.4;box-shadow:none}
 .sep{width:1px;height:22px;background:var(--rule)}
 .status{font-size:12px;color:var(--ink-3)}
 #status{flex:1 1 180px;min-width:0;white-space:normal;overflow-wrap:anywhere}
@@ -93,7 +103,9 @@ button:disabled{cursor:default}
 .menu{position:absolute;right:0;top:calc(100% + 6px);z-index:50;min-width:260px;background:var(--surface);border:1px solid var(--rule);border-radius:9px;box-shadow:var(--drawer-shadow);padding:6px;display:flex;flex-direction:column}
 .menu[hidden]{display:none}
 .menu button,.menu .mi{border:0;background:transparent;text-align:left;padding:7px 10px;border-radius:6px;font-size:13px;display:flex;align-items:center;gap:8px;cursor:pointer;width:100%}
-.menu button:hover:not(:disabled),.menu .mi:hover,.menu button:focus-visible,.menu .mi:focus-visible{background:var(--paper)}
+.menu button:hover:not(:disabled),.menu .mi:hover,.menu button:focus-visible,.menu .mi:focus-visible{background:var(--hov)}
+.menu button:active:not(:disabled),.menu .mi:active{background:var(--prs)}
+.menu button:focus-visible,.menu .mi:focus-visible{outline-offset:-2px}
 .menu button:disabled{opacity:.45;cursor:default}
 .menu .mh{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3);padding:8px 10px 3px;font-weight:600}
 .menu .mh:not(:first-child){border-top:1px solid var(--rule-2);margin-top:4px;padding-top:9px}
@@ -113,7 +125,7 @@ body.presenting.hasSel #side{position:fixed;top:calc(var(--toph,60px) + var(--ws
 .insbtn{position:absolute;z-index:4;width:20px;height:20px;border-radius:50%;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-weight:700;font-size:14px;line-height:17px;padding:0;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.15)}
 .insbtn:hover{background:var(--accent);color:var(--on-accent)}
 .addmenu{position:fixed;right:auto;top:0;min-width:230px}
-.addmenu kbd{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);border:1px solid var(--rule);border-radius:4px;padding:0 5px}
+.addmenu kbd{margin-left:auto;font-family:var(--font-code);font-size:11px;color:var(--ink-3);border:1px solid var(--rule);border-radius:4px;padding:0 5px}
 .addbtn{position:absolute;z-index:3;white-space:nowrap;border:1px dashed var(--ink-3);background:var(--surface);color:var(--ink-3);border-radius:5px;font-size:11px;line-height:16px;padding:1px 7px;opacity:.5}
 .lane:hover .addbtn,.addbtn:focus-visible{opacity:1;color:var(--ink);border-color:var(--ink-2)}
 .lane.compact .addbtn{opacity:0}
@@ -165,7 +177,7 @@ button.lchip{padding:2px 9px;cursor:pointer}
 .peek .pk-h{margin-top:7px;padding-top:6px;border-top:1px solid var(--rule-2);color:var(--ink-3);font-size:11px}
 @media (prefers-reduced-motion: no-preference){ .peek:not([hidden]){animation:pk-in .12s ease-out} @keyframes pk-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}} }
 #dragtip{position:fixed;z-index:60;pointer-events:none;background:var(--tip-bg);color:var(--tip-ink);border-radius:6px;padding:6px 9px;font-size:12px;line-height:1.4;max-width:320px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
-#dragtip .d{font-family:"IBM Plex Mono",monospace;font-weight:600}
+#dragtip .d{font-family:var(--font-ui);font-weight:600}
 #dragtip .w{color:var(--tip-warn)}#dragtip .g{color:var(--tip-ok)}
 #dragtip small{display:block;opacity:.65;font-size:11px;margin-top:2px}
 .welcome{padding:36px 24px 40px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
@@ -179,7 +191,7 @@ button.lchip{padding:2px 9px;cursor:pointer}
 .banner.warn{background:var(--warn-bg)}
 .banner.info{background:var(--surface);border:1px solid var(--rule)}
 .banner b{font-weight:600}
-.linkish{border:0;background:transparent;color:var(--accent);text-decoration:underline;padding:0;font-size:13px}
+.linkish{border:0;background:transparent;color:var(--accent);text-decoration:underline;padding:0;font-size:13px;text-align:left}
 
 .layout{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;padding:16px;align-items:start}
 body:not(.hasSel) #side{display:none}
@@ -219,10 +231,10 @@ body:not(.hasSel) #side{display:none}
 .ghead{display:grid;grid-template-columns:var(--lw,160px) 1fr;border-bottom:1px solid var(--rule);position:relative;z-index:3;background:var(--surface);border-radius:10px 10px 0 0}
 .gcorner{padding:10px 12px;font-size:12px;color:var(--ink-3);display:flex;align-items:flex-end;justify-content:space-between;gap:6px}
 .gcols{display:grid}
-.gsprint{padding:8px 8px 2px;border-left:1px solid var(--rule);font-family:"IBM Plex Sans Condensed",sans-serif;font-weight:600;font-size:13.5px;min-width:0}
-.gsprint small{display:block;font-family:"IBM Plex Mono",monospace;font-weight:400;font-size:11px;color:var(--ink-3)}
-.gsprint em{display:block;font-family:"IBM Plex Sans",sans-serif;font-style:normal;font-weight:400;font-size:11px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gweek{padding:0 6px 6px;font-size:10.5px;color:var(--ink-3);border-left:1px solid var(--rule-2);font-family:"IBM Plex Mono",monospace}
+.gsprint{padding:8px 8px 2px;border-left:1px solid var(--rule);font-family:var(--font-ui);font-stretch:85%;font-weight:600;font-size:13.5px;min-width:0}
+.gsprint small{display:block;font-family:var(--font-ui);font-weight:400;font-size:11px;color:var(--ink-3)}
+.gsprint em{display:block;font-family:var(--font-ui);font-stretch:100%;font-style:normal;font-weight:400;font-size:11px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gweek{padding:0 6px 6px;font-size:10.5px;color:var(--ink-3);border-left:1px solid var(--rule-2);font-family:var(--font-ui)}
 .lane{display:grid;grid-template-columns:var(--lw,160px) 1fr;border-bottom:1px solid var(--rule-2)}
 .lane.dragover{background:color-mix(in srgb,var(--accent) 7%,transparent)}
 .lname{padding:8px 12px;display:flex;flex-direction:column;justify-content:center;gap:1px;cursor:pointer;border:0;border-right:1px solid var(--rule-2);background:transparent;text-align:left}
@@ -249,10 +261,10 @@ body:not(.hasSel) #side{display:none}
 .bar.jira,.tbar.jira,.ibar.jira{border:2px solid var(--lc);border-left-width:4px;line-height:22px}
 .bar.jira.st-inprogress,.tbar.jira.st-inprogress{border-left-color:var(--prog)}.bar.jira.st-atrisk{border-left-color:var(--warn)}
 .bar.jira .tag,.tbar.jira .tag{background:var(--paper);color:var(--ink-2)}
-.jkey{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;line-height:15px;padding:0 4px;border-radius:3px;flex:none;background:color-mix(in srgb,var(--lc,#5c6878) 16%,var(--surface));color:var(--ink)}
+.jkey{font-family:var(--font-code);font-size:10px;line-height:15px;padding:0 4px;border-radius:3px;flex:none;background:color-mix(in srgb,var(--lc,#5c6878) 16%,var(--surface));color:var(--ink)}
 .gsprint.plan{background:var(--paper);font-style:italic;color:var(--ink-2)}
 .lg-jira{display:inline-flex;align-items:center;justify-content:center;width:34px;height:14px;border:2px solid var(--accent);border-left-width:4px;border-radius:3px;background:var(--surface);vertical-align:-3px;margin-right:4px}
-.lg-jira b{font:500 7px "IBM Plex Mono",monospace;color:var(--ink-2)}
+.lg-jira b{font:500 7px var(--font-code);color:var(--ink-2)}
 .lg-tbox{display:inline-block;width:22px;height:12px;border:1px solid var(--rule);background:var(--paper);vertical-align:-2px;margin-right:4px}
 .lg-plan{display:inline-block;width:34px;height:14px;border-radius:3px;background:var(--accent);vertical-align:-3px;margin-right:4px}
 .flag.dragging{z-index:20;cursor:grabbing;opacity:.85}
@@ -262,7 +274,7 @@ body:not(.hasSel) #side{display:none}
 .addedby{margin:0 0 8px}.actrow>summary{cursor:pointer;padding:5px 0;font-size:13px}.actops{margin:2px 0 8px 18px;padding:0;font-size:12.5px;color:var(--ink-2)}
 .tagdots{display:inline-flex;gap:2px;flex:none;margin-left:2px}.tagdots i{width:7px;height:7px;border-radius:50%;display:inline-block}
 .tagrow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:4px}.tagpill{display:inline-flex;align-items:center;gap:3px;padding:1px 8px;border-radius:10px;font-size:12px;background:color-mix(in srgb,var(--tc) 18%,var(--surface));color:var(--ink);border:1px solid color-mix(in srgb,var(--tc) 45%,var(--surface))}
-.tagpill .x{font-size:12px;padding:0 2px}.labelpill{padding:1px 7px;border-radius:10px;font:500 11px "IBM Plex Mono",monospace;border:1px solid var(--rule);color:var(--ink-2)}
+.tagpill .x{font-size:12px;padding:0 2px}.labelpill{padding:1px 7px;border-radius:10px;font:500 11px var(--font-code);border:1px solid var(--rule);color:var(--ink-2)}
 #f-tagadd{font-size:12.5px;padding:2px 6px;width:9em}.fchip.tagchip.hide{text-decoration:line-through}
 .jfacts{border:1.5px solid color-mix(in srgb,var(--accent) 35%,var(--rule));border-radius:10px;padding:10px 12px;margin:0 0 12px;background:color-mix(in srgb,var(--accent) 4%,var(--surface))}
 .jfacts .jfhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}.jfacts .jfhead b{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent)}
@@ -315,7 +327,7 @@ button.flag{border:0;background:transparent;font-family:inherit;cursor:pointer;c
 .lane.gaterow{background:color-mix(in srgb,var(--warn) 5%,transparent)}
 .lane.markrow .track{min-height:30px}
 #t-gates tr.flash td,#t-holidays tr.flash td{background:var(--warn-bg);transition:background .3s}
-.listbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:10px}.listbar .seg .btn.on{background:var(--accent);color:#fff}.listcopy textarea{width:100%;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px}
+.listbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:10px}.listcopy textarea{width:100%;font-family:var(--font-code);font-size:12px}
 .md{font-size:13px;line-height:1.5;color:var(--ink);overflow-wrap:anywhere;max-width:72ch}.md>:first-child{margin-top:0}.md>:last-child{margin-bottom:0}
 .md h3,.md h4,.md h5{margin:12px 0 4px;line-height:1.3;color:var(--ink)}.md h3{font-size:15px}.md h4{font-size:14px}.md h5{font-size:13px;text-transform:none;letter-spacing:0}
 .md p{margin:6px 0}.md ul,.md ol{margin:6px 0;padding-left:22px}.md li{margin:2px 0}.md li>input{margin:0 4px 0 -2px;vertical-align:-1px}
@@ -335,7 +347,7 @@ button.flag{border:0;background:transparent;font-family:inherit;cursor:pointer;c
 .lwrap{overflow-x:auto}.ltable{width:100%;border-collapse:collapse;font-size:13px}.ltable th[scope=col]{text-align:left;font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;padding:6px 8px;border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--surface)}
 .ltable td,.ltable .lname{padding:5px 8px;border-bottom:1px solid var(--rule-2);vertical-align:top;text-align:left;font-weight:normal}.ltable .ld{white-space:nowrap;color:var(--ink-2)}.ltable tr.lrow{cursor:pointer}.ltable tr.lrow:hover td,.ltable tr.lrow:hover th{background:color-mix(in srgb,var(--accent) 6%,transparent)}
 .ltable tr.lrow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}.ltable tr.lsel td,.ltable tr.lsel th{background:color-mix(in srgb,var(--accent) 12%,transparent)}.ltable tr.lhead .lt{font-weight:600}.ltable tr.lgroup th{text-align:left;padding:10px 8px 4px;font-size:13px;border-bottom:1px solid var(--rule)}
-.ltable th.lname{text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink);font-family:inherit}.lwaits .linkish{text-align:left}
+.ltable th.lname{text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink);font-family:inherit}
 .ltable .lkey{margin-left:6px;font-size:11px;color:var(--ink-3)}.ltable .lin,.ltable .lwhy{display:block}.ltable .lshared{margin-left:6px;font-size:11px;padding:0 5px;border-radius:8px;border:1px solid var(--rule);color:var(--ink-2)}.lwaits{margin:0;padding:0;list-style:none}.lwaits li{margin:0 0 2px}.ltable tr.loff td{color:var(--ink-3)}
 @media print{body.on-list>:not(#ws-list){display:none!important}body.on-list #ws-list{display:block!important}body.on-list .listbar,body.on-list .listcopy,body.on-list #listSelHidden{display:none!important}body.on-list .lwrap{overflow:visible}body.on-list .ltable th[scope=col]{position:static}body.on-list .ltable thead{display:table-header-group}body.on-list .ltable tr{break-inside:avoid}body.on-list .panel{border:0;box-shadow:none}}
 .fcsum{font-size:14px;margin:0 0 10px}.fcsum.incomplete{color:var(--warn)}.fctable td,.fcloadt td{padding:4px 8px;border-bottom:1px solid var(--rule-2);vertical-align:top}.fctable tr.nodate td{color:var(--ink-3)}.fcwhytd{font-size:12px;color:var(--ink-2);max-width:360px}.fch3{font-size:14px;margin:16px 0 4px}.fcchain{margin:4px 0 6px 18px;padding:0;font-size:13px}.fcloadt tr.over td:nth-child(4){color:var(--bad);font-weight:600}
@@ -639,7 +651,7 @@ textarea.celltext{field-sizing:content;min-height:0;width:100%;resize:none;font:
 .ktable{border-collapse:collapse;width:100%}
 .ktable td{padding:5px 8px;border-top:1px solid var(--rule-2);vertical-align:top;font-size:13.5px}
 .ktable td:first-child{width:190px;white-space:nowrap}
-kbd{display:inline-block;min-width:18px;padding:1px 6px;margin:0 2px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;background:var(--paper);font:500 12px/18px "IBM Plex Mono",ui-monospace,monospace;text-align:center;color:var(--ink)}
+kbd{display:inline-block;min-width:18px;padding:1px 6px;margin:0 2px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;background:var(--paper);font:500 12px/18px var(--font-code);text-align:center;color:var(--ink)}
 .kor{color:var(--ink-3);font-size:12px;margin:0 3px}
 @media (max-width:640px){.hlp{grid-template-columns:1fr}.hlpnav{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--rule)}.hlpbrand{width:100%}}
 .ic{display:inline-flex;width:16px;height:16px;flex:none;vertical-align:-3px}
@@ -680,7 +692,7 @@ body:not(.hasSel) #side.floating{display:none}
 #dlgJira{width:min(640px,calc(100vw - 32px));max-height:86vh;overflow:auto;border:1px solid var(--rule);border-radius:12px;background:var(--surface);color:var(--ink);padding:0 20px 20px}
 #dlgJira::backdrop{background:rgba(10,14,22,.45)}
 #jiraBody{display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:1.5}
-.jcmd{font:500 12px/1.5 "IBM Plex Mono",ui-monospace,monospace;background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:1px 5px;word-break:break-all}
+.jcmd{font:500 12px/1.5 var(--font-code);background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:1px 5px;word-break:break-all}
 .jsetup summary{cursor:pointer;font-weight:600}
 .jsetup ol{padding-left:20px}.jsetup li{margin:6px 0}
 .jdiffs{display:flex;flex-direction:column;gap:4px;max-height:280px;overflow:auto}
@@ -824,7 +836,7 @@ fieldset.recur > select{align-self:flex-start}
 .load header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .lgrid{display:grid;grid-template-columns:160px repeat(var(--w),1fr);min-width:980px;font-size:12px}
 .lgrid .p{padding:4px 12px 4px 0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lgrid .c{margin:2px;border-radius:4px;text-align:center;line-height:22px;font-family:"IBM Plex Mono",monospace;color:var(--ink-3);background:var(--rule-2)}
+.lgrid .c{margin:2px;border-radius:4px;text-align:center;line-height:22px;font-family:var(--font-ui);color:var(--ink-3);background:var(--rule-2)}
 .lgrid .c.n1{background:var(--ok-bg);color:var(--ok)}
 .lgrid .c.n2{background:var(--warn-bg);color:var(--warn);font-weight:600}
 .lgrid .c.n3{background:var(--bad-bg);color:var(--bad);font-weight:700}
@@ -842,7 +854,7 @@ fieldset.recur > select{align-self:flex-start}
 .bar.taskbar{height:22px;line-height:22px;top:auto;border-left-width:3px;opacity:.95}
 .tbar.init{border-radius:3px;height:22px;opacity:.85;cursor:pointer;border-left:4px solid rgba(0,0,0,.22)}
 .bar.taskbar{border-radius:11px}
-.lgrid .hd{font-size:10.5px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;padding:0 4px 4px}
+.lgrid .hd{font-size:10.5px;color:var(--ink-3);font-family:var(--font-ui);padding:0 4px 4px}
 
 .sections{padding:0 16px 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:16px}
 .sections .wide{grid-column:1/-1}
@@ -860,10 +872,12 @@ td input:disabled,td select:disabled{opacity:1;color:var(--ink);-webkit-appearan
 .x{border:0;background:transparent;color:var(--ink-3);font-size:16px;line-height:1;padding:4px 6px;border-radius:4px}
 .x:hover:not(:disabled){color:var(--bad);background:var(--bad-bg)}
 
-.seg{display:inline-flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
-.seg button{border:0;background:var(--surface);padding:5px 10px;font-size:13px}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
-.gday{border-left:1px solid var(--rule-2);text-align:center;font-size:10px;color:var(--ink-3);padding:0 0 4px;font-family:"IBM Plex Mono",monospace;line-height:1.25}
+.seg{display:inline-flex;gap:2px;padding:2px;background:var(--track);border-radius:9px}
+.seg button{position:relative;isolation:isolate;border:0;background:transparent;color:var(--ink-2);border-radius:7px;padding:4px 10px;font-size:13px;font-weight:500;box-shadow:none}
+.seg button:hover:not(:disabled):not([aria-pressed="true"]):not(.on){background:var(--hov);color:var(--ink)}
+.seg button[aria-pressed="true"],.seg button.on{background:transparent;color:var(--ink);font-weight:600}
+.seg button[aria-pressed="true"]::before,.seg button.on::before{content:"";position:absolute;inset:0;z-index:-1;transform-origin:left center;border-radius:7px;background:var(--surface);box-shadow:var(--lift),0 0 0 1px var(--edge)}
+.gday{border-left:1px solid var(--rule-2);text-align:center;font-size:10px;color:var(--ink-3);padding:0 0 4px;font-family:var(--font-ui);line-height:1.25}
 .gday b{display:block;font-size:11px;color:var(--ink-2);font-weight:500}
 .gday.mon{border-left-color:var(--rule)}
 .gday.hol{background:repeating-linear-gradient(135deg,var(--rule-2) 0 4px,transparent 4px 8px)}
@@ -974,7 +988,7 @@ td input:disabled,td select:disabled{opacity:1;color:var(--ink);-webkit-appearan
 .lane.compact .dlabel{padding-block:3px}
 .lane.compact .dlabel .nm{-webkit-line-clamp:1;font-weight:500;color:var(--ink-2)}
 .lane.compact .ibar{top:8px}
-.offwin{position:absolute;top:4px;font-size:11px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;white-space:nowrap;pointer-events:none}
+.offwin{position:absolute;top:4px;font-size:11px;color:var(--ink-3);font-family:var(--font-ui);white-space:nowrap;pointer-events:none}
 .offwin.r{right:8px}.offwin.l{left:8px}
 .daynav{display:flex;flex-direction:column;align-items:flex-start;gap:5px;width:100%}
 .daynav .row{display:flex;gap:4px;align-items:center}
@@ -1012,7 +1026,7 @@ td input:disabled,td select:disabled{opacity:1;color:var(--ink);-webkit-appearan
 .tasklist{display:flex;flex-direction:column;gap:1px;border:1px solid var(--rule);border-radius:6px;padding:4px;background:var(--paper);max-height:240px;overflow:auto}
 .tasklist button{border:0;background:transparent;text-align:left;padding:3px 5px;border-radius:4px;font-size:12.5px;display:flex;gap:6px;align-items:baseline}
 .tasklist button:hover{background:var(--surface)}
-.tasklist .dt{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);white-space:nowrap}
+.tasklist .dt{margin-left:auto;font-family:var(--font-ui);font-size:11px;color:var(--ink-3);white-space:nowrap}
 .dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--ink-3)}
 .dot.inprogress{background:var(--prog)}.dot.done{background:var(--ok)}.dot.atrisk{background:var(--warn)}
 body.readonly .edit,body.viewonly .edit{display:none!important}
@@ -1022,9 +1036,52 @@ body.readonly .bar,body.readonly .flag{cursor:default}
 
 dialog{border:1px solid var(--rule);border-radius:10px;background:var(--surface);color:var(--ink);padding:16px;width:min(720px,92vw);box-shadow:var(--shadow)}
 dialog::backdrop{background:rgba(10,14,20,.45)}
-dialog textarea{width:100%;height:50vh;font-family:"IBM Plex Mono",monospace;font-size:12px;border:1px solid var(--rule);border-radius:6px;padding:8px;background:var(--paper)}
+dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12px;border:1px solid var(--rule);border-radius:6px;padding:8px;background:var(--paper)}
 .dlg-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap}
 .err{color:var(--bad);font-size:12.5px}
+
+/* Interaction: one system for every control. Hover says it's live, press answers at once, selected differs from hover,
+   focus is never clipped. Motion only answers a person's action; it's off under reduced motion, and forced colors keep
+   the system's own. Screen only, so print stays as it was. */
+@media screen{
+  :is(.btn,.seg button,.primarynav button,[role=tab],.hlpnav button,.chip,.rchip,.fchip,.qchip,.tchip,.rn-chip,button.lchip,.wdbtn,.icb,.icon-btn,.x,.linkish,.menu button,.menu .mi,.insbtn,.addbtn,.foldb,.onbtn,summary,.urow,.oopt,.fhit,.rn-item,.tasklist button,.srow,.dvcard,.meetchip,.nest-tg){
+    transition:background-color var(--state) var(--ease),border-color var(--state) var(--ease),color var(--state) var(--ease),box-shadow var(--state) var(--ease),transform var(--fast) var(--ease),opacity var(--state),text-decoration-color var(--state)}
+  :is(.seg button,.chip,.rchip,.fchip,.qchip,.tchip,.rn-chip,button.lchip,.wdbtn,.icb,.icon-btn,.insbtn,.foldb,.nest-tg,[role=tab],.hlpnav button,.primarynav button):active:not(:disabled){transform:scale(.97)}
+  :is(.fchip,.qchip,.rn-chip,button.lchip,.wdbtn,.icb,.icon-btn,.hlpnav button,.plannav [role=tab],.tabs [role=tab],.tabmore):hover:not(:disabled):not([aria-pressed="true"]):not([aria-selected="true"]){background:var(--hov)}
+  .chip:hover{background:color-mix(in srgb,var(--ink) 5%,var(--paper))}
+  button.rchip:hover:not(:disabled){box-shadow:var(--lift);filter:brightness(.98)}
+  .icon-btn[aria-pressed="true"]{border-color:var(--ink)}
+  .tabs [role=tab][aria-selected="true"]{border-radius:6px 6px 0 0}
+  .x:active:not(:disabled){background:color-mix(in srgb,var(--bad) 22%,var(--surface))}
+  .linkish{text-underline-offset:2px;text-decoration-thickness:1px;text-decoration-color:color-mix(in srgb,currentColor 45%,transparent)}
+  .linkish:hover:not(:disabled){text-decoration-color:currentColor}
+  .linkish:active:not(:disabled){opacity:.7}
+  summary:hover{color:var(--ink)}
+  :is(.urow,.oopt,.rn-item,.tasklist button,.srow):active{background:var(--prs)}
+  .ltable tr.lrow:active>td{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+  :is(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]),select,textarea):not(:disabled):not([readonly]):hover{border-color:color-mix(in srgb,var(--ink) 28%,var(--rule))}
+  :is(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]),select,textarea):focus-visible{outline:none;border-color:var(--accent);box-shadow:var(--ring)}
+  input[type=checkbox],input[type=radio],input[type=range]{accent-color:var(--accent)}
+  :is(.seg button,.tabs [role=tab],.ltable tr.lrow,.bar,.tbar):focus-visible{outline-offset:-2px}
+  :is(.bar,.tbar,.minibar,.ibar,.blk,.dvtl){transition:filter var(--state) var(--ease),box-shadow var(--state) var(--ease)}
+  :is(.bar,.tbar,.minibar,.ibar,.blk,.dvtl):hover{filter:brightness(.95) saturate(1.06)}
+  :is(.bar,.tbar):active{filter:brightness(.9) saturate(1.1)}
+}
+.bar,.tbar{font-stretch:87.5%}
+@media screen{
+  .bar.dragging,.tbar.dragging{box-shadow:0 6px 16px rgb(16 24 40 / .22);filter:none;z-index:20}
+}
+@media screen and (hover:none){ :is(.btn,.chip,.seg button):hover{transform:none} }
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:0s!important;animation-duration:0s!important}
+  :is(button,.linkish,summary,[role=tab]):active{transform:none!important}
+}
+@media (forced-colors:active){
+  .seg button[aria-pressed="true"]::before,.seg button.on::before{background:Highlight;box-shadow:none}
+  .seg button[aria-pressed="true"],.seg button.on{color:HighlightText;forced-color-adjust:none}
+  :is(input,select,textarea):focus-visible{outline:2px solid Highlight;outline-offset:1px}
+  .primarynav button[aria-pressed="true"]{border-bottom:2px solid Highlight}
+}
 </style>
 </head>
 <body>
@@ -1477,7 +1534,11 @@ function syncHeaderGeometry(){
     const value = el.offsetHeight + "px"; if (style.getPropertyValue(property) !== value) style.setProperty(property, value);
   }
 }
-function setStatus(t, fromStrip){ const el = $("#status"); el.textContent = t; el.title = t; statusAt = Date.now(); statusFromStrip = !!fromStrip; if (typeof ResizeObserver === "undefined") syncHeaderGeometry(); }
+function setStatus(t, fromStrip){ const el = $("#status"); const same = el.textContent === t; el.textContent = t; el.title = t; statusAt = Date.now(); statusFromStrip = !!fromStrip; if (typeof ResizeObserver === "undefined") syncHeaderGeometry();
+  if (!fromStrip && !same && t && el.animate && !calmMotion()) el.animate([{opacity:.3, transform:"translateY(2px)"}, {opacity:1, transform:"none"}], {duration:160, easing:EASE}); }
+// Motion answers what a person did. Reduced motion turns it off; so does a page nobody can see.
+const EASE = "cubic-bezier(.2,.7,.2,1)";
+const calmMotion = () => document.hidden || !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
 
 // ================= calendar (UTC day math, no DST drift) =================
 const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -5319,7 +5380,7 @@ function dayPage(dir){
 let measureCtx;
 const keyW = k => k ? k.length * 6 + 13 : 0;      // a .jkey chip plus its gap
 function textW(t){
-  try { if (measureCtx === undefined){ const c = document.createElement("canvas").getContext("2d"); measureCtx = c || null; if (c) c.font = '11px "IBM Plex Sans", system-ui, sans-serif'; } } catch(e){ measureCtx = null; }
+  try { if (measureCtx === undefined){ const c = document.createElement("canvas").getContext("2d"); measureCtx = c || null; if (c) c.font = '11px "Instrument Sans", system-ui, sans-serif'; if ("fontStretch" in c) c.fontStretch = "semi-condensed"; } } catch(e){ measureCtx = null; }
   return measureCtx ? measureCtx.measureText(t).width : t.length * 6.3;
 }
 function dayCols(){
@@ -7450,8 +7511,26 @@ function applyLaneScreen(){
   const was = lanesOffscreen.map(l=>l.id).join(); lanesOffscreen = S.lanes.filter(l=>off.has(l.id)); return was !== lanesOffscreen.map(l=>l.id).join();
 }
 function laneScrollCheck(){ clearTimeout(laneScrollT); laneScrollT = setTimeout(()=>{ if (UI.ws !== "timeline") return; if (applyLaneScreen()) renderWs(); }, 180); }
+// When a change lands (apply, undo, a sync), the bars it moved glide from where they were and glow once, so you see what
+// changed. Only a few moved items glide: when most of the chart moves, the view changed (zoom, filters), not the plan.
+// A dragged bar is already where it lands, so dropping it never glides. Positions are read before and after the draw.
+const GLIDE_MAX = 40; let glideLast = 0;
+function glideSnap(g){ if (!g.firstChild || calmMotion()) return null; const o = g.getBoundingClientRect(), m = new Map();
+  g.querySelectorAll(".bar[data-key],.tbar[data-key]").forEach(el=>{ const r = el.getBoundingClientRect(); if (r.width) m.set(el.dataset.key, {x:r.left - o.left, y:r.top - o.top, w:r.width}); });
+  return {w:o.width, m}; }
+function glide(g, was){ glideLast = 0; if (!was || calmMotion()) return; const o = g.getBoundingClientRect(); if (Math.abs(o.width - was.w) > 1) return;
+  const moved = [], els = g.querySelectorAll(".bar[data-key],.tbar[data-key]");
+  for (const el of els){ const p = was.m.get(el.dataset.key); if (!p) continue; const r = el.getBoundingClientRect(), dx = p.x - (r.left - o.left), dy = p.y - (r.top - o.top);
+    if (Math.abs(dx) >= 1 || Math.abs(dy) >= 1 || Math.abs(p.w - r.width) >= 1){ moved.push({el, dx, dy, w:p.w, nw:r.width}); if (moved.length > GLIDE_MAX) return; } }
+  if (moved.length > els.length / 2 && moved.length > 3) return;
+  const glow = getComputedStyle(document.documentElement).getPropertyValue("--glow").trim() || "rgba(217,154,0,.5)";
+  moved.forEach(({el, dx, dy, w, nw})=>{ if (!el.animate) return; el.dataset.glided = "1";
+    el.animate([{transform:`translate(${dx}px,${dy}px)`, width:w + "px"}, {transform:"none", width:nw + "px"}], {duration:240, easing:EASE});
+    el.animate([{boxShadow:`0 0 0 3px ${glow}`}, {boxShadow:"0 0 0 0 transparent"}], {duration:1100, delay:180, easing:"ease-out"}); });
+  glideLast = moved.length; }
 function renderGantt(){
   const W = S.meta.weeks, g = $("#gantt"), gw = $("#gscroll")?.clientWidth || 1100;   // measure before emptying the chart
+  const was = glideSnap(g);
   g.replaceChildren(); g.style.minWidth = ""; g.style.setProperty("--lw", UI.labelW.weeks + "px");
   { const zw = zoomWeeks(), avail = Math.max(300, gw - UI.labelW.weeks - 2), on = zw > 0 && zw < W;
     g.classList.toggle("zoomed", on); if (on) g.style.minWidth = (UI.labelW.weeks + avail * W / zw) + "px"; }
@@ -7693,7 +7772,17 @@ function renderGantt(){
   addColGrip(g);
   requestAnimationFrame(spillLabels);
   if (frac >= 0 && frac <= 1) g.append(h("div",{class:"today",title:"Today",style:{left:`calc(var(--lw) + (100% - var(--lw)) * ${frac})`, top:g.querySelector(".ghead").offsetHeight+"px"}}));
+  glide(g, was);
 }
+// A segmented control's pill slides from the option that was on to the one picked.
+let segFrom = null;
+document.addEventListener("pointerdown", e=>{ segFrom = null; const b = e.target.closest && e.target.closest(".seg button"); if (!b || b.disabled) return;
+  const seg = b.closest(".seg"), on = seg.querySelector('button[aria-pressed="true"],button.on'); if (on && on !== b) segFrom = {seg, id:seg.id, i:[...seg.querySelectorAll("button")].indexOf(on), r:on.getBoundingClientRect()}; }, true);
+document.addEventListener("click", ()=>{ const f = segFrom; segFrom = null; if (!f) return;
+  requestAnimationFrame(()=>{ const seg = f.seg.isConnected ? f.seg : f.id ? document.getElementById(f.id) : null; if (!seg || calmMotion()) return;
+    const on = seg.querySelector('button[aria-pressed="true"],button.on'); if (!on || !on.animate || [...seg.querySelectorAll("button")].indexOf(on) === f.i) return;
+    const r = on.getBoundingClientRect(); if (!r.width || !f.r.width) return;
+    try { on.animate([{transform:`translateX(${f.r.left - r.left}px) scaleX(${f.r.width / r.width})`}, {transform:"none"}], {duration:200, easing:EASE, pseudoElement:"::before"}); } catch(err){} }); });
 // A plan with nothing on it: say what's happening and the next step. Reconnecting is one obvious button; a shared plan
 // someone else runs says so; an empty plan you're editing gets a short checklist that ticks itself off.
 let reconnectHd = null;

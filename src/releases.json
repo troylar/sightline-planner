@@ -1,5 +1,51 @@
 [
   {
+    "version": "1.112.0",
+    "date": "2026-10-25",
+    "headline": "Every button answers when you hover and click",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Interface",
+        "title": "Controls answer your hover and click",
+        "before": "Many buttons and chips didn't change when you pointed at them, nothing moved when you clicked, and a selected button could show a gray ring or light, clipped corners.",
+        "now": "Every button, chip, tab, menu item and row lightens when you point at it and presses in when you click. Filled buttons keep their color on hover, and the keyboard focus ring stays visible everywhere.",
+        "where": "Everywhere"
+      },
+      {
+        "kind": "improved",
+        "area": "Interface",
+        "title": "Switches slide to what you pick",
+        "before": "Choices like the source and layout switches swapped a dark fill from one option to the next.",
+        "now": "The selected option is a raised pill that slides to the one you pick. The main navigation underlines the view you're on.",
+        "where": "Timeline, List and Plan toolbars"
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Bars glide to their new dates",
+        "now": "When an edit, undo or redo moves a few bars, they glide from where they were and glow once, so you can see what changed. A new view or a drag doesn't animate, and nothing moves if your system asks for reduced motion.",
+        "where": "Timeline"
+      },
+      {
+        "kind": "improved",
+        "area": "Interface",
+        "title": "A new typeface, built into the page",
+        "before": "The page loaded its font from the internet, so it looked different offline.",
+        "now": "Sightline uses Instrument Sans, with narrower headings and bar labels so more of a name fits. The font is part of the file, so it looks the same offline and the page makes no network requests.",
+        "where": "Everywhere"
+      },
+      {
+        "kind": "fixed",
+        "area": "Side panel",
+        "title": "Long links in Breakdown read left to right",
+        "before": "A link that wrapped onto two lines in an initiative's Breakdown was centered.",
+        "now": "It lines up on the left like the text around it.",
+        "where": "Side panel, Breakdown"
+      }
+    ]
+  },
+  {
     "version": "1.111.0",
     "date": "2026-10-25",
     "headline": "The assistant keeps your timeboxes in line with the work",
