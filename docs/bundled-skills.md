@@ -8,7 +8,7 @@ without the repository, Node.js, npm or Python. Keep this HTML file; the skills 
 
 ## Open the collection
 
-In the toolbar, choose **Connect assistant** (or **Changes**), then **Planning skills**. You can also open
+In the toolbar, choose **Connect assistant** (or **Changes**), then **Setup and files → Planning skills and team guidance → Planning skills**. You can also open
 **Settings → Planning guide → Get planning skills**. The dialog shows the bundled Sightline version and each
 skill's purpose. You don't need to connect a plan or an AI endpoint to get the files.
 

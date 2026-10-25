@@ -952,8 +952,58 @@ td input:disabled,td select:disabled{opacity:1;color:var(--ink);-webkit-appearan
 .rmf-idea input{width:min(100vw - 64px, 360px)}.rmf #rmFrom{width:180px}
 .rmtools{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;font-size:12.5px;color:var(--ink-2);margin:10px 0}
 .rmtools select{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:5px 8px}.rmoutside{margin:8px 0 12px;font-size:13px;color:var(--ink-2)}.rmoutside button{margin-left:8px}
-.chatstarters{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.chatstarters button{white-space:normal;text-align:left}
-.chatscope{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:12px;padding:7px 10px;margin:8px 0;background:var(--paper);border:1px solid var(--rule);border-radius:6px;overflow-wrap:anywhere}.chatconnection{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-bottom:8px}.chatconnection .hint{flex:1;min-width:120px}#assistantChat>details{margin:10px 0;font-size:12.5px}#assistantChat>details summary{cursor:pointer}#assistantChat .field{margin-top:6px}
+/* The planning assistant panel: a connection line, the conversation, a composer, then quiet setup rows. Actions are buttons. */
+.btn.quiet{background:transparent;border-color:transparent;box-shadow:none;color:var(--ink-2)}.btn.quiet:hover:not(:disabled){background:var(--hov);color:var(--ink)}
+.chatconnection{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 10px;margin-bottom:14px;border:1px solid var(--rule-2);border-radius:10px;background:var(--paper)}
+#chatConnection{flex:1;min-width:0;font-size:12.5px;color:var(--ink-2)}
+.chatdot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--ink-3)}.chatdot[data-state=off]{background:transparent;box-shadow:inset 0 0 0 1.5px var(--ink-3)}
+.chatdot[data-state=on],.chatdot[data-state=busy]{background:var(--accent)}.chatdot[data-state=ok]{background:var(--ok)}.chatdot[data-state=paused]{background:var(--warn)}.chatdot[data-state=bad]{background:var(--bad)}
+.chatempty{padding:14px 14px 12px;margin-bottom:12px;border-radius:12px;background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.chatempty p{margin:0 0 10px;font-size:13px;line-height:1.5;color:var(--ink-2)}
+.chatstarters{display:flex;flex-wrap:wrap;gap:6px}
+#chatTranscript{display:flex;flex-direction:column;gap:10px;max-height:360px;overflow:auto;margin-bottom:12px}#chatTranscript:empty{display:none}
+.chatmsg{max-width:88%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.5}
+.chatmsg.me{align-self:flex-end;background:color-mix(in srgb,var(--accent) 15%,var(--surface));border-bottom-right-radius:4px}
+.chatmsg.ai{align-self:flex-start;background:var(--surface);border:1px solid var(--rule);border-bottom-left-radius:4px}
+.chatmsg .who{display:block;font-size:11.5px;font-weight:600;color:var(--ink-3);margin-bottom:2px}.chatmsg .chatabout{font-weight:400}
+.chatmsg p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink)}
+.composer{border:1px solid color-mix(in srgb,var(--ink-3) 55%,var(--surface));border-radius:12px;background:var(--surface);box-shadow:var(--lift);transition:border-color var(--state),box-shadow var(--state)}
+.composer:focus-within{border-color:var(--accent);box-shadow:var(--ring)}
+.composer textarea{display:block;width:100%;box-sizing:border-box;min-height:84px;border:0;background:transparent;resize:vertical;padding:8px 12px 4px;font:inherit;font-size:13.5px;line-height:1.5;color:var(--ink);box-shadow:none}
+.composer textarea::placeholder{color:var(--ink-3);opacity:1}.composer textarea:focus,.composer textarea:focus-visible{outline:none;box-shadow:none}
+.chatscope{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 10px 0;font-size:12px;overflow-wrap:anywhere}
+.chatabout-chip{color:var(--ink-3)}
+.cfoot{display:flex;align-items:center;gap:6px;padding:4px 8px 8px 12px}.cfoot .hint{flex:1;font-size:11.5px}
+#chatStatus{margin:8px 2px 0;font-size:12.5px;color:var(--ink-2)}#chatStatus:empty,#chatActions:empty{display:none}#chatActions{margin-top:8px}
+.amctl{display:flex;flex-direction:column;gap:8px;margin:6px 0 0;padding:12px;border:1px solid var(--rule);border-radius:12px;background:var(--surface)}
+.amctlrow{display:flex;align-items:flex-start;gap:10px}.amctltxt{flex:1;display:flex;flex-direction:column;gap:2px;font-size:13px}.amctltxt .hint{font-size:12px;line-height:1.45}
+.amctl .field{margin:0}.amctl .flabel,.amctl .field label{text-transform:none;letter-spacing:0;font-size:12.5px;color:var(--ink-2)}.amctl select{width:100%}.amctl #amAutoHint{margin:0;font-size:12px}
+.assetup{margin-top:20px;padding-top:12px;border-top:1px solid var(--rule-2)}
+.assetup h4{margin:0 0 6px 10px;font-size:12px;font-weight:600;color:var(--ink-3)}
+.assetup>details{margin:2px 0;border-radius:10px;transition:background var(--state)}
+.assetup>details>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;font-size:13px;font-weight:550;color:var(--ink-2);cursor:pointer;transition:background var(--fast),color var(--fast)}
+.assetup>details>summary::-webkit-details-marker{display:none}
+.assetup>details>summary::before{content:"";flex:none;width:6px;height:6px;margin:0 2px 0 3px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);transition:transform var(--state) var(--ease)}
+.assetup>details[open]>summary::before{transform:rotate(45deg) translate(-1px,-1px)}
+.assetup>details>summary:hover{background:var(--hov);color:var(--ink)}
+.assetup>details>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;box-shadow:none}
+.assetup>details[open]{background:color-mix(in srgb,var(--ink) 4%,transparent);box-shadow:inset 3px 0 0 color-mix(in srgb,var(--accent) 70%,transparent);padding-bottom:12px}
+.assetup>details[open]>summary{color:var(--ink)}
+.assetup>details>:not(summary){margin:8px 12px 0 14px}
+.assteps{padding-left:18px;font-size:12.5px;line-height:1.5;color:var(--ink-2)}.assteps li{margin:0 0 6px}.assteps li .btn{margin-right:4px}
+.ascode{margin:6px 0 0;font-family:var(--font-code);font-size:11.5px;line-height:1.6;white-space:pre-wrap;overflow-wrap:break-word;padding:8px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
+.asnote{font-size:12px;line-height:1.5;color:var(--ink-3)}
+.asacts{display:flex;flex-wrap:wrap;gap:6px}
+.asfolder,.astools{display:flex;flex-direction:column;gap:8px}.astools{padding-top:12px;border-top:1px solid var(--rule-2)}
+.asfname,.astitle{display:flex;flex-direction:column;gap:2px;font-size:13px;overflow-wrap:anywhere}.asfname .hint,.astitle .hint{font-size:12px}
+.ascallout{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:8px;background:var(--warn-bg);box-shadow:inset 3px 0 0 var(--warn)}
+.ascallout p{margin:0;font-size:12.5px;line-height:1.5;color:var(--ink)}
+.asfiles{display:flex;flex-wrap:wrap;gap:4px;margin:0;padding:0;list-style:none}.asfiles{flex-direction:column;gap:2px}.asfiles li{font-family:var(--font-code);font-size:11.5px;color:var(--ink-2)}
+.assafe{margin:0;padding-top:8px;border-top:1px dashed var(--rule)}
+#amToolsMsg{margin:0;font-size:12.5px}
+@media (prefers-reduced-motion:no-preference){
+  .chatmsg.arrive{animation:chat-in var(--glide) var(--ease)}@keyframes chat-in{from{opacity:0;transform:translateY(6px)}}
+}
 .rmideas{border:1px solid var(--rule);border-radius:10px;background:var(--surface);padding:10px 14px;margin-bottom:14px}.rmideas h3{margin:0 0 2px;font-size:14px}.rmideas ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
 .rmideas li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.dvidea{font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none}.ideaacts{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto}.btn.sm{padding:2px 8px;font-size:12px}
 .rmgrid{display:flex;flex-direction:column;gap:2px;overflow-x:auto}.rmrow{display:grid;grid-template-columns:170px minmax(640px,1fr);gap:8px;align-items:stretch}
@@ -11936,7 +11986,9 @@ function chatRenderUpdates(){
     const nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
     const old = log.dataset.messages ? JSON.parse(log.dataset.messages) : [], append = old.length <= messages.length && old.every((m,i)=>jeq(m,messages[i]));
     if (!append) log.replaceChildren();
-    messages.slice(append ? old.length : 0).forEach(m=>log.append(h("div",{class:"egroup",style:{marginBottom:"12px"}},h("b",{},m.role === "user" ? "You" : "Assistant"),m.scope ? h("small",{class:"hint"}, " · " + m.scope) : null,h("p",{style:{whiteSpace:"pre-wrap",overflowWrap:"anywhere"}},m.content))));
+    const arriving = append && !!log.dataset.messages;          // only a message that arrives now slides in, not a redraw
+    messages.slice(append ? old.length : 0).forEach(m=>log.append(h("div",{class:"chatmsg " + (m.role === "user" ? "me" : "ai") + (arriving ? " arrive" : "")},
+      h("span",{class:"who"}, m.role === "user" ? "You" : "Assistant", m.scope ? h("span",{class:"chatabout"}, " · " + m.scope) : null), h("p",{}, m.content))));
     log.dataset.messages = signature; if (nearBottom) log.scrollTop = log.scrollHeight;
   }
   const dirty = !!(file.handle && file.dirty), unavailable = !AM?.dir || AM.paused || present || tooNew();
@@ -11944,23 +11996,25 @@ function chatRenderUpdates(){
   root.querySelector("#chatTest").disabled = !!(unavailable || dirty || state.active || state.sending);
   root.querySelector("#chatCancel").hidden = !(state.active || state.sending);
   root.querySelector("#chatDraft").disabled = !!(present || tooNew());
+  root.querySelector("#chatEmpty").hidden = messages.length > 0;
   const scope = root.querySelector("#chatScope"), scopeKey = JSON.stringify([state.selection,state.pendingSelection,chatSelectionLabel(state.selection),state.pendingSelection && chatSelectionLabel(state.pendingSelection.selection)]);
   if (scope.dataset.key !== scopeKey){
     scope.dataset.key = scopeKey;
-    scope.replaceChildren(...[h("span",{}, "Working on: " + chatSelectionLabel(state.selection)),
-      state.pendingSelection ? h("button",{type:"button",class:"linkish",id:"chatSwitchSelection",onclick:()=>{ state.selection = clone(state.pendingSelection.selection); state.pendingSelection = null; state.generatedDraft = null; state.note = "Context changed. Your question was kept."; chatRenderUpdates(); root.querySelector("#chatDraft").focus(); }}, "Switch context to " + chatSelectionLabel(state.pendingSelection.selection)) : null].filter(Boolean));
+    scope.replaceChildren(...[h("span",{class:"chatabout-chip"}, "Working on: " + chatSelectionLabel(state.selection)),
+      state.pendingSelection ? h("button",{type:"button",class:"btn sm",id:"chatSwitchSelection",onclick:()=>{ state.selection = clone(state.pendingSelection.selection); state.pendingSelection = null; state.generatedDraft = null; state.note = "Context changed. Your question was kept."; chatRenderUpdates(); root.querySelector("#chatDraft").focus(); }}, "Switch context to " + chatSelectionLabel(state.pendingSelection.selection)) : null].filter(Boolean));
     root.querySelector("#chatDraft").placeholder = state.selection?.kind === "deliverable" ? "Describe a change or ask about this outcome…" : "Paste roadmap notes or describe a change…";
   }
-  root.querySelector("#chatStatus").textContent = state.error || (AM?.paused ? AM.dir ? "Reconnect the assistant folder before sending." : "Reconnect the changes file to review proposals." : dirty ? "Save the shared plan before sending. Chat uses the last confirmed local read or save." : state.note || (AM?.dir ? "Folder connected. Start the local companion to receive replies." : "Connect a private assistant folder to chat."));
+  root.querySelector("#chatStatus").textContent = state.error || (AM?.paused ? AM.dir ? "Reconnect the assistant folder before sending." : "Reconnect the changes file to review proposals." : dirty ? "Save the shared plan before sending. Chat uses the last confirmed local read or save." : state.note || (!AM?.dir && !AM?.paused && state.draft.trim() ? "Connect your assistant to send. Your draft stays here." : ""));
   const actions = root.querySelector("#chatActions"), reply = state.response, fresh = reply && chatFresh(reply), pending = AM?.file && amRows().some(r=>r.group !== "completed");
-  root.querySelector("#chatConnection").textContent = AM?.paused ? AM.dir ? "Folder access paused" : "File access paused" : !AM?.dir ? "Connect a private folder to receive replies" : fresh && reply.data.status === "ok" ? "Reply received for this snapshot" : "Folder connected · Test reply to check the companion";
+  root.querySelector("#chatConnection").textContent = AM?.paused ? AM.dir ? "Folder access paused" : "File access paused" : !AM?.dir ? "Not connected" : fresh && reply.data.status === "ok" ? "Reply received for this snapshot" : state.active || state.sending ? "Waiting for a reply" : "Folder connected · test the assistant";
+  root.querySelector("#chatDot").dataset.state = AM?.paused ? "paused" : !AM?.dir ? "off" : state.active || state.sending ? "busy" : state.error ? "bad" : fresh && reply.data.status === "ok" ? "ok" : "on";
   const actionKey = JSON.stringify([reply?.requestId,reply?.invalid,!!fresh,!!pending,AM?.chatReview?.requestId,!!state.error,!!state.lastPrompt,!!state.draft.trim(),!!state.active,!!state.sending,!!unavailable,dirty]);
   if (actions.dataset.key !== actionKey){
     const focusedAction = actions.contains(document.activeElement) ? document.activeElement.id : null;
     actions.replaceChildren(...[
       reply?.data.status === "ok" && reply.data.amendments && !reply.invalid ? h("button",{type:"button",class:"btn primary",id:"chatReview",disabled:!!(!fresh || pending || unavailable || AM?.error),onclick:()=>chatReview()},"Review proposed changes") : null,
-      AM?.chatReview ? h("button",{type:"button",class:"linkish",id:"chatReturnToFile",onclick:()=>chatReturnToFile()},"Return to changes file") : null,
-      state.error && state.lastPrompt && !state.draft.trim() && !state.active && !state.sending ? h("button",{type:"button",class:"btn",id:"chatRetry",disabled:!!(unavailable || dirty),onclick:()=>{ if (state.draft.trim()) return; if (!state.lastTest){ state.draft = state.lastPrompt; state.selection = clone(state.lastSelection || null); state.pendingSelection = null; const input = document.getElementById("chatDraft"); if (input) input.value = state.draft; } chatSend(!!state.lastTest); }},"Try again") : null,
+      AM?.chatReview ? h("button",{type:"button",class:"btn sm",id:"chatReturnToFile",onclick:()=>chatReturnToFile()},"Return to changes file") : null,
+      state.error && state.lastPrompt && !state.draft.trim() && !state.active && !state.sending ? h("button",{type:"button",class:"btn sm",id:"chatRetry",disabled:!!(unavailable || dirty),onclick:()=>{ if (state.draft.trim()) return; if (!state.lastTest){ state.draft = state.lastPrompt; state.selection = clone(state.lastSelection || null); state.pendingSelection = null; const input = document.getElementById("chatDraft"); if (input) input.value = state.draft; } chatSend(!!state.lastTest); }},"Try again") : null,
       reply?.data.amendments && pending && !AM?.chatReview ? h("p",{class:"hint"},"Other changes are waiting below. Apply or skip them before reviewing this reply.") : null,
       reply?.data.amendments && !fresh ? h("p",{class:"hint"},"This reply uses an earlier plan snapshot. Send a new request to prepare changes.") : null
     ].filter(Boolean)); actions.dataset.key = actionKey;
@@ -11968,27 +12022,39 @@ function chatRenderUpdates(){
   }
 }
 function assistantChatPanel(){
-  const state = chatState(), input = h("textarea",{id:"chatDraft",rows:"4","aria-label":"Message your planning assistant",placeholder:"Paste roadmap notes or describe a change…",style:{width:"100%",boxSizing:"border-box"},oninput:e=>{ state.draft = e.target.value; chatRenderUpdates(); },onkeydown:e=>{ if ((e.ctrlKey || e.metaKey) && e.key === "Enter"){ e.preventDefault(); chatSend(); } }},state.draft);
+  const state = chatState(), input = h("textarea",{id:"chatDraft",rows:"4","aria-label":"Message your planning assistant","aria-describedby":"chatStatus",placeholder:"Paste roadmap notes or describe a change…",oninput:e=>{ state.draft = e.target.value; chatRenderUpdates(); },onkeydown:e=>{ if ((e.ctrlKey || e.metaKey) && e.key === "Enter"){ e.preventDefault(); chatSend(); } }},state.draft);
   const panel = h("section",{id:"assistantChat","aria-label":"Planning conversation"},
-    h("div",{class:"chatconnection"},h("span",{id:"chatConnection",class:"hint",role:"status"}),
-      !AM?.dir && window.showDirectoryPicker ? h("button",{type:"button",class:"btn",id:"assistantConnect",onclick:()=>assistantConnect()},"Connect your assistant") : null,
-      AM?.paused ? h("button",{type:"button",class:"btn",id:"chatReconnect",onclick:()=>amReconnect()},"Reconnect") : null,
+    h("div",{class:"chatconnection"},h("span",{class:"chatdot",id:"chatDot","aria-hidden":"true"}),h("span",{id:"chatConnection",role:"status"}),
+      !AM?.dir && window.showDirectoryPicker ? h("button",{type:"button",class:"btn primary sm",id:"assistantConnect",onclick:()=>assistantConnect()},"Connect your assistant") : null,
+      AM?.paused ? h("button",{type:"button",class:"btn sm",id:"chatReconnect",onclick:()=>amReconnect()},"Reconnect") : null,
       h("button",{type:"button",class:"btn sm",id:"chatTest",hidden:!AM?.dir,onclick:()=>chatSend(true)},"Test reply")),
-    h("div",{id:"chatScope",class:"chatscope"}),
-    h("label",{class:"field"},h("span",{class:"flabel"},"Message"),input),
-    h("div",{class:"qrow"},h("button",{type:"button",class:"btn primary",id:"chatSend",onclick:()=>chatSend()},"Send"),h("button",{type:"button",class:"linkish",id:"chatCancel",onclick:()=>chatCancel()},"Cancel request"),h("span",{class:"hint"},"Ctrl/Cmd+Enter to send · Enter for a new line")),
-    h("p",{id:"chatStatus",class:"hint",role:"status"}),h("div",{id:"chatActions",class:"qrow"}),
-    h("div",{class:"chatstarters","aria-label":"Planning questions"},
-      h("button",{type:"button",class:"btn sm",id:"chatOrganize",onclick:()=>openPlanningAssistant(roadmapPlanningSelection())},"Organize roadmap notes"),
-      h("button",{type:"button",class:"btn sm",id:"chatReviewRoadmap",onclick:()=>openPlanningAssistant(roadmapPlanningSelection(),"Review this roadmap for missing owners, timing, and Jira links. Answer without proposing edits or inferring delivery feasibility.")},"Review roadmap gaps")),
-    h("p",{class:"hint"},"Proposed changes wait for review and Apply."),
-    h("details",{id:"chatSetup",open:!!state.setupOpen,ontoggle:e=>{ state.setupOpen = e.currentTarget.open; }},h("summary",{},"Connection and setup"),
-      h("ol",{},h("li",{},"Choose Connect your assistant and select a private folder."),h("li",{},"Configure and start the trusted local companion on your computer."),h("li",{},"Choose Test reply above. A matching reply confirms this snapshot, not continuing availability.")),
-      h("pre",{style:{whiteSpace:"pre-wrap"}},"python3 tools/sightline-assistant.py init\npython3 tools/sightline-assistant.py set-token\npython3 tools/sightline-assistant.py run --folder <private-assistant-folder>"),
-      h("p",{class:"hint"},"Edit the private config printed by init with your endpoint and model. Keep tokens in your credential store and keep the companion running. Folder access alone does not confirm an endpoint connection or establish privacy. Check the companion terminal if replies fail.")),
-    h("details",{id:"chatPrivacy"},h("summary",{},"Conversation and data"),h("p",{class:"hint"},"Drafts and the on-screen conversation stay in this tab's session. Sent messages, selection context and replies also remain in your private mailbox files. Chat is excluded from the shared plan. Endpoint settings and credentials stay with the local companion. Each message supports 4,000 characters; requests include at most 20 messages, with room reserved for selection context.")),
-    h("div",{id:"chatTranscript",role:"log","aria-label":"Planning conversation","aria-live":"polite","aria-relevant":"additions",style:{maxHeight:"320px",overflow:"auto"}}));
+    h("div",{id:"chatEmpty",class:"chatempty"},
+      h("p",{},"Ask about the plan, or paste notes to turn into changes. Nothing changes until you review and apply it."),
+      h("div",{class:"chatstarters","aria-label":"Planning questions"},
+        h("button",{type:"button",class:"btn sm",id:"chatOrganize",onclick:()=>openPlanningAssistant(roadmapPlanningSelection())},"Organize roadmap notes"),
+        h("button",{type:"button",class:"btn sm",id:"chatReviewRoadmap",onclick:()=>openPlanningAssistant(roadmapPlanningSelection(),"Review this roadmap for missing owners, timing, and Jira links. Answer without proposing edits or inferring delivery feasibility.")},"Review roadmap gaps"))),
+    h("div",{id:"chatTranscript",role:"log","aria-label":"Planning conversation","aria-live":"polite","aria-relevant":"additions"}),
+    h("div",{class:"composer"},
+      h("div",{id:"chatScope",class:"chatscope"}),
+      input,
+      h("div",{class:"cfoot"},h("span",{class:"hint"},"Ctrl/Cmd+Enter to send"),
+        h("button",{type:"button",class:"btn sm quiet",id:"chatCancel",onclick:()=>chatCancel()},"Cancel request"),
+        h("button",{type:"button",class:"btn primary sm",id:"chatSend",onclick:()=>chatSend()},"Send"))),
+    h("p",{id:"chatStatus",role:"status"}),h("div",{id:"chatActions",class:"qrow"}));
   return panel;
+}
+// The connection steps and what's kept where: rows in Setup and files, under the conversation.
+function assistantChatSetup(){
+  const state = chatState();
+  return [h("details",{id:"chatSetup",open:!!state.setupOpen,ontoggle:e=>{ state.setupOpen = e.currentTarget.open; }},h("summary",{},"Connection and setup"),
+      h("ol",{class:"assteps"},
+        h("li",{},"Choose Connect your assistant and select a private folder."),
+        h("li",{},"Set up the trusted local companion on your computer:", h("pre",{class:"ascode"},"python3 tools/sightline-assistant.py init")),
+        h("li",{},"Edit the private config that init printed with your endpoint and model, then store your token:", h("pre",{class:"ascode"},"python3 tools/sightline-assistant.py set-token")),
+        h("li",{},"Start the companion and keep it running:", h("pre",{class:"ascode"},"python3 tools/sightline-assistant.py run --folder <private-assistant-folder>")),
+        h("li",{},"Choose Test reply above. A matching reply confirms this snapshot, not continuing availability.")),
+      h("p",{class:"asnote"},"Keep tokens in your credential store. Folder access alone does not confirm an endpoint connection or establish privacy. Check the companion terminal if replies fail.")),
+    h("details",{id:"chatPrivacy"},h("summary",{},"Conversation and data"),h("p",{class:"asnote"},"Drafts and the on-screen conversation stay in this tab's session. Sent messages, selection context and replies also remain in your private mailbox files. Chat is excluded from the shared plan. Endpoint settings and credentials stay with the local companion. Each message supports 4,000 characters; requests include at most 20 messages, with room reserved for selection context."))];
 }
 function assistantForeground(){ if (!document.hidden) assistantTick(); }
 document.addEventListener("visibilitychange", assistantForeground);
@@ -12082,46 +12148,66 @@ function amJiraRetarget(o, v){ const a = o.args, [kind, tid] = v.split(/:(.*)/s)
   const keep = {keys:[...a.keys], ...(a.epic && kind !== "skip" ? {epic:a.epic} : {})};
   return kind === "skip" ? {op:"action", action:"jira.notOurs", args:{keys:[...a.keys]}} : kind === "lane" ? {op:"action", action:"jira.toWorkstream", args:{...keep, lane:tid}} : {op:"action", action:"jira.toInitiative", args:{...keep, id:tid}}; }
 // The review panel: Ready / Changed since / Needs attention / Completed.
+// The assistant panel: the conversation, then the controls that govern applying (Pause, the level), what's waiting,
+// and last, Setup and files, a list of quiet rows that open as inset blocks. Everything that acts is a button.
 function amendPanel(put){
+  const setup = [];
+  amendBody(put, setup);
+  const open = chatState().openRows = chatState().openRows || {};   // rows stay as you left them; a tools question always opens Files
+  setup.forEach(d=>{ if (d.id === "chatSetup") return; if (d.id in open && !(d.id === "assistantFiles" && AM && AM.toolsConfirm)) d.open = open[d.id]; d.addEventListener("toggle", ()=>{ if (d.isConnected) open[d.id] = d.open; }); });
+  if (!present) put(h("section",{class:"assetup","aria-labelledby":"assetupH"}, h("h4",{id:"assetupH"},"Setup and files"), ...setup));
+}
+function amendBody(put, setup){
   const can = !present && !tooNew();
   put(assistantChatPanel()); chatRenderUpdates();
-  put(h("div",{class:"qrow"},h("button",{type:"button",class:"btn",id:"assistantSkills",onclick:()=>openPlanningSkills()},"Planning skills"),h("span",{class:"hint"},"Included in this HTML file")));
-  put(h("details",{id:"assistantGuidance"},h("summary",{},"Team planning guidance"),h("p",{class:"hint"}, "Help your assistant organize ideas using your team's ", h("button",{type:"button",class:"linkish",id:"assistantPlanningGuide",onclick:()=>{ sel = null; UI.planTab = "guide"; goWs("plan"); }},"Planning guide"), ".")));
+  setup.push(...assistantChatSetup());
+  setup.push(h("details",{id:"assistantGuidance"},h("summary",{},"Planning skills and team guidance"),
+    h("p",{class:"asnote"},"Skills that teach your assistant how this team plans come inside this HTML file. Your team's Planning guide tells it what each workstream is for."),
+    h("div",{class:"asacts"},h("button",{type:"button",class:"btn sm",id:"assistantSkills",onclick:()=>openPlanningSkills()},"Planning skills"),
+      h("button",{type:"button",class:"btn sm",id:"assistantPlanningGuide",onclick:()=>{ sel = null; UI.planTab = "guide"; goWs("plan"); }},"Open the Planning guide"))));
   if (!AM){
     const folders = typeof window.showDirectoryPicker === "function", files = typeof window.showOpenFilePicker === "function";
     if (!folders) put(h("p",{class:"hint",id:"assistantBrowserHelp"}, files ? "Use Edge or Chrome for an automatic private-folder connection, or connect an existing changes file below."
       : "Use Edge or Chrome for an automatic private-folder connection. You can export context here; connect your assistant's changes file in Edge or Chrome."));
-    put(h("details",{id:"assistantIndividualFiles",open:!folders}, h("summary",{}, "Use individual files instead"),
-      h("ol",{class:"amsteps"}, h("li",{}, h("button",{type:"button",class:"linkish",id:"amExport0",onclick:()=>exportAssistantView()},"Export for your assistant"), ": a file that tells it this plan's deliverables and how to write changes."),
+    setup.push(h("details",{id:"assistantIndividualFiles",open:!folders}, h("summary",{}, "Use individual files instead"),
+      h("ol",{class:"assteps amsteps"}, h("li",{}, h("button",{type:"button",class:"btn sm",id:"amExport0",onclick:()=>exportAssistantView()},"Export for your assistant"), " A file that tells it this plan's deliverables and how to write changes."),
         h("li",{}, "Ask your assistant for changes; it writes an amendments file in your own folder."),
-        h("li",{}, h("button",{type:"button",class:"linkish",id:"amConnect2",disabled:!files,title:files ? "Connect the changes file" : "Open Sightline in Edge or Chrome to connect this file",onclick:()=>amConnect()},"Connect that file"),
-          files ? ", once. Sightline reads it again every 30 seconds." : " in Edge or Chrome."),
+        h("li",{}, h("button",{type:"button",class:"btn sm",id:"amConnect2",disabled:!files,title:files ? "Connect the changes file" : "Open Sightline in Edge or Chrome to connect this file",onclick:()=>amConnect()},"Connect that file"),
+          files ? " Once. Sightline reads it again every 30 seconds." : " In Edge or Chrome."),
         h("li",{}, "Review each change here and apply the ones you want.")))); return;
   }
   if (AM.exportError) put(h("div",{class:"msg warn",id:"assistantExportError"}, AM.exportError));
-  put(h("details",{id:"assistantFiles"},h("summary",{},"Files and assistant handoff"),
-    AM.dir ? h("div",{id:"amTools"}, h("div",{class:"qrow"}, h("button",{type:"button",class:"btn",id:"amToolsPut",disabled:!BUNDLED_TOOLS.files.length,onclick:()=>amToolsPut(false)},"Put assistant tools in this folder"),
-        h("span",{class:"hint"}, BUNDLED_TOOLS.files.length ? `${BUNDLED_TOOLS.files.map(f=>f.name).join(" and ")} for Sightline ${BUNDLED_TOOLS.version}, each with a .sha256` : "Open the built Sightline HTML to get its tools.")),
-      AM.toolsConfirm ? h("div",{class:"msg warn",id:"amToolsConfirm"}, `Older copies are in this folder: ${AM.toolsConfirm.map(x=>x.name + (x.version ? ` (Sightline ${x.version})` : "")).join(", ")}. Replace them with the copies for Sightline ${BUNDLED_TOOLS.version}? Anything else in the folder is kept.`, " ",
-        h("button",{type:"button",class:"btn sm",id:"amToolsReplace",onclick:()=>amToolsPut(true)},"Replace them"), " ", h("button",{type:"button",class:"linkish",id:"amToolsKeep",onclick:()=>{ AM.toolsConfirm = null; AM.toolsMsg = "Kept the older copies. Nothing was changed."; render(); }},"Keep them")) : null,
-      AM.toolsMsg ? h("p",{class:"hint",id:"amToolsMsg"}, AM.toolsMsg) : null,
-      h("p",{class:"hint",id:"amToolsHelp"}, "Keep these tools in a private folder, and never run a tool that holds a Jira token from a shared folder. Matching hashes show the tools match this page, not that the page itself is genuine.")) : null,
-    AM.dir ? h("button",{type:"button",class:"btn",id:"assistantCopyInstructions",onclick:()=>copyText(assistantInstructions(), "the assistant instructions")},"Copy instructions for your assistant") : null,
-    h("div",{class:"qrow"}, h("b",{}, AM.dir ? AM.dir.name : AM.name || "Amendments file"), h("span",{class:"hint"}, AM.readAt ? `read ${fmtTime(new Date(AM.readAt).toISOString())}` : ""),
-    h("button",{type:"button",class:"linkish",id:"amRefresh",onclick:()=>AM.dir ? assistantTick() : amRead(false)},"Refresh"), h("button",{type:"button",class:"linkish",id:"amExport",onclick:()=>exportAssistantView()},"Export for your assistant"),
-    h("button",{type:"button",class:"linkish",id:"amDisconnect",onclick:()=>amDisconnect()},"Disconnect"))));
-  if (AM.dir && can) put(h("div",{class:"qrow",id:"amPauseRow"}, amPausedByMe() ? h("b",{}, "Paused") : null,
-    h("button",{type:"button",class:"btn" + (amPausedByMe() ? " primary" : ""),id:"amPause",onclick:()=>amSetPaused(!amPausedByMe())}, amPausedByMe() ? "Resume" : "Pause"),
-    h("span",{class:"hint"}, amPausedByMe() ? "Nothing applies on its own until you resume. You can still review and apply changes here." : "Stops anything applying on its own, in this browser, until you resume.")));
-  if (AM.dir && can) put(field("amAuto", "When your assistant writes changes", h("select",{id:"amAuto",onchange:e=>amSetLevel(e.target.value)}, ...AM_LEVELS.map(([v, l])=>h("option",{value:v, selected:amLevel() === v}, l)))),
-    amLevel() !== "review" ? h("p",{class:"hint",id:"amAutoHint"}, `Applies while this page is open, even in a background tab, and only batches written against the plan as it is now and less than ${AM_EXPIRE_MS / 60000} minutes old. Each one is a quick update you can Undo.`) : null);
+  const old = AM.toolsConfirm || [], oldTools = old.filter(x=>!/\.sha256$/.test(x.name)), oldVers = [...new Set(oldTools.map(x=>x.version).filter(Boolean))];
+  setup.push(h("details",{id:"assistantFiles",open:!!AM.toolsConfirm},h("summary",{},"Files and assistant handoff"),
+    AM.dir ? h("p",{class:"asnote",id:"amReadyHint"}, `Your assistant reads ${ASSISTANT_FILES.context} and writes ${ASSISTANT_FILES.amendments} in this folder.`) : null,
+    h("div",{class:"asfolder"}, h("div",{class:"asfname"}, h("b",{}, AM.dir ? AM.dir.name : AM.name || "Amendments file"), h("span",{class:"hint"}, AM.readAt ? `read ${fmtTime(new Date(AM.readAt).toISOString())}` : "")),
+      h("div",{class:"asacts"}, h("button",{type:"button",class:"btn sm",id:"amRefresh",onclick:()=>AM.dir ? assistantTick() : amRead(false)},"Refresh"),
+        h("button",{type:"button",class:"btn sm",id:"amExport",onclick:()=>exportAssistantView()},"Export for your assistant"),
+        AM.dir ? h("button",{type:"button",class:"btn sm",id:"assistantCopyInstructions",onclick:()=>copyText(assistantInstructions(), "the assistant instructions")},"Copy instructions") : null,
+        h("button",{type:"button",class:"btn sm",id:"amDisconnect",onclick:()=>amDisconnect()},"Disconnect"))),
+    AM.dir ? h("div",{id:"amTools",class:"astools"}, h("div",{class:"astitle"}, h("b",{},"Assistant tools"),
+        h("span",{class:"hint"}, BUNDLED_TOOLS.files.length ? `${BUNDLED_TOOLS.files.map(f=>f.name).join(", ")} · Sightline ${BUNDLED_TOOLS.version}, each with a .sha256` : "Open the built Sightline HTML to get its tools.")),
+      AM.toolsConfirm ? h("div",{class:"ascallout",id:"amToolsConfirm",role:"group","aria-label":"Older tools in this folder"},
+        h("p",{}, `Replace tools${oldVers.length ? ` from Sightline ${oldVers.join(" and ")}` : ""} with version ${BUNDLED_TOOLS.version}? Their .sha256 files are replaced too; other files stay unchanged.`),
+        h("ul",{class:"asfiles"}, ...oldTools.map(x=>h("li",{}, x.name))),
+        h("div",{class:"asacts"}, h("button",{type:"button",class:"btn primary sm",id:"amToolsReplace",onclick:()=>amToolsPut(true)},"Replace tools"),
+          h("button",{type:"button",class:"btn sm",id:"amToolsKeep",onclick:()=>{ AM.toolsConfirm = null; AM.toolsMsg = "Kept the older copies. Nothing was changed."; render(); setTimeout(()=>document.getElementById("amToolsMsg")?.focus(), 0); }},"Keep current tools")))
+        : h("div",{class:"asacts"}, h("button",{type:"button",class:"btn sm",id:"amToolsPut",disabled:!BUNDLED_TOOLS.files.length,onclick:()=>amToolsPut(false)},"Put assistant tools in this folder")),
+      AM.toolsMsg ? h("p",{class:"hint",id:"amToolsMsg",role:"status",tabindex:"-1"}, AM.toolsMsg) : null,
+      h("p",{class:"asnote assafe",id:"amToolsHelp"}, "Keep these tools in a private folder, and never run a tool that holds a Jira token from a shared folder. Matching hashes show the tools match this page, not that the page itself is genuine.")) : null));
+  if (AM.dir && can) put(h("div",{class:"amctl",id:"amControls"},
+    h("div",{class:"amctlrow",id:"amPauseRow"}, h("div",{class:"amctltxt"}, h("b",{}, amPausedByMe() ? "Paused" : amLevel() === "review" ? "You review every change" : "Some changes apply on their own"),
+        h("span",{class:"hint"}, amPausedByMe() ? "Nothing applies on its own until you resume. You can still review and apply changes here." : "Pause stops anything applying on its own, in this browser, until you resume.")),
+      h("button",{type:"button",class:"btn sm" + (amPausedByMe() ? " primary" : ""),id:"amPause",onclick:()=>amSetPaused(!amPausedByMe())}, amPausedByMe() ? "Resume" : "Pause")),
+    field("amAuto", "When your assistant writes changes", h("select",{id:"amAuto",onchange:e=>amSetLevel(e.target.value)}, ...AM_LEVELS.map(([v, l])=>h("option",{value:v, selected:amLevel() === v}, l)))),
+    amLevel() !== "review" ? h("p",{class:"hint",id:"amAutoHint"}, `Applies while this page is open, even in a background tab, and only batches written against the plan as it is now and less than ${AM_EXPIRE_MS / 60000} minutes old. Each one is a quick update you can Undo.`) : null));
   { const done = can && file.handle ? quickDone.filter(x=>x.hd === file.handle && x.via && x.via.app === "assistant" && x.via.batch).slice(-5).reverse() : [];
     if (done.length) put(h("div",{id:"amUndo"}, h("b",{}, "Applied by your assistant"),
-      h("ul",{class:"amundo"}, ...done.map(x=>h("li",{}, x.what, " ", h("button",{type:"button",class:"linkish","data-undo-batch":x.via.batch,onclick:e=>{ busy(e.currentTarget, "Undoing…"); undoBatch(x.via.batch); }},"Undo this batch")))),
+      h("ul",{class:"amundo"}, ...done.map(x=>h("li",{}, x.what, " ", h("button",{type:"button",class:"btn sm","data-undo-batch":x.via.batch,onclick:e=>{ busy(e.currentTarget, "Undoing…"); undoBatch(x.via.batch); }},"Undo this batch")))),
       h("p",{class:"hint"}, "Undo puts back what the batch changed, except anything a teammate has changed since. It's available in this browser until you reload."))); }
   if (AM.paused){ put(h("div",{class:"msg warn"}, "Paused: this browser needs permission to read the file again. ", h("button",{type:"button",class:"btn",onclick:()=>amReconnect()},"Reconnect"))); return; }
   if (AM.error){ put(h("div",{class:"msg bad",id:"amError"}, AM.error, " Nothing can be applied until the file is fixed.")); return; }
-  const F = AM.file; if (!F){ if (AM.dir) put(h("p",{class:"hint"}, `Ready for your assistant. Ask it to read ${ASSISTANT_FILES.context} and write ${ASSISTANT_FILES.amendments} in this folder.`)); return; }
+  const F = AM.file; if (!F) return;
   if (F.basedOn.planRevision != null && F.basedOn.planRevision !== (S.meta.revision || 0)) put(h("p",{class:"hint"}, `Written against revision ${F.basedOn.planRevision}; the plan is at ${S.meta.revision || 0}. Each change is checked against the plan as it is now.`));
   const rows = amRows(), G = g => rows.filter(r=>r.group === g), ready = G("ready");
   // what else a date change moves: two scheduled copies of the plan each, so only here, for the first 10, once per check
@@ -12134,22 +12220,22 @@ function amendPanel(put){
     run.stop ? h("span",{class:"hint",id:"amRunStop"}, `In order, then stops at ${amNo(run.stop.i)}: ${amWhy(run.stop)}.`) : null));
   const row = x => { const {c, eff, r, mark, after, needs} = x; return h("li",{class:"amrow am-" + (needs != null ? "invalid" : r.status),"data-am":c.id},
     h("div",{class:"amsum"}, h("b",{}, c.summary || r.lines[0] || c.id), eff.edited ? h("span",{class:"dvb dvb-detail",title:"You edited this change before applying it"}, "Edited by you") : null),
-    eff.editLost ? h("div",{class:"hint amwhy"}, "Your assistant rewrote this change, so your earlier edits no longer apply. ", h("button",{type:"button",class:"linkish","data-amdrop":c.id,onclick:()=>{ amSetEdit(AM.file.batchId, c, null); render(); }},"Forget them")) : null,
+    eff.editLost ? h("div",{class:"hint amwhy"}, "Your assistant rewrote this change, so your earlier edits no longer apply. ", h("button",{type:"button",class:"btn sm","data-amdrop":c.id,onclick:()=>{ amSetEdit(AM.file.batchId, c, null); render(); }},"Forget them")) : null,
     r.lines.length ? h("ul",{class:"amlines"}, ...r.lines.map(t=>h("li",{}, t))) : null,
     ...amStories(eff.ops).map(x=>h("div",{class:"amstory","data-amstory":c.id}, h("div",{class:"hint"}, x.label), x.text.trim() ? mdRender(x.text) : h("p",{class:"hint"}, "Clears the story."))),
     after != null ? h("div",{class:"hint amafter","data-amafter":c.id}, `Ready after ${amNo(after)}: ${AM.file.changes[after].summary || AM.file.changes[after].id}. Apply ready applies them in order.`) : null,
     needs != null ? h("div",{class:"hint amwhy","data-amneeds":c.id}, `Needs ${amNo(needs)}, which you skipped. `,
-      can ? h("button",{type:"button",class:"linkish","data-amreopen":AM.file.changes[needs].id,onclick:()=>{ amMark(AM.file.batchId, AM.file.changes[needs], ""); render(); }},`Reopen ${amNo(needs)}`) : null)
+      can ? h("button",{type:"button",class:"btn sm","data-amreopen":AM.file.changes[needs].id,onclick:()=>{ amMark(AM.file.batchId, AM.file.changes[needs], ""); render(); }},`Reopen ${amNo(needs)}`) : null)
     : r.reasons.length ? h("div",{class:"hint amwhy"}, r.reasons.join(" ")) : null, r.notes.length ? h("div",{class:"hint"}, r.notes.join(" · ")) : null,
     past.includes(x) ? h("div",{class:"hint","data-amlater":c.id}, `Apply ready stops at ${amNo(run.stop.i)} first, so this one waits. You can apply it on its own.`) : null,
     r.status === "ready" && amLevel() !== "review" && AM.held && AM.held[c.id] ? h("div",{class:"hint amheld","data-amheld":c.id}, AM.held[c.id].reason) : null,
     r.moves ? h("div",{class:"hint amknock","data-amknock":c.id}, `Applying this also moves ${r.moves} linked item${r.moves === 1 ? "" : "s"} to keep their order.`) : null,
     can ? h("div",{class:"qrow"}, r.status === "ready" && mark !== "skipped" && after == null ? h("button",{type:"button",class:"btn sm","data-amapply":c.id,onclick:e=>{ busy(e.currentTarget, "Applying…"); amApply([c.id]); }},"Apply") : null,
-      mark === "skipped" ? h("button",{type:"button",class:"linkish","data-amreopen":c.id,onclick:()=>{ amMark(AM.file.batchId, c, ""); render(); }},"Reopen")
-        : mark !== "applied" && r.status !== "done" ? h("button",{type:"button",class:"linkish","data-amskip":c.id,onclick:()=>{ amMark(AM.file.batchId, c, "skipped"); render(); }},"Skip") : null,
+      mark === "skipped" ? h("button",{type:"button",class:"btn sm","data-amreopen":c.id,onclick:()=>{ amMark(AM.file.batchId, c, ""); render(); }},"Reopen")
+        : mark !== "applied" && r.status !== "done" ? h("button",{type:"button",class:"btn sm","data-amskip":c.id,onclick:()=>{ amMark(AM.file.batchId, c, "skipped"); render(); }},"Skip") : null,
       mark === "applied" || r.status === "done" ? h("span",{class:"hint"}, "In the plan") : null,
-      mark !== "applied" && r.status !== "done" && UI.amEditing !== c.id ? h("button",{type:"button",class:"linkish","data-amedit":c.id,onclick:()=>{ UI.amEditing = c.id; render(); }},"Edit") : null,
-      eff.edited && mark !== "applied" && r.status !== "done" ? h("button",{type:"button",class:"linkish","data-amorig":c.id,onclick:()=>{ amSetEdit(AM.file.batchId, c, null); render(); }},"Use the assistant's version") : null) : null,
+      mark !== "applied" && r.status !== "done" && UI.amEditing !== c.id ? h("button",{type:"button",class:"btn sm","data-amedit":c.id,onclick:()=>{ UI.amEditing = c.id; render(); }},"Edit") : null,
+      eff.edited && mark !== "applied" && r.status !== "done" ? h("button",{type:"button",class:"btn sm","data-amorig":c.id,onclick:()=>{ amSetEdit(AM.file.batchId, c, null); render(); }},"Use the assistant's version") : null) : null,
     can && UI.amEditing === c.id ? amEditor(c, eff) : null); };
   // Jira placements: one row each, key, destination, the assistant's reason and confidence; Edit picks another destination.
   const jrow = x => { const {c, eff, r, mark, after} = x, o = amJiraOp(eff) || amJiraOp(c), w = amJiraWhat(o), d = amJiraDest(o), k = `amjd-${c.id}`, open = can && UI.amEditing === c.id;
@@ -12166,14 +12252,14 @@ function amendPanel(put){
       h("td",{role:"cell", class:"amjc"}, c.confidence ? h("span",{class:"amconf amconf-" + c.confidence}, c.confidence === "high" ? "High" : "Low") : h("span",{class:"hint"}, "Not given")),
       h("td",{role:"cell", class:"amja"}, can ? h("div",{class:"qrow"},
         r.status === "ready" && mark !== "skipped" && after == null ? h("button",{type:"button",class:"btn sm","data-amapply":c.id,onclick:e=>{ busy(e.currentTarget, "Applying…"); amApply([c.id]); }},"Apply") : null,
-        mark === "skipped" ? h("button",{type:"button",class:"linkish","data-amreopen":c.id,onclick:()=>{ amMark(AM.file.batchId, c, ""); render(); }},"Reopen")
-          : mark !== "applied" && r.status !== "done" ? h("button",{type:"button",class:"linkish","data-amskip":c.id,title:"Leaves it in Sort Jira work",onclick:()=>{ amMark(AM.file.batchId, c, "skipped"); render(); }},"Skip") : null,
+        mark === "skipped" ? h("button",{type:"button",class:"btn sm","data-amreopen":c.id,onclick:()=>{ amMark(AM.file.batchId, c, ""); render(); }},"Reopen")
+          : mark !== "applied" && r.status !== "done" ? h("button",{type:"button",class:"btn sm","data-amskip":c.id,title:"Leaves it in Sort Jira work",onclick:()=>{ amMark(AM.file.batchId, c, "skipped"); render(); }},"Skip") : null,
         mark === "applied" || r.status === "done" ? h("span",{class:"hint"}, "In the plan") : null,
-        mark !== "applied" && r.status !== "done" && !open ? h("button",{type:"button",class:"linkish","data-amedit":c.id,onclick:()=>{ UI.amEditing = c.id; render(); setTimeout(()=>{ const el = document.getElementById(k); if (el) el.focus(); }, 0); }},"Edit") : null,
-        eff.edited && mark !== "applied" && r.status !== "done" ? h("button",{type:"button",class:"linkish","data-amorig":c.id,onclick:()=>{ amSetEdit(AM.file.batchId, c, null); render(); }},"Use the assistant's version") : null) : null)),
+        mark !== "applied" && r.status !== "done" && !open ? h("button",{type:"button",class:"btn sm","data-amedit":c.id,onclick:()=>{ UI.amEditing = c.id; render(); setTimeout(()=>{ const el = document.getElementById(k); if (el) el.focus(); }, 0); }},"Edit") : null,
+        eff.edited && mark !== "applied" && r.status !== "done" ? h("button",{type:"button",class:"btn sm","data-amorig":c.id,onclick:()=>{ amSetEdit(AM.file.batchId, c, null); render(); }},"Use the assistant's version") : null) : null)),
       open ? h("tr",{class:"amjedit","data-amjedit":c.id, role:"row"}, h("td",{colspan:"5", role:"cell"}, h("div",{class:"qrow"}, h("label",{class:"field amf"}, h("span",{class:"flabel"}, `Where ${w.keys.length > 1 ? "these go" : "it goes"}`), amJiraPicker(k, o)),
         h("button",{type:"button",class:"btn sm primary","data-amsave":c.id,onclick:save},"Save"),
-        h("button",{type:"button",class:"linkish",onclick:()=>{ UI.amEditing = null; render(); }},"Cancel")))) : null]; };
+        h("button",{type:"button",class:"btn sm",onclick:()=>{ UI.amEditing = null; render(); }},"Cancel")))) : null]; };
   [["ready","Ready"],["changed","Changed since"],["attention","Needs attention"],["completed","Completed"]].forEach(([g, label])=>{ const L = G(g); if (!L.length) return;
     const J = L.filter(x=>amJiraOp(x.c) && x.needs == null), rest = L.filter(x=>!J.includes(x));
     put(h("details",{class:"amgroup",open: g !== "completed"}, h("summary",{}, `${label} (${L.length})`),

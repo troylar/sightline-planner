@@ -50,8 +50,8 @@ Choose **Plan with AI** to select the displayed quarters, or open an outcome and
 The **Planning assistant** shows **Working on** above the composer. Paste notes or describe a change, then **Send**
 once. These actions do not send or apply anything on their own. An untouched generated starter follows a new
 selection. A question you have written keeps its original selection; **Switch context** deliberately changes that
-selection while keeping your text. **Test reply** checks for a response, and **Connection and setup** holds detailed
-instructions below the composer. Read the [first planning session](assistant-workflow.md#first-four-quarter-planning-session)
+selection while keeping your text. **Test reply** checks for a response, and **Connection and setup**, under **Setup and files** at the end of the panel, holds detailed
+instructions. Read the [first planning session](assistant-workflow.md#first-four-quarter-planning-session)
 for the in-app route. External tools use the [private-folder session](assistant-workflow.md#your-first-external-planning-session) and their own conversation.
 
 Unsubmitted **New idea** text stays with its plan during navigation and redraws in this tab's session. It is not
