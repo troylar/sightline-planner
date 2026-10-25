@@ -1,5 +1,49 @@
 [
   {
+    "version": "1.108.0",
+    "date": "2026-10-25",
+    "headline": "Hide what you don't need, and pin the top rows",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Show: hide gates, meetings, done work and more",
+        "now": "Show has an eye for each kind of item: gates, releases, deliverables, meetings, process blocks, milestones and done work. One click hides or shows a kind on Timeline, List and People. Focus hides meetings, process blocks and done work at once.",
+        "where": "Timeline toolbar, Show (or press H)"
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Pin the top rows while you scroll",
+        "before": "The Gates, Releases, Deliverables, Team meetings and Process rows scrolled away with the workstreams.",
+        "now": "Pin the top rows keeps them under the dates while you scroll, so you can see what's coming next to any workstream.",
+        "where": "Show, Pin the top rows"
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Keys to clear the chart",
+        "now": "G hides or shows gates, M hides or shows meetings, H opens Show, and Shift+H shows everything you hid. In any meeting, gate, process block, release or milestone, Hide all hides that kind.",
+        "where": "Timeline, List and People, and an item's details"
+      },
+      {
+        "kind": "improved",
+        "area": "Filters",
+        "title": "Kinds can be hidden, not only shown",
+        "before": "Kind chips in Filters could only show one kind and leave out the rest.",
+        "now": "Each kind cycles through Show only, Hide and off, and Hide wins. Releases, deliverables and done work can be hidden too. The line under the toolbar says what's hidden, with Show everything.",
+        "where": "Filters, Kinds"
+      },
+      {
+        "kind": "improved",
+        "area": "Views",
+        "title": "Saved views remember what's hidden",
+        "now": "What you hide stays in this browser for each plan, and a saved view keeps its own choice. A plan whose team views hide kinds opens read-only in older copies of Sightline, so they can't drop the setting.",
+        "where": "Views"
+      }
+    ]
+  },
+  {
     "version": "1.107.0",
     "date": "2026-10-25",
     "headline": "Read the whole plan as a list",

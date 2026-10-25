@@ -13,6 +13,18 @@ Each group remembers your last page. Existing saved startup choices and links st
 
 Saved views and filters apply to Timeline, List and Capacity. Roadmap and Status update use the whole plan and say so. Your filters remain available when you return to Timeline.
 
+## Declutter: hide what you don't need
+
+**Show** (in the Timeline toolbar, or press H) has an eye for each kind of item: Gates, Releases, Deliverables, Meetings, Process blocks, Milestones and Done work. Click one, or press its letter while the menu is open, to hide or show it. Hiding works on Timeline, List and Capacity's People page. Today and Sprint always show everything.
+
+- **Keys:** G hides or shows gates and M meetings, on those pages. Shift+H shows everything.
+- **Focus** hides meetings, process blocks and done work in one click.
+- **Hide all meetings** (or gates, process blocks, releases, milestones) is in the details of any one of them.
+- **Pin the top rows** keeps the Gates, Releases, Deliverables, Team meetings and Process rows in view under the dates while you scroll the workstreams, up to half the chart's height.
+- Under the toolbar, "3 hidden: meetings, process blocks, done work" names what's hidden, with **Show everything**. The Show button says how many.
+- In **Filters**, each kind cycles: Show only, Hide, off. Hide wins over Show only. Clear filters also shows everything.
+- What you hide is yours: it stays in this browser for each plan, and a saved view keeps its own choice. Find brings a hidden kind back when the result is one of them. Nothing is changed in the plan file.
+
 ## List
 
 **List** (Delivery, next to Timeline, or press L) reads the plan top to bottom, like a checklist. It shows the work Timeline draws for the same filters: initiatives with their tasks, and Jira stories placed on the plan or counted under an epic. Each row has Start, End, Item, Owner, Waits on and Status.
