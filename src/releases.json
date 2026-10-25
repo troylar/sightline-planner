@@ -1,5 +1,35 @@
 [
   {
+    "version": "1.123.0",
+    "date": "2026-10-25",
+    "headline": "Size List's columns, and choose which ones wrap",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "List",
+        "title": "Resize any column",
+        "before": "List's columns sized themselves to their text, so a long name or a long list of waits could squeeze everything else.",
+        "now": "Drag the edge of a column's heading to resize it, or focus the edge and use the arrow keys. Double-click an edge for its default width. Wide tables scroll sideways.",
+        "where": "List, the column headings"
+      },
+      {
+        "kind": "new",
+        "area": "List",
+        "title": "Choose which columns wrap",
+        "now": "Columns, in List's toolbar, sets each column to wrap or keep one line. A one-line column is cut short and shows the full text on hover. Reset columns puts everything back. These settings are yours, in this browser, and printing still shows every column in full.",
+        "where": "List, then Columns"
+      },
+      {
+        "kind": "fixed",
+        "area": "List",
+        "title": "Item names are full size",
+        "before": "Item names in List were drawn smaller than the other columns, and their cells didn't line up with the rest of the row.",
+        "now": "Item names use the same size as the rest of the table, and every cell in a row lines up.",
+        "where": "List, the Item column"
+      }
+    ]
+  },
+  {
     "version": "1.122.0",
     "date": "2026-10-25",
     "headline": "Change a workstream's ID so it says what the workstream is",
