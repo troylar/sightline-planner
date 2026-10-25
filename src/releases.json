@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.119.1",
+    "date": "2026-10-25",
+    "headline": "Assistant changes apply whole, or say why not",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Assistant",
+        "title": "A change no longer lands only partly",
+        "before": "An assistant change that moved an initiative earlier and made it longer could apply only the longer part: the plan's scheduling put the start back, because it waits on something that ends later, and nothing said so.",
+        "now": "The change waits instead, and review says why: it would start on the later date because it waits on the named item. Change what it waits on, or move that first. A change the schedule allows still applies whole, with one undo.",
+        "where": "Assistant panel"
+      }
+    ]
+  },
+  {
     "version": "1.119.0",
     "date": "2026-10-25",
     "headline": "Settings pages that say where you are, and a File menu for files",

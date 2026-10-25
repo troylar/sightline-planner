@@ -11626,10 +11626,25 @@ function amCheck0(c, p){
       !(x.actual.jira || (x.actual.epics || []).length);
     if (!same) bad.push(`${x.at}: the id ${x.id} is already used by a ${x.type} with other details`);
     else lines.push(`${x.expected.label} (already in the plan)`); });
-  if (cand && !bad.length && !stale.length && todo){ acts.slice(candN).forEach(fn=>fn(cand));        // what the whole change moves, and whether it lands in blacked-out time
+  const sets = c.ops.some(o=>o && o.op === "set" && (o.type === "initiative" || o.type === "task"));     // plain edits that can move dates
+  if ((cand || sets) && !bad.length && !stale.length && todo){         // what the whole change moves, and whether it lands in blacked-out time
+    const after = cand || clone(p); if (cand) acts.slice(candN).forEach(fn=>fn(cand)); else acts.forEach(fn=>fn(after));
     const sched = x => { const was = S; S = x; try { rollup(S); reschedule(); syncWeeks(S); clampToRange(S); } finally { S = was; } return x; };
-    const b0 = sched(clone(p)), b1 = sched(cand), hit = blackoutHit(b0, b1);
-    if (hit) bad.push(hit); else planMoves(b0, b1).filter(m=>!c.ops.some(o=>o && o.op === "action" && o.args && o.args.id === m.id && /\.move$/.test(o.action))).forEach(m=>notes.push(moveLine(m))); }
+    const asked = new Map();          // what the change itself puts each date at, before the plan's own scheduling runs
+    const askBar = id => { const b = (after.bars || []).find(x=>x.id === id); if (b) asked.set("bar:" + id, {name:barTitle(b), at:amWeekIso(after, b.start), deps:b.dependsOn || []}); };
+    const askTask = id => { for (const b of after.bars || []){ const t = (b.tasks || []).find(x=>x.id === id); if (t){ asked.set("task:" + id, {name:t.label || "Task", at:t.start, deps:t.dependsOn || []}); return; } } };
+    c.ops.forEach(o=>{ if (!o || typeof o !== "object") return;
+      if (o.op === "set" && o.field === "start" && o.type === "initiative") askBar(String(o.id || ""));
+      if (o.op === "set" && o.field === "start" && o.type === "task") askTask(String(o.id || ""));
+      if (o.op === "action" && o.args && o.action === "initiative.move" && ("day" in o.args || "start" in o.args)) askBar(String(o.args.id || ""));
+      if (o.op === "action" && o.args && o.action === "task.move" && "start" in o.args) askTask(String(o.args.id || "")); });
+    const b0 = sched(clone(p)), b1 = sched(after), hit = blackoutHit(b0, b1);
+    // A date the plan's scheduling would put back is refused with its reason, so a change never lands only partly.
+    const undone = [...asked].map(([k, a])=>{ const [t, id] = k.split(":"), now = t === "bar" ? (()=>{ const b = b1.bars.find(x=>x.id === id); return b && amWeekIso(b1, b.start); })() : (()=>{ for (const b of b1.bars){ const x = (b.tasks || []).find(y=>y.id === id); if (x) return x.start; } })();
+      if (!now || now === a.at) return null; const on = a.deps.map(d=>t === "bar" ? barById(d) && barTitle(barById(d)) : (taskById(d) || {}).t?.label).filter(Boolean);
+      return `${a.name} would start ${fmtDay(isoToDay(now))}, not ${fmtDay(isoToDay(a.at))}: ` + (on.length ? `it waits on ${on.slice(0, 3).join(", ")}${on.length > 3 ? ` and ${on.length - 3} more` : ""}. Change what it waits on, or move that first.` : "the plan's dates or schedule keep it there."); }).filter(Boolean);
+    if (undone.length) bad.push(...undone);
+    else if (hit) bad.push(hit); else planMoves(b0, b1).filter(m=>!c.ops.some(o=>o && o.op === "action" && o.args && o.args.id === m.id && /\.move$/.test(o.action))).forEach(m=>notes.push(moveLine(m))); }
   const status = bad.length ? "invalid" : stale.length ? "changed" : todo ? "ready" : "done";
   return {status, reasons:[...bad, ...stale], notes:[...new Set(notes)], lines, dated,
     apply: cand ? s=>{ const t = clone(s); acts.forEach(fn=>fn(t)); for (const k of Object.keys(s)) delete s[k]; Object.assign(s, t); }        // actions can touch any part of the plan
