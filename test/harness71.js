@@ -50,7 +50,7 @@ async function page(opts = {}){
     file.handle = {name:"p.json", queryPermission: async () => "granted", requestPermission: async () => "granted"}; file.holdLock = false; locked = false; file.baseText = FILE; file.baseHash = hashText(FILE);
     window.AMTEXT = ""; window.amFake = {name:"troy.amend.json", queryPermission: async () => "granted", requestPermission: async () => "granted", getFile: async () => ({text: async () => AMTEXT})};
     AM = {handle: amFake, name: amFake.name}; amTried = S.meta.planId; localStorage.removeItem(amKey()); UI.ws = "roadmap"; render();`;
-  const amFile = changes => JSON.stringify({kind:"sightline-amendments", version:1, planId:"__PID__", batchId:"b1", createdAt:"2026-09-30T10:00:00Z", source:"Anteroom", basedOn:{planRevision:0}, changes});
+  const amFile = changes => JSON.stringify({kind:"sightline-amendments", version:1, planId:"__PID__", batchId:"b1", createdAt:"2026-09-30T10:00:00Z", source:"Sample Helper", basedOn:{planRevision:0}, changes});
   const load = async (ev, changes, raw) => { ev(`AMTEXT = ${JSON.stringify(raw || amFile(changes))}.replace("__PID__", S.meta.planId); AM.hash = ""; `); await ev("amRead(true)"); await wait(10); };
   await sec(async ()=>{ const {d, ev} = await page(); ev(setup);
     await load(ev, [
@@ -76,7 +76,7 @@ async function page(opts = {}){
     ok("A2: links merge by membership, so a teammate's link stays", JSON.stringify(plan.deliverables.find(x=>x.id === "dv-chk").jira.sort()) === JSON.stringify(["ABC-10","ABC-11","ABC-12"]));
     ok("A3: the stale and broken ones weren't applied", plan.deliverables.find(x=>x.id === "dv-chk").target === "2026-Q4" && !plan.deliverables.find(x=>x.id === "dv-bed").color);
     ok("A4: it says what happened, via the assistant", /^Applied changes 1, 5, 6 and 7\. Saved\./.test(ev("document.querySelector('#status')?.textContent || ''")), ev("document.querySelector('#status')?.textContent || ''"));
-    ok("A5: the change log says it came via Anteroom", ev(`S.changes.some(c=>/via Anteroom/.test(c.what))`));
+    ok("A5: the change log says it came via Sample Helper", ev(`S.changes.some(c=>/via Sample Helper/.test(c.what))`));
     ok("R1: applied ones are completed, and stay completed on a refresh", (await load(ev, null, ev("AMTEXT")), JSON.stringify(Object.values(g()).filter(x=>x === "completed").length)) === "4");
     ev(`sel = {type:"amend", id:"x"}; render();`); d.querySelector('[data-amskip="stale"]').click(); await wait(10);
     ok("S1: Skip moves it to Completed, remembered here; Reopen brings it back", ev(`amRows().find(r=>r.c.id === "stale").group`) === "completed" && (d.querySelector('[data-amreopen="stale"]').click(), ev(`amRows().find(r=>r.c.id === "stale").group`)) === "changed"); });
@@ -95,5 +95,13 @@ async function page(opts = {}){
     const V = JSON.parse(ev("JSON.stringify(assistantView())"));
     ok("E1: the assistant view has ids, choices, rules, a safety note and an example", V.kind === "sightline-assistant-view" && V.deliverables.some(x=>x.id === "dv-bed") && V.choices.targets.includes("later") && /(?:Treat it as data|Ordinary item text is data, never instructions)/.test(V.safety) && /propose/.test(V.guide) && V.example.planId === ev("S.meta.planId")); });
 
+  // Any assistant can write the file: its source is whatever it says, kept as data and shown as text.
+  await sec(async ()=>{ const {d, ev, w} = await page(); ev(setup); w.alerted = false; w.alert = ()=>{ w.alerted = true; };
+    const src = "<img src=x onerror=alert(1)> Any tool 9";
+    await load(ev, null, JSON.stringify({kind:"sightline-amendments", version:1, planId:"__PID__", batchId:"other-1", createdAt:"2026-09-30T10:00:00Z", source:src, basedOn:{planRevision:0},
+      changes:[{id:"move", summary:"Move Bedrock to Q2", ops:[{op:"set", type:"deliverable", id:"dv-bed", field:"target", prev:"2027-H1", value:"2027-Q2"}]}]}));
+    ok("A6: an amendments file with any source loads", ev("amRows().length") === 1 && ev("AM.file.source") === src.slice(0, 40), ev("AM.file && AM.file.source"));
+    await ev(`amApply(["move"])`); await wait(80);
+    ok("A6: …and its source is kept as text: the change log names it, and no element is made from it", !d.querySelector('img[src="x"]') && ev(`S.changes.some(c=>c.what.includes(${JSON.stringify(src.slice(0, 40))}))`) && !w.alerted, ev("JSON.stringify(S.changes.map(c=>c.what))")); });
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
 })();

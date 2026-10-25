@@ -10,14 +10,14 @@ const at = new Date(Date.UTC(2026, 8, 30, 14)).toISOString();
 // A board shaped like a real one: work flows Ready -> To Do -> In Progress -> Step 1 -> Step 2 -> Done, and Done holds
 // finished AND abandoned statuses. "Completed" is (wrongly) in Jira's in-progress category but sits in Done.
 const COLS = [{name:"Ready", statuses:["Ready","Backlog"]}, {name:"To Do", statuses:["To Do"]}, {name:"In Progress", statuses:["In Progress"]},
-  {name:"In Testing/Review (Step 1)", statuses:["Step 1"]}, {name:"Pending Acceptance (Step 2)", statuses:["Step 2"]},
+  {name:"Testing (Step 1)", statuses:["Step 1"]}, {name:"Awaiting review (Step 2)", statuses:["Step 2"]},
   {name:"Done", statuses:["Closed","Abandoned","Done","Not Applicable","In Production","Expired","Completed"]}];
 const iss = (k, status, category, x = {}) => ({summary:`Issue ${k}`, status, category, type:"Story", resolution:"", ...x});
 const status = (x = {}) => JSON.stringify({kind:"sightline-jira-status", snapshot:"aaaa1111bbbb2222", jiraBase:"https://jira.example.com", generatedAt:at,
   board:{id:7, name:"Team board", columns:COLS},
-  sprints:[{id:50, name:"Sprint 50", state:"active", start:"2026-09-28", end:"2026-10-09"}, {id:99, name:"To Be Evaluated", state:"future", start:"2026-09-21", end:"2026-09-25"}],
+  sprints:[{id:50, name:"Sprint 50", state:"active", start:"2026-09-28", end:"2026-10-09"}, {id:99, name:"Parking Lot", state:"future", start:"2026-09-21", end:"2026-09-25"}],
   issues:{"ABC-1":iss("ABC-1","Closed","done",{resolution:"Won't Do"}), "ABC-2":iss("ABC-2","Step 1","inprogress"), "ABC-3":iss("ABC-3","Backlog","todo"),
-          "ABC-4":iss("ABC-4","Completed","inprogress"), "ABC-5":iss("ABC-5","In Progress","inprogress",{sprint:"To Be Evaluated", sprintId:99, sprintState:"future", sprintStart:"2026-09-21", sprintEnd:"2026-09-25"}),
+          "ABC-4":iss("ABC-4","Completed","inprogress"), "ABC-5":iss("ABC-5","In Progress","inprogress",{sprint:"Parking Lot", sprintId:99, sprintState:"future", sprintStart:"2026-09-21", sprintEnd:"2026-09-25"}),
           "ABC-6":iss("ABC-6","Weird","",{}), "ABC-10":{summary:"Epic", status:"In Progress", category:"inprogress", type:"Feature", isEpic:true}},
   missing:[], rollups:{"ABC-10":{total:10, todo:2, inprogress:3, done:5, unknown:0, points:0, pointsDone:0, unestimated:10,
     byState:{"Closed|Done|done":[3,0], "Abandoned||done":[2,0], "Closed|Duplicate|done":[1,0], "Step 2||inprogress":[2,0], "Backlog||todo":[2,0]}}}, ...x});
@@ -59,7 +59,7 @@ const st = (ev, a, b, c) => ev(`JSON.stringify(jiraState(${JSON.stringify(a)}, $
     ok("M2: abandoned statuses in the Done column are abandoned, not done", S2("Abandoned","","done").state === "abandoned" && S2("Not Applicable","","done").state === "abandoned" && S2("Expired","","done").state === "abandoned");
     ok("M2: so is anything closed as Won't Do, Duplicate or Cancelled", S2("Closed","Won't Do","done").state === "abandoned" && S2("Closed","Duplicate","done").state === "abandoned" && S2("Done","Cancelled","done").state === "abandoned");
     ok("M2: early columns are not started", S2("Backlog","","todo").state === "notstarted" && S2("Ready","","todo").state === "notstarted");
-    ok("M2: middle columns are in progress, and show the column's name", S2("Step 1","","inprogress").state === "inprogress" && S2("Step 1","","inprogress").label === "In Testing/Review (Step 1)");
+    ok("M2: middle columns are in progress, and show the column's name", S2("Step 1","","inprogress").state === "inprogress" && S2("Step 1","","inprogress").label === "Testing (Step 1)");
     ok("M2: a status not on the board falls back to Jira's category", S2("Reviewing","","inprogress").state === "inprogress" && S2("Weird","","").state === null); });
 
   // ---- M3: the team's overrides ----
@@ -97,14 +97,14 @@ const st = (ev, a, b, c) => ev(`JSON.stringify(jiraState(${JSON.stringify(a)}, $
   await sec(async ()=>{ const {d, ev, B} = await page();
     ok("M6: an issue parked in it isn't scheduled by it", ev(`jiraLockOf(barById("${B(2)}")).dates`) === false && ev(`barById("${B(2)}").start`) === 6);
     ev(`select("bar", "${B(2)}")`);
-    ok("M6: and says so", /In To Be Evaluated, which isn't a scheduled sprint/.test(d.querySelector("#side .jlockline")?.textContent || ""), d.querySelector("#side .jlockline")?.textContent);
-    ok("M6: the plan's sprints ignore it", !ev("JSON.stringify(sprintProposal().rows)").includes("To Be Evaluated")); });
+    ok("M6: and says so", /In Parking Lot, which isn't a scheduled sprint/.test(d.querySelector("#side .jlockline")?.textContent || ""), d.querySelector("#side .jlockline")?.textContent);
+    ok("M6: the plan's sprints ignore it", !ev("JSON.stringify(sprintProposal().rows)").includes("Parking Lot")); });
 
   // ---- M7, M8: the status map in the Jira window ----
   await sec(async ()=>{ const {w, d, ev} = await page();
     ev("openJiraDialog()");
     const m = d.querySelector("#jiraMap");
-    ok("M7: the Jira window lists the statuses in use, grouped by board column", !!m && /Board column: Done/.test(m.textContent) && /Board column: In Testing\/Review \(Step 1\)/.test(m.textContent) && /Not on the board/.test(m.textContent));
+    ok("M7: the Jira window lists the statuses in use, grouped by board column", !!m && /Board column: Done/.test(m.textContent) && /Board column: Testing \(Step 1\)/.test(m.textContent) && /Not on the board/.test(m.textContent));
     ok("M7: each says what it shows as, and why", /Automatic: Done · board column Done/.test(m.textContent) && /Automatic: Abandoned · status Abandoned/.test(m.textContent));
     ok("M7: it opens by itself when a status has no category", m.open === true && /1 need a choice/.test(m.querySelector("summary").textContent), m.querySelector("summary").textContent);
     ok("M7: resolutions in use are listed too", /Won't Do/.test(m.textContent) && /Duplicate/.test(m.textContent));

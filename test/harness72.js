@@ -49,7 +49,7 @@ async function page(opts = {}){
   const setup = `S.deliverables = [{id:"dv-bed", name:"Bedrock", stage:"planned", target:"2027-H1", date:"2027-02-01"}, {id:"dv-chk", name:"Checkout", stage:"planned", target:"2026-Q4"}];
     window.AMTEXT = ""; window.READS = 0; window.amFake = {name:"t.amend.json", queryPermission: async () => "granted", getFile: async () => { READS++; return {size: AMTEXT.length, text: async () => AMTEXT}; }};
     AM = {handle: amFake, name: amFake.name}; amTried = S.meta.planId; localStorage.removeItem(amKey()); UI.ws = "roadmap"; render();`;
-  const F = (changes, extra) => JSON.stringify({kind:"sightline-amendments", version:1, planId:"__PID__", batchId:"b1", source:"Anteroom", changes, ...(extra || {})});
+  const F = (changes, extra) => JSON.stringify({kind:"sightline-amendments", version:1, planId:"__PID__", batchId:"b1", source:"Sample Helper", changes, ...(extra || {})});
   const load = async (ev, text) => { ev(`AMTEXT = ${JSON.stringify(text)}.replace("__PID__", S.meta.planId);`); await ev("amRead(true)"); await wait(10); };
   const st = (ev, id) => ev(`amRows().find(r=>r.c.id === "${id}")?.r.status`);
   await sec(async ()=>{ const {d, ev, w} = await page(); ev(setup);

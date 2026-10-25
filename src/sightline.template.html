@@ -2937,7 +2937,7 @@ function focusGate(i){
   const inp = row.querySelector("input"); if (inp && !inp.disabled) inp.focus({preventScroll:true});
 }
 function gateTitle(g){ return [`Gate: ${g.x.gate || "Untitled gate"}`, `Needed by ${g.day != null ? fmtDay(g.day) : g.x.neededBy || "no date"}`, own(g.x).length ? "Owner: " + ownerNames(g.x).join(", ") : "", g.x.blocks ? `Blocks: ${g.x.blocks}` : "", ""].filter(Boolean).join("\n"); }
-// Gates needed on the same day share one chip ("Oct 16 Admin consent +1"), so they stop stacking into a tall row.
+// Gates needed on the same day share one chip ("Mar 5 Security review +1"), so they stop stacking into a tall row.
 function gateGroups(list){
   const by = new Map(); list.forEach(g=>{ const k = g.day; if (!by.has(k)) by.set(k, []); by.get(k).push(g); });
   return [...by.values()].map(gs=>({day:gs[0].day, gates:gs, key:"g" + gs[0].i, text:`${fmtDay(gs[0].day)} ${gs[0].x.gate}` + (gs.length > 1 ? ` +${gs.length - 1}` : ""),
@@ -4116,7 +4116,7 @@ function jiraState(status, resolution, category, automatic){      // automatic: 
   const c = {todo:"notstarted", inprogress:"inprogress", done:"done"}[category];
   return c ? {state:c, label:st, why:"Jira's category"} : {state:null, label:st, why:"no category"};
 }
-// status|resolution|category, each part with | and % escaped by the script (so "Done | QA" stays one status)
+// status|resolution|category, each part with | and % escaped by the script (so "Done | Verified" stays one status)
 const stateKeyParts = k => k.split("|").map(x=>x.replace(/%7C/gi, "|").replace(/%25/g, "%"));
 const jiraStateOf = j => j ? jiraState(j.status, j.resolution, j.category) : null;
 // One Jira epic's stories added up, leaving out those switched off (off: a Set of keys). Cached until the next draw or
@@ -4168,7 +4168,7 @@ function epicRollup(b){
 // An initiative's stories: its epics' children from the Jira status file (never copied into the plan). The plan keeps
 // only which ones are off for now (b.storiesOff). A story that's already a task in the plan is that task, not a second copy.
 // when: {s, e} days from its sprint (a stale "future" sprint is a parking lot, not a schedule), or null.
-// A "future" sprint whose dates have passed is a parking lot (e.g. "To be evaluated"), not a schedule.
+// A "future" sprint whose dates have passed is a parking lot (e.g. "Parking lot"), not a schedule.
 const staleSprint = j => !!j && j.sprintState === "future" && !!j.sprintEnd && isoToDay(j.sprintEnd) < todayDay();
 function jiraSprintSpan(j){
   if (!j || !j.sprintStart || !j.sprintEnd || staleSprint(j)) return null;
@@ -6639,7 +6639,7 @@ const visibleCount = () => { const R = fRangeDays(); return S.bars.filter(b=>bar
 // "4 of 10 working days done".
 const cap1 = t => t ? t[0].toUpperCase() + t.slice(1) : t;
 function dayOfSprint(n, of, work){ return work ? `working day ${n} of ${of}` : `${n} of ${of} working days done`; }
-// A Jira sprint's name without the dates teams put at its end ("Planning 2026.S15 09/17-10/02" -> "Planning 2026.S15").
+// A Jira sprint's name without the dates teams put at its end ("Sprint 15 03/02-03/13" -> "Sprint 15").
 // A sprint's name, clipped in the middle when it must be: the end ("S15") is what tells similar names apart.
 function sprintLabel(name){ const t = String(name || ""), m = /[^\s._\-\/]{1,8}$/.exec(t), cut = m && m.index > 0 ? m.index : t.length;
   return h("span",{class:"spn"}, h("span",{class:"spn-a"}, t.slice(0, cut)), cut < t.length ? h("span",{class:"spn-b"}, t.slice(cut)) : null); }
@@ -11470,7 +11470,7 @@ function cardsBar(C, qHidden){
     qHidden ? h("span",{class:"hint",id:"cardsQHidden"}, `${qHidden} hidden by quick filters. `, h("button",{type:"button",class:"linkish",onclick:()=>setCards({quick:[], by:""})},"Clear")) : null);
 }
 // ================= Amendments: an assistant's proposed changes, reviewed before they touch the plan =================
-// Your AI assistant (Anteroom) writes a personal file of proposed changes; Sightline shows them over the plan and applies
+// Your AI assistant writes a personal file of proposed changes; Sightline shows them over the plan and applies
 // the ones you pick as one quick update. v1 covers deliverables (add, change fields, link or unlink Jira work) and Jira
 // change proposals. The checker is strict on purpose: it never trims or repairs; every change gets a result and a reason,
 // and a change applies whole or not at all, re-checked against the latest file when it's saved.
@@ -11943,7 +11943,7 @@ function assistantView(){
     guide:[
       "# Writing Sightline amendments (version 1)",
       "Read each action's args from actions in this file and use them exactly; never guess field names.",
-      "Write one JSON file: {kind:'sightline-amendments', version:1, planId, batchId, createdAt, source:'Anteroom', basedOn:{planRevision}, changes:[...]}.",
+      "Write one JSON file: {kind:'sightline-amendments', version:1, planId, batchId, createdAt, source:'assistant', basedOn:{planRevision}, changes:[...]}.",
       "Each change: {id, summary, ops:[...]} with a stable id; a change applies whole or not at all. Keep ids stable when you rewrite the file.",
       "Ops: add {op:'add', type:'deliverable', id:'dv-…', value:{name, line?, kind?, stage?, target?, release?, lane?, owners?, jira?, note?, source?}};",
       "set {op:'set', type:'deliverable', id, field, prev, value} where prev is the value you see now (null when empty) and value null clears it;",
@@ -11983,7 +11983,7 @@ function assistantView(){
         source:amHas(JIRA && JIRA.issues || {},key) ? "status" : "search",syncedAt:amHas(JIRA && JIRA.issues || {},key) ? JIRA.generatedAt || null : JIRA_ISSUES && JIRA_ISSUES.generatedAt || null,
         ...fields(j,["summary","status","category","resolution","type","isEpic","assignee","assigneeKey","points","sprintId","sprint","sprintState","sprintStart","sprintEnd","epic","parent","due","labels"]), ...(typeof j.description === "string" && j.description.trim() ? {description:j.description} : {})}))},
     jiraSort:assistantSortPile(),
-    example:{kind:"sightline-amendments", version:1, planId:S.meta.planId, batchId:"anteroom-" + dayToIso(todayDay()) + "-1", createdAt:new Date().toISOString(), source:"Anteroom", basedOn:{planRevision:S.meta.revision || 0},
+    example:{kind:"sightline-amendments", version:1, planId:S.meta.planId, batchId:"assistant-" + dayToIso(todayDay()) + "-1", createdAt:new Date().toISOString(), source:"assistant", basedOn:{planRevision:S.meta.revision || 0},
       changes:[{id:"idea-1", summary:"Add an idea from Planning topics", ops:[{op:"add", type:"deliverable", id:"dv-example-idea", value:{name:"Example idea", source:"Planning topics"}}]},
         {id:"replan-1", summary:"Example: a link, a milestone that waits for it, and a risk", ops:[{op:"action", action:"link.add", args:{id:"bar-second", after:"bar-first"}},
           {op:"action", action:"milestone.add", args:{id:"ms-example", what:"Beta", day:dayToIso(todayDay() + 28)}}, {op:"action", action:"milestone.doneWhen.add", args:{id:"ms-example", bar:"bar-second"}},

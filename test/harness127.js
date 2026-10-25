@@ -107,10 +107,10 @@ async function page(opts = {}){
     ok("B1 …the words are hidden visually, not removed", has(/^\.vh$/, r=>/clip-path:\s*inset\(50%\)/.test(r.text) && /position:\s*absolute/.test(r.text)));
     ok("B2 counts and warnings in the menu stay on one line", has(/^\.snp \.warnc$/, r=>/white-space:\s*nowrap/.test(r.text)));
     ok("B3 the menu's focus ring sits inside its rows", has(/\.snh, \.snp/, r=>/:focus-visible/.test(r.sel) && /outline-offset:\s*-2px/.test(r.text)));
-    ev(`S.sprints.forEach((x, i)=>{ x.name = "Platform team 2026.S" + (15 + i); }); goWs('timeline'); render();`);
+    ev(`S.sprints.forEach((x, i)=>{ x.name = "Platform Sprint " + (15 + i); }); goWs('timeline'); render();`);
     const heads = [...d.querySelectorAll("#gantt .gsprint .spn")];
-    ok("N1 similar long sprint names keep their distinguishing end whole in the timeline header", heads.length >= 3 && heads.every((x, i)=>x.querySelector(".spn-b").textContent === "S" + (15 + i) && x.querySelector(".spn-a").textContent === "Platform team 2026."), heads.slice(0, 3).map(x=>x.textContent).join(" | "));
-    ok("N1 …only the start clips, and the full name is in the tooltip", has(/^\.spn-a$/, r=>/text-overflow:\s*ellipsis/.test(r.text)) && has(/^\.spn-b$/, r=>/flex:\s*none/.test(r.text)) && d.querySelector("#gantt .gsprint").title.startsWith("Platform team 2026.S15") && heads[0].textContent === "Platform team 2026.S15");
+    ok("N1 similar long sprint names keep their distinguishing end whole in the timeline header", heads.length >= 3 && heads.every((x, i)=>x.querySelector(".spn-b").textContent === String(15 + i) && x.querySelector(".spn-a").textContent === "Platform Sprint "), heads.slice(0, 3).map(x=>x.textContent).join(" | "));
+    ok("N1 …only the start clips, and the full name is in the tooltip", has(/^\.spn-a$/, r=>/text-overflow:\s*ellipsis/.test(r.text)) && has(/^\.spn-b$/, r=>/flex:\s*none/.test(r.text)) && d.querySelector("#gantt .gsprint").title.startsWith("Platform Sprint 15") && heads[0].textContent === "Platform Sprint 15");
     ev(`UI.planTab = 'types'; goWs('plan'); render();`);
     const nm = [...d.querySelectorAll('#t-sprints input[aria-label="Sprint name"]')];
     ok("N2 Settings gives sprint names room (20 characters), and the full name is in the tooltip", nm.length >= 3 && nm.every(x=>x.closest("td").classList.contains("spname") && x.title.split("\n")[0] === x.value) && has(/^td\.spname$/, r=>/width:\s*20ch/.test(r.text)), nm.slice(0, 2).map(x=>x.title).join(" | "));

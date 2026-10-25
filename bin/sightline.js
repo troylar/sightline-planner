@@ -68,7 +68,7 @@ Docs: https://github.com/troylar/sightline-planner#readme`);
     return;
   }
   if (args[0] === '--version' && args.length === 1) return console.log(pkg.version);
-  if (args[0] === 'helpers' && args.length === 1) return console.log(path.join(root, 'tools'));
+  if (args[0] === 'helpers' && args.length === 1) return console.log(path.join(root, 'dist'));   // the helpers stamped with this app's version
   if (args[0] === 'install' && args.length <= 2 && (!args[1] || !args[1].startsWith('-'))) return install(args[1] || 'sightline', false);
   if (args[0] === 'skills' && args.length === 3 && args[1] === '--to' && !args[2].startsWith('-')) return install(args[2], true);
   throw new Error('Unknown command or argument. Run sightline --help.');

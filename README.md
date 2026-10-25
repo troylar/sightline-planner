@@ -107,9 +107,24 @@ permissions for access. The page makes no network requests: its font is embedded
 
 [Assistant setup](docs/assistant-workflow.md) · [Jira setup](docs/jira.md) · [Sharing and recovery](docs/onedrive.md).
 
+## Install
+
+Sightline is one HTML file you open in Chrome or Edge, plus optional planning skills for your AI assistant and an
+optional read-only Jira helper. It never writes to Jira. With Node.js 18 or later:
+
+```sh
+npx @troylar/sightline install my-sightline
+```
+
+That creates **my-sightline/** with **sightline.html**, the planning skills in **.sightline/skills/**, and an invented
+example plan in **example/**. Open **my-sightline/sightline.html** and choose **File → Open shared plan…** to open
+**example/plan.json**, or start your own plan. It never replaces a file that's already there; to update, install into
+a new folder and open your plan from the new app. `npx @troylar/sightline helpers` prints the folder that holds the
+Python helpers (the Jira sync and the assistant tools), which need Python 3.10 or later.
+
 ## Try it with an invented team plan
 
-The available public route is a source build. You need Git, Node.js 18+, Python 3.10+, and Bash:
+To build from source instead, you need Git, Node.js 18+, Python 3.10+, and Bash:
 
 ```sh
 git clone https://github.com/troylar/sightline-planner.git sightline
@@ -126,8 +141,7 @@ Or give your coding assistant the repository link and ask:
 > Clone Sightline into a new folder, read its project instructions, install its development dependencies,
 > and build the HTML. Tell me where to open it and the Northstar example. Preserve any existing checkout.
 
-No public npm package or GitHub release download is available yet. Newer local builds are explicitly
-version-gated in the docs. [Check version and download availability](docs/availability.md).
+[Check which version each install route gives you](docs/availability.md).
 
 ## Documentation
 

@@ -1,5 +1,35 @@
 [
   {
+    "version": "1.120.2",
+    "date": "2026-10-25",
+    "headline": "Install Sightline with npm",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Install",
+        "title": "One command to install",
+        "before": "Getting Sightline meant cloning the source and building it.",
+        "now": "npx @troylar/sightline install <folder> puts the app, the planning skills and an invented example plan in a new folder. The README and the availability page explain each install route.",
+        "where": "README, and docs/availability.md"
+      },
+      {
+        "kind": "fixed",
+        "area": "Install",
+        "title": "Helpers match the app they came with",
+        "before": "The package's Jira sync and assistant helpers weren't stamped with the app's version, so they didn't match the copies the app hands out.",
+        "now": "sightline helpers points to helpers stamped with the app's version, the same files the app and its download carry.",
+        "where": "npx @troylar/sightline helpers"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Neutral wording for any assistant",
+        "now": "The instructions the app gives your AI assistant use a generic source name and batch id in their example. Any assistant's name is still accepted and shown as written.",
+        "where": "Roadmap, Assistant amendments"
+      }
+    ]
+  },
+  {
     "version": "1.120.1",
     "date": "2026-10-25",
     "headline": "Stories under a feature are sorted under their epic",
@@ -415,7 +445,7 @@
         "kind": "fixed",
         "area": "Settings",
         "title": "Similar sprint names no longer look the same",
-        "before": "In Settings, long sprint names were cut off at the end, so names like \"Team 2026.S15\" and \"Team 2026.S16\" read the same.",
+        "before": "In Settings, long sprint names were cut off at the end, so names like \"Platform Sprint 15\" and \"Platform Sprint 16\" read the same.",
         "now": "The name column has room for typical sprint names. Where a name still has to be cut, the timeline header and the commitment table cut it in the middle and keep the end, such as S15, in view. Point at a name to see all of it.",
         "where": "Settings, Timeboxes and ceremonies; Timeline header"
       },
@@ -692,8 +722,8 @@
         "kind": "improved",
         "area": "Forecast",
         "title": "Clearer reasons",
-        "now": "Reasons read as plain sentences: \"It starts then because it waited for Schema cleanup (finishes Nov 13).\"",
-        "before": "\"It starts then because waited for Schema cleanup.\"",
+        "now": "Reasons read as plain sentences: \"It starts then because it waited for Index rebuild (finishes Mar 20).\"",
+        "before": "\"It starts then because waited for Index rebuild.\"",
         "where": "Initiative card and Capacity, Forecast"
       }
     ]
@@ -1929,7 +1959,7 @@
         "kind": "new",
         "area": "Views",
         "title": "Your assistant's changes, reviewed first",
-        "now": "Connect a personal amendments file that your AI assistant (like Anteroom) writes. The Roadmap shows how many are waiting, new ones as dashed Proposed cards, and a proposed mark on cards they'd change. Nothing touches the shared plan until you apply it.",
+        "now": "Connect a personal amendments file that your AI assistant writes. The Roadmap shows how many are waiting, new ones as dashed Proposed cards, and a proposed mark on cards they'd change. Nothing touches the shared plan until you apply it.",
         "where": "Roadmap: Assistant amendments."
       },
       {
@@ -2944,7 +2974,7 @@
         "kind": "fixed",
         "area": "Jira",
         "title": "Sprint numbers, not dates",
-        "now": "A Jira sprint named with its dates, like Team 2026.S15 09/17-10/02, no longer makes the next sprints 10/3 and 10/4; they're S16 and S17.",
+        "now": "A Jira sprint named with its dates, like Sprint 15 03/02-03/13, no longer makes the next sprints 3/14 and 3/15; they're S16 and S17.",
         "where": "Use Jira's sprints."
       },
       {
@@ -3849,7 +3879,7 @@
         "kind": "fixed",
         "area": "Jira",
         "title": "Statuses with a | in their name",
-        "before": "A Jira status like Done | QA was misread in epic progress.",
+        "before": "A Jira status like Done | Verified was misread in epic progress.",
         "now": "It's counted under its real name. Needs the updated sync script.",
         "where": "Epic progress and the status map."
       },
@@ -4093,7 +4123,7 @@
         "area": "Jira",
         "title": "Statuses follow your board's columns",
         "before": "Sightline used Jira's own status categories, which put some statuses in the wrong place (Completed as in progress, Resolved as to do).",
-        "now": "Run the sync with --board and Sightline reads the board's columns: early columns are not started, middle ones are in progress (shown by the column's name, like Pending Acceptance), the last is done. Abandoned statuses in the Done column show as Abandoned.",
+        "now": "Run the sync with --board and Sightline reads the board's columns: early columns are not started, middle ones are in progress (shown by the column's name, like Awaiting review), the last is done. Abandoned statuses in the Done column show as Abandoned.",
         "where": "Everywhere a Jira status shows."
       },
       {
@@ -4108,7 +4138,7 @@
         "area": "Sprints & process",
         "title": "Parking-lot sprints don't schedule anything",
         "before": "An issue parked in such a sprint was pinned to its old dates.",
-        "now": "A future sprint whose dates have passed (like To Be Evaluated by Leads) no longer sets an issue's dates or shapes the plan's sprints. Its issues say they're not in a scheduled sprint.",
+        "now": "A future sprint whose dates have passed (like Parking lot) no longer sets an issue's dates or shapes the plan's sprints. Its issues say they're not in a scheduled sprint.",
         "where": "Timeline, and Sprints from your Jira board."
       }
     ]
@@ -4411,7 +4441,7 @@
         "area": "Timeline",
         "title": "Gates on the same day share one chip",
         "before": "Gates needed on the same day stacked on top of each other, so the Gates row grew tall.",
-        "now": "They share one chip, like \"Oct 16 Admin consent +1\". Click it to pick the gate you want.",
+        "now": "They share one chip, like \"Mar 5 Security review +1\". Click it to pick the gate you want.",
         "where": "Timeline, the Gates row."
       },
       {

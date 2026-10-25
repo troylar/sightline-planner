@@ -12,7 +12,7 @@ const story = (k, x = {}) => ({summary:`Story ${k}`, status:"In Progress", categ
 const status = JSON.stringify({kind:"sightline-jira-status", generatedAt:at, jiraBase:"https://jira.example.com", missing:[],
   issues:{"ABC-1":epic("ABC-1","Made from an epic"), "ABC-2":epic("ABC-2","Hand-made with an epic key"), "ABC-3":epic("ABC-3","Third"), "ABC-4":epic("ABC-4","Fourth"),
           "ABC-50":story("ABC-50"), "ABC-51":story("ABC-51", {sprintStart:"2026-10-12", sprintEnd:"2026-10-23", sprint:"Sprint 43", sprintId:43})},
-  rollups:{"ABC-3":{total:3, todo:0, inprogress:0, done:3, unknown:0, points:0, pointsDone:0, unestimated:3, byState:{"Done %7C QA||done":[3,0]}}}});
+  rollups:{"ABC-3":{total:3, todo:0, inprogress:0, done:3, unknown:0, points:0, pointsDone:0, unestimated:3, byState:{"Done %7C Verified||done":[3,0]}}}});
 async function page(){
   const dom = new JSDOM(html,{runScripts:"dangerously",pretendToBeVisual:true,url:"https://local.test/",virtualConsole:new (require("jsdom").VirtualConsole)(),beforeParse(w){
     const RD = w.Date, NOW = new RD(2026, 8, 30, 10).getTime();
@@ -75,10 +75,10 @@ async function page(){
     ok("E5: scheduling leaves a Jira-sprint story where Jira put it", s0 === "2026-09-28" && ev("barById(A).tasks[0].start") === "2026-09-28" && ev("reschedule().moved") === 0); });
 
   await sec(async ()=>{ const {ev} = await page();
-    ok("E6: a status with | in its name stays one status", ev("stateKeyParts('Done %7C QA||done').join('/')") === "Done | QA//done" && ev("stateKeyParts('100%25 %257C||todo')[0]") === "100% %7C");
+    ok("E6: a status with | in its name stays one status", ev("stateKeyParts('Done %7C Verified||done').join('/')") === "Done | Verified//done" && ev("stateKeyParts('100%25 %257C||todo')[0]") === "100% %7C");
     ev("barById(A).epics = ['ABC-3']; render();");
     ok("E6: and its stories count as done", ev("epicRollup(barById(A)).done") === 3);
-    ok("E6: the status map lists it by its real name", ev("statusesInUse().st.has('Done | QA')")); });
+    ok("E6: the status map lists it by its real name", ev("statusesInUse().st.has('Done | Verified')")); });
 
   await sec(async ()=>{ const {w} = await page(); ok("no page errors", !w.errs.length, w.errs.join("; ")); });
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

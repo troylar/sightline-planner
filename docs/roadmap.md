@@ -3,7 +3,7 @@
 This is the historical implementation sequence, not the current feature status or a delivery commitment.
 For today's product, start with [the visual guide](../README.md) and [release history](../CHANGELOG.md).
 
-The plan for building [vision.md](../vision.md), release by release. Each release is one PR with its own tests.
+The plan for building [vision.md](https://github.com/troylar/sightline-planner/blob/main/vision.md), release by release. Each release is one PR with its own tests.
 Function names are given instead of line numbers, because lines move.
 
 ## What the code tells us first

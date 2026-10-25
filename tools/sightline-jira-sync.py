@@ -663,7 +663,7 @@ STORY_CAP = 3000                                               # of those, how m
 
 
 def state_part(v: str) -> str:
-    """One part of a status|resolution|category key, with | and % escaped so a status named "Done | QA" stays one part."""
+    """One part of a status|resolution|category key, with | and % escaped so a status named "Done | Verified" stays one part."""
     return str(v or "").replace("%", "%25").replace("|", "%7C")
 
 
@@ -1206,7 +1206,7 @@ def cmd_fields(args) -> None:
     entry["fields"] = fields
     save_config(cfg)
     report_fields(fields)
-    print("To change one yourself: fields --set ROLE=customfield_NNNNN  (for example storyPoints=customfield_12345)")
+    print("To change one yourself: fields --set ROLE=customfield_NNNNN  (for example storyPoints=customfield_9900001)")
 
 
 def get_json(base: str, token: str, path: str, opener=None, cap: int = 5 * 1024 * 1024):
