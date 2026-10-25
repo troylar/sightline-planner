@@ -55,8 +55,8 @@ async function page(opts = {}){
     const id = ev("sel.id");
     ok("C2: made while filtering to a tag, it gets the tag and stays in view", JSON.stringify(ev(`barById(${JSON.stringify(id)}).tags`)) === JSON.stringify(["tq"]) && !!d.querySelector(`#gantt [data-key="bar:${id}"]`)); });
 
-  await sec(async ()=>{ const {d, ev} = await page({jira:false}); ev("setWs('timeline'); UI.zoom='weeks'; render(); setZoomN(1);"); await wait(20);
-    ok("P1: zoomed in, the pager has the dates on screen and a separate Today", !!d.querySelector("#gantt #pgRange") && !!d.querySelector("#gantt #pgToday")); });
+  await sec(async ()=>{ const {d, ev} = await page({jira:false}); ev("setWs('timeline'); UI.zoom='weeks'; render(); setZoomN(1); visibleDays = () => [startDay(), startDay() + 13]; updatePager();"); await wait(20);   // jsdom has no layout: the days on screen are given
+    ok("P1: zoomed in, the dates on screen are read out and shown on the picker", /\w{3} \d+ – \w{3} \d+/.test(d.querySelector("#zoomBar #pgRange").textContent) && /^On screen: /.test(d.querySelector("#zoomSprint").title), d.querySelector("#zoomSprint").title); });
 
   await sec(async ()=>{ const {d, ev} = await page({jira:false}); ev("S.bars[0].parked = true; S.bars[1].parked = true; setWs('timeline'); render();"); await wait(10);
     const t = d.querySelector("#hsParked")?.textContent || "";

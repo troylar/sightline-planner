@@ -47,11 +47,11 @@ async function page(opts = {}){
   const sec = async fn => { try { await fn(); } catch(e){ ok("section crashed", false, String(e.message).slice(0,140)); } };
 
   await sec(async ()=>{ const {d, ev, w} = await page({jira:false}); ev("UI.zoomN = 0; UI.zoomSp = null; setZoom('weeks'); setWs('timeline'); render();"); await wait(10);
-    ok("Z1: Weeks has the same − / + zoom, starting at Fit", d.querySelector("#gantt .gcorner #zoomLab")?.textContent === "Fit" && !!d.querySelector("#gantt .gcorner #zoomIn"));
+    ok("Z1: Weeks has the same − / + zoom, starting at Fit", d.querySelector("#zoomBar #zoomLab")?.textContent === "Fit" && !!d.querySelector("#zoomBar #zoomIn"));
     d.querySelector("#zoomIn").click(); await wait(10);
     const n = ev("zoomN()");
     ok("Z1: + shows fewer sprints, so the timeline scrolls sideways with wider weeks", n >= 1 && d.querySelector("#gantt").classList.contains("zoomed") && parseInt(d.querySelector("#gantt").style.minWidth) > 0 && d.querySelector("#zoomLab").textContent === `${n} sprint${n===1?"":"s"}`);
-    ok("Z1: with a Today and paging", !!d.querySelector("#gantt .gcorner [aria-label=Later]"));
+    ok("Z1: with paging", !!d.querySelector("#zoomBar [aria-label=Later]") && !d.querySelector("#zoomBar [aria-label=Later]").disabled);
     d.dispatchEvent(new w.KeyboardEvent("keydown",{key:"+",bubbles:true})); await wait(10);
     ok("Z2: the + key works in Weeks too", ev("zoomN()") === Math.max(1, n - 1));
     const m = ev("zoomN()"); ev("setZoom('days')"); await wait(10);

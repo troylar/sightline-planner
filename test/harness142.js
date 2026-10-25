@@ -48,8 +48,8 @@ async function open(iso, fresh){
     ok("K3 at the plan's first sprint, [ stays and says so", ev("UI.zoomSp") === "2026-09-28" && /first sprint/.test(d.querySelector("#status").textContent), ev("UI.zoomSp"));
     choose("2026-12-14"); key("]");
     ok("K4 at the last, ] stays and says so", ev("UI.zoomSp") === "2026-12-14" && /last sprint/.test(d.querySelector("#status").textContent));
-    const later = [...d.querySelectorAll("#gantt .ghead button")].find(b=>b.getAttribute("aria-label") === "Previous sprint");
-    ok("B1 the ‹ › buttons become Previous and Next sprint", !!later && !!d.querySelector('#gantt .ghead button[aria-label="Next sprint"]'));
+    const later = [...d.querySelectorAll("#zoomBar button")].find(b=>b.getAttribute("aria-label") === "Previous sprint");
+    ok("B1 the ‹ › buttons become Previous and Next sprint", !!later && !!d.querySelector('#zoomBar button[aria-label="Next sprint"]'));
     later.click();
     ok("B1 …and step whole sprints", ev("UI.zoomSp") === "2026-11-30");
     key("."); await wait(20);
@@ -85,7 +85,16 @@ async function open(iso, fresh){
 
     // One-click presets: This sprint, This + next, Next 3 and Fit, from the sprint we're in (or the next between sprints).
     const F = await open("2026-10-07"), pb = k => F.d.querySelector(`.zpresets [data-preset="${k}"]`), pressed = () => [...F.d.querySelectorAll(".zpresets .zp")].filter(b=>b.getAttribute("aria-pressed") === "true").map(b=>b.dataset.preset).join(",");
-    ok("Q1 the zoom control has This sprint, This + next, Next 3 and Fit, with Fit pressed at Fit", ["1","2","3","0"].map(k=>pb(k)?.textContent).join("|") === "This sprint|This + next|Next 3|Fit" && pressed() === "0", pressed());
+    ok("Q1 the zoom control has This sprint, This + next, Next 3 and Fit, with Fit pressed at Fit", ["1","2","3","0"].map(k=>pb(k)?.getAttribute("aria-label")).join("|") === "This sprint|This + next|Next 3|Fit" && pressed() === "0", pressed());
+    ok("Q1 …short on the button (1, 2, 3, Fit), with the full name and shortcut in the tooltip", ["1","2","3","0"].map(k=>pb(k)?.textContent).join("|") === "1|2|3|Fit" && pb(2).title === "This + next (Shift+2)");
+    // 1.124.1: the zoom controls sit in the toolbar, so the timeline's header is as short as before them
+    const zb = F.d.querySelector("#zoomBar"), corner = F.d.querySelector("#gantt .gcorner");
+    ok("T1 the zoom controls are one group in the toolbar: ‹ sprint › | 1 2 3 Fit | − +", !!zb && zb.closest("#wsbar") && zb.getAttribute("role") === "group" && [...zb.children].filter(x=>!x.classList.contains("vh")).map(x=>x.id || x.className).join(" ") === "pgPrev sprpick pgNext zsep zpresets zsep zoomOut zoomIn", [...zb.children].map(x=>x.id || x.className).join(" "));
+    ok("T2 the corner is just the row label again", !corner.querySelector("button, select") && corner.textContent.trim() === "Workstream", corner.textContent);
+    ok("T3 − and + and the paging keep their names for screen readers", zb.querySelector("#zoomIn").getAttribute("aria-label") === "Zoom in: one sprint fewer" && zb.querySelector("#pgPrev").getAttribute("aria-label") && zb.querySelector("#zoomLab").getAttribute("aria-live") === "polite");
+    F.ev("goWs('people')");
+    ok("T4 the group is only there on Timeline", zb.hidden === true);
+    F.ev("goWs('timeline')");
     const fits = (n, weeks) => { const lw = F.ev("UI.labelW.weeks"), avail = GW - lw - 2, mw = parseFloat(F.d.querySelector("#gantt").style.minWidth);
       return F.ev("zoomWeeks()") === weeks && Math.abs(mw - (lw + avail * 14 / weeks)) < 0.01 && F.last() === F.day("2026-09-28") && F.ev("UI.zoomSp") === "2026-09-28" && pressed() === String(n); };
     const res = [];
