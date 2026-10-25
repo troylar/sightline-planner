@@ -822,6 +822,46 @@ body:not(.hasSel) #side.floating{display:none}
 .lanehdr.folded{opacity:.85}
 .lane.folded .lname span{font-style:italic}
 .track.mini .minibar{position:absolute;top:8px;height:8px;border-radius:4px;opacity:.85;cursor:pointer}
+/* Sprint shelves: a workstream's Jira stories as tiles on a shelf per sprint. Status shows as fill and as a symbol */
+.lane.shelfrow{position:relative;z-index:2;background:color-mix(in srgb,var(--lc,var(--accent)) 3%,var(--surface))}
+.shlab{border-right:1px solid var(--rule-2);padding:6px 10px 8px 26px;min-width:0;font-size:11px;color:var(--ink-3)}
+.shstick{display:flex;flex-direction:column;align-items:flex-start;gap:3px;position:sticky;top:var(--lhtop,0px)}
+.shlab b{font-size:12px;color:var(--ink-2)}
+.shlab .shtog{font-size:11px}.shlab .shnote{font-style:italic;max-width:30ch}.shlab .shme{color:var(--ink-2);font-weight:600}
+.shspot{display:flex;gap:4px;align-items:center;color:var(--ink-2)}.shspot select{font:inherit;max-width:12em}
+.shelves{display:grid;align-items:start;min-width:0}
+.shcell{position:relative;z-index:2;background:var(--surface);min-width:0;margin:4px 2px;padding:4px 5px 5px;border-left:2px solid color-mix(in srgb,var(--lc,var(--accent)) 55%,transparent);border-right:1px solid var(--rule)}
+.shcell.now{background:color-mix(in srgb,var(--accent) 7%,var(--surface))}
+.shmini{display:flex;flex-direction:column;gap:3px;align-items:stretch;background:transparent;border-top:0;border-bottom:0;font:inherit;font-size:10.5px;color:var(--ink-2);cursor:pointer;text-align:left}
+.shmini:hover,.shmini:focus-visible{background:color-mix(in srgb,var(--lc,var(--accent)) 9%,transparent)}
+.shmini .shn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shbar{display:flex;height:7px;border-radius:4px;overflow:hidden;border:1px solid var(--rule);background:var(--surface);min-width:24px}
+.shbar i{display:block}.shbar .d{background:var(--lc,var(--accent))}.shbar .p{background:repeating-linear-gradient(135deg,var(--lc,var(--accent)) 0 2px,transparent 2px 5px)}
+.shgrp{margin:0 0 6px}
+.shgrp h5{margin:0 0 3px;font-size:11.5px;font-weight:600;display:flex;gap:8px;align-items:baseline;min-width:0;color:var(--ink)}
+.shgrp h5 .shgn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.shgrp h5 .shgs{margin-left:auto;font-weight:500;color:var(--ink-3);font-size:10.5px;white-space:nowrap}
+.shelf{display:flex;flex-wrap:wrap;gap:4px;padding:4px;border:1px solid var(--rule);border-radius:6px;background:var(--surface)}
+.shelf:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+.shtile{position:relative;box-sizing:border-box;height:42px;min-width:min(118px,100%);max-width:100%;border-radius:5px;padding:3px 6px;font-size:11.5px;display:flex;flex-direction:column;justify-content:space-between;border:1.5px solid var(--lc,var(--accent));color:var(--ink);background:var(--surface);overflow:hidden;cursor:pointer}
+.shtile .tt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.shtile .mt{display:flex;gap:6px;align-items:center;font-size:10.5px;color:var(--ink-2)}
+.shtile .pts{font-weight:700;color:var(--ink)}.shtile .who{margin-left:auto}.shtile .who.none{font-style:italic;color:var(--ink-3)}
+.shtile.done{background:color-mix(in srgb,var(--lc,var(--accent)) 22%,var(--surface));border-color:color-mix(in srgb,var(--lc,var(--accent)) 45%,var(--surface));color:var(--ink-2)}
+.shtile.prog{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--lc,var(--accent)) 16%,var(--surface)) 0 6px,var(--surface) 6px 12px)}
+.shtile.shblk::after{content:"";position:absolute;top:0;right:0;border-style:solid;border-width:0 12px 12px 0;border-color:transparent var(--bad) transparent transparent}
+.shtile.shbig{border-right-width:4px}.shtile.shbig .pts::after{content:" ▸"}
+.shtile:hover{box-shadow:0 0 0 1px var(--lc,var(--accent))}
+.shtile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.shtile.selected{box-shadow:0 0 0 2px var(--sel)}
+.shstrip{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:4px;border:1.5px dashed var(--ink-3);border-radius:6px;flex:1 1 100%}
+.shstrip>b{font-size:10.5px;color:var(--ink-2);margin-right:2px;font-weight:600}
+.shstrip .shtile{border-style:dashed}
+.shmore{font-size:11px;align-self:center}
+.shsum{display:flex;gap:8px;align-items:center;margin:2px 0 0;font-size:10.5px;color:var(--ink-2)}.shsum .shbar{flex:0 0 min(160px,30%)}
+.shelfrow.spot .shtile:not(.me){opacity:.3}.shelfrow.spot .shtile.me{box-shadow:0 0 0 2px var(--accent)}
+.shlab .shelf{margin-top:4px;max-width:100%}
+@media (forced-colors:active){.shtile.done{border-style:double;border-width:3px}.shtile.shblk::after{border-color:transparent CanvasText transparent transparent}}
+@media print{.shelfrow .shtile{break-inside:avoid}}
 .track.mini .minibar.late{box-shadow:0 0 0 2px var(--bad)}
 .row3{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px}
 fieldset.recur{border:1px solid var(--rule);border-radius:8px;padding:8px 10px 10px;margin:4px 0 6px;display:flex;flex-direction:column;gap:7px;min-width:0}
@@ -4209,6 +4249,45 @@ function storyIndex(){
 }
 const storiesOf = b => b ? storyIndex().byBar.get(b.id) || [] : [];
 const storyByKey = k => storyIndex().byKey.get(k) || null;
+// Sprint shelves (Weeks, rows by workstream): a workstream's Jira stories sit on one shelf per sprint, as tiles sized by
+// points on one scale for the whole chart, instead of a bar each. Display only: a one-story initiative is shown as a loose
+// story and stays in the plan as it is. Tiles keep a stable order (status, then key); position inside a sprint means nothing.
+const SHELF_MIN = 118, SHELF_PX = 11, SHELF_CAP = 13, SHELF_PREVIEW = 24, SHELF_RANK = {prog:0, todo:1, done:2};
+const shelvesOn = () => UI.zoom !== "days" && UI.shelves !== false && UI.rows !== "people" && rowsMode() !== "epics" && !!JIRA && sprintList().some(x=>!x.gap);
+const shelfOpen = id => typeof (UI.shelfOpen || {})[id] === "boolean" ? UI.shelfOpen[id] : zoomN() >= 1 && zoomN() <= 2;   // your choice beats the zoom's
+const shelfAt = day => sprintList().findIndex(x=>day >= x.a && day < x.a + x.weeks * 7);
+const tileWidth = pts => pts == null ? null : SHELF_MIN + Math.min(pts, SHELF_CAP) * SHELF_PX;
+// A Jira issue that's an initiative of its own: a leaf, not an epic, synced, in a sprint inside the plan.
+function storyLeaf(b){
+  if (!b || !isLeafBar(b) || barEpics(b).length) return null;
+  const j = jiraOf(b.jira), when = jiraSprintSpan(j); if (!when || when.s < startDay() || when.e > planEndDay()) return null;
+  const st = jiraStateOf(j); return st && st.state !== "abandoned" ? {j, when, st} : null;
+}
+// What one workstream's shelves hold, from the bars the chart would draw there (so filters apply the same way).
+function laneShelf(lane, bars, FR){
+  const tiles = [], none = [], leaves = new Set(), ids = new Set(bars.map(b=>b.id));
+  const cat = s => s === "done" ? "done" : s === "inprogress" ? "prog" : "todo";
+  bars.forEach(b=>{ const L = storyLeaf(b);
+    if (L){ const sp = shelfAt(L.when.s); if (sp < 0) return; leaves.add(b.id);
+      tiles.push({dk:"bar:" + b.id, pt:"bar", pid:b.id, key:upKey(b.jira), title:L.j.summary || chartLabel(b), pts:typeof L.j.points === "number" ? L.j.points : null, st:cat(L.st.state), label:L.st.label || L.j.status || "",
+        who:personByJiraKey(L.j.assigneeKey)?.id || null, whoName:L.j.assignee || "", blk:isBlocked(b), grp:b.parent && ids.has(b.parent) ? barById(b.parent) : null, sp, open:()=>select("bar", b.id), sel:!!sel && sel.type === "bar" && sel.id === b.id}); return; }
+    storiesOf(b).forEach(x=>{ if (x.off || x.real || x.state === "abandoned" || !storyVisible(x, UI.filter, FR)) return;
+      const sp = x.inPlan ? shelfAt(x.when.s) : -1;
+      const t = {dk:"story:" + x.key, pt:"story", pid:x.key, key:x.key, title:x.j.summary || x.key, pts:typeof x.j.points === "number" ? x.j.points : null, st:cat(x.state), label:x.label || x.j.status || "",
+        who:x.owner, whoName:x.j.assignee || "", blk:false, grp:b, sp, open:()=>select("story", x.key), sel:!!sel && sel.type === "story" && sel.id === x.key};
+      (sp < 0 ? none : tiles).push(t); }); });
+  const ord = (a, z) => SHELF_RANK[a.st] - SHELF_RANK[z.st] || a.key.localeCompare(z.key, undefined, {numeric:true});
+  tiles.sort(ord); none.sort(ord);
+  return {tiles, none, leaves, order:bars.map(b=>b.id), n:tiles.length + none.length};
+}
+// Points and counts, honestly labeled: estimated points only, zero and missing kept apart, never a capacity or forecast.
+function shelfSum(ts){
+  const est = ts.filter(t=>t.pts != null), add = f => est.filter(f).reduce((n, t)=>n + t.pts, 0);
+  return {n:ts.length, pts:add(()=>true), done:add(t=>t.st === "done"), prog:add(t=>t.st === "prog"), un:ts.length - est.length,
+    cn:{done:ts.filter(t=>t.st === "done").length, prog:ts.filter(t=>t.st === "prog").length}};
+}
+const storiesWord = n => `${n.toLocaleString("en-US")} ${n === 1 ? "story" : "stories"}`;
+const shelfText = s => `${storiesWord(s.n)} · ${fmtPts(s.pts)} pts estimated, ${fmtPts(s.done)} done (estimated points)` + (s.un ? ` · ${s.un} not estimated` : "");
 function storyVisible(x, f = UI.filter, R = fRangeDays(f)){
   if (hidKind("done") && x.status === "done") return false;
   if (tagHides(x, "story", f)) return false;
@@ -7979,7 +8058,9 @@ function openShowMenu(focusKind){
     item({role:"menuitem",id:"showFocus",title:"Hide meetings, process blocks and done work",onclick:()=>{ closeShowMenu(true); focusPreset(); }}, "Focus: hide meetings, process and done", "f"),
     item({role:"menuitem",id:"showAll",disabled:!hid.length,onclick:()=>{ closeShowMenu(true); showEverything(); }}, "Show everything", "a"),
     h("div",{class:"mh"}, "While scrolling"),
-    item({role:"menuitemcheckbox","aria-checked":String(!!UI.pinTop),id:"showPin",title:"Keep gates, releases, deliverables, meetings and process in view while you scroll the workstreams, up to half the chart's height. Fold or hide one to make room for the next",onclick:()=>{ UI.pinTop = !UI.pinTop; saveUI(); render(); openShowMenu(); $("#showPin")?.focus(); setStatus(UI.pinTop ? "The top rows stay in view while you scroll" : "The top rows scroll with the chart"); }}, "Pin the top rows", "t"));
+    item({role:"menuitemcheckbox","aria-checked":String(!!UI.pinTop),id:"showPin",title:"Keep gates, releases, deliverables, meetings and process in view while you scroll the workstreams, up to half the chart's height. Fold or hide one to make room for the next",onclick:()=>{ UI.pinTop = !UI.pinTop; saveUI(); render(); openShowMenu(); $("#showPin")?.focus(); setStatus(UI.pinTop ? "The top rows stay in view while you scroll" : "The top rows scroll with the chart"); }}, "Pin the top rows", "t"),
+    h("div",{class:"mh"}, "Jira stories"),
+    item({role:"menuitemcheckbox","aria-checked":String(UI.shelves !== false),id:"showShelves",title:"In Weeks, put each workstream's Jira stories on a shelf per sprint, sized by points, instead of a bar each",onclick:()=>{ UI.shelves = UI.shelves === false; saveUI(); render(); openShowMenu(); $("#showShelves")?.focus(); setStatus(UI.shelves ? "Jira stories sit on sprint shelves" : "Jira stories are drawn as bars"); }}, "On sprint shelves", "s"));
   placePop(m, $("#showBtn")); $("#showBtn").setAttribute("aria-expanded", "true");
   (focusKind && m.querySelector(`[data-show="${CSS.escape(focusKind)}"]`) || m.querySelector("button"))?.focus();
 }
@@ -8284,7 +8365,7 @@ function renderGantt(){
   (UI.rows === "people" || rowsMode() === "epics" ? [] : S.lanes).forEach(lane=>{
     if (laneOutOf(lane, viewA, viewZ)){ lanesOut.push(lane); return; }
     const barsAll = S.bars.filter(b=>b.lane===lane.id && barVisible(b, UI.filter, FR)), shownIds = new Set(barsAll.map(b=>b.id));
-    const bars = barsAll.filter(b=>ancestorsOf(b).every(a=>!shownIds.has(a.id) || !UI.collapsed[a.id]));
+    let bars = barsAll.filter(b=>ancestorsOf(b).every(a=>!shownIds.has(a.id) || !UI.collapsed[a.id]));
     const laneLabel = extra => h("div",{class:"lnwrap"}, foldBtn("lane:" + lane.id, lane.name),
       h("button",{class:`lname${sel&&sel.type==="lane"&&sel.id===lane.id?" selected":""}`, type:"button", "data-key":"lane:"+lane.id, "data-peek-type":"lane", "data-peek-id":lane.id, "aria-label":`Workstream ${lane.name}${laneWho(lane)?", "+laneWho(lane):""}${laneWord(lane) ? ", " + laneWord(lane) : ""}`, onclick:()=>select("lane",lane.id)},
         h("b",{}, h("i",{style:{background:lane.color}}), lane.name), h("span",{}, extra || laneWho(lane))));
@@ -8296,6 +8377,8 @@ function renderGantt(){
       g.append(h("div",{class:"lane folded","data-lane":lane.id}, laneLabel(`${bars.length} item${bars.length===1?"":"s"} · folded`), track));
       return;
     }
+    const sh = shelvesOn() ? laneShelf(lane, bars, FR) : null;          // its Jira stories go on the shelves below, not a bar each
+    if (sh) bars = bars.filter(b=>!sh.leaves.has(b.id));
     const fg = textOn(lane.color);
     const flags = [];
     S.milestones.filter(m=>m.lane===lane.id && msVisible(m, UI.filter, FR)).forEach(m=>{
@@ -8305,7 +8388,8 @@ function renderGantt(){
     if (UI.filter.people.length && !bars.length) flags.length = 0;   // a person filter shows milestones only where that person has work
     const laneHasNotes = S.notes.some(n=>n.lane===lane.id && !noteOn(n) && noteShown(n, FR));
     const lmeet = meetingsIn(lane.id), lblk = blocksIn(lane.id), lbt = lblk.length ? blockTrack(lblk, weeksGeom(W)) : null;
-    if (!laneShown(lane.id, bars.length || flags.length || laneHasNotes || lmeet.length || lblk.length)) return;
+    if (!laneShown(lane.id, bars.length || flags.length || laneHasNotes || lmeet.length || lblk.length || (sh && sh.n))) return;
+    if (sh && sh.n) shownAny = true;
     if (lblk.length) shownAny = true;
     if (lmeet.length) shownAny = true;
     if (laneHasNotes) shownAny = true;
@@ -8388,6 +8472,7 @@ function renderGantt(){
     const lname = laneLabel(laneWord(lane) ? [laneWho(lane), laneWord(lane)].filter(Boolean).join(" · ") : null);
     fadeLane(track, lane, d=>(d - startDay()) / 7 / W * 100, true);
     g.append(h("div",{class:"lane","data-lane":lane.id}, lname, track));
+    if (sh && sh.n) g.append(shelfRow(lane, sh, W));
   });
   if (fActive() && !shownAny && (S.bars.length || S.milestones.length)) g.append(filteredEmpty());
   if (!S.bars.length && !S.milestones.length){
@@ -8404,6 +8489,70 @@ function renderGantt(){
     if (frac >= 0 && frac <= 1) g.append(h("div",{class:"today",title:"Today",style:{left:`calc(var(--lw) + (100% - var(--lw)) * ${frac})`, top}})); }
   stickLanes(g);
   glide(g, was);
+}
+// One workstream's shelf row: a cell per sprint (borders at the sprint's own dates), its stories grouped by initiative.
+// Folded to a summary at Fit or several sprints; tiles at one or two sprints, or when the workstream is opened by hand.
+const shelfMore = new Set();          // "Show all" per group, for this visit
+const SHELF_SYM = {done:"●", prog:"◐", todo:"○"}, SHELF_ST = {done:"Done", prog:"In progress", todo:"Not started"};
+function shelfBar(s){
+  const by = s.pts ? [s.done, s.prog, s.pts] : [s.cn.done, s.cn.prog, s.n], w = v => (by[2] ? v / by[2] * 100 : 0) + "%";
+  return h("span",{class:"shbar","aria-hidden":"true"}, h("i",{class:"d",style:{width:w(by[0])}}), h("i",{class:"p",style:{width:w(by[1])}}));
+}
+function shelfTile(t){
+  const pp = t.who ? personById(t.who) : null, nm = pp ? pp.name : t.whoName, w = tileWidth(t.pts), spot = UI.spot && t.who === UI.spot;
+  return h("div",{class:`shtile ${t.st}${t.blk ? " shblk" : ""}${t.pts > SHELF_CAP ? " shbig" : ""}${spot ? " me" : ""}${t.sel ? " selected" : ""}`, role:"button", tabindex:"-1", "data-key":t.dk, "data-peek-type":t.pt, "data-peek-id":t.pid,
+    style:w ? {width:w + "px"} : {}, "aria-label":`${t.key}: ${t.title}. ${t.label || SHELF_ST[t.st]}${t.label && t.label !== SHELF_ST[t.st] ? ` (${SHELF_ST[t.st].toLowerCase()})` : ""}${t.blk ? ", blocked in the plan" : ""}. ${t.pts == null ? "Not estimated" : fmtPts(t.pts) + (t.pts === 1 ? " point" : " points")}. ${nm || "Unassigned"}.` + (t.grp ? ` In ${chartLabel(t.grp)}.` : ""),
+    onclick:t.open, onkeydown:e=>{ if (e.key === "Enter" || e.key === " "){ e.preventDefault(); t.open(); } }},
+    h("span",{class:"tt"}, t.title),
+    h("span",{class:"mt"}, propChip([t.key]), h("b",{class:"pts"}, t.pts == null ? "?" : fmtPts(t.pts) + " pt"), h("span",{class:"sym","aria-hidden":"true"}, SHELF_SYM[t.st] + (t.blk ? " ⛔" : "")),
+      h("span",{class:"who" + (nm ? "" : " none")}, pp ? pp.initials || initials(pp.name) : nm ? initials(nm) : "unassigned")));
+}
+// One tab stop per shelf: arrows move along it, Home and End go to its ends, Enter opens the story.
+function shelfKeys(e){
+  const ts = [...e.currentTarget.querySelectorAll(".shtile")], i = ts.indexOf(document.activeElement); if (i < 0) return;
+  const to = {ArrowRight:i + 1, ArrowDown:i + 1, ArrowLeft:i - 1, ArrowUp:i - 1, Home:0, End:ts.length - 1}[e.key]; if (to == null) return;
+  e.preventDefault(); const t = ts[Math.max(0, Math.min(ts.length - 1, to))]; ts.forEach(x=>x.tabIndex = x === t ? 0 : -1); t.focus();
+}
+function shelfGroup(ts, label, gk){
+  const all = shelfMore.has(gk), est = ts.filter(t=>t.pts != null), un = ts.filter(t=>t.pts == null), cut = !all && ts.length > SHELF_PREVIEW;
+  const showE = cut ? est.slice(0, SHELF_PREVIEW) : est, showU = cut ? un.slice(0, Math.max(0, SHELF_PREVIEW - showE.length)) : un;
+  const g = h("div",{class:"shelf",role:"group","aria-label":`${label}: ${storiesWord(est.length)} estimated` + (un.length ? `, ${un.length} not estimated` : ""),onkeydown:shelfKeys},
+    showE.map(shelfTile), un.length ? h("div",{class:"shstrip"}, h("b",{}, `Not estimated (${un.length})`), showU.map(shelfTile)) : null,
+    cut || all && ts.length > SHELF_PREVIEW ? h("button",{type:"button",class:"linkish shmore","data-key":"shmore:" + gk,onclick:()=>{ all ? shelfMore.delete(gk) : shelfMore.add(gk); render(); }}, all ? "Show fewer" : `Show all ${ts.length}`) : null);
+  const tl = g.querySelectorAll(".shtile"); (g.querySelector(".shtile.selected") || tl[0])?.setAttribute("tabindex", "0");
+  return g;
+}
+function shelfRow(lane, sh, W){
+  const open = shelfOpen(lane.id) || sh.tiles.some(t=>t.sel), L = sprintList(), NS = nowSprint(), sd = startDay(), fl = fActive() ? " · filters apply" : "";
+  const toggle = () => { UI.shelfOpen = {...(UI.shelfOpen || {}), [lane.id]:!open}; saveUI(); render(); };
+  const cells = L.map((x, i)=>{ const ts = sh.tiles.filter(t=>t.sp === i); if (!ts.length) return null;
+    const s = shelfSum(ts), w0 = Math.round((x.a - sd) / 7), name = x.gap ? "No sprint" : x.sp.name, now = NS && NS.now && NS.sp === x.sp ? " now" : "";
+    const pos = {gridColumn:`${w0 + 1} / span ${x.weeks}`, gridRow:"1"};
+    if (!open) return h("button",{type:"button",class:"shcell shmini" + now,style:pos,"data-key":`shcell:${lane.id}:${i}`,"aria-label":`${lane.name}, ${name}: ${shelfText(s)}. Show the stories`,onclick:toggle},
+      shelfBar(s), h("span",{class:"shn"}, `${s.n} · ${fmtPts(s.pts)} pt` + (s.un ? ` · ${s.un} ?` : "")));
+    const grps = []; ts.forEach(t=>{ const k = t.grp ? t.grp.id : ""; let gr = grps.find(y=>y.k === k); if (!gr) grps.push(gr = {k, b:t.grp, ts:[]}); gr.ts.push(t); });
+    const order = new Map(sh.order.map((id, n)=>[id, n])); grps.sort((a, z)=>(a.k ? order.get(a.k) ?? 1e6 : 1e7) - (z.k ? order.get(z.k) ?? 1e6 : 1e7));
+    return h("div",{class:"shcell" + now,style:pos,role:"group","aria-label":`${lane.name}, ${name}`},
+      grps.map(gr=>{ const gs = shelfSum(gr.ts), nm = gr.b ? chartLabel(gr.b) : "Not on an initiative";
+        return h("section",{class:"shgrp"}, h("h5",{}, h("span",{class:"shgn"}, nm), h("span",{class:"shgs"}, `${storiesWord(gs.n)} · ${fmtPts(gs.pts)} pt` + (gs.un ? ` · ${gs.un} not estimated` : ""))),
+          shelfGroup(gr.ts, `${nm}, ${name}`, `${lane.id}:${i}:${gr.k}`)); }),
+      h("p",{class:"shsum"}, shelfBar(s), h("span",{}, `${name}: ${shelfText(s)} · capacity unavailable${fl}`))); });
+  const all = shelfSum(sh.tiles.concat(sh.none)), people = [...new Set(sh.tiles.concat(sh.none).map(t=>t.who).filter(Boolean))].map(personById).filter(Boolean);
+  if (UI.spot && !people.some(p=>p.id === UI.spot) && personById(UI.spot)) people.push(personById(UI.spot));
+  const mine = UI.spot ? shelfSum(sh.tiles.concat(sh.none).filter(t=>t.who === UI.spot)) : null;
+  const spot = open && people.length ? h("label",{class:"shspot"}, "Spotlight ", h("select",{"data-key":"shspot:" + lane.id,onchange:e=>{ UI.spot = e.target.value || null; saveUI(); render(); }},
+    h("option",{value:""}, "No one"), ...people.map(p=>h("option",{value:p.id, selected:UI.spot === p.id}, p.name)))) : null;
+  const unOpen = shelfMore.has("none:" + lane.id);
+  const label = h("div",{class:"shlab"}, h("div",{class:"shstick"},
+    h("b",{}, "Jira stories"), h("span",{}, shelfText(all)),
+    h("button",{type:"button",class:"linkish shtog","aria-expanded":String(open),"data-key":"shtog:" + lane.id,onclick:toggle}, open ? "Show summaries only" : "Show the stories"),
+    spot, mine ? h("span",{class:"shme"}, `${personName(UI.spot)}: ${storiesWord(mine.n)}, ${fmtPts(mine.pts)} pts` + (mine.un ? `, ${mine.un} not estimated` : "")) : null,
+    open ? h("span",{class:"shnote"}, "Tiles are sized by points, one scale for the whole chart. Where a tile sits in a sprint says nothing about when.") : null,
+    sh.none.length ? h("button",{type:"button",class:"linkish shtog","aria-expanded":String(unOpen),"data-key":"shnone:" + lane.id,onclick:()=>{ unOpen ? shelfMore.delete("none:" + lane.id) : shelfMore.add("none:" + lane.id); render(); }}, `Unscheduled: ${storiesWord(sh.none.length)} with no sprint in this plan`) : null,
+    sh.none.length && unOpen ? shelfGroup(sh.none, `${lane.name}, unscheduled`, "un:" + lane.id) : null));
+  const grid = `repeating-linear-gradient(to right, transparent 0, transparent calc(${100/W}% - 1px), var(--rule-2) calc(${100/W}% - 1px), var(--rule-2) ${100/W}%)`;
+  return h("div",{class:"lane shelfrow" + (open ? " open" : "") + (UI.spot ? " spot" : ""),"data-shelf":lane.id,style:{"--lc":lane.color}}, label,
+    h("div",{class:"shelves",style:{gridTemplateColumns:`repeat(${W},1fr)`,backgroundImage:grid}}, cells));
 }
 // A segmented control's pill slides from the option that was on to the one picked.
 let segFrom = null;
