@@ -11,6 +11,14 @@
         "before": "\"1 sprint\" showed a sprint's width wherever the view happened to be, so it usually showed parts of two sprints, and the arrows moved by screens, not sprints.",
         "now": "Pick a sprint in the zoom control and the view fits it exactly, from its first day to its last, in Weeks and Days, for sprints of any length. The arrows and [ and ] step whole sprints, and . goes to the sprint we're in. Show two or more sprints with + and −. The choice stays in this browser and links carry it.",
         "where": "Timeline, the zoom control at the top left"
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "One click to this sprint, the next two, or the next three",
+        "before": "The Timeline opened on Fit, and getting to this sprint and the next meant clicking + many times.",
+        "now": "This sprint, This + next, Next 3 and Fit sit beside the sprint picker, each fitted from the sprint we're in (or the next one, between sprints). Shift+1, Shift+2, Shift+3 and Shift+0 do the same. A plan with sprints opens on This + next the first time, then on your last choice. A link with a sprint still wins.",
+        "where": "Timeline, the zoom control at the top left"
       }
     ]
   },

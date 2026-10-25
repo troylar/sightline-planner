@@ -9,7 +9,8 @@ const FIX = (()=>{ const o = JSON.parse(TB(fs.readFileSync(path.join(__dirname, 
 const R = []; const ok = (n, c, x = "") => R.push(`${c ? "PASS" : "FAIL"}  ${n}${x ? "  (" + x + ")" : ""}`);
 setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT"); process.exit(1); }, 90000).unref();
 const wait = ms => new Promise(r=>setTimeout(r, ms));
-async function open(iso){
+let GW = 1100;
+async function open(iso, fresh){
   const dom = new JSDOM(html, {runScripts:"dangerously", pretendToBeVisual:true, url:"https://local.test/", virtualConsole:new VirtualConsole(), beforeParse(w){
     const RealDate = w.Date, now = new RealDate(iso + "T14:00:00").getTime();
     w.Date = class extends RealDate {constructor(...a){ a.length ? super(...a) : super(now); } static now(){ return now; }};
@@ -17,9 +18,10 @@ async function open(iso){
     w.indexedDB = undefined; w.confirm = ()=>true; w.alert = ()=>{}; w.prompt = ()=>"T"; w.Element.prototype.scrollIntoView = ()=>{};
     w.HTMLCanvasElement.prototype.getContext = ()=>null; w.CSS = w.CSS || {}; w.CSS.escape = s=>s; w.errs = []; w.addEventListener("error", e=>w.errs.push(e.message)); }});
   const w = dom.window, d = w.document, ev = s=>w.eval(s);
-  Object.defineProperty(w.HTMLElement.prototype, "clientWidth", {configurable:true, get(){ return this.id === "gscroll" ? 1100 : 0; }});
+  Object.defineProperty(w.HTMLElement.prototype, "clientWidth", {configurable:true, get(){ return this.id === "gscroll" ? GW : 0; }});
   await wait(150); w.FIX = FIX;
-  ev("askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb(); stopAuto(); S = parseText(FIX); resetHistory(); sel = null; UI.zoom = 'weeks'; UI.zoomN = 0; UI.zoomSp = null; goWs('timeline'); render()");
+  ev("askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb(); stopAuto(); S = parseText(FIX); resetHistory(); sel = null; UI.zoom = 'weeks'; goWs('timeline')");
+  ev(fresh ? "presetLoaded = false; delete UI.zoomN; delete UI.zoomPreset; UI.zoomSp = null; render()" : "presetLoaded = true; UI.zoomN = 0; UI.zoomSp = null; render()");
   ev("window.went = []; const __sv = scrollViewTo; scrollViewTo = day => { window.went.push(day); return __sv(day); }");
   const key = k => d.dispatchEvent(new w.KeyboardEvent("keydown", {key:k, bubbles:true}));
   const pick = () => d.querySelector("#zoomSprint"), day = iso => ev(`isoToDay('${iso}')`), last = () => ev("window.went[window.went.length - 1]");
@@ -80,6 +82,46 @@ async function open(iso){
     Q.ev(`applyNav(parseNav("#ws=timeline&plan=" + encodeURIComponent(S.meta.planId) + "&z=weeks&n=1&sp=not-a-date"))`); await wait(30);
     ok("L4 a link with a bad sprint is ignored", !Q.ev("UI.zoomSp"));
     ok("Z2 no page errors", !Q.w.errs.length, Q.w.errs.join(" | "));
+
+    // One-click presets: This sprint, This + next, Next 3 and Fit, from the sprint we're in (or the next between sprints).
+    const F = await open("2026-10-07"), pb = k => F.d.querySelector(`.zpresets [data-preset="${k}"]`), pressed = () => [...F.d.querySelectorAll(".zpresets .zp")].filter(b=>b.getAttribute("aria-pressed") === "true").map(b=>b.dataset.preset).join(",");
+    ok("Q1 the zoom control has This sprint, This + next, Next 3 and Fit, with Fit pressed at Fit", ["1","2","3","0"].map(k=>pb(k)?.textContent).join("|") === "This sprint|This + next|Next 3|Fit" && pressed() === "0", pressed());
+    const fits = (n, weeks) => { const lw = F.ev("UI.labelW.weeks"), avail = GW - lw - 2, mw = parseFloat(F.d.querySelector("#gantt").style.minWidth);
+      return F.ev("zoomWeeks()") === weeks && Math.abs(mw - (lw + avail * 14 / weeks)) < 0.01 && F.last() === F.day("2026-09-28") && F.ev("UI.zoomSp") === "2026-09-28" && pressed() === String(n); };
+    const res = [];
+    for (const width of [1100, 760]){ GW = width;
+      pb(1).click(); res.push(fits(1, 2)); pb(2).click(); res.push(fits(2, 6)); pb(3).click(); res.push(fits(3, 9)); }
+    ok("Q2 each preset fits whole sprints edge to edge from the sprint we're in, at two widths (a gap between them is shown, not counted)", res.every(Boolean), res.join(","));
+    GW = 1100; pb(0).click();
+    ok("Q3 Fit goes back to the whole plan, and is pressed", !F.ev("zoomN()") && !F.ev("UI.zoomSp") && pressed() === "0");
+    const shift = (code, from = F.d) => from.dispatchEvent(new F.w.KeyboardEvent("keydown", {key:code === "Digit2" ? "@" : "!", code, shiftKey:true, bubbles:true}));
+    shift("Digit2");
+    ok("Q4 Shift+2 picks This + next", F.ev("zoomN()") === 2 && F.ev("UI.zoomSp") === "2026-09-28" && pressed() === "2");
+    shift("Digit0");
+    ok("Q4 …and Shift+0 Fit", !F.ev("zoomN()"));
+    F.d.dispatchEvent(new F.w.KeyboardEvent("keydown", {key:"!", code:"Digit1", shiftKey:true, bubbles:true}));
+    ok("Q4 the physical key counts, whatever symbol Shift makes: Shift+Digit1 sent as \"!\" picks This sprint", F.ev("zoomN()") === 1 && pressed() === "1");
+    ok("Q4 each button names its shortcut on hover", pb(2).title === "This + next (Shift+2)" && pb(0).title === "Fit (Shift+0)", pb(2).title);
+    shift("Digit0");
+    const t = F.d.querySelector("#title"); t.focus(); shift("Digit1", t);
+    ok("Q5 the keys do nothing while typing in a field", !F.ev("zoomN()"));
+    t.blur(); F.d.dispatchEvent(new F.w.KeyboardEvent("keydown", {key:"2", code:"Digit2", bubbles:true}));
+    ok("Q5 …and plain number keys still change pages", F.ev("UI.ws") === "timeline");
+    pb(2).click(); F.ev("zoomOut()");
+    ok("Q6 − still works from a preset, as a fine step from the same sprint", F.ev("zoomN()") === 3 && F.ev("UI.zoomSp") === "2026-09-28" && F.ev("UI.zoomPreset") == null);
+    ok("Q7 no page errors", !F.w.errs.length, F.w.errs.join(" | "));
+    // First open: a plan with timeboxes opens on This + next.
+    const G = await open("2026-10-07", true);
+    ok("Q8 the first time, a plan with timeboxes opens on This + next", G.ev("zoomN()") === 2 && G.ev("UI.zoomSp") === "2026-09-28" && G.d.querySelector('.zpresets [data-preset="2"]').getAttribute("aria-pressed") === "true");
+    // A remembered preset follows the calendar: a later visit anchors it to that day's sprint.
+    G.ev("UI.zoomPreset = 1; UI.zoomN = 1; UI.zoomSp = '2026-11-09'; presetLoaded = false; render()");
+    ok("Q9 a remembered preset opens on that day's sprint", G.ev("zoomN()") === 1 && G.ev("UI.zoomSp") === "2026-09-28");
+    G.ev(`UI.zoomPreset = 3; presetLoaded = false; applyNav(parseNav("#ws=timeline&plan=" + encodeURIComponent(S.meta.planId) + "&z=weeks&n=1&sp=2026-11-30")); render()`); await wait(30);
+    ok("Q10 a link with a sprint wins over a remembered preset", G.ev("UI.zoomSp") === "2026-11-30" && G.ev("zoomN()") === 1, G.ev("UI.zoomSp"));
+    const H = await open("2026-10-15");
+    H.d.querySelector('.zpresets [data-preset="2"]').click();
+    ok("Q11 between sprints, the presets start at the next one", H.ev("UI.zoomSp") === "2026-10-26" && H.ev("zoomN()") === 2, H.ev("UI.zoomSp"));
+    ok("Q12 no page errors", !G.w.errs.length && !H.w.errs.length, [...G.w.errs, ...H.w.errs].join(" | "));
   } catch(e){ ok("harness ran without throwing", false, e.stack); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
 })();
