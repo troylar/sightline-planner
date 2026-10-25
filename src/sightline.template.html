@@ -315,6 +315,13 @@ button.flag{border:0;background:transparent;font-family:inherit;cursor:pointer;c
 .lane.gaterow{background:color-mix(in srgb,var(--warn) 5%,transparent)}
 .lane.markrow .track{min-height:30px}
 #t-gates tr.flash td,#t-holidays tr.flash td{background:var(--warn-bg);transition:background .3s}
+.listbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:10px}.listbar .seg .btn.on{background:var(--accent);color:#fff}.listcopy textarea{width:100%;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px}
+.lwrap{overflow-x:auto}.ltable{width:100%;border-collapse:collapse;font-size:13px}.ltable th[scope=col]{text-align:left;font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;padding:6px 8px;border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--surface)}
+.ltable td,.ltable .lname{padding:5px 8px;border-bottom:1px solid var(--rule-2);vertical-align:top;text-align:left;font-weight:normal}.ltable .ld{white-space:nowrap;color:var(--ink-2)}.ltable tr.lrow{cursor:pointer}.ltable tr.lrow:hover td,.ltable tr.lrow:hover th{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.ltable tr.lrow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}.ltable tr.lsel td,.ltable tr.lsel th{background:color-mix(in srgb,var(--accent) 12%,transparent)}.ltable tr.lhead .lt{font-weight:600}.ltable tr.lgroup th{text-align:left;padding:10px 8px 4px;font-size:13px;border-bottom:1px solid var(--rule)}
+.ltable th.lname{text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink);font-family:inherit}.lwaits .linkish{text-align:left}
+.ltable .lkey{margin-left:6px;font-size:11px;color:var(--ink-3)}.ltable .lin,.ltable .lwhy{display:block}.ltable .lshared{margin-left:6px;font-size:11px;padding:0 5px;border-radius:8px;border:1px solid var(--rule);color:var(--ink-2)}.lwaits{margin:0;padding:0;list-style:none}.lwaits li{margin:0 0 2px}.ltable tr.loff td{color:var(--ink-3)}
+@media print{body.on-list>:not(#ws-list){display:none!important}body.on-list #ws-list{display:block!important}body.on-list .listbar,body.on-list .listcopy,body.on-list #listSelHidden{display:none!important}body.on-list .lwrap{overflow:visible}body.on-list .ltable th[scope=col]{position:static}body.on-list .ltable thead{display:table-header-group}body.on-list .ltable tr{break-inside:avoid}body.on-list .panel{border:0;box-shadow:none}}
 .fcsum{font-size:14px;margin:0 0 10px}.fcsum.incomplete{color:var(--warn)}.fctable td,.fcloadt td{padding:4px 8px;border-bottom:1px solid var(--rule-2);vertical-align:top}.fctable tr.nodate td{color:var(--ink-3)}.fcwhytd{font-size:12px;color:var(--ink-2);max-width:360px}.fch3{font-size:14px;margin:16px 0 4px}.fcchain{margin:4px 0 6px 18px;padding:0;font-size:13px}.fcloadt tr.over td:nth-child(4){color:var(--bad);font-weight:600}
 .fcload{display:block}.fcl-fixed{fill:var(--ink-3)}.fcl-used{fill:var(--accent)}.fcl-hatch{stroke:var(--warn);stroke-width:2}.fcl-cap{fill:none;stroke:var(--ink);stroke-width:1.5}
 .fcwhy{font-size:12px;color:var(--ink-3);margin-top:4px}.fcwhy summary{cursor:pointer}.fcwhy ol{margin:4px 0 0 18px;padding:0}.fcwhy li{margin:2px 0}
@@ -1075,6 +1082,7 @@ dialog textarea{width:100%;height:50vh;font-family:"IBM Plex Mono",monospace;fon
   <div class="tabs" role="tablist" aria-label="Workspace">
     <button type="button" role="tab" id="tab-today" aria-controls="ws-today" data-ws="today" title="Today (1 or T)">Today<span class="tbadge" id="todayBadge" hidden></span></button>
     <button type="button" role="tab" id="tab-timeline" aria-controls="ws-timeline" data-ws="timeline" title="Timeline (2)">Timeline</button>
+    <button type="button" role="tab" id="tab-list" aria-controls="ws-list" data-ws="list" title="List: the plan's work as rows (L)">List</button>
     <button type="button" role="tab" id="tab-people" aria-controls="ws-people" data-ws="people" title="Team capacity (3)">Capacity</button>
     <button type="button" role="tab" id="tab-standup" aria-controls="ws-standup" data-ws="standup" title="Sprint: the current Jira sprint's work as cards (5)">Sprint</button>
     <button type="button" role="tab" id="work-sort" aria-controls="ws-plan" data-section="epics">Sort Jira work</button>
@@ -1143,6 +1151,7 @@ dialog textarea{width:100%;height:50vh;font-family:"IBM Plex Mono",monospace;fon
 
 </div>
 <div id="ws-today" role="tabpanel" aria-labelledby="tab-today" hidden><div id="today"></div></div>
+<div id="ws-list" role="tabpanel" aria-labelledby="tab-list" hidden><div class="panel listws" id="listWs"></div></div>
 <div id="ws-standup" role="tabpanel" aria-labelledby="tab-standup" hidden><div class="panel standup" id="standupWs"></div></div>
 <div id="ws-roadmap" role="tabpanel" aria-labelledby="tab-roadmap" hidden><div class="panel roadmap" id="roadmapWs"></div></div>
 <div id="ws-people" role="tabpanel" aria-labelledby="tab-people" hidden>
@@ -5168,7 +5177,7 @@ function quickKey(k){
 // ================= zoom (per-browser view settings, not saved in the file) =================
 const UI = {ws:"timeline", zoom:"weeks", focus:null, collapsed:{}};
 try { Object.assign(UI, JSON.parse(localStorage.getItem("timeline-planner-ui") || "{}")); } catch(e){}
-if (!["today","timeline","people","plan","standup","roadmap","settings"].includes(UI.ws)) UI.ws = "timeline";
+if (!["today","timeline","list","people","plan","standup","roadmap","settings"].includes(UI.ws)) UI.ws = "timeline";
 UI.rmHorizon = UI.rmHorizon === "long" ? "long" : "four";
 UI.filter = normFilter(UI.filter); UI.labelW = normLW(UI.labelW); UI.notes = ["all","mine","others","none"].includes(UI.notes) ? UI.notes : "all"; UI.rows = ["people","epics"].includes(UI.rows) ? UI.rows : "lanes"; if (!UI.epicOpen || typeof UI.epicOpen !== "object") UI.epicOpen = {};
 UI.view = UI.view && typeof UI.view === "object" && ["team","personal"].includes(UI.view.src) ? {src:UI.view.src, id:str(UI.view.id)} : null;
@@ -5347,6 +5356,7 @@ function navState(){
   if (UI.ws === "plan") st.pt = UI.planTab || "epics";
   if (sel && NAV_SEL.includes(sel.type)) st.sel = sel.type + ":" + sel.id;
   if (UI.ws === "timeline" || UI.ws === "standup"){ st.z = UI.zoom === "days" ? "days" : "weeks"; st.n = String(zoomN()); }
+  if (UI.ws === "list") st.ll = listLayout();
   const f = UI.filter, def = normFilter({}), diff = {}; Object.keys(f).forEach(k=>{ if (JSON.stringify(f[k]) !== JSON.stringify(def[k])) diff[k] = f[k]; });
   if (Object.keys(diff).length) st.f = JSON.stringify(diff);
   if (layerOf() !== "all") st.layer = layerOf();
@@ -5361,10 +5371,13 @@ function navFind(t, id){
   if (t === "block") return (S.blocks || []).some(b=>b.id === id); if (t === "deliverable") return (S.deliverables || []).some(d=>d.id === id); return false;
 }
 function applyNav(st){
-  if (!st || (st.plan && st.plan !== S.meta.planId)) return; navApplying = true;          // another plan's place: nothing here changes
+  if (!st) return;
+  if (st.plan && st.plan !== S.meta.planId){ setStatus("That link is for another plan, so nothing was selected here. Open that plan to follow it."); return; }   // another plan's place: nothing here changes
+  navApplying = true;
   try {
     if (WS_LIST.includes(st.ws)) UI.ws = st.ws;
     if (st.pt && PLAN_TABS.some(x=>x[0] === st.pt)) UI.planTab = st.pt;
+    if (st.ws === "list") setListLayoutQuiet(st.ll);                                   // a layout this page doesn't know falls back to the default
     if (st.z === "days" || st.z === "weeks") UI.zoom = st.z;
     if (st.n != null && /^\d{1,3}$/.test(st.n)) UI.zoomN = Number(st.n);
     try { UI.filter = cleanFilter(normFilter(st.f ? JSON.parse(st.f) : {})); } catch(e){}
@@ -5379,7 +5392,7 @@ function syncNav(){
   if (navApplying || typeof history === "undefined") return;
   if (navPending){ const st = navPending;                      // a link opens where it points, once its plan is here
     if (!st.plan || st.plan === S.meta.planId){ navPending = null; setTimeout(()=>applyNav(st), 0); return; }
-    if (file.handle) navPending = null; else return; }         // a different shared plan opened: the link was for another one
+    if (file.handle){ navPending = null; setStatus("That link is for another plan, so nothing was selected here. Open that plan to follow it."); } else return; }         // a different shared plan opened: the link was for another one
   const next = navState(), hash = "#" + encodeNav(next); if (hash === location.hash) return;
   const cur = parseNav(location.hash) || {}, go = cur.ws !== next.ws || (cur.pt || "") !== (next.pt || "") || (cur.sel || "") !== (next.sel || "");
   try { go && cur.ws ? history.pushState(null, "", hash) : history.replaceState(null, "", hash); } catch(e){}
@@ -5961,9 +5974,9 @@ function viewModified(){ const v = activeView(); return v ? defKey(normViewDef(v
 function viewLabel(){ const v = activeView(); return v ? v.name : fActive() ? "Custom filter" : "All work"; }
 function applyView(src, v){
   const d = normViewDef(v.def);
-  UI.filter = cleanFilter(clone(d.filter)); UI.zoom = d.zoom; if (d.zoomN != null) UI.zoomN = d.zoomN; else if (d.dayZoom != null){ UI.zoomN = [1, 1, 1, 2, 3, 0][d.dayZoom] ?? 0; } UI.ws = d.ws; UI.rows = d.rows; UI.labelW = clone(d.labelW); UI.notes = d.notes; UI.focus = null; UI.view = {src, id:v.id};
-  saveUI(); sel = null; setLayer(d.layer || "all");
-  if (UI.zoom === "days"){ const R = fRangeDays(); dayScrollTo(R && Number.isFinite(R[0]) ? Math.max(startDay(), R[0]) : Math.max(startDay(), mondayOf(todayDay()))); }
+  UI.filter = cleanFilter(clone(d.filter)); UI.zoom = d.zoom; if (d.zoomN != null) UI.zoomN = d.zoomN; else if (d.dayZoom != null){ UI.zoomN = [1, 1, 1, 2, 3, 0][d.dayZoom] ?? 0; } const onList = UI.ws === "list"; UI.ws = onList ? "list" : d.ws; UI.rows = d.rows; UI.labelW = clone(d.labelW); UI.notes = d.notes; UI.focus = null; UI.view = {src, id:v.id};
+  saveUI(); if (!onList) sel = null; setLayer(d.layer || "all");
+  if (UI.zoom === "days" && !onList){ const R = fRangeDays(); dayScrollTo(R && Number.isFinite(R[0]) ? Math.max(startDay(), R[0]) : Math.max(startDay(), mondayOf(todayDay()))); }
   setStatus(`Showing ${v.name}`);
 }
 function clearView(){ UI.view = null; UI.filter = normFilter({}); UI.rows = "lanes"; setLayerQuiet("all"); saveUI(); render(); setStatus("Showing all work"); }
@@ -6255,7 +6268,7 @@ function scopeText(){
 }
 function renderViewBar(){
   { const open = UI.legend === "open"; $("#legend").classList.toggle("closed", !open); $("#legendTg").setAttribute("aria-expanded", String(open)); }
-  const filtered = ["timeline","people"].includes(UI.ws);
+  const filtered = ["timeline","people","list"].includes(UI.ws);
   ["viewBtn","filterBtn"].forEach(id=>$("#" + id).hidden = !filtered);
   $("#scopeLine").textContent = UI.ws === "roadmap" ? "Whole plan · Roadmap" : UI.ws === "plan" ? `Whole plan · ${(PLAN_TABS.find(([k])=>k === UI.planTab) || ["","Settings"])[1]}` : filtered ? scopeText() : "";
   { const mode = UI.notes || "all", nb = $("#notesBtn");
@@ -6295,7 +6308,7 @@ function goMainGroup(group){
   else if (group === "updates") goWs("roadmap");
   else if (group === "delivery"){
     if (last && last.ws === "plan" && DELIVERY_SECTIONS.includes(last.section)){ UI.planTab = last.section; goWs("plan"); }
-    else goWs(last && ["timeline","people"].includes(last.ws) ? last.ws : "timeline");
+    else goWs(last && ["timeline","people","list"].includes(last.ws) ? last.ws : "timeline");
   }
   else if (group === "settings"){
     UI.planTab = last && last.ws === "plan" && PLAN_TABS.some(([section])=>section === last.section && section !== "epics" && !DELIVERY_SECTIONS.includes(section)) ? last.section : "jira";
@@ -6333,11 +6346,11 @@ function renderMainNav(){
   identity.title = me ? `${label}. Change who you are in this browser` : "Choose who you are in this browser";
   identity.setAttribute("aria-label", me ? `${label}. Change who you are in this browser` : "Choose who you are in this browser");
 }
-const WS_LIST = ["today","timeline","people","plan","standup","roadmap","settings"];
+const WS_LIST = ["today","timeline","people","plan","standup","roadmap","settings","list"];   // the order is the number keys 1-6
 function setWs(ws){ if (ws === "settings"){ UI.planTab = "jira"; ws = "plan"; }   // Jira setup lives in Settings, then Jira connection
   if (!WS_LIST.includes(ws)) return; UI.ws = ws; saveUI(); render(); }
 // Picking another tab yourself closes what you had open, so it doesn't cover the new page. (Jumps like "show in the Gates list" use setWs.)
-function goWs(ws){ if (ws !== UI.ws) sel = null; setWs(ws); }
+function goWs(ws){ if (ws !== UI.ws && !(["timeline","list"].includes(ws) && ["timeline","list"].includes(UI.ws))) sel = null; setWs(ws); }   // the selection carries between Timeline and List
 function setPlanTab(t){ UI.planTab = t; saveUI(); render(); }
 function revealWs(){
   if (UI.ws === "settings"){ UI.ws = "plan"; UI.planTab = "jira"; }     // a place saved before Jira setup moved into Plan
@@ -6356,6 +6369,8 @@ function renderWs(){
   if (ws === "today"){ renderToday(); setTimeout(restoreTodayFocus, 0); }
   if (ws === "standup") renderStandup();
   if (ws === "roadmap") renderRoadmap();
+  if (ws === "list") renderList();
+  document.body.classList.toggle("on-list", ws === "list");
   amRestore();
   { const b = $("#amBadge"), n = AM && AM.file && !AM.error ? amRows().filter(r=>r.group !== "completed").length : 0; if (b){ b.hidden = !n; b.textContent = n ? String(n) : ""; b.title = n ? `${n} amendment${n === 1 ? "" : "s"} from your assistant waiting` : ""; } }
   if (ws === "settings") renderSettings();
@@ -6372,7 +6387,7 @@ function renderWs(){
     b.hidden = !n && !sp; b.textContent = sp ? `${words} in a sprint` : n ? `${n} to sort` : ""; b.classList.toggle("hot", !!sp);
     b.title = [sp ? `${words} in a sprint and not on the board` : "", n ? `${n} epic${n===1?"":"s"} to sort` : ""].filter(Boolean).join("; "); }
   { const rm = rowsMode(); $("#rLanes").setAttribute("aria-pressed", String(rm === "lanes")); $("#rPeople").setAttribute("aria-pressed", String(rm === "people")); $("#rEpics").setAttribute("aria-pressed", String(rm === "epics")); $("#rEpics").hidden = !hasJiraTree(); }
-  $("#layerSeg").hidden = (ws !== "timeline" && ws !== "standup") || (!hasJiraWork() && !(S.changes || []).length && !mineOnly());
+  $("#layerSeg").hidden = (ws !== "timeline" && ws !== "standup" && ws !== "list") || (!hasJiraWork() && !(S.changes || []).length && !mineOnly());
   $("#lyAll").setAttribute("aria-pressed", String(layerOf() === "all")); $("#lyJira").setAttribute("aria-pressed", String(jiraOnly())); $("#lyMine").setAttribute("aria-pressed", String(mineOnly()));
   { const hs = $("#hiddenStrip"), t = ws === "timeline" ? hiddenTally() : null, parts = [];
     if (t && t.layer) parts.push(h("span",{}, (mineOnly() ? `Showing Jira's work and what you added: ${t.layer} item${t.layer===1?"":"s"} added by others ${t.layer===1?"is":"are"} hidden` + (t.unknown ? ` (${t.unknown} with no recorded author)` : "") + ". "
@@ -7752,9 +7767,14 @@ function openPeek(target){
   if (x < 8 || x + w > right + 1){ el.hidden = true; el.setAttribute("aria-hidden","true"); target.removeAttribute("aria-describedby"); peekFor = null; return; }   // nowhere useful to put it
   el.style.left = Math.round(x) + "px"; el.style.top = Math.round(y) + "px";
 }
-function peekTarget(node){ const t = node && node.closest ? node.closest("[data-peek-type]") : null; return t && $("#gantt").contains(t) ? t : null; }
-function wirePeek(){
-  const g = $("#gantt");
+function peekTarget(node){ const t = node && node.closest ? node.closest("[data-peek-type]") : null; return t && ($("#gantt").contains(t) || $("#listWs").contains(t) && !t.classList.contains("lsel")) ? t : null; }   // a List row whose details are open needs no card
+function wirePeek(){ wirePeekOn($("#gantt")); wirePeekOn($("#listWs"));
+  $("#gscroll").addEventListener("scroll", closePeek, {passive:true});
+  window.addEventListener("scroll", closePeek, {passive:true});
+  window.addEventListener("blur", closePeek);
+  $("#listWs").addEventListener("keydown", listKeys);
+}
+function wirePeekOn(g){
   g.addEventListener("pointerover", e=>{
     if (e.pointerType === "touch") return;
     const t = peekTarget(e.target); if (!t) return;
@@ -7767,9 +7787,6 @@ function wirePeek(){
   g.addEventListener("pointerdown", closePeek, true);
   g.addEventListener("focusin", e=>{ const t = peekTarget(e.target); if (!t) return; let fv = true; try { fv = t.matches(":focus-visible"); } catch(err){} if (!fv) return; peekPt = null; clearTimeout(peekT); openPeek(t); });
   g.addEventListener("focusout", ()=>{ clearTimeout(peekCloseT); peekCloseT = setTimeout(()=>{ if (!peekTarget(document.activeElement)) closePeek(); }, PEEK_CLOSE_MS); });
-  $("#gscroll").addEventListener("scroll", closePeek, {passive:true});
-  window.addEventListener("scroll", closePeek, {passive:true});
-  window.addEventListener("blur", closePeek);
 }
 // After layout: a truncated bar name is drawn to its right when the whole name fits before the next item.
 function spillLabels(){
@@ -8601,7 +8618,7 @@ function addBarAt0(e,laneId){
 }
 
 // ================= side panel =================
-function select(type,id){ sel = {type,id}; if (["bar","task","ms","lane","gate","story"].includes(type) && UI.ws !== "standup") UI.ws = "timeline"; render(); }   // Standup opens the card beside the board
+function select(type,id){ sel = {type,id}; if (["bar","task","ms","lane","gate","story"].includes(type) && UI.ws !== "standup" && !(UI.ws === "list" && ["bar","task","story","gate"].includes(type))) UI.ws = "timeline"; render(); }   // Standup opens the card beside the board
 function del(type,id){
   if (type==="lane"){ const c = laneContents(id); if (!laneEmpty(c)){ setStatus("This workstream still has work in it. End it, or move its work to another workstream, first."); return; }
     commit(s=>{ s.lanes = s.lanes.filter(l=>l.id!==id); if (!s.lanes.length) s.lanes.push({id:newId("lane"),name:"Workstream",who:"",color:"#2c6fbb"}); }); }
@@ -12202,6 +12219,158 @@ function renderPlanningGuide(){
   updateDraftState();
   if (focused){ const next = document.getElementById(focused); if (next && !next.disabled){ next.focus({preventScroll:true}); if (start != null && typeof next.setSelectionRange === "function") next.setSelectionRange(start, end); } }
 }
+// ================= List: the plan's work as rows (docs/workspaces.md) =================
+// The same items Timeline draws for the same filters, read top to bottom: initiatives as group headers, their tasks and
+// the Jira stories placed under them. It only reads; edits happen in the side panel.
+const LIST_KEY = "sightline-list-layout", LIST_LAYOUTS = [["initiative", "By initiative"], ["person", "By person"], ["start", "Everything by start date"]];
+let listMemo = null, listFocus = null;
+function listLayout(){
+  if (listMemo !== null) return listMemo;
+  try { const o = JSON.parse(localStorage.getItem(LIST_KEY) || "{}"), v = o && o[S.meta.planId]; listMemo = LIST_LAYOUTS.some(x=>x[0] === v) ? v : "initiative"; } catch(e){ listMemo = "initiative"; }
+  return listMemo;
+}
+function setListLayoutQuiet(v){ const L = LIST_LAYOUTS.some(x=>x[0] === v) ? v : "initiative";
+  try { const o = JSON.parse(localStorage.getItem(LIST_KEY) || "{}") || {}; if (L !== "initiative") o[S.meta.planId] = L; else delete o[S.meta.planId]; localStorage.setItem(LIST_KEY, JSON.stringify(o)); } catch(e){}
+  listMemo = L; }
+function setListLayout(v){ setListLayoutQuiet(v); render(); }
+const listWhen = n => n == null ? "" : dayToDate(n).getUTCFullYear() === dayToDate(todayDay()).getUTCFullYear() ? fmtDay(n) : fmtDayY(n);
+const listPerson = id => { const p = personById(id); return p ? p.name + (p.inactive ? " (inactive)" : p.external ? " (outside the team)" : "") : "Former member"; };
+// Who's on an item: plan owners for plan items; for Jira items, the Jira assignee and, labeled apart, any plan lead.
+function listOwners(type, x){
+  if (type === "story") return {ids:x.owner ? [x.owner] : [], text:[x.j.assignee ? `Jira: ${x.owner ? listPerson(x.owner) : x.j.assignee}` : "Jira: Unassigned"]};
+  const a = assigneeOf(x);
+  if (a){ const lead = leadOf(x); return {ids:peopleOf(x), text:[`Jira: ${a.id ? listPerson(a.id) : a.name || "Unassigned"}`, ...(lead.length ? [`Lead: ${lead.map(listPerson).join(", ")}`] : [])]}; }
+  const ids = type === "bar" && rolls(x) ? effOwnerIds(x) : own(x);
+  return {ids, text:[ids.length ? ids.map(listPerson).join(", ") : "Unassigned"]};
+}
+function listStatus(type, x){
+  const plain = st => (STATUSES.find(s=>s[0] === st) || [st, st])[1];
+  if (type === "story") return {text:plain(x.status), jira:`Jira: ${x.j.status}${jiraAge() ? ", synced " + jiraAge() : ""}`};
+  const st = type === "bar" ? effStatus(x) : x.status, j = x.jira && !(type === "bar" && barEpics(x).length) ? jiraOf(x.jira) : null;
+  return {text:plain(st) + (isBlocked(x) ? ", blocked" : ""), jira:j ? `Jira: ${j.status}${jiraAge() ? ", synced " + jiraAge() : ""}` : null};
+}
+// What an item waits on, from the models that exist: task links on tasks; initiative, gate and process waits on the
+// initiative; Jira dependencies, with a warning when one ends after the item starts. Each entry can open what it names.
+function listWaits(type, x, start, label){
+  const out = [], pre = label ? label + ": " : "";
+  if (type === "task") (x.dependsOn || []).forEach(id=>{ const f = taskById(id); out.push({text:pre + "after " + (f ? taskTitle(f.t) : "a removed task"), open:f ? ["task", id] : null}); });
+  if (type === "bar"){
+    (x.dependsOn || []).forEach(id=>{ const b = barById(id); out.push({text:pre + "after " + (b ? chartLabel(b) : "a removed initiative"), open:b ? ["bar", id] : null}); });
+    (x.waitsFor || []).forEach(id=>{ const g = (S.gates || []).find(y=>y.id === id);
+      if (g) out.push({text:pre + "gate: " + g.gate, open:["gate", id]});
+      else { const blk = (S.blocks || []).find(y=>y.id === id); out.push({text:pre + "process: " + predName(id), open:blk ? ["block", id] : null}); } });
+  }
+  (x.jiraDeps || []).forEach(k=>{ const j = jiraOf(k), e = jiraEndDay(k);
+    out.push({text:`${pre}Jira dependency: ${k}${j && j.summary ? " " + j.summary.slice(0, 60) : ""}` + (e != null && start != null && e >= start ? ` (ends ${listWhen(e)}, after this starts)` : ""), url:jiraUrl(k)}); });
+  return out;
+}
+// Every row the current filters show, in initiative order, plus what Timeline doesn't draw and why.
+function listModel(f = UI.filter){
+  const R = fRangeDays(f), tf = tasksFiltered(f), hs = HS(), lanes = new Map(S.lanes.map((l, i)=>[l.id, i])), idx = new Map(S.bars.map((b, i)=>[b.id, i]));
+  const kidsOf = new Map(); S.bars.forEach(b=>{ const p = b.parent && barById(b.parent) ? b.parent : ""; if (!kidsOf.has(p)) kidsOf.set(p, []); kidsOf.get(p).push(b); });
+  const order = (a, b) => (lanes.get(a.lane) ?? 1e9) - (lanes.get(b.lane) ?? 1e9) || a.start - b.start || idx.get(a.id) - idx.get(b.id);
+  kidsOf.forEach(v=>v.sort(order));
+  const rows = [], off = [], hidden = {work:0, headers:0}; let ord = 0;
+  const work = (type, x, b, depth, s, e) => ({type, id:type === "story" ? x.key : x.id, x, b, depth, s, e, ord:ord++, header:false,
+    label:type === "bar" ? chartLabel(x) : type === "task" ? taskTitle(x) : x.j.summary || x.key, key:type === "story" ? x.key : x.jira || ""});
+  const walk = (b, depth) => {
+    if (b.parked){ off.push({...work("bar", b, b, 0, null, null), why:"parked"}); return; }
+    if (!lanes.has(b.lane)){ off.push({...work("bar", b, b, 0, null, null), why:"not in a workstream"}); return; }
+    const vis = barVisible(b, f, R), kids = kidsOf.get(b.id) || [], st = storiesOf(b);
+    st.filter(x=>!x.real && !x.drawn).forEach(x=>off.push({...work("story", x, b, 0, null, null), why:x.off ? "switched off here" : x.state === "abandoned" ? "abandoned in Jira" : !x.when ? "no sprint dates" : "outside the plan's dates"}));
+    if (!kids.length && !hasTasks(b) && !st.some(x=>x.drawn)){ if (vis) rows.push(work("bar", b, b, depth, wkDay(b.start), barEndDay(b))); else hidden.work++; return; }
+    const head = {...work("bar", b, b, depth, wkDay(b.start), barEndDay(b)), header:true}, at = rows.length;
+    if (vis) rows.push(head); else hidden.headers++;
+    const inside = [...(b.tasks || []).map((t, i)=>{ const sp = taskSpan(t, hs); return {type:"task", x:t, s:sp.s, e:sp.e, i, show:!tf || taskVisible(t, f, R)}; }),
+      ...st.filter(x=>x.drawn).map((x, i)=>({type:"story", x, s:x.s, e:x.e, i:1e6 + i, show:!tf || storyVisible(x, f, R)}))].sort((a, z)=>a.s - z.s || a.i - z.i);   // in start order, ties in plan order
+    inside.forEach(r=>{ if (vis && r.show) rows.push(work(r.type, r.x, b, depth + 1, r.s, r.e)); else hidden.work++; });
+    kids.forEach(k=>walk(k, depth + 1));
+    if (vis) head.count = rows.slice(at + 1).filter(r=>!r.header).length;
+  };
+  (kidsOf.get("") || []).forEach(b=>walk(b, 0));
+  return {rows, off, hidden};
+}
+// The rows for a layout, as groups: [{label, rows}]. Flat layouts sort by start; ties go by initiative, then plan order.
+function listGroups(m, layout){
+  const items = m.rows.filter(r=>!r.header), byStart = (a, b) => (a.s ?? 1e12) - (b.s ?? 1e12) || a.ord - b.ord;
+  if (layout === "start") return [{label:null, rows:items.slice().sort(byStart)}];
+  if (layout === "person"){
+    const ppl = [...team(), ...outsiders()].map(p=>p.id), at = new Map(ppl.map((id, i)=>[id, i])), groups = new Map();
+    items.forEach(r=>{ const ids = listOwners(r.type, r.x).ids.filter((id, i, a)=>a.indexOf(id) === i);
+      (ids.length ? ids : [""]).forEach(id=>{ if (!groups.has(id)) groups.set(id, []); groups.get(id).push({...r, shared:ids.length > 1}); }); });
+    return [...groups.keys()].sort((a, b)=>(a === "" ? 1e9 : at.get(a) ?? 1e8) - (b === "" ? 1e9 : at.get(b) ?? 1e8)).map(id=>({label:id ? listPerson(id) : "Unassigned", person:id, rows:groups.get(id).sort(byStart)}));
+  }
+  return [{label:null, rows:m.rows}];
+}
+// The table as markdown, exactly as shown: pipes escaped, line breaks flattened.
+function listMarkdown(groups, layout){
+  const cell = v => String(v == null ? "" : v).replace(/\r?\n|\r/g, " ").replace(/\\/g, "\\\\").replace(/\|/g, "\\|").trim();
+  const lines = ["| Start | End | Item | Owner | Waits on | Status |", "| --- | --- | --- | --- | --- | --- |"];
+  groups.forEach(g=>{ if (g.label) lines.push(`|  |  | **${cell(g.label)}** (${g.rows.length}) |  |  |  |`);
+    g.rows.forEach(r=>{ const o = listOwners(r.type, r.x), s = listStatus(r.type, r.x), w = listRowWaits(r, layout);
+      const name = (layout === "initiative" ? "› ".repeat(r.depth) : "") + (r.header ? `**${r.label}**` : r.label) + (r.key && r.type !== "bar" ? ` (${r.key})` : "") + (layout !== "initiative" && r.type !== "bar" ? ` in ${chartLabel(r.b)}` : "") + (r.shared ? " (shared)" : "");
+      lines.push("| " + [listWhen(r.s), listWhen(r.e), name, o.text.join("; "), w.map(x=>x.text).join("; "), s.text + (s.jira ? "; " + s.jira : "")].map(cell).join(" | ") + " |"); }); });
+  return lines.join("\n") + "\n";
+}
+// In the flat layouts there's no initiative header, so a task's row also carries what its initiative waits on.
+const listRowWaits = (r, layout) => [...listWaits(r.type, r.x, r.s), ...(layout !== "initiative" && r.type !== "bar" ? listWaits("bar", r.b, r.s, "its initiative") : [])];
+function listCopy(text){
+  const show = () => { const box = $("#listCopyBox"); if (!box) return; box.hidden = false; const ta = box.querySelector("textarea"); ta.value = text; ta.focus(); ta.select();
+    setStatus("This browser didn't allow copying. The table is selected below: copy it with Ctrl+C (Cmd+C on a Mac)."); };
+  const done = () => setStatus("Copied the table. It pastes into a markdown file as a table.");
+  const fallback = () => { const ta = h("textarea",{style:{position:"fixed",left:"-9999px"}}); ta.value = text; document.body.append(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch(e){} ta.remove(); ok ? done() : show(); };
+  try { if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(done, fallback); } catch(e){}
+  fallback();
+}
+function renderList(){
+  const host = $("#listWs"); if (!host) return;
+  const layout = listLayout(), m = listModel(), groups = listGroups(m, layout), keyOf = r => `list:${r.type}:${r.id}`;
+  const shown = new Set(m.rows.filter(r=>!r.header).map(r=>r.type + ":" + r.id)), cur = sel && ["bar", "task", "story"].includes(sel.type) ? sel : null;
+  const selHidden = cur && !m.rows.some(r=>r.type === cur.type && r.id === cur.id);
+  const items = shown.size, sum = [`${items} item${items === 1 ? "" : "s"}`];
+  if (m.hidden.work) sum.push(`${m.hidden.work} hidden by filters` + (m.hidden.headers ? ` (and ${m.hidden.headers} initiative${m.hidden.headers === 1 ? "" : "s"} with nothing shown)` : ""));
+  if (m.off.length) sum.push(`${m.off.length} not on the timeline (parked, switched off or undated), listed at the end`);
+  const row = (r, g) => { const o = listOwners(r.type, r.x), s = listStatus(r.type, r.x), w = listRowWaits(r, layout), on = cur && cur.type === r.type && cur.id === r.id;
+    const name = h(r.header ? "th" : "td",{class:"lname", ...(r.header ? {scope:"row"} : {}), style:layout === "initiative" ? {paddingLeft:(8 + r.depth * 18) + "px"} : null},
+      h("span",{class:"lt"}, r.label), r.key && r.type !== "bar" ? h("span",{class:"lkey mono"}, r.key) : null,
+      r.header ? h("span",{class:"hint"}, ` ${r.count} item${r.count === 1 ? "" : "s"}`) : null,
+      layout !== "initiative" && r.type !== "bar" ? h("span",{class:"hint lin"}, `in ${chartLabel(r.b)}`) : null, r.shared ? h("span",{class:"lshared"}, "shared") : null,
+      r.why ? h("span",{class:"hint lwhy"}, r.why) : null);
+    const waits = w.length ? h("ul",{class:"lwaits"}, ...w.map(x=>h("li",{}, x.open ? h("button",{type:"button",class:"linkish",onclick:e=>{ e.stopPropagation(); listFocus = keyOf(r); select(x.open[0], x.open[1]); }}, x.text)
+      : x.url ? h("a",{href:x.url,target:"_blank",rel:"noopener noreferrer",class:"linkish",onclick:e=>e.stopPropagation()}, x.text + " ↗") : x.text))) : "";
+    return h("tr",{class:["lrow", r.header ? "lhead" : "", on ? "lsel" : "", r.why ? "loff" : ""].join(" "), tabindex:"-1", "data-key":keyOf(r) + (g && g.person != null ? "@" + g.person : ""), "data-lk":keyOf(r),
+      "data-peek-type":r.type, "data-peek-id":r.id, "aria-selected":on ? "true" : "false", onclick:()=>{ listFocus = keyOf(r); select(r.type, r.id); }},
+      h("td",{class:"ld"}, listWhen(r.s)), h("td",{class:"ld"}, listWhen(r.e)), name, h("td",{class:"lown"}, ...o.text.map((t, i)=>h("div",{class:i ? "hint" : ""}, t))),
+      h("td",{class:"lw"}, waits), h("td",{class:"lst"}, h("div",{}, s.text), s.jira ? h("div",{class:"hint"}, s.jira) : null));
+  };
+  const head = h("thead",{}, h("tr",{}, ...["Start", "End", "Item", "Owner", "Waits on", "Status"].map(t=>h("th",{scope:"col"}, t))));
+  const bodies = groups.map(g=>h("tbody",{...(g.label ? {"aria-label":`${g.label}, ${g.rows.length} item${g.rows.length === 1 ? "" : "s"}`} : {})},
+    g.label ? h("tr",{class:"lgroup"}, h("th",{scope:"colgroup",colspan:"6"}, g.label, h("span",{class:"hint"}, ` ${g.rows.length} item${g.rows.length === 1 ? "" : "s"}`))) : null, ...g.rows.map(r=>row(r, g))));
+  const offBody = m.off.length ? [h("tbody",{class:"loffg"}, h("tr",{class:"lgroup"}, h("th",{scope:"colgroup",colspan:"6"},
+    h("button",{type:"button",class:"linkish",id:"listOffToggle","aria-expanded":String(!!UI.listOff),onclick:()=>{ UI.listOff = !UI.listOff; saveUI(); renderList(); }}, `${UI.listOff ? "▾" : "▸"} Not on the timeline (${m.off.length})`))),
+    ...(UI.listOff ? m.off.map(r=>row(r, null)) : []))] : [];
+  const md = () => listMarkdown([...groups, ...(m.off.length ? [{label:"Not on the timeline", rows:m.off.map(r=>({...r, depth:0}))}] : [])], layout);
+  host.replaceChildren(...[
+    h("div",{class:"listbar"},
+      h("div",{class:"seg",role:"group","aria-label":"List layout"}, ...LIST_LAYOUTS.map(([k, label])=>h("button",{type:"button",class:"btn" + (k === layout ? " on" : ""),"aria-pressed":String(k === layout),"data-layout":k,onclick:()=>setListLayout(k)}, label))),
+      h("span",{class:"hint",id:"listSummary"}, sum.join(". ") + "."),
+      h("button",{type:"button",class:"btn",id:"listCopy",onclick:()=>listCopy(md())}, "Copy as table"),
+      h("button",{type:"button",class:"btn",id:"listPrint",onclick:()=>window.print()}, "Print")),
+    h("div",{id:"listCopyBox",class:"listcopy",hidden:true}, h("label",{class:"hint",for:"listCopyText"}, "The table, as markdown: select it and copy."), h("textarea",{id:"listCopyText",readonly:true,rows:"8"})),
+    selHidden ? h("p",{class:"hint",id:"listSelHidden"}, "The selected item is hidden by the current filters, so it isn't in the list. Its details stay open.") : null,
+    items || m.off.length ? h("div",{class:"lwrap"}, h("table",{class:"ltable",id:"listTable","aria-label":`The plan's work, ${LIST_LAYOUTS.find(x=>x[0] === layout)[1].toLowerCase()}`}, head, ...bodies, ...offBody))
+      : h("p",{class:"hint",id:"listEmpty"}, m.hidden.work ? "The current filters hide all the work." : "No work yet. Add initiatives and tasks on the Timeline.")].filter(Boolean));
+  const rowsEl = [...host.querySelectorAll("tr[data-lk]")], pick = rowsEl.find(x=>x.classList.contains("lsel")) || rowsEl[0]; if (pick) pick.tabIndex = 0;
+  if (listFocus && !sel){ const t = rowsEl.find(x=>x.dataset.lk === listFocus); listFocus = null; if (t){ t.tabIndex = 0; if (pick && pick !== t) pick.tabIndex = -1; t.focus({preventScroll:false}); } }
+}
+// Arrows move between rows, Enter opens the row's details; the side panel's inputs aren't inside the list.
+function listKeys(e){
+  const t = e.target.closest && e.target.closest("tr[data-lk]"); if (!t || e.target !== t) return;
+  const rows = [...$("#listWs").querySelectorAll("tr[data-lk]")], i = rows.indexOf(t);
+  const go = j => { const n = rows[Math.max(0, Math.min(rows.length - 1, j))]; if (!n) return; rows.forEach(r=>{ r.tabIndex = -1; }); n.tabIndex = 0; n.focus(); e.preventDefault(); };
+  if (e.key === "ArrowDown") go(i + 1); else if (e.key === "ArrowUp") go(i - 1); else if (e.key === "Home") go(0); else if (e.key === "End") go(rows.length - 1);
+  else if (e.key === "Enter"){ e.preventDefault(); listFocus = t.dataset.lk; t.click(); }
+}
 function renderTables(){
   if (UI.ws === "people"){ renderForecastWs(); renderOffTracker(); renderJiraPeople(); }
   if (UI.ws !== "plan") return;
@@ -12477,6 +12646,7 @@ document.addEventListener("keydown", e=>{
   else if (e.key==="?" && !mod){ openHelp("keys"); }
   else if (/^[1-6]$/.test(e.key) && !mod && !e.altKey){ goWs(WS_LIST[+e.key - 1]); }
   else if (k==="t" && !mod && !e.altKey){ goWs("today"); }
+  else if (k==="l" && !mod && !e.altKey){ goWs("list"); }
   else if (k==="j" && !mod && !e.altKey){ e.preventDefault(); if (UI.ws !== "timeline") setWs("timeline"); stepItem(1); }
   else if (k==="k" && !mod && !e.altKey){ e.preventDefault(); if (UI.ws !== "timeline") setWs("timeline"); stepItem(-1); }
   else if (["i","x","b","u","s"].includes(k) && !mod && !e.altKey && !present && quickKey(k)){ e.preventDefault(); }
@@ -12484,8 +12654,8 @@ document.addEventListener("keydown", e=>{
   else if ((e.key === "[" || e.key === "]") && !mod && UI.zoom === "days"){ dayPage(e.key === "]" ? 1 : -1); }
   else if (k==="e" && !mod && !e.altKey && file.handle && !present){ e.preventDefault(); file.holdLock ? doneEditing() : startEditing(); }
   else if (k==="n" && !mod && !e.altKey && !e.shiftKey){ e.preventDefault(); UI.notes = (UI.notes || "all") === "none" ? "all" : "none"; saveUI(); render(); setStatus(UI.notes === "none" ? "Notes hidden (N shows them)" : "Notes shown"); }
-  else if (k==="f" && !mod && !e.altKey && !present && ["timeline","people"].includes(UI.ws)){ e.preventDefault(); $("#filterPop").hidden ? openFilterPop() : closeFilterPop(true); }
-  else if (k==="v" && !mod && !e.altKey && ["timeline","people"].includes(UI.ws)){ e.preventDefault(); $("#viewMenu").hidden ? openViewMenu() : closeViewMenu(true); }
+  else if (k==="f" && !mod && !e.altKey && !present && ["timeline","people","list"].includes(UI.ws)){ e.preventDefault(); $("#filterPop").hidden ? openFilterPop() : closeFilterPop(true); }
+  else if (k==="v" && !mod && !e.altKey && ["timeline","people","list"].includes(UI.ws)){ e.preventDefault(); $("#viewMenu").hidden ? openViewMenu() : closeViewMenu(true); }
   else if (k==="a" && !mod && !e.altKey && editable()){ e.preventDefault(); openAddMenu($("#addBtn").getBoundingClientRect(), {}); }
   else if (UI.ws === "timeline" && !mod && !e.altKey && (e.key==="+" || e.key==="=")){ zoomIn(); }
   else if (UI.ws === "timeline" && !mod && !e.altKey && (e.key==="-" || e.key==="_")){ zoomOut(); }

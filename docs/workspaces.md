@@ -5,13 +5,28 @@ plan file from Sightline's **File** menu. The source template is not the runnabl
 not grant access to its file.
 
 - **Work**: Today shows attention and next actions. Sprint shows the current sprint by person, workstream or epic. Sort Jira work places synced issues on the plan; the Jira connection remains in Settings.
-- **Delivery**: Timeline shows planned work. Capacity shows people and time off. Status update, Decisions and Risks support delivery reviews. Supporting lists hold milestones, gates, snapshots and activity.
+- **Delivery**: Timeline shows planned work. List shows the same work as rows. Capacity shows the forecast, people and time off. Status update, Decisions and Risks support delivery reviews. Supporting lists hold milestones, gates, snapshots and activity.
 - **Product updates**: Roadmap explains what the team plans to ship. Release notes opens the customer wording approved for each Jira release.
 - **Settings**: Team, calendar, meetings, process types, the Jira connection, and the project Planning guide.
 
 Each group remembers your last page. Existing saved startup choices and links still open their original destinations. Views express audience preferences; file permissions control access.
 
-Saved views and filters apply to Timeline and Capacity. Roadmap and Status update use the whole plan and say so. Your filters remain available when you return to Timeline.
+Saved views and filters apply to Timeline, List and Capacity. Roadmap and Status update use the whole plan and say so. Your filters remain available when you return to Timeline.
+
+## List
+
+**List** (Delivery, next to Timeline, or press L) reads the plan top to bottom, like a checklist. It shows the work Timeline draws for the same filters: initiatives with their tasks, and Jira stories placed on the plan or counted under an epic. Each row has Start, End, Item, Owner, Waits on and Status.
+
+- **Layouts:** By initiative (initiatives are group headers with their own dates, owner and item count), By person (a task with two owners appears under each, marked shared), and Everything by start date. Ties keep initiative order, then plan order. The layout stays in your browser for each plan; it isn't part of a saved view.
+- **Dates** are Timeline's own: weekends, holidays and owners' time off are already skipped.
+- **Owner** shows the plan's owners; for a Jira item, its Jira assignee and, separately, any plan lead. People outside the team or inactive are marked.
+- **Waits on** lists what an item waits for: a task's links, and an initiative's waits on other initiatives, gates and process steps. In the flat layouts a task's row also shows its initiative's waits. Jira dependencies link to Jira, with a warning when one ends after the item starts. Click a name to open it.
+- **Status** is the status Timeline shows. For a Jira item, Jira's own status and when it was synced.
+- Work Timeline doesn't draw (parked, switched off, abandoned in Jira, or without sprint dates) is in **Not on the timeline** at the end, with the reason, so nothing goes missing.
+- Hover or focus a row for its card; click it or press Enter for its details. Escape closes them and returns you to the row; Up and Down move between rows. A selection carries between Timeline and List, and the page, layout and selection are in the link.
+- **Copy as table** copies the rows as shown as a markdown table. If the browser doesn't allow copying, the table appears selected so you can copy it yourself. **Print** prints every row, with the header repeated on each page.
+
+Edits stay in the details panel; List has no editable cells.
 
 Roadmap starts with **Four quarters**. Choose the starting calendar quarter (including its year); this is a target
 window, not a commitment. The choice stays in your browser. **Long range** restores the broader quarters, halves,

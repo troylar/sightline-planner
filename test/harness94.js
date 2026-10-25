@@ -30,7 +30,7 @@ async function page(fileText){
     const vis = () => [...d.querySelectorAll(".tabs [role=tab][data-ws]")].filter(t=>!t.hidden).map(t=>t.dataset.ws).join();
     ok("R1 Work offers Today, Sprint and Sort Jira work without More", vis() === "today,standup" && !d.querySelector("#work-sort").hidden && d.querySelector("#tabMore").hidden, vis());
     d.querySelector("#nav-delivery").click(); await wait(5);
-    ok("R2 Delivery offers Timeline and People", vis() === "timeline,people", vis());
+    ok("R2 Delivery offers Timeline, List and People", vis() === "timeline,list,people", vis());
     ok("R2a Delivery also offers status, decisions and risks", [...d.querySelectorAll('.tabs [data-section]')].filter(t=>!t.hidden).map(t=>t.dataset.section).join() === "report,decisions,risks");
     d.querySelector('#tab-timeline').focus(); d.querySelector('.tabs').dispatchEvent(new d.defaultView.KeyboardEvent('keydown', {key:'End', bubbles:true})); await wait(10);
     ok("R2b keyboard navigation reaches Delivery sections", ev("UI.ws") === "plan" && ev("UI.planTab") === "risks");

@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.107.0",
+    "date": "2026-10-25",
+    "headline": "Read the whole plan as a list",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "List",
+        "title": "A List page next to Timeline",
+        "now": "List shows the same work Timeline draws, as rows: Start, End, Item, Owner, Waits on and Status. Read it by initiative, by person, or as one list by start date. Work Timeline doesn't draw is at the end under Not on the timeline, with the reason.",
+        "where": "Delivery, List (or press L)"
+      },
+      {
+        "kind": "new",
+        "area": "List",
+        "title": "See what each item waits on",
+        "now": "Waits on names the task, initiative, gate or process step an item waits for, and links Jira dependencies to Jira, warning when one ends after the item starts. Click a name to open it.",
+        "where": "List, Waits on"
+      },
+      {
+        "kind": "new",
+        "area": "List",
+        "title": "Copy or print the list",
+        "now": "Copy as table copies the rows as shown as a markdown table, ready to paste into a document. Print prints every row, with the header repeated on each page.",
+        "where": "List, Copy as table and Print"
+      },
+      {
+        "kind": "improved",
+        "area": "Views",
+        "title": "Views and selection carry across",
+        "now": "A saved view applied on List stays on List. The selected item stays selected when you switch between Timeline and List, and a link to List opens the same layout and item.",
+        "where": "List and Timeline"
+      }
+    ]
+  },
+  {
     "version": "1.106.0",
     "date": "2026-10-25",
     "headline": "The whole forecast in one place",
