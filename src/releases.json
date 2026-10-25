@@ -1,5 +1,55 @@
 [
   {
+    "version": "1.103.0",
+    "date": "2026-10-24",
+    "headline": "Capacity day by day, the second step toward a forecast",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Forecast",
+        "title": "Say when people join and leave",
+        "now": "A person's card has Joins on and Leaves on. Their capacity counts only the days in between, so someone starting mid-sprint or rolling off is planned for the days they're actually here.",
+        "where": "The person card"
+      },
+      {
+        "kind": "new",
+        "area": "Forecast",
+        "title": "Split someone's time across workstreams",
+        "now": "For someone in two or more workstreams, the person card has Time split: a weight for each workstream. With no split, their time divides evenly. When a workstream ends, its share moves to their other workstreams.",
+        "where": "The person card, Time split"
+      },
+      {
+        "kind": "new",
+        "area": "Forecast",
+        "title": "Keep time back for support and unplanned work",
+        "now": "Set a reserve for the team in Team, and a different one for any workstream on its card. The workstream card shows this week's capacity for planned work, in person-weeks, after the reserve.",
+        "where": "Team, Reserve; the workstream card"
+      },
+      {
+        "kind": "improved",
+        "area": "Capacity",
+        "title": "Sprint capacity counts joining and leaving dates",
+        "now": "A person's capacity for a sprint leaves out the days before they join and from the day they leave.",
+        "before": "Capacity counted every working day of the sprint, whatever their start or end date.",
+        "where": "Capacity in the sprint view"
+      },
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "Your assistant can set capacity inputs",
+        "now": "Assistant changes can set when someone joins or leaves, how their time splits across workstreams, and the team's or a workstream's reserve.",
+        "where": "Assistant changes"
+      },
+      {
+        "kind": "improved",
+        "area": "Plan file",
+        "title": "Older copies open a plan with these settings read-only",
+        "now": "A plan with join or leave dates, time splits or reserves opens read-only in copies older than 1.103.0, so they can't save over them.",
+        "where": "Opening a plan in an older copy"
+      }
+    ]
+  },
+  {
     "version": "1.102.0",
     "date": "2026-10-24",
     "headline": "Effort estimates, the first step toward a forecast",

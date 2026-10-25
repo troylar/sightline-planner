@@ -1,0 +1,71 @@
+// Day-by-day capacity (docs/forecast-and-scenarios.md 1.4): one day rule shared with capOf, joining and leaving dates,
+// workstream splits by weight, reserves per workstream and for the team, and the inputs on the cards.
+const {JSDOM, VirtualConsole} = require('jsdom'), fs = require('fs'), path = require('path');
+const html = fs.readFileSync(process.env.SIGHTLINE_HTML || path.join(__dirname,'../dist/sightline.html'),'utf8').replace(/<link[^>]+fonts[^>]+>/,'');
+const fixture = fs.readFileSync(path.join(__dirname,'fixtures/sample-plan.json'),'utf8'), checks = [];
+const ok = (name, pass, x='')=>checks.push(`${pass ? 'PASS' : 'FAIL'} ${name}${x ? '  (' + x + ')' : ''}`);
+setTimeout(()=>{console.log(checks.join('\n'));console.log('TIMEOUT');process.exit(1);},50000).unref();
+(async()=>{
+  const dom = new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://local.test/',virtualConsole:new VirtualConsole(),beforeParse(w){
+    const D = w.Date; w.Date = class extends D {constructor(...a){super(...(a.length ? a : ['2026-10-24T14:00:00Z']));} static now(){return new D('2026-10-24T14:00:00Z').getTime();}};
+    w.indexedDB=undefined;w.alert=()=>{};w.confirm=()=>true;w.prompt=()=>'Tester';
+    w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
+    w.HTMLCanvasElement.prototype.getContext=()=>({measureText:t=>({width:String(t).length*7})});w.Element.prototype.scrollIntoView=()=>{};
+    w.CSS={escape:s=>s};w.errors=[];w.addEventListener('error',e=>w.errors.push(e.message));
+  }});
+  try {
+    await new Promise(r=>setTimeout(r,180)); const w=dom.window, d=w.document, ev=s=>w.eval(s); w.FIX=fixture;
+    ev(`(()=>{ const P = JSON.parse(FIX); P.meta.planId = 'p-fc';
+      P.lanes = [{id:'l-plat',name:'Platform',members:['p-morgan','p-avery'],reserve:20},{id:'l-data',name:'Data',members:['p-avery','p-casey']}];
+      P.bars.forEach((b, i)=>{ b.lane = i % 2 ? 'l-data' : 'l-plat'; });
+      P.people = [{id:'p-morgan',name:'Morgan',alloc:50},{id:'p-avery',name:'Avery'},{id:'p-casey',name:'Casey',days:4},{id:'p-out',name:'Riley',external:true}];
+      P.holidays = [{date:'2026-10-12',name:'Columbus Day'}];
+      S = normalize(P, false); file.handle = null; resetHistory(); sel = null; render(); setMe(S.people[0].id); })()`);
+    const near = (a, b)=>Math.abs(a - b) < 1e-9, wk = iso => `isoToDay('${iso}')`;
+    const capW = (lane, iso) => ev(`laneCapacity('${lane}', ${wk(iso)}, ${wk(iso)} + 6)`);
+    const one = (pid, lane, iso) => ev(`(()=>{ const pp = personById('${pid}'); let t = 0; for (let n = ${wk(iso)}; n < ${wk(iso)} + 7; n++) t += laneCap(pp, '${lane}', n); return t; })()`);
+    ok('C1 the worked example: Morgan, 50%, Platform only, 20% reserve, a week with one holiday, gives 0.32 person-weeks', near(one('p-morgan', 'l-plat', '2026-10-12'), 0.32), one('p-morgan', 'l-plat', '2026-10-12'));
+    ok('C1 a full week at 100% is 1 person-week', near(ev(`(()=>{ const pp = personById('p-avery'); let t = 0; for (let n = ${wk('2026-10-19')}; n < ${wk('2026-10-19')} + 7; n++) t += personDayCap(pp, n); return t; })()`), 1));
+    ok('C2 two workstreams and no split: half each', near(one('p-avery', 'l-data', '2026-10-19'), 0.5) && near(one('p-avery', 'l-plat', '2026-10-19'), 0.5 * 0.8));
+    ev(`act('person.setSplit', {id:'p-avery', lanes:{'l-plat':25, 'l-data':75}})`);
+    ok('C2 with a split of 25 and 75, Data gets three quarters of Avery', near(one('p-avery', 'l-data', '2026-10-19'), 0.75));
+    ev(`S.lanes.find(l=>l.id === 'l-plat').until = '2026-10-21'`);
+    ok('C2 once Platform ends, Data gets all of Avery from the next day', near(ev(`laneCap(personById('p-avery'), 'l-data', ${wk('2026-10-22')})`), 0.2) && near(ev(`laneCap(personById('p-avery'), 'l-data', ${wk('2026-10-21')})`), 0.15));
+    ev(`delete S.lanes.find(l=>l.id === 'l-plat').until; act('person.setSplit', {id:'p-avery', lanes:{'l-plat':0, 'l-data':100}})`);
+    ok('C2 weight 0: a member with no time there', near(one('p-avery', 'l-plat', '2026-10-19'), 0) && near(one('p-avery', 'l-data', '2026-10-19'), 1));
+    ok('C3 a person in a workstream they have no weight for isn\'t counted there, and four days a week is 0.8', near(one('p-casey', 'l-data', '2026-10-19'), 0.8));
+    ok('C3 outside owners give nothing', near(ev(`personDayCap(personById('p-out'), ${wk('2026-10-19')})`), 0));
+    ev(`act('person.set', {id:'p-morgan', field:'from', value:'2026-10-21'})`);
+    ok('C4 someone joining mid-week counts only from that day', near(one('p-morgan', 'l-plat', '2026-10-19'), 0.1 * 3 * 0.8));
+    ev(`act('person.set', {id:'p-morgan', field:'leaves', value:'2026-10-22'})`);
+    ok('C4 …and nothing from the day they leave', near(one('p-morgan', 'l-plat', '2026-10-19'), 0.1 * 1 * 0.8));
+    ok('C4 leaving before joining is refused', !ev(`applyAction(planOfRecord(S), 'person.set', {id:'p-morgan', field:'leaves', value:'2026-10-20'}).ok`));
+    ev(`act('person.set', {id:'p-morgan', field:'from', value:''}); act('person.set', {id:'p-morgan', field:'leaves', value:''})`);
+    ok('C5 capOf uses the same days: rate × allocation × days they have ÷ weekdays, in halves', ev(`(()=>{ S.meta.capRates = [{from:'2026-09-01', points:10}]; const sp = {start:'2026-10-12', end:'2026-10-23'};
+      const pp = personById('p-morgan'); pp.from = '2026-10-14'; const got = capOf(pp, sp), want = Math.round(10 * 0.5 * haveDays(pp, isoToDay(sp.start), isoToDay(sp.end)) / 10 * 2) / 2; delete pp.from; delete S.meta.capRates;
+      return got === want && haveDays({...pp, from:'2026-10-14'}, isoToDay(sp.start), isoToDay(sp.end)) === 8; })()`) === true);
+    ev(`act('workstream.setReserve', {id:'l-plat', reserve:null}); act('forecast.setReserve', {reserve:10})`);
+    ok('C6 a workstream with no reserve of its own uses the team\'s', near(one('p-morgan', 'l-plat', '2026-10-19'), 0.5 * 0.9));
+    ok('C6 reserves are whole percents up to 90', !ev(`applyAction(planOfRecord(S), 'workstream.setReserve', {id:'l-plat', reserve:95}).ok`) && !ev(`applyAction(planOfRecord(S), 'forecast.setReserve', {reserve:2.5}).ok`));
+    ok('C6 a split naming a workstream they aren\'t in is refused', /aren't in/.test(ev(`applyAction(planOfRecord(S), 'person.setSplit', {id:'p-casey', lanes:{'l-plat':50}}).reason`)));
+    ok('C7 normalize clamps reserves and weights, drops a leaving day before joining, and odd keys', ev(`(()=>{ const P = clone(planOfRecord(S)); P.lanes[0].reserve = 400; P.people[0].lanes = {'l-plat':250, '__proto__':5, 'l-data':'x'}; P.people[0].from = '2026-11-01'; P.people[0].leaves = '2026-10-01'; P.meta.forecast = {reserve:-5};
+      const n = normalize(P, false); return n.lanes[0].reserve === 90 && JSON.stringify(n.people[0].lanes) === '{"l-plat":100}' && !n.people[0].leaves && n.people[0].from === '2026-11-01' && n.meta.forecast.reserve === 0; })()`) === true);
+    ok('C8 the plan names capacity1 (not forecast1, which 1.102.0 knows), and keeps it all through JSON and YAML', ev(`featuresIn(S).includes('capacity1') && !featuresIn(S).includes('forecast1')`) && ev(`['p.json','p.yaml'].every(n=>{ const P = parseText(serialize(planOfRecord(S), n)); return P.meta.forecast.reserve === 10 && JSON.stringify(P.people.find(p=>p.id === 'p-avery').lanes) === JSON.stringify({'l-plat':0, 'l-data':100}); })`) === true);
+    ok('C8 a copy that knows forecast1 but not capacity1 opens the plan read-only', ev(`(()=>{ const k = KNOWN_FEATURES.splice(KNOWN_FEATURES.indexOf('capacity1'), 1); try { return !!tooNew(parseText(serialize(planOfRecord(S), 'p.json'))); } finally { KNOWN_FEATURES.push(...k); } })()`) === true);
+    ev(`select('person', 'p-avery')`);
+    ok('C9 the person card has Joins on, Leaves on, and the split for someone in two workstreams', !!d.querySelector('#f-pfrom') && !!d.querySelector('#f-pleaves') && !!d.querySelector('#f-split-l-data') && d.querySelector('#f-split-l-data').value === '100');
+    ev(`document.getElementById('f-split-l-plat').value = '40'; document.getElementById('f-split-l-data').value = '60'; document.getElementById('f-split-l-data').dispatchEvent(new Event('change'))`);
+    ok('C9 …and editing the split saves the weights', ev(`JSON.stringify(personById('p-avery').lanes)`) === JSON.stringify({'l-plat':40, 'l-data':60}));
+    ev(`select('person', 'p-morgan')`);
+    ok('C9 someone in one workstream has no split', !d.querySelector('#f-split'));
+    ev(`select('lane', 'l-plat')`);
+    ok('C10 the workstream card has its reserve and this week\'s capacity in person-weeks', !!d.querySelector('#f-lreserve') && /person-weeks? for planned work, after a 10% reserve/.test((d.querySelector('#f-lcap') || {}).textContent || ''), (d.querySelector('#f-lcap') || {}).textContent);
+    ev(`document.getElementById('f-lreserve').value = '30'; document.getElementById('f-lreserve').dispatchEvent(new Event('change'))`);
+    ok('C10 …and setting it saves it', ev(`S.lanes.find(l=>l.id === 'l-plat').reserve`) === 30);
+    ok('C11 review lines say what happens', /keeps 30% back/.test(ev(`actLine('workstream.setReserve', {id:'l-plat', reserve:30}, S)`)) && /^Split "Avery" across workstreams: "Platform" 40, "Data" 60$/.test(ev(`actLine('person.setSplit', {id:'p-avery', lanes:{'l-plat':40, 'l-data':60}}, S)`)));
+    ok('C12 drawing never writes the plan', ev(`(()=>{ const a = JSON.stringify(planOfRecord(S)); render(); select('lane', 'l-data'); select('person', 'p-avery'); return JSON.stringify(planOfRecord(S)) === a; })()`) === true);
+    ok('no runtime errors', ev('window.errors.length') === 0, ev('window.errors.join(" | ")'));
+  } catch(e){ ok('harness ran', false, e && e.stack ? e.stack.split('\n').slice(0, 3).join(' ') : e); }
+  console.log(checks.join('\n')); const f = checks.filter(c=>c.startsWith('FAIL')).length;
+  console.log(`\n${checks.length - f}/${checks.length} passed`); process.exit(f ? 1 : 0);
+})();
