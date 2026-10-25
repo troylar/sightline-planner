@@ -374,11 +374,16 @@ button.flag{border:0;background:transparent;font-family:inherit;cursor:pointer;c
 .amplain{white-space:pre-wrap;overflow-wrap:anywhere;margin:2px 0}
 @media print{.md pre{white-space:pre-wrap}}
 .lwrap{overflow-x:auto}.ltable{width:100%;border-collapse:collapse;font-size:13px}.ltable th[scope=col]{text-align:left;font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;padding:6px 8px;border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--surface)}
-.ltable td,.ltable .lname{padding:5px 8px;border-bottom:1px solid var(--rule-2);vertical-align:top;text-align:left;font-weight:normal}.ltable .ld{white-space:nowrap;color:var(--ink-2)}.ltable tr.lrow{cursor:pointer}.ltable tr.lrow:hover td,.ltable tr.lrow:hover th{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.ltable td,.ltable .lname{padding:5px 8px;border-bottom:1px solid var(--rule-2);vertical-align:top;text-align:left;font-weight:normal}.ltable .ld{color:var(--ink-2)}.ltable .lname{display:table-cell;border-right:0;cursor:inherit}.ltable .lname .lt{font-size:inherit;color:inherit}
+.ltable .nw,.ltable .nw *{white-space:nowrap}.ltable.lfixed{table-layout:fixed}.ltable.lfixed td,.ltable.lfixed th{overflow:hidden;overflow-wrap:anywhere}.ltable.lfixed .nw,.ltable.lfixed .nw>*{overflow:hidden;text-overflow:ellipsis}
+.lrz{position:absolute;top:0;right:0;width:9px;height:100%;cursor:col-resize;touch-action:none;z-index:1}.lrz::after{content:"";position:absolute;right:3px;top:22%;bottom:22%;width:2px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .12s}
+.ltable thead th:hover .lrz::after{opacity:.45}.lrz:hover::after,.lrz.drag::after,.lrz:focus-visible::after{opacity:1}.lrz:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}body.lresizing,body.lresizing *{cursor:col-resize!important;user-select:none}
+.listcols{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 18px;align-items:center;margin:0 0 10px;padding:8px 10px;border:1px solid var(--rule);border-radius:8px}.listcols .lcrow{display:flex;gap:8px;align-items:baseline}.listcols .lcname{font-weight:600;min-width:72px}.listcols .btn{justify-self:start}.listcols p{grid-column:1/-1;margin:2px 0 0}
+@media (prefers-reduced-motion:reduce){.lrz::after{transition:none}}.ltable tr.lrow{cursor:pointer}.ltable tr.lrow:hover td,.ltable tr.lrow:hover th{background:color-mix(in srgb,var(--accent) 6%,transparent)}
 .ltable tr.lrow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}.ltable tr.lsel td,.ltable tr.lsel th{background:color-mix(in srgb,var(--accent) 12%,transparent)}.ltable tr.lhead .lt{font-weight:600}.ltable tr.lgroup th{text-align:left;padding:10px 8px 4px;font-size:13px;border-bottom:1px solid var(--rule)}
 .ltable th.lname{text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink);font-family:inherit}
 .ltable .lkey{margin-left:6px;font-size:11px;color:var(--ink-3)}.ltable .lin,.ltable .lwhy{display:block}.ltable .lshared{margin-left:6px;font-size:11px;padding:0 5px;border-radius:8px;border:1px solid var(--rule);color:var(--ink-2)}.lwaits{margin:0;padding:0;list-style:none}.lwaits li{margin:0 0 2px}.ltable tr.loff td{color:var(--ink-3)}
-@media print{body.on-list>:not(#ws-list){display:none!important}body.on-list #ws-list{display:block!important}body.on-list .listbar,body.on-list .listcopy,body.on-list #listSelHidden{display:none!important}body.on-list .lwrap{overflow:visible}body.on-list .ltable th[scope=col]{position:static}body.on-list .ltable thead{display:table-header-group}body.on-list .ltable tr{break-inside:avoid}body.on-list .panel{border:0;box-shadow:none}}
+@media print{body.on-list>:not(#ws-list){display:none!important}body.on-list #ws-list{display:block!important}body.on-list .listbar,body.on-list .listcopy,body.on-list #listSelHidden{display:none!important}body.on-list .lwrap{overflow:visible}body.on-list .ltable th[scope=col]{position:static}body.on-list .ltable thead{display:table-header-group}body.on-list .ltable tr{break-inside:avoid}body.on-list .ltable.lfixed{table-layout:auto;width:100%!important}body.on-list .ltable .nw,body.on-list .ltable .nw *{white-space:normal}body.on-list .lrz{display:none}body.on-list .panel{border:0;box-shadow:none}}
 .fcsum{font-size:14px;margin:0 0 10px}.fcsum.incomplete{color:var(--warn)}.fctable td,.fcloadt td{padding:4px 8px;border-bottom:1px solid var(--rule-2);vertical-align:top}.fctable tr.nodate td{color:var(--ink-3)}.fcwhytd{font-size:12px;color:var(--ink-2);max-width:360px}.fch3{font-size:14px;margin:16px 0 4px}.fcchain{margin:4px 0 6px 18px;padding:0;font-size:13px}.fcloadt tr.over td:nth-child(4){color:var(--bad);font-weight:600}
 .fcload{display:block}.fcl-fixed{fill:var(--ink-3)}.fcl-used{fill:var(--accent)}.fcl-hatch{stroke:var(--warn);stroke-width:2}.fcl-cap{fill:none;stroke:var(--ink);stroke-width:1.5}
 .fcwhy{font-size:12px;color:var(--ink-3);margin-top:4px}.fcwhy summary{cursor:pointer}.fcwhy ol{margin:4px 0 0 18px;padding:0}.fcwhy li{margin:2px 0}
@@ -13871,6 +13876,64 @@ function listCopy(text){
   try { if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(done, fallback); } catch(e){}
   fallback();
 }
+// Column widths and wrapping are the viewer's own, kept in this browser. The first resize fixes every column at the width
+// it shows, so nothing else jumps; a column that doesn't wrap keeps one line, cut short with the full text on hover.
+const LIST_COLS = [["start", "Start", 96], ["end", "End", 96], ["item", "Item", 320], ["owner", "Owner", 180], ["waits", "Waits on", 220], ["status", "Status", 170]];
+const LCOL_MIN = 48, LCOL_MAX = 900, LCOL_NW = ["start", "end"], lcolW = v => Math.round(Math.max(LCOL_MIN, Math.min(LCOL_MAX, v)));
+let listColsOpen = false;
+function listCols(){
+  const o = UI.listCols && typeof UI.listCols === "object" ? UI.listCols : {}, ids = LIST_COLS.map(c=>c[0]), w = {};
+  if (o.w && typeof o.w === "object") ids.forEach(k=>{ const v = Number(o.w[k]); if (Number.isFinite(v) && v > 0) w[k] = lcolW(v); });
+  return {w, nw:Array.isArray(o.nw) ? ids.filter(k=>o.nw.includes(k)) : LCOL_NW.slice()};
+}
+function setListCols(c){
+  const plain = !Object.keys(c.w).length && c.nw.length === LCOL_NW.length && LCOL_NW.every(k=>c.nw.includes(k));
+  if (plain) delete UI.listCols; else UI.listCols = {w:{...c.w}, nw:c.nw.slice()};
+  saveUI();
+}
+function listFixAll(c){
+  const ths = [...document.querySelectorAll("#listTable thead th[data-col]")];
+  LIST_COLS.forEach(([k, , d])=>{ if (c.w[k]) return; const th = ths.find(t=>t.dataset.col === k), m = th ? th.getBoundingClientRect().width : 0; c.w[k] = lcolW(m || d); });
+  return c;
+}
+function listApplyCols(tbl, c){
+  if (!tbl) return; const fixed = Object.keys(c.w).length > 0, wOf = (k, d) => c.w[k] || d;
+  tbl.classList.toggle("lfixed", fixed); tbl.style.width = fixed ? LIST_COLS.reduce((n, [k, , d])=>n + wOf(k, d), 0) + "px" : "";
+  LIST_COLS.forEach(([k, label, d])=>{ const col = tbl.querySelector(`col[data-col="${k}"]`), rz = tbl.querySelector(`.lrz[data-col="${k}"]`);
+    if (col) col.style.width = fixed ? wOf(k, d) + "px" : "";
+    if (rz){ if (fixed) rz.setAttribute("aria-valuenow", String(wOf(k, d))); else rz.removeAttribute("aria-valuenow");
+      rz.setAttribute("aria-valuetext", fixed ? `${wOf(k, d)} pixels` : "fits its text"); } });
+}
+function listResizeKey(e, k){
+  const step = e.shiftKey ? 64 : 16, by = e.key === "ArrowRight" ? step : e.key === "ArrowLeft" ? -step : 0; if (!by) return;
+  e.preventDefault(); e.stopPropagation();
+  const c = listFixAll(listCols()); c.w[k] = lcolW(c.w[k] + by); setListCols(c); listApplyCols($("#listTable"), c);
+}
+function listResizeDrag(e, k){
+  if (e.button !== 0) return; e.preventDefault(); e.stopPropagation();
+  const t = e.currentTarget, tbl = $("#listTable"), c = listFixAll(listCols()), x0 = e.clientX, w0 = c.w[k];
+  try { t.setPointerCapture(e.pointerId); } catch(_){}
+  t.classList.add("drag"); document.body.classList.add("lresizing"); listApplyCols(tbl, c);
+  const move = ev => { c.w[k] = lcolW(w0 + ev.clientX - x0); listApplyCols(tbl, c); };
+  const end = () => { ["pointermove", "pointerup", "pointercancel"].forEach((n, i)=>t.removeEventListener(n, i ? end : move));
+    t.classList.remove("drag"); document.body.classList.remove("lresizing"); setListCols(c); };
+  t.addEventListener("pointermove", move); t.addEventListener("pointerup", end); t.addEventListener("pointercancel", end);
+}
+function listResizeReset(e, k){
+  e.preventDefault(); e.stopPropagation(); const c = listCols(); if (!c.w[k]) return;
+  c.w[k] = LIST_COLS.find(x=>x[0] === k)[2]; setListCols(c); listApplyCols($("#listTable"), c);
+}
+function listColsPanel(c){
+  const fixed = Object.keys(c.w).length > 0, plain = !fixed && c.nw.length === LCOL_NW.length && LCOL_NW.every(k=>c.nw.includes(k));
+  return h("div",{class:"listcols",id:"listColsBox",role:"group","aria-label":"List columns"},
+    ...LIST_COLS.map(([k, label, d])=>h("div",{class:"lcrow"}, h("span",{class:"lcname"}, label),
+      h("label",{}, h("input",{type:"checkbox",id:"lcw-" + k,checked:!c.nw.includes(k),onchange:e=>{ const n = listCols();
+        n.nw = e.target.checked ? n.nw.filter(x=>x !== k) : [...n.nw, k]; setListCols(n); renderList(); const f = $("#lcw-" + k); if (f) f.focus(); }}), " Wrap text"),
+      h("span",{class:"hint"}, fixed ? `${c.w[k] || d} px` : "fits its text"))),
+    h("button",{type:"button",class:"btn",id:"listColsReset",disabled:plain,onclick:()=>{ setListCols({w:{}, nw:LCOL_NW.slice()}); renderList(); const f = $("#listColsToggle"); if (f) f.focus();
+      setStatus("The List's columns fit their text again, and only the dates stay on one line."); }}, "Reset columns"),
+    h("p",{class:"hint"}, "Drag the edge of a column's heading to resize it, or focus the edge and use the arrow keys (Shift for bigger steps). Double-click an edge for its default width. These settings are yours, in this browser."));
+}
 function renderList(){
   const host = $("#listWs"); if (!host) return;
   const layout = listLayout(), m = listModel(), groups = listGroups(m, layout), keyOf = r => `list:${r.type}:${r.id}`;
@@ -13879,8 +13942,9 @@ function renderList(){
   const items = shown.size, sum = [`${items} item${items === 1 ? "" : "s"}`];
   if (m.hidden.work) sum.push(`${m.hidden.work} hidden by filters` + (m.hidden.headers ? ` (and ${m.hidden.headers} initiative${m.hidden.headers === 1 ? "" : "s"} with nothing shown)` : ""));
   if (m.off.length) sum.push(`${m.off.length} not on the timeline (parked, switched off or undated), listed at the end`);
+  const lc = listCols(), cc = (k, cls) => ({"data-col":k, class:(cls ? cls + " " : "") + (lc.nw.includes(k) ? "nw" : "")});
   const row = (r, g) => { const o = listOwners(r.type, r.x), s = listStatus(r.type, r.x), w = listRowWaits(r, layout), on = cur && cur.type === r.type && cur.id === r.id;
-    const name = h(r.header ? "th" : "td",{class:"lname", ...(r.header ? {scope:"row"} : {}), style:layout === "initiative" ? {paddingLeft:(8 + r.depth * 18) + "px"} : null},
+    const name = h(r.header ? "th" : "td",{...cc("item", "lname"), ...(r.header ? {scope:"row"} : {}), style:layout === "initiative" ? {paddingLeft:(8 + r.depth * 18) + "px"} : null},
       h("span",{class:"lt"}, r.label), r.key && r.type !== "bar" ? h("span",{class:"lkey mono"}, r.key) : null,
       r.header ? h("span",{class:"hint"}, ` ${r.count} item${r.count === 1 ? "" : "s"}`) : null,
       layout !== "initiative" && r.type !== "bar" ? h("span",{class:"hint lin"}, `in ${chartLabel(r.b)}`) : null, r.shared ? h("span",{class:"lshared"}, "shared") : null,
@@ -13889,10 +13953,13 @@ function renderList(){
       : x.url ? h("a",{href:x.url,target:"_blank",rel:"noopener noreferrer",class:"linkish",onclick:e=>e.stopPropagation()}, x.text + " ↗") : x.text))) : "";
     return h("tr",{class:["lrow", r.header ? "lhead" : "", on ? "lsel" : "", r.why ? "loff" : ""].join(" "), tabindex:"-1", "data-key":keyOf(r) + (g && g.person != null ? "@" + g.person : ""), "data-lk":keyOf(r),
       "data-peek-type":r.type, "data-peek-id":r.id, "aria-selected":on ? "true" : "false", onclick:()=>{ listFocus = keyOf(r); select(r.type, r.id); }},
-      h("td",{class:"ld"}, listWhen(r.s)), h("td",{class:"ld"}, listWhen(r.e)), name, h("td",{class:"lown"}, ...o.text.map((t, i)=>h("div",{class:i ? "hint" : ""}, t))),
-      h("td",{class:"lw"}, waits), h("td",{class:"lst"}, h("div",{}, s.text), s.jira ? h("div",{class:"hint"}, s.jira) : null));
+      h("td",cc("start", "ld"), listWhen(r.s)), h("td",cc("end", "ld"), listWhen(r.e)), name, h("td",cc("owner", "lown"), ...o.text.map((t, i)=>h("div",{class:i ? "hint" : ""}, t))),
+      h("td",cc("waits", "lw"), waits), h("td",cc("status", "lst"), h("div",{}, s.text), s.jira ? h("div",{class:"hint"}, s.jira) : null));
   };
-  const head = h("thead",{}, h("tr",{}, ...["Start", "End", "Item", "Owner", "Waits on", "Status"].map(t=>h("th",{scope:"col"}, t))));
+  const head = h("thead",{}, h("tr",{}, ...LIST_COLS.map(([k, t])=>h("th",{scope:"col","data-col":k}, t,
+    h("span",{class:"lrz",role:"separator",tabindex:"0","data-col":k,"aria-orientation":"vertical","aria-label":`Resize the ${t} column`,"aria-valuemin":String(LCOL_MIN),"aria-valuemax":String(LCOL_MAX),
+      title:"Drag to resize. Double-click for the default width.",onpointerdown:e=>listResizeDrag(e, k),onkeydown:e=>listResizeKey(e, k),ondblclick:e=>listResizeReset(e, k),onclick:e=>e.stopPropagation()})))));
+  const cols = h("colgroup",{}, ...LIST_COLS.map(([k])=>h("col",{"data-col":k})));
   const bodies = groups.map(g=>h("tbody",{...(g.label ? {"aria-label":`${g.label}, ${g.rows.length} item${g.rows.length === 1 ? "" : "s"}`} : {})},
     g.label ? h("tr",{class:"lgroup"}, h("th",{scope:"colgroup",colspan:"6"}, g.label, h("span",{class:"hint"}, ` ${g.rows.length} item${g.rows.length === 1 ? "" : "s"}`))) : null, ...g.rows.map(r=>row(r, g))));
   const offBody = m.off.length ? [h("tbody",{class:"loffg"}, h("tr",{class:"lgroup"}, h("th",{scope:"colgroup",colspan:"6"},
@@ -13903,12 +13970,16 @@ function renderList(){
     h("div",{class:"listbar"},
       h("div",{class:"seg",role:"group","aria-label":"List layout"}, ...LIST_LAYOUTS.map(([k, label])=>h("button",{type:"button",class:"btn" + (k === layout ? " on" : ""),"aria-pressed":String(k === layout),"data-layout":k,onclick:()=>setListLayout(k)}, label))),
       h("span",{class:"hint",id:"listSummary"}, sum.join(". ") + "."),
+      h("button",{type:"button",class:"btn" + (listColsOpen ? " on" : ""),id:"listColsToggle","aria-expanded":String(listColsOpen),"aria-controls":"listColsBox",onclick:()=>{ listColsOpen = !listColsOpen; renderList(); const f = $("#listColsToggle"); if (f) f.focus(); }}, "Columns"),
       h("button",{type:"button",class:"btn",id:"listCopy",onclick:()=>listCopy(md())}, "Copy as table"),
       h("button",{type:"button",class:"btn",id:"listPrint",onclick:()=>window.print()}, "Print")),
     h("div",{id:"listCopyBox",class:"listcopy",hidden:true}, h("label",{class:"hint",for:"listCopyText"}, "The table, as markdown: select it and copy."), h("textarea",{id:"listCopyText",readonly:true,rows:"8"})),
+    listColsOpen ? listColsPanel(lc) : null,
     selHidden ? h("p",{class:"hint",id:"listSelHidden"}, "The selected item is hidden by the current filters, so it isn't in the list. Its details stay open.") : null,
-    items || m.off.length ? h("div",{class:"lwrap"}, h("table",{class:"ltable",id:"listTable","aria-label":`The plan's work, ${LIST_LAYOUTS.find(x=>x[0] === layout)[1].toLowerCase()}`}, head, ...bodies, ...offBody))
+    items || m.off.length ? h("div",{class:"lwrap"}, h("table",{class:"ltable",id:"listTable","aria-label":`The plan's work, ${LIST_LAYOUTS.find(x=>x[0] === layout)[1].toLowerCase()}`}, cols, head, ...bodies, ...offBody))
       : h("p",{class:"hint",id:"listEmpty"}, m.hidden.work ? "The current filters hide all the work." : "No work yet. Add initiatives and tasks on the Timeline.")].filter(Boolean));
+  listApplyCols($("#listTable"), lc);
+  host.querySelectorAll("#listTable .nw").forEach(td=>{ const t = td.textContent.replace(/\s+/g, " ").trim(); if (t) td.title = t; });   // one line, cut short: the rest on hover
   const rowsEl = [...host.querySelectorAll("tr[data-lk]")], pick = rowsEl.find(x=>x.classList.contains("lsel")) || rowsEl[0]; if (pick) pick.tabIndex = 0;
   if (listFocus && !sel){ const t = rowsEl.find(x=>x.dataset.lk === listFocus); listFocus = null; if (t){ t.tabIndex = 0; if (pick && pick !== t) pick.tabIndex = -1; t.focus({preventScroll:false}); } }
 }
