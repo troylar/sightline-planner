@@ -95,6 +95,27 @@ const act = (action, args)=>({op:'action', action, args});
     ok('X2 the heartbeat says editing', status().state === 'editing');
     ev("file.handle = realHandle; file.baseText = realBase; file.dirty = false");
 
+    // Pause, and risk by size
+    ev("amSetLevel('routine')"); await wait(30);
+    ev("sel = {type:'amend', id:'x'}; render()"); d.querySelector('#amPause').click(); await wait(30);
+    send('b-pause', [{id:'p1', summary:'A risk', ops:[act('risk.add', {id:'risk-p', text:'While paused'})]}]); await tick();
+    ok('P1 Pause: nothing applies, the results say paused, and so does the heartbeat', !ev("S.risks.some(r=>r.id==='risk-p')") && change('p1').held && change('p1').held.code === 'paused' && status().state === 'paused', JSON.stringify([change('p1').held, status().state]));
+    ok('P1 …and the panel offers Resume', d.querySelector('#amPause') && d.querySelector('#amPause').textContent === 'Resume');
+    d.querySelector('#amPause').click(); await wait(30); await tick();
+    ok('P2 Resume applies it', ev("S.risks.some(r=>r.id==='risk-p')") && change('p1').outcome === 'applied', JSON.stringify(change('p1')));
+    ev(`(()=>{ const P = planOfRecord(S), lane = P.lanes[0].id; for (let i = 0; i < 7; i++) P.bars.push({id:'z' + i, lane, start:0.2 * i, span:0.2, label:'Chain ' + i, status:'notstarted', owners:[], tasks:[], dependsOn:i ? ['z' + (i - 1)] : []});
+      S = normalize(P, false); render(); })()`);
+    const late = ev("S.bars.filter(b=>!b.id.startsWith('z') && !(b.tasks || []).length && !b.jira).sort((a, b)=>(b.start + b.span) - (a.start + a.span))[0].id");
+    send('b-big', [{id:'z', summary:'Start the chain later', ops:[act('link.add', {id:'z0', after:late})]}]); await tick();
+    ok('Z1 at "routine" a change that moves more than 5 other items waits for review and says how many', ev("!(barById('z0').dependsOn || []).includes(" + JSON.stringify(late) + ")") && change('z').held && /moves \d+ other items/.test(change('z').held.reason), JSON.stringify(change('z')));
+    ev("amSetLevel('all')"); await wait(30); await tick();
+    ok('Z2 at "all" it applies', ev("(barById('z0').dependsOn || []).includes(" + JSON.stringify(late) + ")") && change('z').outcome === 'applied', JSON.stringify(change('z')));
+    ev("amSetLevel('routine')"); await wait(30);
+    const many = n => [0, 1, 2].map(c=>({id:'m' + c, summary:'Risks', ops:Array.from({length:n}, (_, i)=>act('risk.add', {id:`risk-m${c}-${i}`, text:'Many'}))}));
+    send('b-many', many(20)); await tick();
+    ok('Z3 at "routine" a batch touching more than 50 items waits for review', !ev("S.risks.some(r=>r.id==='risk-m0-0')") && change('m0').held && /more than 50/.test(change('m0').held.reason), JSON.stringify(change('m0')));
+    send('b-some', many(10).map(c=>({...c, id:c.id + 'b', ops:c.ops.map(o=>({...o, args:{...o.args, id:o.args.id + 'b'}}))}))); await tick();
+    ok('Z4 …and a batch of 30 applies', ev("S.risks.some(r=>r.id==='risk-m0-0b')") && change('m0b').outcome === 'applied', JSON.stringify(change('m0b')));
     ev("Object.defineProperty(document, 'hidden', {configurable:true, get:()=>true})");
     send('b-hidden', [{id:'h1', summary:'A risk', ops:[act('risk.add', {id:'risk-h', text:'In the background'})]}]); await tick();
     ok('B1 a background tab still applies when changes apply on their own', ev("S.risks.some(r=>r.id==='risk-h')"));

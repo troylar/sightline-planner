@@ -1,5 +1,27 @@
 [
   {
+    "version": "1.101.0",
+    "date": "2026-10-24",
+    "headline": "Pause your assistant, and big changes wait for you",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "Pause and Resume",
+        "now": "One click stops anything your assistant writes from applying on its own, whatever level you picked, until you click Resume. You can still review and apply changes by hand, and your assistant is told it's paused.",
+        "where": "Assistant panel, Pause"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Changes that move a lot wait for your review",
+        "now": "When your assistant's changes apply routine changes on their own, a change that would move more than 5 other items, or a batch touching more than 50 items, waits for you instead, and says why. At Apply everything, they apply as before.",
+        "before": "Any routine change applied on its own, however much of the plan it moved.",
+        "where": "Assistant panel, When your assistant writes changes"
+      }
+    ]
+  },
+  {
     "version": "1.100.0",
     "date": "2026-10-24",
     "headline": "See what your assistant changed, and undo a whole batch",
