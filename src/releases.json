@@ -1,5 +1,49 @@
 [
   {
+    "version": "1.106.0",
+    "date": "2026-10-25",
+    "headline": "The whole forecast in one place",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Capacity",
+        "title": "A Forecast section in Capacity",
+        "now": "Capacity opens with the forecast for the whole plan: one line with how many items, their effort and the likely and high finish, then every initiative with its effort, start, likely and high finish, and why it starts when it does. Click an initiative to open it on the timeline.",
+        "where": "Capacity, Forecast"
+      },
+      {
+        "kind": "new",
+        "area": "Capacity",
+        "title": "See when the forecast isn't complete",
+        "now": "When any initiative has no forecast date (no effort, nobody to do it, or waiting on something with no date), the summary says the forecast is incomplete, counts why, and doesn't claim a finish date for everything.",
+        "where": "Capacity, Forecast"
+      },
+      {
+        "kind": "new",
+        "area": "Capacity",
+        "title": "The chain behind the last finish, and load by workstream",
+        "now": "Under the table: the critical chain that sets the last finish date, the workstream the waiting was for, and each workstream's demand against its people's time, with a weekly chart of Jira-dated work, forecast work and ready work waiting.",
+        "where": "Capacity, Forecast"
+      },
+      {
+        "kind": "fixed",
+        "area": "Forecast",
+        "title": "Overlapping waits are counted once",
+        "now": "When naming the workstream most of the waiting was for, a working day that several steps of the chain spent waiting counts once.",
+        "before": "Overlapping waits were added together, so the count could be longer than the whole forecast.",
+        "where": "Initiative card, \"Why it finishes then\""
+      },
+      {
+        "kind": "improved",
+        "area": "Forecast",
+        "title": "Clearer reasons",
+        "now": "Reasons read as plain sentences: \"It starts then because it waited for Schema cleanup (finishes Nov 13).\"",
+        "before": "\"It starts then because waited for Schema cleanup.\"",
+        "where": "Initiative card and Capacity, Forecast"
+      }
+    ]
+  },
+  {
     "version": "1.105.1",
     "date": "2026-10-25",
     "headline": "People rows draw their work again, and the assistant scripts travel with the page",
