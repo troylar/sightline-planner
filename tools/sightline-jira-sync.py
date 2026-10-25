@@ -1853,6 +1853,11 @@ ACTIONS = {
     "sprint.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "sprint.add": ({"id": "id", "name": "str?", "goal": "str?"}, False),
     "sprint.addThrough": ({"date": "iso"}, False),
+    "jira.toWorkstream": ({"keys": "keys", "lane": "id", "epic": "str?"}, False),
+    "jira.toInitiative": ({"keys": "keys", "id": "id", "epic": "str?"}, False),
+    "jira.notOurs": ({"keys": "keys"}, False),
+    "jira.epicLink": ({"epic": "str", "id": "id"}, False),
+    "jira.epicNew": ({"epic": "str", "lane": "id", "id": "id?"}, False),
     "risk.add": ({"id": "id?", "text": "str", "sev": "any?", "state": "any?", "owners": "any?", "item": "any?", "next": "any?", "waitingOn": "any?", "escalateBy": "any?"}, False),
     "risk.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "risk.del": ({"id": "id"}, False),
@@ -1863,7 +1868,7 @@ ACTIONS = {
 ACT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,79}$")
 # What an id-like argument points at, by the action's first word (id) or the argument's own name.
 ACT_REF_BY_NOUN = {"initiative": "bar", "link": "bar", "task": "task", "outcome": "dv", "workstream": "lane", "person": "person",
-                   "milestone": "ms", "gate": "gate", "risk": "risk", "decision": "dec", "sprint": "sprint"}
+                   "milestone": "ms", "gate": "gate", "risk": "risk", "decision": "dec", "sprint": "sprint", "jira": "bar"}
 ACT_REF_BY_ARG = {"outcome": "dv", "after": "bar", "parent": "bar", "target": "bar", "bar": "bar", "lane": "lane", "person": "person",
                   "owners": "person", "members": "person", "item": "bar", "decider": "person"}
 
@@ -1927,6 +1932,8 @@ def check_action_op(o, at: str, ids: dict, made: dict) -> str:
             return f"{at}: {k} isn't a valid {'date (YYYY-MM-DD)' if ty in ('iso', 'isoOrNull') else 'list' if ty in ('ids', 'keys') else 'id' if ty == 'id' else 'number' if ty in ('num', 'int') else 'split ({workstream id: weight})' if ty == 'weights' else 'value'}."
     noun, verb = name.split(".", 1)
     creates = verb == "add" and noun not in ("link",)
+    if name == "jira.epicNew" and isinstance(args.get("id"), str) and args["id"]:      # its id is optional: the page makes a stable one from the epic key
+        made.setdefault("bar", set()).add(args["id"])
     if creates and "id" in spec and not (isinstance(args.get("id"), str) and args["id"]):
         return f"{at}: give the new item an id (like risk-vendor-limits), so reading the file again can't add it twice"
     for k, v in args.items():
@@ -1937,7 +1944,7 @@ def check_action_op(o, at: str, ids: dict, made: dict) -> str:
             kind = "bar"
         if name == "initiative.waitFor" and k == "gate":
             kind = "gate|block"
-        if not kind or (k == "id" and creates) or name.endswith(".remove") and k != "id" or name in ("link.remove", "initiative.unwait", "task.unlink", "milestone.doneWhen.remove", "workstream.removeMember", "outcome.unlinkJira") and k != "id":
+        if not kind or (k == "id" and (creates or name == "jira.epicNew")) or name.endswith(".remove") and k != "id" or name in ("link.remove", "initiative.unwait", "task.unlink", "milestone.doneWhen.remove", "workstream.removeMember", "outcome.unlinkJira") and k != "id":
             continue
         vals = v if isinstance(v, list) else [v]
         for x in vals:
@@ -1945,6 +1952,8 @@ def check_action_op(o, at: str, ids: dict, made: dict) -> str:
                 continue
             if not any(x in ids.get(kd, set()) or x in made.get(kd, set()) for kd in kind.split("|")):
                 return f"{at}: {x[:60]} isn't in the plan (for {k})"
+    if noun == "jira" and isinstance(args.get("keys"), list) and len({str(k).strip().upper() for k in args["keys"]}) > 100:
+        return f"{at}: one change places up to 100 issues"
     if creates and isinstance(args.get("id"), str):
         made.setdefault(ACT_REF_BY_NOUN.get(noun, noun), set()).add(args["id"])
     return ""
@@ -2081,6 +2090,10 @@ def am_parse(text: str, plan: dict) -> tuple[dict | None, str]:
         ops = c.get("ops")
         if not isinstance(ops, list) or not ops or len(ops) > AM_MAX_OPS:
             return None, f'Change "{c["id"]}" needs 1 to {AM_MAX_OPS} ops.'
+        if c.get("reason") is not None and not isinstance(c.get("reason"), str):
+            return None, f'Change "{c["id"]}": reason is one line of text.'
+        if c.get("confidence") is not None and c.get("confidence") not in ("high", "low"):
+            return None, f'Change "{c["id"]}": confidence is "high" or "low".'
     return o, ""
 
 

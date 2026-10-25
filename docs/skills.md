@@ -36,6 +36,7 @@ Sightline tab writing its outputs. [Connect the folder and complete a session](a
 | [sightline-review-plan](../skills/sightline-review-plan/SKILL.md) | A snapshot and review scope | Read-only findings with evidence and coverage limits |
 | [sightline-status](../skills/sightline-status/SKILL.md) | Current context; optional matching results | Read-only update for the audience you name |
 | [sightline-planning-guide](../skills/sightline-planning-guide/SKILL.md) | Team scope and workstream distinctions | Copy-ready guidance for Settings → Planning guide |
+| [sightline-sort-jira](../skills/sightline-sort-jira/SKILL.md) | What's waiting in Sort Jira work | Reviewed placements with reasons, and a list of what it couldn't place |
 
 ## What happens to your plan
 
@@ -79,6 +80,6 @@ folder and compare before carrying your edits forward.
 
 ## Check a skill after changing it
 
-Use the [synthetic skill evaluation](skill-evaluation.md) to exercise all six skills with isolated assistant
+Use the [synthetic skill evaluation](skill-evaluation.md) to exercise the skills with isolated assistant
 tasks. It checks proposal files and preserved inputs, with separate review criteria for the assistant's
 explanations. Installation tests alone do not establish planning quality. The evaluation tooling is maintained with newer source builds; confirm it exists in your checkout before running it.

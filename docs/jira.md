@@ -45,6 +45,9 @@ that computer. The default output is a **jira** folder beside the plan.
    first** before choosing to follow Jira's sprints.
 4. Use **Work → Sort Jira work** to arrange returned issues. Open an item: **From Jira** stays read-only;
    **Added here** is your planning context.
+   Your assistant can propose where each issue goes (the **Sort Jira work** skill); you review every placement in
+   **Changes** before anything joins the plan, and nothing is written to Jira. See
+   [Sorting Jira work](assistant-workflow.md#sorting-jira-work).
 5. An initiative or task linked to an issue shows the issue's description as its story, marked **From Jira**
    (Sightline 1.109.0 or later, with the matching sync). The sync reads descriptions only for issues the plan links.
 

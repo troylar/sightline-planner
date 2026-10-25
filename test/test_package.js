@@ -17,7 +17,7 @@ try {
   ok('install succeeds in a new destination', run('install',dest).status === 0);
   ok('installed app is the exact built HTML', fs.readFileSync(path.join(dest,'sightline.html')).equals(fs.readFileSync(path.join(root,'dist/sightline.html'))));
   const skills = fs.readdirSync(path.join(dest,'.sightline/skills'));
-  ok('all six skills are installed', skills.length === 6 && skills.every(s=>fs.existsSync(path.join(dest,'.sightline/skills',s,'SKILL.md'))));
+  ok('all seven skills are installed', skills.length === 7 && skills.every(s=>fs.existsSync(path.join(dest,'.sightline/skills',s,'SKILL.md'))));
   for (const skill of skills) {
     const installed = fs.readFileSync(path.join(dest,'.sightline/skills',skill,'SKILL.md'),'utf8');
     const match = /^---\n([\s\S]*?)\n---/.exec(installed), meta = match && yaml.load(match[1]);

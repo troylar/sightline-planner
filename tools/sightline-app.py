@@ -177,6 +177,10 @@ def check_offline(folder: Path, batch: dict) -> list:
         if not isinstance(ops, list) or not ops:
             bad.append(f"{at}: no ops.")
             continue
+        if c.get("reason") is not None and not isinstance(c.get("reason"), str):
+            bad.append(f"{at}: reason is one line of text.")
+        if c.get("confidence") is not None and c.get("confidence") not in ("high", "low"):
+            bad.append(f'{at}: confidence is "high" or "low".')
         for oi, o in enumerate(ops, 1):
             where = f"{at}, op {oi}"
             if not isinstance(o, dict) or o.get("op") not in OPS:
@@ -204,6 +208,55 @@ def check_offline(folder: Path, batch: dict) -> list:
                     bad.append(f"{where}: {k} isn't a valid {'date (YYYY-MM-DD)' if t.startswith('iso') else t.rstrip('?')}.")
             if name.endswith(".add") and "id" in spec and not (isinstance(args.get("id"), str) and args["id"]):
                 bad.append(f"{where}: give the new item an id (like risk-vendor-limits), so reading the file again can't add it twice.")
+            if str(name).startswith("jira."):
+                bad.extend(f"{where}: {x}" for x in check_jira_place(ctx.get("jiraSort") or {}, name, args))
+    return bad
+
+
+JIRA_KEYS_MAX = 100
+
+
+def check_jira_place(sort: dict, name: str, args: dict) -> list:
+    """A Jira placement against the context's sort list: what's waiting to be sorted, what's already on the plan and where
+    work can go. Mirrors the page, which checks again: already where the change puts it is fine; somewhere else isn't."""
+    up = lambda v: str(v or "").strip().upper()
+    pile = {up(x.get("key")): x for x in sort.get("issues") or [] if isinstance(x, dict)}
+    placed = {up(k): v for k, v in (sort.get("placed") or {}).items() if isinstance(v, dict)}
+    epics = {up(x.get("key")) for x in sort.get("epics") or [] if isinstance(x, dict)}
+    targets = sort.get("targets") or {}
+    lanes = {x.get("id") for x in targets.get("workstreams") or [] if isinstance(x, dict)}
+    bars = {x.get("id"): x for x in targets.get("initiatives") or [] if isinstance(x, dict)}
+    bad = []
+    if name in ("jira.epicLink", "jira.epicNew"):
+        epic = up(args.get("epic"))
+        if epic not in epics:
+            bad.append(f"{epic[:40] or 'epic'} isn't an epic in jiraSort.epics.")
+    else:
+        keys = list(dict.fromkeys(up(k) for k in args.get("keys"))) if isinstance(args.get("keys"), list) else []
+        if not keys:
+            bad.append("list at least one Jira key in keys.")
+        if len(keys) > JIRA_KEYS_MAX:
+            bad.append(f"one change places up to {JIRA_KEYS_MAX} issues.")
+        dest = ("notOurs", None) if name == "jira.notOurs" else ("lane", args.get("lane")) if name == "jira.toWorkstream" else ("initiative", args.get("id"))
+        for k in keys:
+            if k in pile:
+                continue
+            w = placed.get(k)
+            if w is None:
+                bad.append(f"{k[:40]} isn't waiting to be sorted (it isn't in jiraSort.issues).")
+            elif not (w.get("kind") == "notOurs" if dest[0] == "notOurs" else w.get(dest[0]) == dest[1]):
+                bad.append(f"{k[:40]} is already on the plan somewhere else (jiraSort.placed).")
+        epic = up(args.get("epic"))
+        if epic and any(up(pile[k].get("epic")) != epic for k in keys if k in pile):
+            bad.append(f"every key in an epic group must be one of {epic[:40]}'s stories.")
+    if name in ("jira.toWorkstream", "jira.epicNew") and args.get("lane") not in lanes:
+        bad.append(f"{str(args.get('lane'))[:40]} isn't a workstream in jiraSort.targets.")
+    if name in ("jira.toInitiative", "jira.epicLink") and args.get("id") not in bars:
+        bad.append(f"{str(args.get('id'))[:40]} isn't an initiative that takes Jira work (jiraSort.targets.initiatives).")
+    if name == "jira.epicLink" and args.get("id") in bars:
+        held = [up(e) for e in bars[args.get("id")].get("epics") or []]
+        if up(args.get("epic")) not in held and len(held) >= 50:
+            bad.append(f"{str(args.get('id'))[:40]} already has 50 epics, the most an initiative holds.")
     return bad
 
 
@@ -295,15 +348,17 @@ def main(argv=None) -> int:
     ap.add_argument("--json", action="store_true", help="print one JSON object")
     ap.add_argument("--version", action="version", version=f"sightline-app.py for Sightline {PAGE_VERSION}" if PAGE_VERSION else "sightline-app.py (source copy, not stamped with a page version)")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    s = sub.add_parser("status", help="is a Sightline page answering for this folder?")
+    after = argparse.ArgumentParser(add_help=False)          # --json works after the command too, as the guide writes it
+    after.add_argument("--json", action="store_true", default=argparse.SUPPRESS, help="print one JSON object")
+    s = sub.add_parser("status", parents=[after], help="is a Sightline page answering for this folder?")
     s.add_argument("folder")
-    s = sub.add_parser("check", help="check a batch against the context you read, offline; nothing is written")
+    s = sub.add_parser("check", parents=[after], help="check a batch against the context you read, offline; nothing is written")
     s.add_argument("folder"); s.add_argument("batch")
-    s = sub.add_parser("send", help="check the heartbeat and context revision, then write the batch atomically")
+    s = sub.add_parser("send", parents=[after], help="check the heartbeat and context revision, then write the batch atomically")
     s.add_argument("folder"); s.add_argument("batch")
-    s = sub.add_parser("wait", help="wait until every change in a batch has an outcome")
+    s = sub.add_parser("wait", parents=[after], help="wait until every change in a batch has an outcome")
     s.add_argument("folder"); s.add_argument("batchId"); s.add_argument("--timeout", type=float, default=180)
-    s = sub.add_parser("run", help="send, then wait")
+    s = sub.add_parser("run", parents=[after], help="send, then wait")
     s.add_argument("folder"); s.add_argument("batch"); s.add_argument("--timeout", type=float, default=180)
     a = ap.parse_args(argv)
     folder = Path(a.folder)
