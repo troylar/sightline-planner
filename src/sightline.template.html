@@ -402,7 +402,7 @@ body.presenting .editstrip{display:none!important}
 #startEdit,#saveFile,#doneEdit{display:none!important}
 .wsbar{position:sticky;top:var(--toph,60px);z-index:19;display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:6px 16px;background:var(--paper);border-bottom:1px solid var(--rule-2)}
 .wsright{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.scopeline{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 120px}
+.scopeline{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 0}   /* the leftover room only: the controls keep one line */
 .viewctl{display:inline-flex;gap:6px;align-items:center}
 #viewBtn{max-width:280px}
 #viewBtn .vlabel{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px;display:inline-block;vertical-align:bottom}
@@ -441,7 +441,7 @@ body.presenting .editstrip{display:none!important}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:70;background:var(--tip-bg);color:var(--tip-ink);border-radius:8px;padding:9px 14px;font-size:13px;display:flex;gap:14px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.25)}
 .toast .linkish{color:inherit;font-weight:600}
 .review .scope{font-size:12.5px;color:var(--ink-2);margin-left:auto}
-@media (max-width:1150px){ .scopeline{display:none} }
+@media (max-width:1365px){ .scopeline{display:none} }   /* below this the toolbar needs the room */
 body.presenting #filterBtn,body.presenting #viewSave{display:none!important}
 .opick{display:flex;flex-wrap:wrap;gap:4px;align-items:center;border:1px solid var(--rule);border-radius:6px;padding:4px 6px;background:var(--paper);position:relative;min-height:34px}
 .opick input{border:0!important;background:transparent!important;padding:2px 4px!important;flex:1;min-width:80px;outline:none}
@@ -1155,7 +1155,11 @@ body.navrail .snp{padding-left:10px}body.navrail .snsub{padding-left:10px}
 .caplegend{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:0;font-size:11.5px;color:var(--ink-3)}.caplegend i{display:inline-block;width:14px;height:10px;border-radius:3px;margin-left:6px}.caplegend i:first-child{margin-left:0}
 .caplegend i.h1{background:color-mix(in srgb,var(--accent) 12%,transparent)}.caplegend i.h2{background:color-mix(in srgb,var(--accent) 34%,transparent)}.caplegend i.h3{background:color-mix(in srgb,var(--warn) 42%,transparent)}.caplegend i.h4{background:color-mix(in srgb,var(--bad) 55%,transparent)}.caplegend i.n2{background:color-mix(in srgb,var(--ink-3) 30%,transparent)}
 .lremove{border-top:1px solid var(--rule-2);padding-top:10px;display:flex;flex-direction:column;gap:8px}.lrm-opt{display:flex;flex-direction:column;gap:4px}.lrm-opt .qrow{flex-wrap:wrap}
-.wkcorner{flex-direction:column;align-items:flex-start;justify-content:flex-end}.zoomctl .sprpick{flex:1 1 100%;min-width:0;display:block}.zoomctl .sprpick select{width:100%;max-width:100%;min-width:0;text-overflow:ellipsis;font:inherit;font-size:12px;padding:2px 4px}.zoomctl{flex-wrap:wrap}.zoomctl .zpresets{display:flex;flex-wrap:wrap;gap:3px;flex:1 1 100%;min-width:0}.zoomctl .zp{font-size:11px;padding:1px 6px;min-height:24px}.zoomctl .zp[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}.zoomctl .zlab{min-width:64px;text-align:center;font-size:12px;font-weight:600;color:var(--ink-2)}
+.wkcorner{flex-direction:column;align-items:flex-start;justify-content:flex-end}.zbar{display:inline-flex;flex-wrap:nowrap;align-items:center;gap:3px;white-space:nowrap}.zbar[hidden]{display:none}.zbar .btn{min-width:26px;padding-left:6px;padding-right:6px;justify-content:center}.zbar .vh{position:absolute}
+@media (max-width:1499px){ #wsright #layoutLbl{display:none} #wsright .vsum{margin-left:0} }   /* "View:" goes first when room is short; the button's label keeps it */
+.zbar .sprpick{display:inline-flex}.zbar .sprpick select{max-width:118px;text-overflow:ellipsis;font:inherit;font-size:12.5px;padding:4px 6px;border:1px solid var(--rule);border-radius:7px;background:var(--surface);color:var(--ink)}
+.zbar .zpresets{display:inline-flex;gap:2px}.zbar .zp{font-variant-numeric:tabular-nums}.zbar .zp[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.zsep{width:1px;height:18px;background:var(--rule);margin:0 3px;flex:none}
 .gantt.days .ghead{z-index:6}
 .lanehdr .lh-in{position:sticky;left:12px;display:inline-flex;align-items:center;gap:7px}
 .lhname{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer;border-radius:3px}
@@ -1420,6 +1424,7 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
       </div>
     </div>
     <span class="seg" role="group" aria-label="Zoom" id="zoomSeg"><button type="button" id="zWeeks" aria-pressed="true" title="Initiatives by week (W)">Weeks</button><button type="button" id="zDays" aria-pressed="false" title="Tasks by working day (D)">Days</button></span>
+    <span class="zbar" role="group" aria-label="Sprints on screen" id="zoomBar"></span>
   </div>
 </div>
 <!--__SOURCE_NOTICE_START__-->
@@ -5739,15 +5744,23 @@ function setZoomN(n){
 const zoomIn = () => { const n = zoomN(); setZoomN(n ? Math.max(1, n - 1) : maxZoomN()); };
 const zoomOut = () => { const n = zoomN(); if (n) setZoomN(n + 1); };
 function sprintStartOf(d){ let w0 = 0; for (const sp of S.sprints || []){ const a = wkDay(w0); w0 += sp.weeks; if (d < wkDay(w0)) return a; } return startDay(); }
-function zoomCtl(){
-  const n = zoomN();
-  return h("div",{class:"row zoomctl"},
+// The zoom controls live in the toolbar, as one group that wraps as a whole: [‹] [Sprint ▾] [›] | 1 2 3 Fit | − +.
+// Short faces, full names and shortcuts in the tooltips; the dates on screen are in the picker's tooltip.
+function fillZoomBar(pageable){
+  const bar = $("#zoomBar"); if (!bar) return; const n = zoomN(), cs = chosenSprint(), focus = UI.zoom === "days" && UI.focus, sep = () => h("span",{class:"zsep","aria-hidden":"true"});
+  bar.replaceChildren(...nonNull(
+    h("button",{class:"btn",type:"button",id:"pgPrev","aria-label":cs ? "Previous sprint" : "Earlier",title:cs ? "Previous sprint ([)" : "Earlier ([)",disabled:!pageable,onclick:()=>viewPage(-1)},"‹"),
+    focus ? null : sprintPick(),
+    h("span",{class:"vh",id:"pgRange","aria-live":"polite"}),
+    h("button",{class:"btn",type:"button",id:"pgNext","aria-label":cs ? "Next sprint" : "Later",title:cs ? "Next sprint (])" : "Later (])",disabled:!pageable,onclick:()=>viewPage(1)},"›"),
+    focus ? null : sep(),
+    focus ? null : h("span",{class:"zpresets",role:"group","aria-label":"Show sprints"}, ZOOM_PRESETS.map(([k, t])=>h("button",{type:"button",class:"btn zp","data-preset":String(k),"aria-pressed":String(presetOn(k)),
+      "aria-label":t,title:`${t} (Shift+${k})`,"aria-keyshortcuts":`Shift+${k}`,disabled:!!k && !nowSprint(),onclick:()=>zoomPreset(k)}, k ? String(k) : "Fit"))),
+    sep(),
     h("button",{class:"btn",type:"button",id:"zoomOut","aria-label":"Zoom out: one more sprint",title:"One more sprint on screen (−)",disabled:!n,onclick:zoomOut},"−"),
-    h("span",{class:"zlab",id:"zoomLab","aria-live":"polite"}, zoomText()),
-    h("button",{class:"btn",type:"button",id:"zoomIn","aria-label":"Zoom in: one sprint fewer",title:"One sprint fewer on screen (+)",disabled:n === 1,onclick:zoomIn},"+"),
-    UI.zoom === "days" && UI.focus ? null : sprintPick(),
-    UI.zoom === "days" && UI.focus ? null : h("div",{class:"zpresets",role:"group","aria-label":"Show sprints"}, ZOOM_PRESETS.map(([k, t])=>h("button",{type:"button",class:"btn zp","data-preset":String(k),"aria-pressed":String(presetOn(k)),
-      title:`${t} (Shift+${k})`,"aria-keyshortcuts":`Shift+${k}`,disabled:!!k && !nowSprint(),onclick:()=>zoomPreset(k)}, t))));
+    h("span",{class:"vh",id:"zoomLab","aria-live":"polite"}, zoomText()),
+    h("button",{class:"btn",type:"button",id:"zoomIn","aria-label":"Zoom in: one sprint fewer",title:"One sprint fewer on screen (+)",disabled:n === 1,onclick:zoomIn},"+")));
+  updatePager();
 }
 function sprintPick(){
   const c = chosenSprint(), NS = nowSprint(), L = sprintList().filter(x=>!x.gap);
@@ -5799,6 +5812,7 @@ function visibleDays(){
 function updatePager(){ laneScrollCheck(); const r = $("#pgRange"), t = $("#pgToday"), v = visibleDays(); if (!r || !v) return;
   const sw = sprintWindow(), fitted = sw && Math.abs(v[0] - sw.a) <= 3 && Math.abs(v[1] - sw.z) <= 3;   // a sprint fitted edge to edge: its own dates, not the pixels' rounding
   r.textContent = fitted ? `${fmtDay(sw.a)} – ${fmtDay(sw.z)}` : `${fmtDay(v[0])} – ${fmtDay(v[1])}`; const td = todayDay();
+  { const p = $("#zoomSprint"); if (p) p.title = `On screen: ${r.textContent}. Fit the view to one sprint, edge to edge.`; }
   if (t && sw){ const n = nowSprint(), on = !!n && n.a === sw.a; t.disabled = on; t.title = on ? "The sprint we're in is on screen" : "The sprint we're in (.)"; }
   else if (t){ const on = td >= v[0] && td <= v[1]; t.disabled = on; t.title = on ? "Today is on screen" : "Back to today"; } }
 let pagerRaf = 0;
@@ -6947,7 +6961,7 @@ function revealWs(){
 function renderWs(){
   const ws = revealWs();
   renderMainNav();
-  $("#zoomSeg").hidden = ws !== "timeline"; $("#rowsSeg").hidden = ws !== "timeline";
+  $("#zoomSeg").hidden = ws !== "timeline"; $("#zoomBar").hidden = ws !== "timeline"; $("#rowsSeg").hidden = ws !== "timeline";
   { const c = todayCounts(); const b = $("#todayBadge"); b.hidden = !c; b.textContent = c ? String(c) : ""; b.title = c ? `${c} blocked, late or to escalate` : ""; }
   if (ws === "today"){ renderToday(); setTimeout(restoreTodayFocus, 0); }
   if (ws === "standup") renderStandup();
@@ -8253,11 +8267,7 @@ function renderGantt(){
   cols.append(h("div",{class:"gnow",style:{gridColumn:"1 / -1", gridRow:"3"}}, todayTab(frac)));
   g.classList.remove("days");
   g.append(h("div",{class:"ghead"}, h("div",{class:"gcorner wkcorner"}, h("span",{class:"wklab"}, rowsMode() === "epics" ? "Epic" : UI.rows === "people" ? "Person" : "Workstream", rowsMode() === "epics" ? epicAllBtns() : null),
-    h("div",{class:"daynav"}, zoomCtl(), g.classList.contains("zoomed") ? h("div",{class:"row"},
-      h("button",{class:"btn",type:"button","aria-label":chosenSprint() ? "Previous sprint" : "Earlier",title:chosenSprint() ? "Previous sprint ([)" : "Earlier",onclick:()=>viewPage(-1)},"‹"),
-      h("span",{class:"pgrange",id:"pgRange"}),
-      h("button",{class:"btn",type:"button",id:"pgToday",title:chosenSprint() ? "The sprint we're in (.)" : "Scroll to this sprint",onclick:()=>chosenSprint() ? jumpToday() : scrollViewTo(sprintStartOf(todayDay()))},"Today"),
-      h("button",{class:"btn",type:"button","aria-label":chosenSprint() ? "Next sprint" : "Later",title:chosenSprint() ? "Next sprint (])" : "Later",onclick:()=>viewPage(1)},"›")) : null)), cols));
+    ), cols)); fillZoomBar(g.classList.contains("zoomed"));
 
   const top0 = g.children.length;
   { const all = gateItems(), gs = all.filter(g=>g.day!=null && gateVisible(g)).map(g=>({...g, at: dayToAt(g.day)})).filter(g=>g.at >= 0 && g.at <= W);
@@ -9168,14 +9178,8 @@ function renderDays(){
   const tcol = today < cols[0] ? -1 : today > cols[N-1] + 2 ? N + 1 : today > cols[N-1] ? N : colOf(today) + (idx.has(today) ? .5 : 0), tfrac = tcol / N;   // a weekend sits on Monday's edge
   head.append(h("div",{class:"gnow",style:{gridColumn:"1 / -1", gridRow:"4"}}, todayTab(tfrac)));
   const focus = UI.focus && barById(UI.focus);
-  const zoomRow = zoomCtl();
-  const pager = h("div",{class:"row"},
-    h("button",{class:"btn",type:"button","aria-label":chosenSprint() ? "Previous sprint" : "Earlier",title:chosenSprint() ? "Previous sprint ([)" : "Earlier",onclick:()=>viewPage(-1)},"‹"),
-    h("span",{class:"pgrange",id:"pgRange"}),
-    h("button",{class:"btn",type:"button",id:"pgToday",title:chosenSprint() ? "The sprint we're in (.)" : "Scroll to this week",onclick:()=>chosenSprint() ? jumpToday() : dayScrollTo(Math.max(cols[0], mondayOf(today)))},"Today"),
-    h("button",{class:"btn",type:"button","aria-label":chosenSprint() ? "Next sprint" : "Later",title:chosenSprint() ? "Next sprint (])" : "Later",onclick:()=>viewPage(1)},"›"));
-  const nav = focus ? h("div",{class:"daynav"}, h("button",{class:"linkish",onclick:()=>setZoom("days",null)},"← All initiatives"), zoomRow)
-    : h("div",{class:"daynav"}, zoomRow, pager);
+  fillZoomBar(true);
+  const nav = focus ? h("div",{class:"daynav"}, h("button",{class:"linkish",onclick:()=>setZoom("days",null)},"← All initiatives")) : null;
   g.append(h("div",{class:"ghead"}, h("div",{class:"gcorner"}, nav, rowsMode() === "epics" && !focus ? epicAllBtns() : null), head));
   const vis = (s0, e0) => e0 >= cols[0] && s0 <= cols[N-1];
   const pos = (s0, e0) => ({left:`calc(${colOf(s0)/N*100}% + 1px)`, width:`calc(${(colOf(e0)-colOf(s0)+1)/N*100}% - 2px)`});

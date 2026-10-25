@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.124.1",
+    "date": "2026-10-25",
+    "headline": "The timeline's header is short again",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Zoom controls moved to the toolbar",
+        "before": "The sprint picker, the 1, 2, 3 and Fit presets, − and + and the dates on screen were stacked in the timeline's top-left corner, pushing the first row down by about six lines.",
+        "now": "They're one compact group in the toolbar, beside Weeks and Days: ‹ the sprint picker › | 1 2 3 Fit | − +. Tooltips keep the full names and shortcuts, and the picker's tooltip shows the dates on screen. The corner holds just the row label again.",
+        "where": "Timeline, the toolbar"
+      }
+    ]
+  },
+  {
     "version": "1.124.0",
     "date": "2026-10-25",
     "headline": "Jira stories on sprint shelves, sized by points",
