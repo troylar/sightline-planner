@@ -1760,6 +1760,10 @@ ACTIONS = {
     "initiative.setParent": ({"id": "id", "parent": "idOrBlank"}, True),
     "initiative.place": ({"id": "id", "target": "id", "zone": "str"}, False),
     "initiative.del": ({"id": "id"}, False),
+    "initiative.setEffort": ({"id": "id", "likely": "num?", "low": "num?", "high": "num?", "at": "iso?"}, True),
+    "initiative.setScope": ({"id": "id", "scope": "str"}, True),
+    "initiative.delivers.add": ({"id": "id", "outcome": "id"}, False),
+    "initiative.delivers.remove": ({"id": "id", "outcome": "id"}, False),
     "task.add": ({"id": "id?", "bar": "id", "start": "iso", "days": "int?", "label": "str?", "owners": "ids?", "tags": "ids?"}, False),
     "task.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "task.setStatus": ({"id": "id", "status": "str"}, True),
@@ -1813,7 +1817,7 @@ ACT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,79}$")
 # What an id-like argument points at, by the action's first word (id) or the argument's own name.
 ACT_REF_BY_NOUN = {"initiative": "bar", "link": "bar", "task": "task", "outcome": "dv", "workstream": "lane", "person": "person",
                    "milestone": "ms", "gate": "gate", "risk": "risk", "decision": "dec"}
-ACT_REF_BY_ARG = {"after": "bar", "parent": "bar", "target": "bar", "bar": "bar", "lane": "lane", "person": "person",
+ACT_REF_BY_ARG = {"outcome": "dv", "after": "bar", "parent": "bar", "target": "bar", "bar": "bar", "lane": "lane", "person": "person",
                   "owners": "person", "members": "person", "item": "bar", "decider": "person"}
 
 
