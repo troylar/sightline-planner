@@ -171,6 +171,11 @@ authorization; the token holder decides.
 - One workstream placement per epic; other workstreams refer to it rather than placing it again.
 - Notes on Jira issues attach by Jira key and follow the issue.
 - Write-back comes later, through proposed changes first, then the sync script.
+- The team chooses which Jira fields come in; each person's sync decides what it fetches. The plan may list fields
+  to bring in for the issues a sync already fetches (a shared field mapping), never which issues: searches stay on
+  the command line of whoever runs the sync. A mapped field id must look like a Jira field id and the list is capped.
+  Each person can refuse any field on their own computer, and the sync says when the plan asks for a field it
+  hasn't fetched before, so nobody's token reads something new without their knowing.
 
 **Open**
 
