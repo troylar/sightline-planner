@@ -67,15 +67,15 @@ async function page(opts = {}){
     ok("V1: the Roadmap says how many are waiting, and shows new ones as ghosts", /7 amendments waiting/.test(d.querySelector("#amOpen")?.textContent || "") && !!d.querySelector('#rmIdeas [data-amghost="idea"]') && !!d.querySelector('[data-dv="dv-bed"] .amark'));
     ok("V2: the tab shows the same count", d.querySelector("#amBadge")?.textContent === "7");
     ev(`sel = {type:"amend", id:"x"}; render();`);
-    ok("P1: the panel groups them and offers Apply for the ready ones", /Ready \(4\)/.test(d.querySelector("#side").textContent) && /Changed since \(1\)/.test(d.querySelector("#side").textContent) && /Needs attention \(2\)/.test(d.querySelector("#side").textContent) && /Apply 4 ready as one update/.test(d.querySelector("#amApplyAll")?.textContent || ""));
+    ok("P1: the panel groups them, and Apply ready takes them in order up to the first that can't apply", /Ready \(4\)/.test(d.querySelector("#side").textContent) && /Changed since \(1\)/.test(d.querySelector("#side").textContent) && /Needs attention \(2\)/.test(d.querySelector("#side").textContent) && /Apply 1 ready as one update/.test(d.querySelector("#amApplyAll")?.textContent || "") && /stops at change 2/.test(d.querySelector("#amRunStop")?.textContent || ""));
     // a teammate links something else to Checkout before the save
     ev(`const t = JSON.parse(FILE); t.deliverables.find(x=>x.id === "dv-chk").jira = ["ABC-10", "ABC-12"]; FILE = serialize(normalize(t, false), "p.json");`);
-    d.querySelector("#amApplyAll").click(); await wait(80);
+    await ev(`amApply(["move","idea","link","prop"])`); await wait(80);          // picked ones, past the blocked ones (Apply ready stops at change 2)
     const P = () => ev(`JSON.stringify(normalize(JSON.parse(FILE), false))`), plan = JSON.parse(P());
     ok("A1: Apply saves the ready ones to the shared file", plan.deliverables.find(x=>x.id === "dv-bed").target === "2027-Q2" && !!plan.deliverables.find(x=>x.id === "dv-eval" && x.stage === "idea" && x.source === "Planning topics") && plan.proposals.some(x=>x.key === "ABC-11" && x.field === "points"));
     ok("A2: links merge by membership, so a teammate's link stays", JSON.stringify(plan.deliverables.find(x=>x.id === "dv-chk").jira.sort()) === JSON.stringify(["ABC-10","ABC-11","ABC-12"]));
     ok("A3: the stale and broken ones weren't applied", plan.deliverables.find(x=>x.id === "dv-chk").target === "2026-Q4" && !plan.deliverables.find(x=>x.id === "dv-bed").color);
-    ok("A4: it says what happened, via the assistant", /Applied 4 \(via Anteroom\)\./.test(ev("document.querySelector('#status')?.textContent || ''")), ev("document.querySelector('#status')?.textContent || ''"));
+    ok("A4: it says what happened, via the assistant", /^Applied changes 1, 5, 6 and 7\. Saved\./.test(ev("document.querySelector('#status')?.textContent || ''")), ev("document.querySelector('#status')?.textContent || ''"));
     ok("A5: the change log says it came via Anteroom", ev(`S.changes.some(c=>/via Anteroom/.test(c.what))`));
     ok("R1: applied ones are completed, and stay completed on a refresh", (await load(ev, null, ev("AMTEXT")), JSON.stringify(Object.values(g()).filter(x=>x === "completed").length)) === "4");
     ev(`sel = {type:"amend", id:"x"}; render();`); d.querySelector('[data-amskip="stale"]').click(); await wait(10);

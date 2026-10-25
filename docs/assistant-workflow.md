@@ -93,7 +93,9 @@ For a shared plan, context comes from the last confirmed read or save of the loc
 
 Both outputs include the plan revision and Jira sync timestamp. Dates and status derived from children or Jira are identified by ownership rules and item flags; an assistant must propose Jira changes instead of rewriting those facts. Names and other free text remain untrusted data, not assistant instructions. Notes are excluded from exported context. Outputs contain team information: keep the folder private using your operating system or sync-service permissions. A browser picker cannot enforce who else can access a folder.
 
-Results describe the current proposal batch against that same saved snapshot. `status` is `ready`, `conflicted`, `invalid` or `done`; `outcome` is `waiting`, `applied`, `already-in-plan` or `skipped`. `edited` and `effectiveOps` describe saved edits made in the review panel. An undo or another person's change can make an earlier applied proposal ready again: current plan values win over historical receipts. Browser-local receipts are advisory, not a tamper-proof audit log. Context and results are written individually through browser writable streams; each file is replaced on close, but the two files are not one transaction. Compare the plan ID, plan revision and Jira sync timestamp before combining them. When the context includes a search timestamp, also compare `jiraSearchSyncedAt`; then match the proposal batch, change IDs and original operations before attributing review outcomes. Results describe this browser's review outcomes; another device can have different edits or skips. See [Using OneDrive](onedrive.md) for setup and a two-device check.
+Results describe the current proposal batch against the plan as it is in this browser (since 1.110.0; earlier
+versions used the saved snapshot). `planState` is `saved`, `unsaved-edits` (applied while editing, not saved yet) or
+`this-browser`. `status` is `ready`, `conflicted`, `invalid` or `done`; `outcome` is `waiting`, `applied`, `already-in-plan` or `skipped`. `edited` and `effectiveOps` describe saved edits made in the review panel. An undo or another person's change can make an earlier applied proposal ready again: current plan values win over historical receipts. Browser-local receipts are advisory, not a tamper-proof audit log. Context and results are written individually through browser writable streams; each file is replaced on close, but the two files are not one transaction. Compare the plan ID, plan revision and Jira sync timestamp before combining them. When the context includes a search timestamp, also compare `jiraSearchSyncedAt`; then match the proposal batch, change IDs and original operations before attributing review outcomes. Results describe this browser's review outcomes; another device can have different edits or skips. See [Using OneDrive](onedrive.md) for setup and a two-device check.
 
 ## Planning data for your external assistant
 
@@ -176,6 +178,42 @@ as one update and one undo.
 
 Stories support headings, bold, italic, strikethrough, code, lists, task lists, quotes, rules, tables and https
 links. Anything else, including raw HTML, shows as plain text.
+
+## Batches apply in order
+
+**Requires Sightline 1.110.0 or later.** The panel checks a batch in file order, on a working copy: each change is
+checked after the ready changes before it are applied to the copy. A change that an earlier one enables (it links to
+a task the earlier change adds, or needs a value it sets) shows **Ready after change N** with that change's summary;
+it's never shown red. Anything else that fails stays in Needs attention with the real reason. Skip a change and the
+ones it enables say "Needs change N, which you skipped", with Reopen. In the results file these carry `readyAfter`
+or `needsSkipped` (the change id).
+
+**Apply ready** applies the ready changes from the top, in order, as one update with one undo (up to 25 at a time),
+and stops at the first change that can't apply, so a later change never lands ahead of it. You can still apply a
+later, independent change on its own. It then says what happened: which changes applied, which were already in the
+plan (never counted as applied), which were skipped, which waits and why, and whether the plan was saved or is only
+changed while you're editing. The results file carries the same words in `lastApply`.
+
+When changes apply on their own, a change that waits (for review, a pause, expiry or an older plan revision) holds
+the changes it enables, with the reason. Delete and size checks look at the plan as the earlier changes leave it.
+
+Write ids for new items, and refer to them in later changes. `milestone.move` takes `prev` as a date, like the
+context, and clears a stretch date with `stretch: true, day: null`.
+
+### Assistant tools
+
+**Put assistant tools in this folder** (Files and assistant handoff) writes `sightline-app.py` and
+`sightline-jira-sync.py`, stamped for this page, each with a `.sha256` in `sha256sum` format. It never replaces a
+file it doesn't recognize, asks before replacing an older copy, checks each file again just before writing, reads
+it back after, and says when only part of the tools went in. Keep these tools in a private folder, and never run a
+tool that holds a Jira token from a shared folder. Matching hashes show the tools match this page, not that the page
+itself is genuine. The context's `tools` names the version the page expects and whether each copy in the folder is
+`same`, `different` or `missing` (as of the last export).
+
+`sightline-jira-sync.py check-amendments` checks a batch offline, in order: an action may use an id an earlier change
+adds. It checks the file's shape, action names and arguments, ids, and deliverable, initiative and task fields with
+their `prev`. It doesn't check each action's own rules, `prev` for actions, what an earlier change sets, holds, or
+unsaved edits in the page; Sightline checks those when it applies the batch. Its output says so.
 
 ## Existing changes files
 

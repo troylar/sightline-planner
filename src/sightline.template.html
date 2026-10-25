@@ -1030,7 +1030,8 @@ dialog textarea{width:100%;height:50vh;font-family:"IBM Plex Mono",monospace;fon
 <body>
 <div id="bootfail" role="alert" style="max-width:640px;margin:48px auto;padding:20px 24px;border:2px solid #b3261e;border-radius:10px;background:#fff4f2;color:#410e0b;font:15px/1.5 system-ui,sans-serif">
   <b style="font-size:17px">Sightline didn't start.</b>
-  <p>The page's code was blocked, which usually means this file changed while it was being copied: for example, pasted as text through a remote desktop, or opened and saved in an editor.</p>
+  <p id="bootfailSync"><b>If this file is in OneDrive or another synced folder, wait for the sync to finish, then reload.</b> A file that's still arriving looks changed to the browser.</p>
+  <p>Otherwise, the page's code was blocked, which usually means this file changed while it was being copied: for example, pasted as text through a remote desktop, or opened and saved in an editor.</p>
   <p>Copy <b>sightline.html</b> again as a file (OneDrive, or drag and drop), then reload. To check a copy, run <code>sha256sum -c sightline.html.sha256</code> in the same folder: it should say OK.</p>
   <p style="color:#6b3a36;font-size:13px">If the browser's console says "Content Security Policy", that's this problem. Your plan file is not affected.</p>
 </div>
@@ -6576,6 +6577,7 @@ const ACT_ARG = {
   num: v => typeof v === "number" && Number.isFinite(v),
   int: v => Number.isInteger(v),
   iso: v => validIso(v),
+  isoOrNull: v => v === null || validIso(v),
   keys: v => Array.isArray(v) && v.length <= 500 && v.every(k=>typeof k === "string" && k.length <= 40),
   any: v => v === null || typeof v === "boolean" || ACT_ARG.num(v) || ACT_ARG.str(v) || ACT_ARG.ids(v),
   weights: v => v === null || (!!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length <= 20 && Object.entries(v).every(([k, x])=>ACT_ARG.id(k) && Number.isInteger(x))),
@@ -6587,7 +6589,7 @@ function actArgsProblem(a, args){
   for (const [k, t] of Object.entries(a.args)){ const opt = t.endsWith("?"), ty = opt ? t.slice(0, -1) : t;
     if (!(k in args) || args[k] === undefined){ if (opt) continue; return `${a.id} needs ${k}.`; }
     if ((ty === "str" || ty === "any") && typeof args[k] === "string" && args[k].length > 4000) return `${k} is up to 4,000 characters.`;
-    if (!ACT_ARG[ty](args[k])) return `${k} isn't a valid ${ty === "iso" ? "date (YYYY-MM-DD)" : ty === "ids" || ty === "keys" ? "list" : ty === "id" ? "id" : ty === "num" || ty === "int" ? "number" : ty === "weights" ? "split ({workstream id: weight})" : "value"}.`; }
+    if (!ACT_ARG[ty](args[k])) return `${k} isn't a valid ${ty === "iso" || ty === "isoOrNull" ? "date (YYYY-MM-DD)" : ty === "ids" || ty === "keys" ? "list" : ty === "id" ? "id" : ty === "num" || ty === "int" ? "number" : ty === "weights" ? "split ({workstream id: weight})" : "value"}.`; }
   return null;
 }
 const actMissing = what => ({code:"invalid", reason:`That ${what} isn't in the plan.`});
@@ -6998,11 +7000,12 @@ defAction("milestone.add", {scope:"milestones", risk:"routine", done:(p, a)=>!!a
     if (a.owners && !actPeople(p, a.owners)) return actMissing("person"); if (a.after && a.after.some(x=>!actBar(p, x))) return actMissing("initiative it's done after"); },
   run:(p, a)=>{ const id = actNewId(p, a, "ms");
     p.milestones.push({id, date:"", owners:[...(a.owners || [])], stretch:"", what:a.what.trim(), dep:"", status:a.status || "commit", lane:a.lane || p.lanes[0]?.id || "", at: a.day ? msAt(p, a.day) : null, stretchAt:null, after:[...new Set(a.after || [])]}); return id; }});
-defAction("milestone.move", {scope:"schedule", risk:"routine", args:{id:"id", day:"iso", stretch:"any?"},
-  cur:(p, a)=>{ const m = actMs(p, a.id); return m ? (a.stretch === true ? m.stretchAt : m.at) : undefined; },
+defAction("milestone.move", {scope:"schedule", risk:"routine", args:{id:"id", day:"isoOrNull", stretch:"any?"},
+  cur:(p, a)=>{ const m = actMs(p, a.id), at = m ? (a.stretch === true ? m.stretchAt : m.at) : undefined; return at === undefined ? undefined : at == null ? null : amWeekIso(p, at); },   // a date, as prev is written
   check:(p, a)=>{ const m = actMs(p, a.id); if (!m) return actMissing("milestone");
+    if (a.day === null && a.stretch !== true) return actInvalid("Only a stretch date can be cleared (stretch: true, day: null).");
     if (a.stretch !== true && (m.after || []).length) return `${m.what || "This milestone"} is placed after the initiatives it follows, so it moves when they do. Change what it follows instead.`; },
-  run:(p, a)=>{ const m = actMs(p, a.id), k = a.stretch === true ? "stretchAt" : "at", at = msAt(p, a.day); if (m[k] === at) return NOCHANGE; m[k] = at; if (k === "at" && !m.lane) m.lane = p.lanes[0]?.id || ""; }});
+  run:(p, a)=>{ const m = actMs(p, a.id), k = a.stretch === true ? "stretchAt" : "at", at = a.day === null ? null : msAt(p, a.day); if (m[k] === at) return NOCHANGE; m[k] = at; if (k === "stretchAt" && at === null) m.stretch = ""; if (k === "at" && !m.lane) m.lane = p.lanes[0]?.id || ""; }});
 defAction("milestone.set", {scope:"milestones", risk:"routine", args:{id:"id", field:"str", value:"any"},
   cur:(p, a)=>{ const m = actMs(p, a.id); return m && a.field in MS_SET ? clone(m[MS_KEY[a.field] || a.field] ?? "") : undefined; },
   check:(p, a)=>{ if (!actMs(p, a.id)) return actMissing("milestone");
@@ -10790,7 +10793,7 @@ function amSetEdit(batch, c, ops){ if (!AM_ID.test(batch) || !AM_ID.test(c.id)) 
   const keep = Object.keys(all).filter(k=>k !== batch).slice(-4); Object.keys(all).forEach(k=>{ if (k !== batch && !keep.includes(k)) delete all[k]; });
   try { localStorage.setItem(amEditKey(), JSON.stringify(all)); assistantScheduleExport(); return true; } catch(e){ return false; } }
 function amReceipt(batch, c){ const st = amState(), b = amHas(st, batch) ? st[batch] : null, r = b && typeof b === "object" && amHas(b, c.id) ? b[c.id] : null;
-  return r && typeof r === "object" && r.fp === amFp(c) && (r.how === "applied" || r.how === "skipped") ? r.how : ""; }
+  return r && typeof r === "object" && r.fp === amFp(c) && ["applied", "skipped", "already"].includes(r.how) ? r.how : ""; }
 const amSaid = v => v == null || v === "" ? "empty" : Array.isArray(v) ? (v.length ? v.map(x=>typeof x === "string" ? x : "?").join(", ").slice(0, 80) : "empty") : typeof v === "string" && TARGET_RE.test(v) ? (periodRange(v) || {}).label || v : typeof v === "object" ? "?" : String(v).slice(0, 60);
 function amValueErr(field, v, p){ const t = amHas(AM_FIELDS, field) ? AM_FIELDS[field] : null; if (!t) return `"${String(field).slice(0, 30)}" can't be changed by an amendment`;
   if (!amPlain(v)) return `${field} must be plain text, a number, a short list or null`;
@@ -10963,17 +10966,38 @@ function amCheck0(c, p){
 }
 // Checked once per version of the file, the plan, Jira and the receipts, not on every draw.
 let amMemo = null;
+// In file order, on a working copy: each change is checked after the eligible ones before it are applied to the copy, so
+// one that an earlier change enables (it adds the task this one links to) is ready, and says which change it follows.
+// A skipped change isn't applied; what it would have enabled says so. Nothing in the plan changes.
 function amRows(){ const F = AM && AM.file; if (!F) return [];
   const key = [AM.hash, amVer, JIRA, S, S.meta.planId, hashText(JSON.stringify([S.deliverables || [], (S.proposals || []).length, S.lanes.length, S.people.length, S.bars.length])), changeGen];
   if (amMemo && amMemo.key.every((v, i)=>v === key[i])) return amMemo.rows;
-  const rows = F.changes.map(c=>{ const eff = amEff(F.batchId, c), r = amCheck(eff, S), mark = amReceipt(F.batchId, c);
-    const group = r.status === "done" ? "completed" : r.status === "ready" ? (mark === "skipped" ? "completed" : "ready") : mark === "skipped" ? "completed" : r.status === "changed" ? "changed" : "attention";   // what the plan says now wins over a receipt
-    return {c, eff, r, mark: r.status === "ready" && mark === "applied" ? "" : mark, group}; });
+  let work = {...S}, alt = null; const states = [{s:{...S}, by:null}], altStates = [];   // apply replaces a copy's top-level fields, so a shallow copy is a snapshot
+  const firstReady = (eff, list) => { for (let k = 1; k < list.length; k++) if (amCheck(eff, list[k].s).status === "ready") return list[k].by; return list[list.length - 1].by; };
+  const put = (r, into) => { try { r.apply(into); return true; } catch(e){ return false; } };
+  const rows = F.changes.map((c, i)=>{ const eff = amEff(F.batchId, c), mark = amReceipt(F.batchId, c), base = {...work}, r = amCheck(eff, work);
+    let after = null, needs = null;
+    if (r.status === "ready" && states.length > 1 && !["ready","done"].includes(amCheck(eff, S).status)) after = firstReady(eff, states);
+    if (r.status === "ready" && mark !== "skipped"){ if (put(r, work)){ states.push({s:{...work}, by:i}); if (alt){ const ra = amCheck(eff, alt); if (ra.status === "ready" && put(ra, alt)) altStates.push({s:{...alt}, by:i}); } } }
+    else if (r.status === "ready"){ const ra = alt ? amCheck(eff, alt) : r; if (!alt){ alt = {...work}; altStates.push(...states); } if (ra.status === "ready" && put(ra, alt)) altStates.push({s:{...alt}, by:i}); }
+    else if (alt && r.status !== "done"){ const ra = amCheck(eff, alt); if (ra.status === "ready"){ needs = firstReady(eff, altStates); if (put(ra, alt)) altStates.push({s:{...alt}, by:i}); } }
+    return {c, i, eff, r, base, after, needs, mark: r.status === "ready" && (mark === "applied" || mark === "already") ? "" : mark}; });
+  rows.forEach(x=>{ if (x.needs != null && rows[x.needs].mark !== "skipped") x.needs = rows[x.needs].needs; });       // what it needs is waiting on a skipped change
+  rows.forEach(x=>{ const {r, mark} = x;
+    x.group = r.status === "done" ? "completed" : r.status === "ready" ? (mark === "skipped" ? "completed" : "ready") : mark === "skipped" ? "completed" : x.needs != null ? "attention" : r.status === "changed" ? "changed" : "attention"; });   // what the plan says now wins over a receipt
   amMemo = {key, rows}; return rows; }
+const amNo = i => `change ${i + 1}`;
+// The run Apply ready takes: eligible changes from the top, in order, up to the first one that can't apply.
+// Changes already in the plan (that this browser didn't apply) ride along, so the summary can say so.
+function amRun(rows){ const ids = [], ready = []; let stop = null, more = false;
+  for (const x of rows){ if (x.group === "completed"){ if (x.r.status === "done" && !x.mark) ids.push(x.c.id); continue; }
+    if (x.group !== "ready"){ stop = x; break; } if (ready.length === AM_APPLY_MAX){ more = true; break; } ids.push(x.c.id); ready.push(x.c.id); }
+  return {ids, ready, stop, more}; }
+const amWhy = x => x.needs != null ? `it needs ${amNo(x.needs)}, which you skipped` : (x.r.reasons[0] || "it needs attention").replace(/\.$/, "");
 // How many other items this change would move: the plan scheduled with it and without it, on copies, compared. Items
 // the scheduling would move anyway, and the ones the change itself sets, don't count. Nothing in the plan changes.
-function amKnock(r, ops){ const real = S, own = new Set((ops || []).flatMap(o=>o ? [o.id, o.op === "action" && o.args ? o.args.id : null] : []).filter(Boolean));
-  const run = withIt => { S = clone(real); if (withIt) r.apply(S); rollup(S); reschedule(); const m = new Map();
+function amKnock(r, ops, base = S){ const real = S, own = new Set((ops || []).flatMap(o=>o ? [o.id, o.op === "action" && o.args ? o.args.id : null] : []).filter(Boolean));
+  const run = withIt => { S = clone(base); if (withIt) r.apply(S); rollup(S); reschedule(); const m = new Map();
     S.bars.forEach(b=>{ m.set("b:" + b.id, [b.start, b.span].join()); (b.tasks || []).forEach(t=>m.set("t:" + t.id, [t.start, t.days].join())); }); return m; };
   try { const before = run(false), after = run(true); let n = 0; before.forEach((v, k)=>{ if (!own.has(k.slice(2)) && after.has(k) && after.get(k) !== v) n++; }); return n; }
   catch(e){ return 0; } finally { S = real; dropJiraMemos(); } }
@@ -11008,20 +11032,40 @@ function amRestore(){ const pid = S.meta.planId; if (amTried === pid) return; ch
     else if (hd && hd.getFile){ AM = {handle:hd, name:hd.name}; amPoll(); amRead(true); }
   }).catch(()=>{}); }
 // Apply the picked ready changes as one quick update: each is checked again on the latest file inside the save.
-function amApply(ids, opts = {}){ const F = AM && AM.file; if (!F) return Promise.resolve(false);
+// Applies the picked changes in file order on one copy, as one update and one undo. In order (Apply ready), it stops at
+// the first change that can't apply, so a later one never lands ahead of it. Says what happened in plain words, and the
+// results file says the same.
+const amList = ns => ns.length === 1 ? `change ${ns[0]}` : `changes ${ns.slice(0, -1).join(", ")} and ${ns[ns.length - 1]}`;
+function amApply(ids, opts = {}){ const F = AM && AM.file, me = AM; if (!F) return Promise.resolve(false);
   const want = F.changes.filter(c=>ids.includes(c.id)); if (!want.length) return Promise.resolve(false);
-  if (want.length > AM_APPLY_MAX){ setStatus(`Apply up to ${AM_APPLY_MAX} at a time, so the update stays undoable.`); return Promise.resolve(false); }
+  if (want.length > AM_APPLY_MAX + (opts.inOrder ? AM_MAX_CHANGES : 0)){ setStatus(`Apply up to ${AM_APPLY_MAX} at a time, so the update stays undoable.`); return Promise.resolve(false); }
+  const num = id => F.changes.findIndex(c=>c.id === id) + 1;
   let out = {applied:[], already:[], waiting:[]};
   const fn = rerun(s=>{ out = {applied:[], already:[], waiting:[]}; const candidate = clone(s);         // actions can change any part of the plan
-    want.forEach(c=>{ const r = amCheck(amEff(F.batchId, c), candidate); if (r.status === "ready"){ try { r.apply(candidate); out.applied.push(c.id); } catch(e){ out.waiting.push(c.id); } } else if (r.status === "done") out.already.push(c.id); else out.waiting.push(c.id); });
+    for (const c of want){ if (opts.inOrder && out.waiting.length) break;
+      const r = amCheck(amEff(F.batchId, c), candidate);
+      if (r.status === "ready"){ try { r.apply(candidate); out.applied.push(c.id); } catch(e){ out.waiting.push({id:c.id, reason:String(e.message || e).slice(0, 160)}); } }
+      else if (r.status === "done") out.already.push(c.id); else out.waiting.push({id:c.id, reason:(r.reasons[0] || "it needs attention").replace(/\.$/, "")}); }
     if (candidate.deliverables.length > DV_MAX){ out.refused = `A plan holds up to ${DV_MAX} deliverables. Nothing applied.`; setStatus(out.refused); return NOCHANGE; }
     if (!out.applied.length) return NOCHANGE;
     for (const k of Object.keys(s)) delete s[k]; Object.assign(s, candidate); });
   fn.via = {app:"assistant", name:F.source || "Your assistant", batch:F.batchId};
   return quickSave(`${want.length === 1 ? (want[0].summary || "an amendment") : want.length + " amendments"} (via ${F.source}${opts.auto ? ", applied on its own" : ""})`, fn).then(ok=>{
-    [...(ok ? out.applied : []), ...out.already].forEach(id=>amMark(F.batchId, F.changes.find(c=>c.id === id), "applied"));
-    const n = (ok ? out.applied.length : 0) + out.already.length;
-    setStatus(out.refused || (n ? `Applied ${n} (via ${F.source}${opts.auto ? ", on its own" : ""})` + (out.waiting.length ? `; ${out.waiting.length} changed since or need attention, and wait.` : ".") : out.waiting.length ? "Nothing applied: those changed since or need attention." : "Nothing applied."));
+    if (ok) out.applied.forEach(id=>amMark(F.batchId, F.changes.find(c=>c.id === id), "applied"));
+    out.already.forEach(id=>amMark(F.batchId, F.changes.find(c=>c.id === id), "already"));          // reported once, never as applied
+    const applied = ok ? out.applied : [], waiting = [...(ok ? [] : out.applied.map(id=>({id, reason:"it wasn't applied"}))), ...out.waiting];
+    if (opts.stop && !waiting.length) waiting.push(opts.stop);
+    const skipped = (opts.skipped || []).map(num), saved = !applied.length ? null : !file.handle ? "browser" : file.dirty ? "editing" : "saved";
+    const parts = [];
+    if (applied.length) parts.push(`Applied ${amList(applied.map(num))}`);
+    if (out.already.length) parts.push(`${amList(out.already.map(num))} ${out.already.length === 1 ? "was" : "were"} already in the plan`);
+    if (skipped.length) parts.push(`${amList(skipped)} skipped`);
+    if (waiting.length) parts.push(`${amList([num(waiting[0].id)])} waits: ${waiting[0].reason}` + (waiting.length > 1 ? `; ${waiting.length - 1} more ${waiting.length === 2 ? "waits" : "wait"}` : ""));
+    const said = (out.refused ? out.refused : parts.length ? parts.join("; ") + "." : "Nothing applied.") + (opts.more && ok ? ` More are ready: apply the next ${AM_APPLY_MAX}.` : "") +
+      (saved === "editing" ? " Not saved yet: you're editing." : saved === "saved" ? " Saved." : saved === "browser" ? " Kept in this browser." : "");
+    if (me === AM){ me.lastApply = {batchId:F.batchId, at:new Date().toISOString(), summary:said, applied, already:out.already, skipped:opts.skipped || [], waiting, saved:saved || "nothing-applied", auto:!!opts.auto};
+      me.autoGen = (me.autoGen || 0) + 1; assistantScheduleExport(); }
+    setStatus(said + (opts.auto ? ` (via ${F.source}, on its own)` : ""));
     render(); return ok; }); }
 // What the assistant reads: this plan's deliverables and the choices it can use, with rules from Sightline itself.
 // Planning context is read-only. Use the same capacity rule as the UI, with demand from every loaded Jira key once.
@@ -11142,6 +11186,57 @@ function assistantView(){
           {op:"action", action:"risk.add", args:{id:"risk-example", text:"The example risk", sev:"high"}}]}]}}); }
 function exportAssistantView(){ download(JSON.stringify(assistantView(), null, 2), "sightline-assistant-view.json", "application/json"); }
 // The selected folder is personal: only these two output files belong to Sightline. The assistant owns its input.
+// The assistant tools (sightline-app.py, sightline-jira-sync.py), stamped for this page by build.sh and embedded as the
+// same bytes. Put in the assistant folder with a .sha256 each. Files the page doesn't recognize are never replaced, an
+// older copy is replaced only when the person says so, and every write is checked again before and read back after.
+const BUNDLED_TOOLS = /*__TOOLS__*/{"version":"dev","files":[]};
+const toolTargets = () => BUNDLED_TOOLS.files.flatMap(f=>[{name:f.name, text:f.text, tool:f}, {name:f.name + ".sha256", text:`${f.sha256}  ${f.name}\n`, tool:f, sum:true}]);
+const toolVer = text => (String(text).match(/\nPAGE_VERSION = (?:"([^"\n]{1,20})"|None)\n/) || [])[1] || "";
+const toolKnown = (x, text) => x.sum ? text.length < 200 && new RegExp(`^[0-9a-f]{64} [ *]?${x.tool.name.replace(/[.]/g, "\\.")}\\s*$`).test(text)
+  : /\nPAGE_VERSION = /.test(text) && text.includes(x.tool.name.replace(/\.py$/, ""));
+async function toolRead(dir, name){
+  try { const f = await (await dir.getFileHandle(name)).getFile(); return f.size > 4 * 1024 * 1024 ? {big:true} : {text:await f.text()}; }
+  catch(e){ if (e && e.name === "NotFoundError") return null; throw e; } }
+async function toolsInspect(dir){ const out = [];
+  for (const x of toolTargets()){ const r = await toolRead(dir, x.name);
+    out.push({...x, seen:r ? r.text : undefined, state:!r ? "missing" : r.big ? "foreign" : r.text === x.text ? "same" : toolKnown(x, r.text) ? "older" : "foreign"}); }
+  return out; }
+async function installAssistantTools(dir, {replace = false} = {}){
+  if (!BUNDLED_TOOLS.files.length) throw new Error("Open the built Sightline HTML to get its assistant tools.");
+  if (await dir.queryPermission({mode:"readwrite"}) !== "granted" && await dir.requestPermission({mode:"readwrite"}) !== "granted") throw new Error("Folder access was not granted.");
+  const plan = await toolsInspect(dir), older = plan.filter(x=>x.state === "older");
+  if (older.length && !replace) return {confirm:older.map(x=>({name:x.name, version:toolVer(x.seen)})), total:plan.length};
+  const done = [], same = [], kept = [], failed = [];
+  for (const x of plan){
+    if (x.state === "same"){ same.push(x.name); continue; }
+    if (x.state === "foreign" || (x.sum && plan.some(y=>!y.sum && y.tool === x.tool && y.state === "foreign"))){ kept.push(x.name); continue; }   // a checksum goes with its tool
+    try {
+      const now = await toolRead(dir, x.name);                     // again, just before writing: it must still be what was checked
+      if ((now ? now.text : undefined) !== x.seen) throw new Error("it changed while installing, so it was kept");
+      const hd = await dir.getFileHandle(x.name, {create:true}); let w;
+      try { w = await hd.createWritable(); await w.write(x.text); await w.close(); } catch(e){ try { await w?.abort(); } catch(_){} throw e; }
+      const back = await toolRead(dir, x.name); if (!back || back.text !== x.text) throw new Error("it doesn't read back as written");
+      done.push(x.name);
+    } catch(e){ failed.push({name:x.name, reason:String(e.message || e).slice(0, 120)}); } }
+  return {done, same, kept, failed, total:plan.length}; }
+function toolsSaid(r){ const v = BUNDLED_TOOLS.version;
+  if (r.same.length === r.total) return `The tools in this folder already match Sightline ${v}.`;
+  const parts = [`Put ${r.done.length} of ${r.total} files in the folder for Sightline ${v}` + (r.same.length ? ` (${r.same.length} already matched)` : "")];
+  if (r.kept.length) parts.push(`kept ${r.kept.join(", ")}: Sightline doesn't recognize what's there, so it wasn't replaced`);
+  if (r.failed.length) parts.push(`couldn't write ${r.failed.map(f=>`${f.name} (${f.reason})`).join(", ")}`);
+  return parts.join("; ") + "." + (r.kept.length || r.failed.length ? " Only part of the tools were installed: move those files aside and try again." : ""); }
+async function amToolsPut(replace){ const me = AM; if (!me || !me.dir) return;
+  me.toolsConfirm = null; me.toolsMsg = "Putting the tools in the folder…"; render();
+  try { const r = await installAssistantTools(me.dir, {replace});
+    if (r.confirm){ me.toolsConfirm = r.confirm; me.toolsMsg = ""; }
+    else { me.toolsMsg = toolsSaid(r); me.autoGen = (me.autoGen || 0) + 1; assistantScheduleExport(); }
+  } catch(e){ me.toolsMsg = `Nothing more was changed: ${String(e.message || e).slice(0, 160)}`; }
+  if (me === AM){ setStatus(me.toolsMsg || "Older copies of the tools are in the folder."); render(); } }
+// For the context file: the tool version this page expects, and whether the folder's copy is it.
+async function assistantToolsState(dir){ if (!BUNDLED_TOOLS.files.length) return null;
+  const files = []; for (const f of BUNDLED_TOOLS.files){ let r = null; try { r = await toolRead(dir, f.name); } catch(e){}
+    files.push({name:f.name, sha256:f.sha256, inFolder:!r ? "missing" : r.text === f.text ? "same" : "different", ...(r && r.text && r.text !== f.text ? {folderVersion:toolVer(r.text) || "unknown"} : {})}); }
+  return {expectedVersion:BUNDLED_TOOLS.version, files, note:"Use the tools whose inFolder is \"same\". Different or missing ones don't match this page: ask the person to click Put assistant tools in this folder."}; }
 const ASSISTANT_FILES = {context:"sightline-assistant-view.json", amendments:"sightline-amendments.json", results:"sightline-assistant-results.json"};
 let assistantExportTimer = null, assistantExportChain = Promise.resolve();
 function assistantInteractionBusy(){ const a = document.activeElement;
@@ -11169,21 +11264,31 @@ function assistantCurrentValues(ops, index){ return ops.filter(o=>o && o.op === 
   const value = !item ? null : o.type === "initiative" && o.field === "start" ? amWeekIso(S, item.start)
     : o.type === "initiative" && o.field === "weeks" ? item.span : o.field === "owners" && o.type !== "deliverable" ? item.owners || [] : item[o.field] ?? null;
   return {type:o.type, id:o.id, field:o.field, exists:!!item, value}; }); }
-function assistantPayloads(){ return assistantSavedSnapshot(snapshot=>{
-  const context = assistantView(), currentIndex = assistantCurrentIndex(); context.snapshot = snapshot;
-  const results = {kind:"sightline-assistant-results", version:1, planId:S.meta.planId, planRevision:S.meta.revision || 0,
-    jiraSyncedAt:context.jira.syncedAt, jiraSearchSyncedAt:context.jira.searchSyncedAt, generatedAt:context.generatedAt, snapshot,
+// The context is the saved file; the results describe the plan as it is in this browser, so an apply made while editing
+// (not saved yet) shows as applied, and what it enables as ready, with planState saying it isn't in the file yet.
+function assistantResultRows(){ if (!AM || !AM.file || AM.error) return [];
+  const currentIndex = assistantCurrentIndex(), rows = amRows(), id = i => AM.file.changes[i].id;
+  return rows.map(({c, eff, r, mark, after, needs})=>({id:c.id, summary:c.summary, status:needs != null ? "invalid" : r.status === "changed" ? "conflicted" : r.status,
+    outcome:mark === "skipped" ? "skipped" : r.status === "done" ? (mark === "applied" ? "applied" : "already-in-plan") : "waiting",
+    ...(after != null ? {readyAfter:id(after)} : {}), ...(needs != null ? {needsSkipped:id(needs)} : {}),
+    edited:!!eff.edited, originalOps:c.ops, effectiveOps:eff.ops, currentValues:assistantCurrentValues(eff.ops, currentIndex), reasons:needs != null ? [`Needs ${amNo(needs)}, which was skipped.`] : r.reasons, notes:r.notes, lines:r.lines,
+    ...(r.status === "ready" && AM.held && AM.held[c.id] ? {held:AM.held[c.id]} : {})})); }
+// While there are unsaved edits, the results follow them; otherwise they follow the saved file, like the context.
+function assistantResults(context, changes){ const last = AM && AM.file && AM.lastApply && AM.lastApply.batchId === AM.file.batchId ? AM.lastApply : null;
+  return {kind:"sightline-assistant-results", version:1, planId:S.meta.planId, planRevision:context.plan.revision || 0,
+    jiraSyncedAt:context.jira.syncedAt, jiraSearchSyncedAt:context.jira.searchSyncedAt, generatedAt:context.generatedAt, snapshot:context.snapshot,
     batchId:AM && AM.file ? AM.file.batchId : null, inputError:AM && AM.error || null, autoApply:amLevel(),
-    changes:AM && AM.file && !AM.error ? amRows().map(({c, eff, r, mark})=>({id:c.id, summary:c.summary, status:r.status === "changed" ? "conflicted" : r.status,
-      outcome:mark === "skipped" ? "skipped" : r.status === "done" ? (mark === "applied" ? "applied" : "already-in-plan") : "waiting",
-      edited:!!eff.edited, originalOps:c.ops, effectiveOps:eff.ops, currentValues:assistantCurrentValues(eff.ops, currentIndex), reasons:r.reasons, notes:r.notes, lines:r.lines,
-      ...(r.status === "ready" && AM.held && AM.held[c.id] ? {held:AM.held[c.id]} : {})})) : []};
-  return {context, results}; }); }
+    planState:!file.handle ? "this-browser" : file.dirty ? "unsaved-edits" : "saved", ...(last ? {lastApply:last} : {}), changes}; }
+function assistantPayloads(tools = null){ const unsaved = !!(file.handle && file.dirty) ? assistantResultRows() : null;
+  return assistantSavedSnapshot(snapshot=>{
+  const context = assistantView(); context.snapshot = snapshot; if (tools) context.tools = tools;
+  return {context, results:assistantResults(context, unsaved || assistantResultRows())}; }); }
 // Navigation does not change exported data. Check cheap identities/generations before rebuilding a saved snapshot.
 function assistantExportKey(){ return [S.meta.planId, file.handle, file.baseText, !!file.dirty, file.handle ? null : S,
   file.handle ? null : changeGen, JIRA, JIRA_ISSUES, amVer, AM && AM.hash, AM && AM.error || "", dayToIso(todayDay()), AM && AM.autoGen || 0, amLevel()]; }
 const assistantSameKey = (a, b) => !!a && a.length === b.length && a.every((v, i)=>v === b[i]);
-function assistantExportUnchanged(me, key){ return !!me.exportHash && !me.exportError && assistantSameKey(me.exportKey, key); }
+const assistantDirtyGen = () => file.handle && file.dirty ? changeGen : null;      // unsaved edits change only the results
+function assistantExportUnchanged(me, key){ return !!me.exportHash && !me.exportError && assistantSameKey(me.exportKey, key) && me.exportDirtyGen === assistantDirtyGen(); }
 function assistantScheduleExport(){
   clearTimeout(assistantExportTimer); if (!AM || !AM.dir || AM.paused || assistantExportUnchanged(AM, assistantExportKey())) return;
   assistantExportTimer = setTimeout(()=>assistantExport(), 200);
@@ -11220,13 +11325,18 @@ async function assistantExport0(){
   try {
     if ((await me.dir.queryPermission({mode:"readwrite"})) !== "granted"){ if (alive()){ me.paused = true; if (!assistantInteractionBusy()) render(); } return; }
     if (!alive()) return;
-    const payloads = assistantPayloads(), stable = {
+    if (me.exportContext && me.exportHash && !me.exportError && assistantSameKey(me.exportKey, exportKey)){        // only unsaved edits changed: the saved context stands
+      const dgen = assistantDirtyGen(), results = assistantResults(me.exportContext, assistantResultRows());
+      if (!(await assistantWriteOwned(me, ASSISTANT_FILES.results, {...results, generatedAt:new Date().toISOString()}, alive))) return;
+      if (alive()) me.exportDirtyGen = dgen; return; }
+    const tools = await assistantToolsState(me.dir); if (!alive()) return;
+    const payloads = assistantPayloads(tools), stable = {
       context:{...payloads.context, generatedAt:undefined, example:{...payloads.context.example, createdAt:undefined}},
       results:{...payloads.results, generatedAt:undefined}};
-    const fp = hashText(JSON.stringify(stable)); if (fp === me.exportHash && !me.exportError){ me.exportKey = exportKey; return; }
+    const fp = hashText(JSON.stringify(stable)); if (fp === me.exportHash && !me.exportError){ me.exportKey = exportKey; me.exportContext = payloads.context; me.exportDirtyGen = assistantDirtyGen(); return; }
     if (!(await assistantWriteOwned(me, ASSISTANT_FILES.context, payloads.context, alive))) return; me.contextRev = payloads.context.plan.revision;
     if (!(await assistantWriteOwned(me, ASSISTANT_FILES.results, payloads.results, alive))) return;
-    if (!alive()) return; const changed = !!me.exportError; me.exportHash = fp; me.exportKey = exportKey; me.exportError = ""; me.exportedAt = Date.now();
+    if (!alive()) return; const changed = !!me.exportError; me.exportHash = fp; me.exportKey = exportKey; me.exportContext = payloads.context; me.exportDirtyGen = assistantDirtyGen(); me.exportError = ""; me.exportedAt = Date.now();
     if (changed && !assistantInteractionBusy()) render();
   } catch(e){ if (alive()){ const changed = me.exportError !== e.message; me.exportError = String(e.message || e).slice(0, 200); if (changed && !assistantInteractionBusy()) render(); } }
 }
@@ -11288,19 +11398,20 @@ function amAutoBlock(F){
 let amAutoBusy = false;
 async function amAuto(){
   const me = AM, F = me && me.dir && !me.error && !me.paused && !me.chatReview ? me.file : null; if (!F || amAutoBusy) return;
-  const level = amLevel(), rows = amRows().filter(r=>r.group === "ready" && r.r.status === "ready"), held = {};
+  const level = amLevel(), all = amRows(), rows = all.filter(r=>r.group === "ready" && r.r.status === "ready"), held = {};
   if (level === "review"){ rows.forEach(r=>{ held[r.c.id] = {code:"review", reason:"Waiting for review in Sightline (Changes)."}; }); }
   else if (rows.length){ const why = amAutoBlock(F);
-    rows.forEach(r=>{ const risk = why ? "" : amRiskOf(r.eff);
+    rows.forEach(r=>{ const risk = why ? "" : amRiskOf(r.eff, r.base);
       if (why) held[r.c.id] = why;
       else if (risk === "floor") held[r.c.id] = {code:"review", reason:"It deletes an initiative with Jira-linked work, so a person always reviews it."};
       else if (risk === "risky" && level !== "all") held[r.c.id] = {code:"review", reason:"It deletes something, so it waits for review at this level."}; });
     // risk by size: what a change moves besides its own items, and how many items the batch touches in all
     if (!why && level !== "all"){ let total = 0; const sized = [];
-      rows.filter(r=>!held[r.c.id]).slice(0, AM_APPLY_MAX).forEach(r=>{ const moves = r.r.dated ? (r.r.moves ?? amKnock(r.r, r.eff.ops)) : 0; r.r.moves = moves;
+      rows.filter(r=>!held[r.c.id]).slice(0, AM_APPLY_MAX).forEach(r=>{ const moves = r.r.dated ? (r.r.moves ?? amKnock(r.r, r.eff.ops, r.base)) : 0; r.r.moves = moves;
         total += new Set((r.eff.ops || []).map(o=>o && (o.id || (o.args && (o.args.id || o.args.date || o.args.from))) || "").filter(Boolean)).size + moves; sized.push(r);
         if (moves > AM_MOVES_MAX) held[r.c.id] = {code:"review", reason:`It moves ${moves} other items, so it waits for review at this level.`}; });
       if (total > AM_BATCH_ITEMS_MAX) sized.forEach(r=>{ if (!held[r.c.id]) held[r.c.id] = {code:"review", reason:`The batch touches about ${total} items, more than ${AM_BATCH_ITEMS_MAX}, so it waits for review at this level.`}; }); } }
+  rows.forEach(r=>{ const was = r.after != null && held[all[r.after].c.id]; if (was && !held[r.c.id]) held[r.c.id] = {code:was.code, reason:`It needs ${amNo(r.after)}, which waits: ${was.reason}`}; });   // a held change holds what it enables
   const go = rows.filter(r=>!held[r.c.id]).map(r=>r.c.id).slice(0, AM_APPLY_MAX);
   if (JSON.stringify(held) !== JSON.stringify(me.held || {})){ me.held = held; me.autoGen = (me.autoGen || 0) + 1; assistantScheduleExport(); }
   if (!go.length || assistantInteractionBusy()) return;
@@ -11341,7 +11452,7 @@ function chatState(pid = S.meta.planId){
   return chatSessions.get(pid);
 }
 function chatSourceKey(){ return [S.meta.planId, file.handle, file.baseText, !!file.dirty, file.handle ? null : S, file.handle ? null : changeGen, JIRA, JIRA_ISSUES, dayToIso(todayDay())]; }
-function chatSignature(context){ const copy = clone(context); delete copy.generatedAt; if (copy.example) delete copy.example.createdAt; return JSON.stringify(copy); }
+function chatSignature(context){ const copy = clone(context); delete copy.generatedAt; delete copy.tools; if (copy.example) delete copy.example.createdAt; return JSON.stringify(copy); }
 function chatCurrentSignature(){ return chatSignature(assistantPayloads().context); }
 function chatFresh(reply){
   if (!reply || reply.connection !== AM || !AM?.dir || AM.paused || reply.planId !== S.meta.planId || (file.handle && file.dirty)) return false;
@@ -11656,6 +11767,12 @@ function amendPanel(put){
   }
   if (AM.exportError) put(h("div",{class:"msg warn",id:"assistantExportError"}, AM.exportError));
   put(h("details",{id:"assistantFiles"},h("summary",{},"Files and assistant handoff"),
+    AM.dir ? h("div",{id:"amTools"}, h("div",{class:"qrow"}, h("button",{type:"button",class:"btn",id:"amToolsPut",disabled:!BUNDLED_TOOLS.files.length,onclick:()=>amToolsPut(false)},"Put assistant tools in this folder"),
+        h("span",{class:"hint"}, BUNDLED_TOOLS.files.length ? `${BUNDLED_TOOLS.files.map(f=>f.name).join(" and ")} for Sightline ${BUNDLED_TOOLS.version}, each with a .sha256` : "Open the built Sightline HTML to get its tools.")),
+      AM.toolsConfirm ? h("div",{class:"msg warn",id:"amToolsConfirm"}, `Older copies are in this folder: ${AM.toolsConfirm.map(x=>x.name + (x.version ? ` (Sightline ${x.version})` : "")).join(", ")}. Replace them with the copies for Sightline ${BUNDLED_TOOLS.version}? Anything else in the folder is kept.`, " ",
+        h("button",{type:"button",class:"btn sm",id:"amToolsReplace",onclick:()=>amToolsPut(true)},"Replace them"), " ", h("button",{type:"button",class:"linkish",id:"amToolsKeep",onclick:()=>{ AM.toolsConfirm = null; AM.toolsMsg = "Kept the older copies. Nothing was changed."; render(); }},"Keep them")) : null,
+      AM.toolsMsg ? h("p",{class:"hint",id:"amToolsMsg"}, AM.toolsMsg) : null,
+      h("p",{class:"hint",id:"amToolsHelp"}, "Keep these tools in a private folder, and never run a tool that holds a Jira token from a shared folder. Matching hashes show the tools match this page, not that the page itself is genuine.")) : null,
     AM.dir ? h("button",{type:"button",class:"btn",id:"assistantCopyInstructions",onclick:()=>copyText(assistantInstructions(), "the assistant instructions")},"Copy instructions for your assistant") : null,
     h("div",{class:"qrow"}, h("b",{}, AM.dir ? AM.dir.name : AM.name || "Amendments file"), h("span",{class:"hint"}, AM.readAt ? `read ${fmtTime(new Date(AM.readAt).toISOString())}` : ""),
     h("button",{type:"button",class:"linkish",id:"amRefresh",onclick:()=>AM.dir ? assistantTick() : amRead(false)},"Refresh"), h("button",{type:"button",class:"linkish",id:"amExport",onclick:()=>exportAssistantView()},"Export for your assistant"),
@@ -11675,24 +11792,32 @@ function amendPanel(put){
   if (F.basedOn.planRevision != null && F.basedOn.planRevision !== (S.meta.revision || 0)) put(h("p",{class:"hint"}, `Written against revision ${F.basedOn.planRevision}; the plan is at ${S.meta.revision || 0}. Each change is checked against the plan as it is now.`));
   const rows = amRows(), G = g => rows.filter(r=>r.group === g), ready = G("ready");
   // what else a date change moves: two scheduled copies of the plan each, so only here, for the first 10, once per check
-  let knocks = 0; rows.forEach(x=>{ if (x.r.status === "ready" && x.r.dated && x.r.moves == null && knocks++ < 10) x.r.moves = amKnock(x.r, x.eff.ops); });
-  if (can && ready.length) put(h("button",{type:"button",class:"btn primary",id:"amApplyAll",onclick:e=>{ busy(e.currentTarget, "Applying…"); amApply(ready.slice(0, AM_APPLY_MAX).map(r=>r.c.id)); }},
-    ready.length > AM_APPLY_MAX ? `Apply the first ${AM_APPLY_MAX} ready as one update` : `Apply ${ready.length} ready as one update`));
-  const row = ({c, eff, r, mark}) => h("li",{class:"amrow am-" + r.status,"data-am":c.id},
+  let knocks = 0; rows.forEach(x=>{ if (x.r.status === "ready" && x.r.dated && x.r.moves == null && knocks++ < 10) x.r.moves = amKnock(x.r, x.eff.ops, x.base); });
+  const run = amRun(rows), past = run.stop ? rows.filter(x=>x.i > run.stop.i && x.group === "ready") : [];
+  const skippedIn = x => rows.filter(y=>y.i < x && y.mark === "skipped").map(y=>y.c.id);
+  if (can && run.ready.length) put(h("div",{class:"qrow",id:"amRunRow"}, h("button",{type:"button",class:"btn primary",id:"amApplyAll",onclick:e=>{ busy(e.currentTarget, "Applying…");
+      amApply(run.ids, {inOrder:true, more:run.more, stop:run.stop ? {id:run.stop.c.id, reason:amWhy(run.stop)} : null, skipped:skippedIn(run.stop ? run.stop.i : rows.length)}); }},
+    run.more ? `Apply the next ${AM_APPLY_MAX} as one update` : `Apply ${run.ready.length} ready as one update`),
+    run.stop ? h("span",{class:"hint",id:"amRunStop"}, `In order, then stops at ${amNo(run.stop.i)}: ${amWhy(run.stop)}.`) : null));
+  const row = x => { const {c, eff, r, mark, after, needs} = x; return h("li",{class:"amrow am-" + (needs != null ? "invalid" : r.status),"data-am":c.id},
     h("div",{class:"amsum"}, h("b",{}, c.summary || r.lines[0] || c.id), eff.edited ? h("span",{class:"dvb dvb-detail",title:"You edited this change before applying it"}, "Edited by you") : null),
     eff.editLost ? h("div",{class:"hint amwhy"}, "Your assistant rewrote this change, so your earlier edits no longer apply. ", h("button",{type:"button",class:"linkish","data-amdrop":c.id,onclick:()=>{ amSetEdit(AM.file.batchId, c, null); render(); }},"Forget them")) : null,
     r.lines.length ? h("ul",{class:"amlines"}, ...r.lines.map(t=>h("li",{}, t))) : null,
     ...amStories(eff.ops).map(x=>h("div",{class:"amstory","data-amstory":c.id}, h("div",{class:"hint"}, x.label), x.text.trim() ? mdRender(x.text) : h("p",{class:"hint"}, "Clears the story."))),
-    r.reasons.length ? h("div",{class:"hint amwhy"}, r.reasons.join(" ")) : null, r.notes.length ? h("div",{class:"hint"}, r.notes.join(" · ")) : null,
+    after != null ? h("div",{class:"hint amafter","data-amafter":c.id}, `Ready after ${amNo(after)}: ${AM.file.changes[after].summary || AM.file.changes[after].id}. Apply ready applies them in order.`) : null,
+    needs != null ? h("div",{class:"hint amwhy","data-amneeds":c.id}, `Needs ${amNo(needs)}, which you skipped. `,
+      can ? h("button",{type:"button",class:"linkish","data-amreopen":AM.file.changes[needs].id,onclick:()=>{ amMark(AM.file.batchId, AM.file.changes[needs], ""); render(); }},`Reopen ${amNo(needs)}`) : null)
+    : r.reasons.length ? h("div",{class:"hint amwhy"}, r.reasons.join(" ")) : null, r.notes.length ? h("div",{class:"hint"}, r.notes.join(" · ")) : null,
+    past.includes(x) ? h("div",{class:"hint","data-amlater":c.id}, `Apply ready stops at ${amNo(run.stop.i)} first, so this one waits. You can apply it on its own.`) : null,
     r.status === "ready" && amLevel() !== "review" && AM.held && AM.held[c.id] ? h("div",{class:"hint amheld","data-amheld":c.id}, AM.held[c.id].reason) : null,
     r.moves ? h("div",{class:"hint amknock","data-amknock":c.id}, `Applying this also moves ${r.moves} linked item${r.moves === 1 ? "" : "s"} to keep their order.`) : null,
-    can ? h("div",{class:"qrow"}, r.status === "ready" && mark !== "skipped" ? h("button",{type:"button",class:"btn sm","data-amapply":c.id,onclick:e=>{ busy(e.currentTarget, "Applying…"); amApply([c.id]); }},"Apply") : null,
+    can ? h("div",{class:"qrow"}, r.status === "ready" && mark !== "skipped" && after == null ? h("button",{type:"button",class:"btn sm","data-amapply":c.id,onclick:e=>{ busy(e.currentTarget, "Applying…"); amApply([c.id]); }},"Apply") : null,
       mark === "skipped" ? h("button",{type:"button",class:"linkish","data-amreopen":c.id,onclick:()=>{ amMark(AM.file.batchId, c, ""); render(); }},"Reopen")
         : mark !== "applied" && r.status !== "done" ? h("button",{type:"button",class:"linkish","data-amskip":c.id,onclick:()=>{ amMark(AM.file.batchId, c, "skipped"); render(); }},"Skip") : null,
       mark === "applied" || r.status === "done" ? h("span",{class:"hint"}, "In the plan") : null,
       mark !== "applied" && r.status !== "done" && UI.amEditing !== c.id ? h("button",{type:"button",class:"linkish","data-amedit":c.id,onclick:()=>{ UI.amEditing = c.id; render(); }},"Edit") : null,
       eff.edited && mark !== "applied" && r.status !== "done" ? h("button",{type:"button",class:"linkish","data-amorig":c.id,onclick:()=>{ amSetEdit(AM.file.batchId, c, null); render(); }},"Use the assistant's version") : null) : null,
-    can && UI.amEditing === c.id ? amEditor(c, eff) : null);
+    can && UI.amEditing === c.id ? amEditor(c, eff) : null); };
   [["ready","Ready"],["changed","Changed since"],["attention","Needs attention"],["completed","Completed"]].forEach(([g, label])=>{ const L = G(g); if (!L.length) return;
     put(h("details",{class:"amgroup",open: g !== "completed"}, h("summary",{}, `${label} (${L.length})`),
       g === "changed" ? h("p",{class:"hint"}, "The plan changed after your assistant wrote these. Ask it to look again; nothing was applied.") : null,

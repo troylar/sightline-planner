@@ -1841,7 +1841,7 @@ ACTIONS = {
     "holiday.del": ({"date": "iso"}, False),
     "forecast.setReserve": ({"reserve": "any"}, True),
     "milestone.add": ({"id": "id?", "what": "str", "day": "iso?", "lane": "id?", "status": "str?", "owners": "ids?", "after": "ids?"}, False),
-    "milestone.move": ({"id": "id", "day": "iso", "stretch": "any?"}, True),
+    "milestone.move": ({"id": "id", "day": "isoOrNull", "stretch": "any?"}, True),
     "milestone.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "milestone.doneWhen.add": ({"id": "id", "bar": "id"}, False),
     "milestone.doneWhen.remove": ({"id": "id", "bar": "id"}, False),
@@ -1868,6 +1868,8 @@ ACT_REF_BY_ARG = {"outcome": "dv", "after": "bar", "parent": "bar", "target": "b
 def _act_type_ok(t: str, v) -> bool:
     if t == "id":
         return isinstance(v, str) and bool(ACT_ID.match(v))
+    if t == "isoOrNull":
+        return v is None or _act_type_ok("iso", v)
     if t == "idOrBlank":
         return v == "" or _act_type_ok("id", v)
     if t == "ids":
@@ -1919,7 +1921,7 @@ def check_action_op(o, at: str, ids: dict, made: dict) -> str:
                 continue
             return f"{at}: {name} needs {k}."
         if not _act_type_ok(ty, args[k]):
-            return f"{at}: {k} isn't a valid {'date (YYYY-MM-DD)' if ty == 'iso' else 'list' if ty in ('ids', 'keys') else 'id' if ty == 'id' else 'number' if ty in ('num', 'int') else 'split ({workstream id: weight})' if ty == 'weights' else 'value'}."
+            return f"{at}: {k} isn't a valid {'date (YYYY-MM-DD)' if ty in ('iso', 'isoOrNull') else 'list' if ty in ('ids', 'keys') else 'id' if ty == 'id' else 'number' if ty in ('num', 'int') else 'split ({workstream id: weight})' if ty == 'weights' else 'value'}."
     noun, verb = name.split(".", 1)
     creates = verb == "add" and noun not in ("link",)
     if creates and "id" in spec and not (isinstance(args.get("id"), str) and args["id"]):
@@ -2176,8 +2178,9 @@ def _am_item(o, at, plan, made_bars, made_tasks) -> str:
     return "todo"
 
 
-def am_check(c: dict, plan: dict, status: dict) -> dict:
-    """One change against the plan: {status: ready|changed|invalid|done, reasons, notes}. Mirrors the page's amCheck."""
+def am_check(c: dict, plan: dict, status: dict, earlier: dict | None = None) -> dict:
+    """One change against the plan: {status: ready|changed|invalid|done, reasons, notes}. Mirrors the page's amCheck.
+    earlier: ids that earlier changes in the batch add, by kind; an action may refer to them (the page applies in order)."""
     bad, stale, notes, made, todo, made_bars, made_tasks = [], [], [], {}, 0, {}, {}
     dvs = [d for d in plan.get("deliverables") or [] if isinstance(d, dict)]
     issues = status.get("issues") or {}
@@ -2185,7 +2188,7 @@ def am_check(c: dict, plan: dict, status: dict) -> dict:
     def dv(i):
         return made.get(i) or next((d for d in dvs if d.get("id") == i), None)
 
-    plan_ids, act_made = _plan_ids(plan), {}
+    plan_ids, act_made = _plan_ids(plan), {k: set(v) for k, v in (earlier or {}).items()}
     for n, o in enumerate(c["ops"], 1):
         at = f"op {n}"
         if not isinstance(o, dict):
@@ -2336,7 +2339,17 @@ def am_check(c: dict, plan: dict, status: dict) -> dict:
             continue
         bad.append(f'{at}: "{str(o.get("op"))[:20]}" isn\'t an amendment (use add, set, link, unlink, propose or action)')
     st = "invalid" if bad else "changed" if stale else "ready" if todo else "done"
+    if earlier is not None and st != "invalid":
+        for k, v in act_made.items():
+            earlier.setdefault(k, set()).update(v)
     return {"id": c["id"], "summary": str(c.get("summary") or "")[:200], "status": st, "reasons": bad + stale, "notes": list(dict.fromkeys(notes))}
+
+
+# What this offline check covers, and what only the page can check (it has the live plan, Jira and the person's choices).
+AM_CHECKED = ["the file's shape and ids", "action names and their arguments", "that every id an action uses is in the plan or added by an earlier change in this batch",
+              "deliverable, initiative and task fields, values and prev"]
+AM_NOT_CHECKED = ["each action's own rules (loops, Jira-owned dates and status, blacked-out time, limits)", "prev for actions",
+                  "what an earlier change in this batch sets", "review and apply-on-its-own holds", "unsaved edits in the open page"]
 
 
 def semver(v) -> tuple:
@@ -2386,10 +2399,12 @@ def cmd_check_amendments(args) -> None:
         else:
             print("Can't use this file: " + err)
         raise SystemExit(2)
-    rows = [am_check(c, plan, status) for c in o["changes"]]
+    earlier: dict = {}
+    rows = [am_check(c, plan, status, earlier) for c in o["changes"]]
     counts = {k: sum(1 for r in rows if r["status"] == k) for k in ("ready", "changed", "invalid", "done")}
     if args.json:
         print(json.dumps({"ok": counts["invalid"] == 0, "matchesPage": PAGE_VERSION, "batchId": o["batchId"], "counts": counts, "changes": rows,
+                          "checked": AM_CHECKED, "notCheckedHere": AM_NOT_CHECKED, "checkedWhen": "Sightline checks everything again, in order, when it applies the batch.",
                           "jiraSyncedAt": status.get("generatedAt"), "planRevision": (plan.get("meta") or {}).get("revision", 0)}, indent=2))
     else:
         label = {"ready": "READY  ", "changed": "CHANGED", "invalid": "INVALID", "done": "DONE   "}
@@ -2402,6 +2417,8 @@ def cmd_check_amendments(args) -> None:
                 print(f"          note: {x}")
         print(f"{counts['ready']} ready, {counts['changed']} changed since, {counts['invalid']} invalid, {counts['done']} already in the plan."
               + ("" if status else " No Jira sync found, so releases, sprints and assignees can't be checked."))
+        print("Checked here: " + "; ".join(AM_CHECKED) + ".")
+        print("Not checked here: " + "; ".join(AM_NOT_CHECKED) + ". Sightline checks those when it applies the batch, in order.")
     raise SystemExit(1 if counts["invalid"] else 0)
 
 

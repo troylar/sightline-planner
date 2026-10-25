@@ -89,6 +89,19 @@ bundle = {"version":rel[0]["version"], "files":skill_files, "license":license_te
 skill_data = json.dumps(bundle, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
 assert t.count('/*__SKILLS__*/{"version":"dev","files":[],"archive":""}') == 1, "skills placeholder not found"
 t = t.replace('/*__SKILLS__*/{"version":"dev","files":[],"archive":""}', skill_data)
+# The assistant tools, stamped with this page's version: written to dist/ here and embedded as the same bytes, so the
+# page can put copies that match it in an assistant folder. Escaped like the release notes, inside the hashed script.
+tools = []
+for name in ("sightline-app.py", "sightline-jira-sync.py"):
+    raw = pathlib.Path("tools", name).read_bytes()
+    if raw.count(b"\nPAGE_VERSION = None\n") != 1: fail(f"{name}: PAGE_VERSION = None must occur once")
+    raw = raw.replace(b"\nPAGE_VERSION = None\n", f'\nPAGE_VERSION = "{rel[0]["version"]}"\n'.encode(), 1)
+    pathlib.Path("dist", name).write_bytes(raw)
+    tools.append({"name":name, "text":raw.decode("utf-8"), "sha256":hashlib.sha256(raw).hexdigest(), "bytes":len(raw)})
+if sum(x["bytes"] for x in tools) > 512 * 1024: fail("the assistant tools must fit within 512 KiB to embed")
+tool_data = json.dumps({"version":rel[0]["version"], "files":tools}, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
+assert t.count('/*__TOOLS__*/{"version":"dev","files":[]}') == 1, "tools placeholder not found"
+t = t.replace('/*__TOOLS__*/{"version":"dev","files":[]}', tool_data)
 # The version stamp near the top of the page, which the Jira sync reads to tell an open page a newer copy is there.
 assert t.count('<meta name="sightline-version" content="dev">') == 1, "version meta placeholder not found in template"
 t = t.replace('<meta name="sightline-version" content="dev">', f'<meta name="sightline-version" content="{rel[0]["version"] if rel else "0.0.0"}">')
@@ -141,7 +154,6 @@ node --check dist/app.js
 # doesn't know instead of checking against old actions.
 VER=$(python3 -c 'import json; print(json.load(open("src/releases.json"))[0]["version"])')
 for t in sightline-app.py sightline-jira-sync.py; do
-  sed "s/^PAGE_VERSION = None$/PAGE_VERSION = \"$VER\"/" "tools/$t" > "dist/$t"
   grep -q "^PAGE_VERSION = \"$VER\"$" "dist/$t" || { echo "build: couldn't stamp $t with $VER" >&2; exit 1; }
   python3 -c "import ast, sys; ast.parse(open(sys.argv[1], encoding=\"utf-8\").read())" "dist/$t"
 done
