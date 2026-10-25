@@ -1,5 +1,35 @@
 [
   {
+    "version": "1.118.0",
+    "date": "2026-10-25",
+    "headline": "Text size, and a tidier header",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Header",
+        "title": "Make the text larger or smaller",
+        "now": "Choose A+ or A− to change the page's text from 90% to 150% in 10% steps, without browser zoom, and Reset to go back to 100%. Text never gets smaller than 9 pixels. The size stays in this browser and isn't saved in the plan.",
+        "where": "The menu at the right of the header, under Text size"
+      },
+      {
+        "kind": "improved",
+        "area": "Header",
+        "title": "You, theme, what's new and help in one menu",
+        "before": "Who you are, the theme, What's new and Help were four separate buttons across the top.",
+        "now": "One button at the right of the header shows your initials, or Choose yourself, and opens a menu with who you are, text size, theme, What's new and help. A dot on it means there's something new to read.",
+        "where": "Right of the header"
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "View says how you're looking at the plan",
+        "before": "The rows and sources choices took up most of the bar above the chart.",
+        "now": "View holds the rows (by workstream, person or epic) and the sources, and the button says what's chosen, like View: By person · Jira only. R still switches rows.",
+        "where": "Timeline, above the chart"
+      }
+    ]
+  },
+  {
     "version": "1.117.0",
     "date": "2026-10-25",
     "headline": "What each workstream is for, and skills on the team",

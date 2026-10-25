@@ -165,7 +165,7 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   ok("welcome can be dismissed, leaving the setup checklist", !d.querySelector(".welcome") && /Set up this plan/.test(d.querySelector("#gantt").textContent));
   // --- themes ---
   const tb = d.querySelector("#theme");
-  ok("theme starts on auto (no data-theme)", !d.documentElement.hasAttribute("data-theme") && tb.textContent==="◐");
+  ok("theme starts on auto (no data-theme)", !d.documentElement.hasAttribute("data-theme") && tb.textContent.startsWith("◐") && /Theme: Auto/.test(tb.textContent));
   tb.click(); ok("theme → light", d.documentElement.getAttribute("data-theme")==="light");
   tb.click(); ok("theme → dark", d.documentElement.getAttribute("data-theme")==="dark" && /Dark/.test(tb.getAttribute("aria-label")));
   ok("theme remembered", w.localStorage.getItem("timeline-planner-theme")==="dark");
