@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.121.0",
+    "date": "2026-10-25",
+    "headline": "See one whole sprint, edge to edge, and step sprint by sprint",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Fit the view to a sprint",
+        "before": "\"1 sprint\" showed a sprint's width wherever the view happened to be, so it usually showed parts of two sprints, and the arrows moved by screens, not sprints.",
+        "now": "Pick a sprint in the zoom control and the view fits it exactly, from its first day to its last, in Weeks and Days, for sprints of any length. The arrows and [ and ] step whole sprints, and . goes to the sprint we're in. Show two or more sprints with + and −. The choice stays in this browser and links carry it.",
+        "where": "Timeline, the zoom control at the top left"
+      }
+    ]
+  },
+  {
     "version": "1.120.3",
     "date": "2026-10-25",
     "headline": "Milestone and gate labels that fall close together stay readable",
