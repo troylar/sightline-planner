@@ -76,7 +76,7 @@ setTimeout(()=>{console.log(checks.join('\n'));console.log('TIMEOUT');process.ex
     const bg = JSON.parse(big);
     ok('R4 300 items, 40 people, 5 years: everything gets a date, one run under 150 ms and all three under 500 ms', bg.done === 300 && bg.one < 150 && bg.all < 500, big);
     ev(`select('bar', 'B')`);
-    ok('U1 an initiative\'s card shows its forecast dates and why they are what they are', /^Forecast: likely Nov 2 to Nov 6; high finish Nov \d+ \(if everything takes its high estimate\)\. It starts then because waited for A again \(finishes Oct 30\)\. About 1 person-week a week \(Casey\)\.$/.test((d.querySelector('#f-fcast') || {}).textContent || ''), (d.querySelector('#f-fcast') || {}).textContent);
+    ok('U1 an initiative\'s card shows its forecast dates and why they are what they are', /^Forecast: likely Nov 2 to Nov 6; high finish Nov \d+ \(if everything takes its high estimate\)\. It starts then because it waited for A again \(finishes Oct 30\)\. About 1 person-week a week \(Casey\)\.$/.test((d.querySelector('#f-fcast') || {}).textContent || ''), (d.querySelector('#f-fcast') || {}).textContent);
     ev(`commit(()=>{ S.bars.push({...clone(S.bars.find(b=>b.id === 'A')), id:'NC', label:'Unsized work', start:3}); delete S.bars.at(-1).effort; S.bars.find(b=>b.id === 'B').dependsOn = ['A', 'NC']; }); select('bar', 'B')`);
     ok('U2 …and when it has no date, the reason', /^No forecast date: waits for Unsized work \(not counted: no effort\)\.$/.test((d.querySelector('#f-fcast') || {}).textContent || ''), (d.querySelector('#f-fcast') || {}).textContent);
     ok('no runtime errors', ev('window.errors.length') === 0, ev('window.errors.join(" | ")'));

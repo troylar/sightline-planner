@@ -315,6 +315,8 @@ button.flag{border:0;background:transparent;font-family:inherit;cursor:pointer;c
 .lane.gaterow{background:color-mix(in srgb,var(--warn) 5%,transparent)}
 .lane.markrow .track{min-height:30px}
 #t-gates tr.flash td,#t-holidays tr.flash td{background:var(--warn-bg);transition:background .3s}
+.fcsum{font-size:14px;margin:0 0 10px}.fcsum.incomplete{color:var(--warn)}.fctable td,.fcloadt td{padding:4px 8px;border-bottom:1px solid var(--rule-2);vertical-align:top}.fctable tr.nodate td{color:var(--ink-3)}.fcwhytd{font-size:12px;color:var(--ink-2);max-width:360px}.fch3{font-size:14px;margin:16px 0 4px}.fcchain{margin:4px 0 6px 18px;padding:0;font-size:13px}.fcloadt tr.over td:nth-child(4){color:var(--bad);font-weight:600}
+.fcload{display:block}.fcl-fixed{fill:var(--ink-3)}.fcl-used{fill:var(--accent)}.fcl-hatch{stroke:var(--warn);stroke-width:2}.fcl-cap{fill:none;stroke:var(--ink);stroke-width:1.5}
 .fcwhy{font-size:12px;color:var(--ink-3);margin-top:4px}.fcwhy summary{cursor:pointer}.fcwhy ol{margin:4px 0 0 18px;padding:0}.fcwhy li{margin:2px 0}
 .effin{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--ink-3)}.effin input{width:5.5em}
 .editstrip{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:10px 16px 0;padding:7px 12px;border-radius:8px;font-size:13px;border:1px solid var(--rule);background:var(--surface)}
@@ -1144,6 +1146,10 @@ dialog textarea{width:100%;height:50vh;font-family:"IBM Plex Mono",monospace;fon
 <div id="ws-standup" role="tabpanel" aria-labelledby="tab-standup" hidden><div class="panel standup" id="standupWs"></div></div>
 <div id="ws-roadmap" role="tabpanel" aria-labelledby="tab-roadmap" hidden><div class="panel roadmap" id="roadmapWs"></div></div>
 <div id="ws-people" role="tabpanel" aria-labelledby="tab-people" hidden>
+<section class="panel load" id="sec-forecast" aria-labelledby="fc-h">
+  <header><h2 id="fc-h">Forecast</h2><span class="hint" id="fcHint">Worked out from effort, who's in each workstream, their time and what each item waits for. It never moves anything on the timeline.</span></header>
+  <div id="forecastWs"></div>
+</section>
 <section class="panel load" id="sec-off" aria-labelledby="off-h">
   <header><h2 id="off-h">Time off</h2><span class="hint" id="offHint">Everyone's time off in one place. Company holidays are in Settings → Calendar.</span></header>
   <div id="offTracker"></div>
@@ -2431,6 +2437,7 @@ function criticalChain(run, endId){
     const sDays = Math.max(0, ...Object.values(slow).map(x=>x.length)), sIds = Object.keys(slow).filter(x=>slow[x].length === sDays).sort();
     const e = it.startEdge || {kind:"first"}, cost = e.kind === "capacity" ? e.days : it.late || 0;
     const link = {id, seg, at, start:it.start, finish:it.finish, edge:e, late:cost, slowedBy:sDays ? sIds : [], slowDays:sDays, via:sDays > cost ? "slow" : "start"};
+    link.waitDays = link.via === "slow" ? [...new Set(sIds.flatMap(x=>slow[x]))].sort((a, b)=>a - b) : e.kind === "capacity" ? it.hits.filter(h=>!h[1] && h[0] < it.start).map(h=>h[0]) : [];
     links.push(link);
     if (link.via === "slow"){ const nx = latest(sIds), days = slow[nx]; id = nx; seg = [days[0], days[days.length - 1]]; at = seg[0]; continue; }
     if (e.kind === "dep" && run.items[e.id]){ id = e.id; seg = [fin(id), fin(id)]; at = fin(id) + 1; continue; }
@@ -2449,15 +2456,18 @@ function forecastLoad(run, laneId, from, to){
   const demand = used + backlog;
   return {lane:laneId, people:run.people[laneId] || [], from, to, capacity:cap, used, backlog, demand, load:cap > FC_EPS ? demand / cap : null};
 }
-// The bottleneck: the workstream whose waits add the most days to the chain; if none do, the one with the highest load.
+// The bottleneck: the workstream whose waits add the most days to the chain (each working day counted once, though
+// waits on the chain overlap); if none do, the one with the highest load.
 function forecastBottleneck(run, chain, laneOf){
-  const days = {}; chain.links.forEach(l=>{ const n = l.via === "slow" ? l.slowDays : l.edge && l.edge.kind === "capacity" ? l.late : 0; if (n) days[laneOf(l.id)] = (days[laneOf(l.id)] || 0) + n; });
+  const sets = {}; chain.links.forEach(l=>{ if (!(l.waitDays || []).length) return; const k = laneOf(l.id); sets[k] = sets[k] || new Set(); l.waitDays.forEach(n=>sets[k].add(n)); });
+  const days = Object.fromEntries(Object.entries(sets).map(([k, v])=>[k, v.size]));
   const order = Object.keys(run.pools), top = Object.keys(days).sort((a, b)=>days[b] - days[a] || order.indexOf(a) - order.indexOf(b))[0];
   if (top) return {lane:top, by:"chain", days:days[top], people:run.people[top] || []};
   const to = chain.links.length ? chain.links[0].finish : run.end, loads = order.map(l=>forecastLoad(run, l, run.first, to)).filter(x=>x && x.load != null && x.demand > FC_EPS);
   const hi = loads.sort((a, b)=>b.load - a.load || order.indexOf(a.lane) - order.indexOf(b.lane))[0];
   return hi ? {...hi, by:"load"} : null;
 }
+const fcBecause = (e, run) => (["dep", "gate", "block", "jira"].includes(e.kind) ? "it " : "") + fcEdgeText(e, run);
 const effOwnerIds = b => { const r = rollupOf(b); return r && r.owners.length ? r.owners : own(b); };
 const effOwner = b => effOwnerIds(b).map(personName).join(", ");
 const isLate = b => b.kind !== "waiting" && (rolls(b) ? (rollupOf(b).late || (effStatus(b) !== "done" && todayDay() > barEndDay(b))) : (b.status !== "done" && todayDay() > barEndDay(b)));
@@ -8625,21 +8635,79 @@ function forecastLine(b){
   if (it.finish == null) return h("p",{class:"hint",id:"f-fcast"}, `No forecast date: ${it.why.text}.`);
   const who = Object.keys(it.people).map(personName).join(", ");
   return h("p",{class:"hint",id:"f-fcast"}, `Forecast: likely ${yr(it.start)} to ${yr(f.likely)}; high finish ${yr(f.high)} (if everything takes its high estimate). `
-    + `It starts then because ${fcEdgeText(it.startEdge, run)}. About ${pw1(it.rate)} a week` + (who ? ` (${who})` : "") + "." + (it.overdue ? " Its sprint has ended, so what's left is forecast from today." : "") + high);
+    + `It starts then because ${fcBecause(it.startEdge, run)}. About ${pw1(it.rate)} a week` + (who ? ` (${who})` : "") + "." + (it.overdue ? " Its sprint has ended, so what's left is forecast from today." : "") + high);
 }
-// The critical chain to this item (or a holder's last item), as sentences, with the workstream the waiting was for.
+// The critical chain as sentences, and the workstream the waiting was for (or the busiest one).
+function chainLines(run, ch, yr){
+  const nm = id => { const x = S.bars.find(y=>y.id === id); return x ? chartLabel(x) : id; }, names = ids => ids.map(nm).join(" and "), days = n => `${n} working day${n === 1 ? "" : "s"}`;
+  return ch.links.map(l=>{ const head = `${nm(l.id)} (${l.start == null ? "" : yr(l.start) + " to "}${yr(l.finish)}): `;
+    if (!l.edge) return head + "Jira's sprint sets its dates.";
+    const st = l.edge.kind === "first" ? "started as soon as it could" : `started then because ${fcBecause(l.edge, run)}`, sl = l.slowDays ? `slowed ${days(l.slowDays)} while ${names(l.slowedBy)} shared its people` : "";
+    return head + (l.via === "slow" ? sl + (l.late ? `; it ${st}` : "") : st + (sl ? `; ${sl}` : "")) + "."; });
+}
+const poolName = (laneId, people) => { const ln = S.lanes.find(l=>l.id === laneId); return `${ln ? ln.name : "a workstream"}${people.length ? ` (${people.map(personName).join(", ")})` : ""}`; };
+function bottleneckText(run, ch, yr){
+  const bn = forecastBottleneck(run, ch, id=>run.items[id].lane); if (!bn) return null; const pool = poolName(bn.lane, bn.people);
+  return bn.by === "chain" ? `Most of the waiting on this chain is for ${pool}: ${bn.days} working day${bn.days === 1 ? "" : "s"}.`
+    : `Nobody on this chain waited for people. The busiest workstream is ${pool}: demand ${(Math.round(bn.load * 10) / 10).toFixed(1)} × capacity, ${yr(nextWork(bn.from, holidaySet(S)))} to ${yr(bn.to)}.`;
+}
+// The critical chain to this item (or a holder's last item), on its card.
 function forecastWhy(b){
   const F = forecastFor(), run = F.runs.likely, ch = criticalChain(run, b.id), yr = n => dayToDate(n).getUTCFullYear() === dayToDate(F.today).getUTCFullYear() ? fmtDay(n) : fmtDayY(n);
   if (!ch.links.length || ch.links.length === 1 && (!ch.links[0].edge || ch.links[0].edge.kind === "first" && !ch.links[0].slowDays)) return null;
-  const nm = id => { const x = S.bars.find(y=>y.id === id); return x ? chartLabel(x) : id; }, names = ids => ids.map(nm).join(" and "), days = n => `${n} working day${n === 1 ? "" : "s"}`;
-  const lines = ch.links.map(l=>{ const head = `${nm(l.id)} (${l.start == null ? "" : yr(l.start) + " to "}${yr(l.finish)}): `;
-    if (!l.edge) return head + "Jira's sprint sets its dates.";
-    const st = l.edge.kind === "first" ? "started as soon as it could" : `started then because ${fcEdgeText(l.edge, run)}`, sl = l.slowDays ? `slowed ${days(l.slowDays)} while ${names(l.slowedBy)} shared its people` : "";
-    return head + (l.via === "slow" ? sl + (l.late ? `; it ${st}` : "") : st + (sl ? `; ${sl}` : "")) + "."; });
-  const bn = forecastBottleneck(run, ch, id=>run.items[id].lane), ln = bn && S.lanes.find(l=>l.id === bn.lane), pool = bn && `${ln ? ln.name : "a workstream"}${bn.people.length ? ` (${bn.people.map(personName).join(", ")})` : ""}`;
-  return h("details",{class:"fcwhy",id:"f-chain"}, h("summary",{}, "Why it finishes then"), h("ol",{}, ...lines.map(t=>h("li",{}, t))),
-    bn ? h("p",{class:"hint",id:"f-bottleneck"}, bn.by === "chain" ? `Most of the waiting on this chain is for ${pool}: ${days(bn.days)}.`
-      : `Nobody on this chain waited for people. The busiest workstream is ${pool}: demand ${(Math.round(bn.load * 10) / 10).toFixed(1)} × capacity, ${yr(nextWork(bn.from, holidaySet(S)))} to ${yr(bn.to)}.`) : null);
+  const bt = bottleneckText(run, ch, yr);
+  return h("details",{class:"fcwhy",id:"f-chain"}, h("summary",{}, "Why it finishes then"), h("ol",{}, ...chainLines(run, ch, yr).map(t=>h("li",{}, t))), bt ? h("p",{class:"hint",id:"f-bottleneck"}, bt) : null);
+}
+// Capacity, Forecast (docs/forecast-and-scenarios.md 1.7, 1.8, 6): the summary for everything, every item's dates and
+// reason, the critical chain to the last finish, and each workstream's load by week. It only reads.
+const FC_NODATE = {notcounted:"not counted (no effort)", unstaffed:"unstaffed", waits:"waiting for an item with no date", loop:"on a dependency loop", horizon:"past the forecast's reach", gate:"waiting for a gate with no date", jira:"waiting for a Jira issue with no date"};
+function forecastSummary(F){
+  const run = F.runs.likely, rows = Object.entries(run.items).filter(([, it])=>it.state !== "done" && !["parked", "out"].includes((it.why || {}).kind));
+  const dated = rows.filter(([, it])=>it.finish != null), none = rows.filter(([, it])=>it.finish == null), byId = new Map(S.bars.map(b=>[b.id, b]));
+  const sum = k => dated.reduce((t, [id])=>t + ((byId.get(id) || {}).effort || {})[k] || 0, 0), likely = dated.length ? Math.max(...dated.map(([id])=>F.finish(id).likely)) : null;
+  const high = dated.length ? Math.max(...dated.map(([id])=>F.finish(id).high ?? -Infinity)) : null, n = x => `${x} item${x === 1 ? "" : "s"}`;
+  const range = sum("low") === sum("high") ? pw(sum("likely")) : `${Math.round(sum("low") * 2) / 2} to ${pw(sum("high"))}`;
+  if (!none.length) return {complete:true, rows, likely, high, text:`Everything (${n(dated.length)}, ${range}): likely ${fmtDayY(likely)}, high ${fmtDayY(high)} (if everything takes its high estimate).`};
+  const why = {}; none.forEach(([, it])=>{ const k = FC_NODATE[it.why.kind] ? it.why.kind : "waits"; why[k] = (why[k] || 0) + 1; });
+  return {complete:false, rows, likely, high, text:`Everything: incomplete. ` + (dated.length ? `The ${n(dated.length)} with a date finish ${fmtDayY(likely)} (likely). ` : "") +
+    `${n(none.length)} ${none.length === 1 ? "has" : "have"} no finish: ` + Object.entries(why).map(([k, c])=>`${c} ${FC_NODATE[k]}`).join(", ") + ". No finish date is claimed for everything."};
+}
+function loadChart(run, laneId, to, i){
+  const p = run.pools[laneId], ns = "http://www.w3.org/2000/svg", el = (tag, at) => { const e = document.createElementNS(ns, tag); Object.entries(at).forEach(([k, v])=>e.setAttribute(k, v)); return e; };
+  const last = Math.min(p.cap.length - 1, to - run.first), weeks = Math.min(104, Math.max(1, Math.ceil((last + 1) / 7))), wk = Array.from({length:weeks}, (_, w)=>{ const r = {cap:0, fixed:0, used:0, short:0};
+    for (let j = w * 7; j < Math.min(w * 7 + 7, last + 1); j++) ["cap", "fixed", "used", "short"].forEach(k=>{ r[k] += p[k][j] || 0; }); return r; });
+  const W = weeks * 8, H = 48, top = Math.max(FC_EPS, ...wk.map(r=>Math.max(r.cap, r.fixed + r.used + r.short))), y = v => H - v / top * (H - 4);
+  const svg = el("svg",{viewBox:`0 0 ${W} ${H}`,width:W,height:H,class:"fcload",role:"img","aria-label":`Weekly load for ${poolName(laneId, run.people[laneId] || [])}`});
+  const pat = el("pattern",{id:"fcw-" + i, width:4, height:4, patternUnits:"userSpaceOnUse", patternTransform:"rotate(45)"}); pat.append(el("line",{x1:0, y1:0, x2:0, y2:4, class:"fcl-hatch"})); const defs = el("defs",{}); defs.append(pat); svg.append(defs);
+  wk.forEach((r, w)=>{ let b = H; [["fixed", "fcl-fixed"], ["used", "fcl-used"], ["short", null]].forEach(([k, cls])=>{ const ht = r[k] / top * (H - 4); if (ht < 0.05) return; b -= ht;
+    svg.append(el("rect",{x:w * 8 + 1, y:b, width:6, height:ht, ...(cls ? {class:cls} : {fill:`url(#fcw-${i})`, class:"fcl-wait"})})); }); });
+  svg.append(el("polyline",{points:wk.flatMap((r, w)=>[`${w * 8},${y(r.cap)}`, `${w * 8 + 8},${y(r.cap)}`]).join(" "), class:"fcl-cap"}));
+  return svg;
+}
+function renderForecastWs(){
+  const host = $("#forecastWs"); if (!host) return; host.replaceChildren();
+  const F = forecastFor(), run = F.runs.likely, sm = forecastSummary(F), byId = new Map(S.bars.map(b=>[b.id, b]));
+  if (!sm.rows.some(([id])=>(byId.get(id) || {}).effort)){ host.append(h("p",{class:"hint",id:"fcEmpty"}, "Nothing has an effort yet. Give initiatives an effort (person-weeks left) on their cards, and the forecast appears here.")); return; }
+  const yr = n => dayToDate(n).getUTCFullYear() === dayToDate(F.today).getUTCFullYear() ? fmtDay(n) : fmtDayY(n);
+  host.append(h("p",{class:"fcsum" + (sm.complete ? "" : " incomplete"),id:"fcSummary"}, sm.text));
+  const reason = it => it.finish == null ? it.why.text : it.state === "fixed" ? "Jira's sprint sets its dates" : it.startEdge && it.startEdge.kind !== "first" ? fcEdgeText(it.startEdge, run) : "starts as soon as it can";
+  const rows = sm.rows.slice().sort(([a, x], [b, y])=>(x.finish ?? Infinity) - (y.finish ?? Infinity) || chartLabel(byId.get(a)).localeCompare(chartLabel(byId.get(b))));
+  host.append(h("div",{class:"gwrap"}, h("table",{class:"jptable fctable",id:"fcItems"},
+    h("thead",{}, h("tr",{}, ...["Initiative", "Workstream", "Effort", "Start", "Likely", "High", "Why"].map(t=>h("th",{}, t)))),
+    h("tbody",{}, ...rows.map(([id, it])=>{ const b = byId.get(id), e = b.effort, f = F.finish(id), ln = S.lanes.find(l=>l.id === b.lane);
+      return h("tr",{"data-fc":id, class:it.finish == null ? "nodate" : ""}, h("td",{}, h("button",{type:"button",class:"linkish",onclick:()=>select("bar", id)}, chartLabel(b))), h("td",{}, ln ? ln.name : ""),
+        h("td",{class:"num"}, e ? String(e.likely) + (e.low !== e.likely || e.high !== e.likely ? ` (${e.low}–${e.high})` : "") : "—"),
+        h("td",{}, it.start != null ? yr(it.start) : ""), h("td",{}, f.likely != null ? yr(f.likely) : "no date"), h("td",{}, f.high != null ? yr(f.high) + (f.highEarlier ? "*" : "") : ""), h("td",{class:"fcwhytd"}, reason(it))); })))));
+  if (rows.some(([id])=>F.finish(id).highEarlier)) host.append(h("p",{class:"hint"}, "* The high run finished this earlier, because a higher estimate changed who got people first; the likely date is shown."));
+  const last = rows.filter(([, it])=>it.finish != null).sort(([a, x], [b, y])=>y.finish - x.finish || (a < b ? -1 : 1))[0];
+  if (last){ const ch = criticalChain(run, last[0]), bt = bottleneckText(run, ch, yr);
+    host.append(h("h3",{class:"fch3"}, "Critical chain"), h("p",{class:"hint"}, "What sets the last finish, working back: the work each step waited for, or that had its people."),
+      h("ol",{class:"fcchain",id:"fcChain"}, ...chainLines(run, ch, yr).map(t=>h("li",{}, t))), bt ? h("p",{class:"hint",id:"fcBottleneck"}, bt) : null); }
+  const to = sm.likely ?? run.end, loads = S.lanes.map((l, i)=>({l, i, x:forecastLoad(run, l.id, run.first, to)})).filter(r=>r.x && (r.x.demand > FC_EPS || r.x.capacity > FC_EPS));
+  if (loads.length) host.append(h("h3",{class:"fch3"}, "Load by workstream"), h("p",{class:"hint"}, `Demand against capacity, ${yr(nextWork(run.first, holidaySet(S)))} to ${yr(to)}. Each week: Jira-dated work, forecast work, and ready work waiting (hatched), against the line of what the people have.`),
+    h("div",{class:"gwrap"}, h("table",{class:"jptable fcloadt",id:"fcLoad"}, h("thead",{}, h("tr",{}, ...["Workstream", "Capacity", "Demand", "Load", "By week"].map(t=>h("th",{}, t)))),
+      h("tbody",{}, ...loads.map(({l, i, x})=>h("tr",{"data-lane":l.id, class:x.load > 1 + FC_EPS ? "over" : ""}, h("td",{}, poolName(l.id, x.people)), h("td",{class:"num"}, pw1(x.capacity)), h("td",{class:"num"}, pw1(x.demand)),
+        h("td",{class:"num"}, x.load == null ? "no one" : `${(Math.round(x.load * 10) / 10).toFixed(1)} ×`), h("td",{}, loadChart(run, l.id, to, i))))))));
 }
 function effortField(b){
   if (hasKids(b)){ const e = effortOf(b); return h("div",{class:"field",id:"f-effort"}, h("span",{class:"flabel"},"Effort left (from what's inside)"),
@@ -12135,7 +12203,7 @@ function renderPlanningGuide(){
   if (focused){ const next = document.getElementById(focused); if (next && !next.disabled){ next.focus({preventScroll:true}); if (start != null && typeof next.setSelectionRange === "function") next.setSelectionRange(start, end); } }
 }
 function renderTables(){
-  if (UI.ws === "people"){ renderOffTracker(); renderJiraPeople(); }
+  if (UI.ws === "people"){ renderForecastWs(); renderOffTracker(); renderJiraPeople(); }
   if (UI.ws !== "plan") return;
   const section = PLAN_TABS.some(([key])=>key === UI.planTab) ? UI.planTab : jiraDir || JIRA || S.bars.some(b=>(b.epics || []).length) ? "epics" : "milestones";
   if (section === "team"){ renderTeam(); renderGroups(); }
