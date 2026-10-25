@@ -4024,7 +4024,7 @@ function parseJiraStatus(text){                // the file is untrusted input: c
     if (!JKEY.test(k) || issues[k] || !v || typeof v !== "object") return;
     ancestors[k] = {summary:t(v.summary,300), status:t(v.status,60), category:["todo","inprogress","done"].includes(v.category) ? v.category : "", type:t(v.type,40), isEpic: v.isEpic === true,
       parent: JKEY.test(t(v.parent,40)) ? t(v.parent,40) : "", epic: JKEY.test(t(v.epic,40)) ? t(v.epic,40) : ""}; });
-  return {ancestors, page, devCover, sync, guard, keysCut, releases, burndown, dev, rollups, rollupsTruncated: o.rollupsTruncated === true, sprints, board, snapshot: /^[0-9a-f]{8,64}$/.test(t(o.snapshot,64)) ? t(o.snapshot,64) : "", generatedAt:t(o.generatedAt,40), jiraBase: /^https:\/\/\S+$/.test(t(o.jiraBase,200)) ? t(o.jiraBase,200) : "", issues, missing:(Array.isArray(o.missing) ? o.missing : []).map(x=>t(x,40)).filter(x=>JKEY.test(x)).slice(0,2000)};
+  return {ancestors, noParentLink: o.noParentLink === true, page, devCover, sync, guard, keysCut, releases, burndown, dev, rollups, rollupsTruncated: o.rollupsTruncated === true, sprints, board, snapshot: /^[0-9a-f]{8,64}$/.test(t(o.snapshot,64)) ? t(o.snapshot,64) : "", generatedAt:t(o.generatedAt,40), jiraBase: /^https:\/\/\S+$/.test(t(o.jiraBase,200)) ? t(o.jiraBase,200) : "", issues, missing:(Array.isArray(o.missing) ? o.missing : []).map(x=>t(x,40)).filter(x=>JKEY.test(x)).slice(0,2000)};
 }
 // jira-issues.json: what the helper's Jira search found (--filter / --jql), in Jira's order. Also untrusted input.
 let JIRA_ISSUES = null, jiraIssuesHandle = null;
@@ -4403,7 +4403,7 @@ function sprintWork(){
   Object.entries(JIRA && JIRA.rollups || {}).forEach(([e, r])=>[...(r.children || []), ...(r.sprintKids || [])].forEach(c=>{ if (!epicOf.has(c)) epicOf.set(c, e); }));
   const placed = new Set(S.bars.flatMap(b=>[upKey(b.jira), ...(b.tasks || []).map(t=>upKey(t.jira))]).filter(Boolean));
   const scan = src => Object.entries(src || {}).forEach(([k, j])=>{ if (seen.has(k)) return; seen.add(k); if (!inSprintNow(j)) return;
-    const e = topOf(k, j, epicOf), known = e && (isEpic(issueOf(e)) || !!(JIRA && JIRA.rollups && JIRA.rollups[e]));
+    const e = topOf(k, j, epicOf), known = e && (isEpic(hierOf(e)) || !!(JIRA && JIRA.rollups && JIRA.rollups[e]));
     const it = {key:k, j, start: j.sprintStart ? isoToDay(j.sprintStart) : Infinity, sprint: j.sprint || "a sprint", ...(e && !known ? {missing:e} : {})};
     if (known){ if (!byEpic.has(e)) byEpic.set(e, []); byEpic.get(e).push(it); } else if (!placed.has(k)) noEpic.push(it); });   // a parent not in the files: listed with the loose ones, never dropped
   scan(JIRA && JIRA.issues); scan(JIRA_ISSUES && JIRA_ISSUES.issues);
@@ -4411,12 +4411,15 @@ function sprintWork(){
   return sprintMemo = {J:JIRA, I:JIRA_ISSUES, sig, byEpic, noEpic};
 }
 // The highest level an issue rolls up to (story, then feature, then epic...): the sync's rollups already say which epic,
-// else follow each parent the Jira files know. A parent that isn't in the files still counts as the top.
+// else follow each parent the Jira files know. A parent that isn't in the files still counts as the top. Levels the
+// sync only brought as ancestors (a feature between a story and its epic) are climbed through, up to the first epic.
 function topOf(k, j, epicOf){
   let cur = k, x = j; const seen = new Set([k]);
   for (let n = 0; n < 8; n++){ const up = epicOf.get(cur) || (x && (x.epic || x.parent)) || ""; if (!up) break;
     if (seen.has(up)) return "";                     // a loop in Jira's parent links: no top to trust
-    seen.add(up); cur = up; x = issueOf(cur); if (!x && !epicOf.has(cur)) break; }
+    seen.add(up); cur = up; x = issueOf(cur);
+    if (!x){ const a = JIRA && JIRA.ancestors && JIRA.ancestors[cur]; if (a && !isEpic(a)) x = a; }
+    if (!x && !epicOf.has(cur)) break; }
   return cur === k ? "" : cur;
 }
 // Where new work lands on the board: the next working day from today, on the plan's half-week grid.
@@ -4662,7 +4665,7 @@ function sortPile(){
 function sortGroups(list){
   const by = SORT_BY.some(x=>x[0] === UI.sortBy) ? UI.sortBy : "epic", m = new Map();
   const keyOf = x => by === "epic" ? (x.epic ? "e:" + x.epic : "~none") : by === "sprint" ? (x.sprint ? "s:" + x.sprint : "~none") : by === "assignee" ? (x.j.assigneeKey ? "a:" + x.j.assigneeKey : "~none") : ((x.j.labels || [])[0] ? "l:" + x.j.labels[0] : "~none");
-  const nameOf = (g, x) => g === "~none" ? {epic:"No epic", sprint:"Not in a sprint", assignee:"Unassigned", label:"No label"}[by] : by === "epic" ? `${x.epic} ${(issueOf(x.epic) || {}).summary || ""}`.trim() : by === "sprint" ? x.sprint : by === "assignee" ? (x.j.assignee || x.j.assigneeKey) : x.j.labels[0];
+  const nameOf = (g, x) => g === "~none" ? {epic:"No epic", sprint:"Not in a sprint", assignee:"Unassigned", label:"No label"}[by] : by === "epic" ? `${x.epic} ${(hierOf(x.epic) || {}).summary || ""}`.trim() : by === "sprint" ? x.sprint : by === "assignee" ? (x.j.assignee || x.j.assigneeKey) : x.j.labels[0];
   list.forEach(x=>{ const g = keyOf(x); if (!m.has(g)) m.set(g, {id:g, name:nameOf(g, x), items:[]}); m.get(g).items.push(x); });
   return [...m.values()].sort((a, b)=>(a.id === "~none") - (b.id === "~none") || b.items.length - a.items.length || a.name.localeCompare(b.name));
 }
@@ -4983,6 +4986,7 @@ function healthLine(){
     H.handOld && !H.overdue ? h("p",{class:"hint",id:"jiraHandOld"}, "Synced by hand. To keep it current on its own, run the sync with --save, then install.") : null,
     JIRA.guard ? h("div",{class:"msg warn",id:"jiraGuard"}, `The last sync (${ageOf(JIRA.guard.at)}) returned only ${JIRA.guard.found} of this plan's ${JIRA.guard.previous} Jira items, so Sightline is showing the earlier sync. Nothing was removed. If the drop is real, run the sync with --accept-drop.`) : null,
     JIRA.keysCut ? h("div",{class:"msg warn",id:"jiraKeysCut"}, `This plan links ${JIRA.keysCut.linked} Jira items; the sync fetches at most ${JIRA.keysCut.fetched}, so some show as not in the last sync. Remove links the plan no longer needs.`) : null,
+    JIRA.noParentLink && sortPile().some(x=>!x.epic) ? h("div",{class:"msg warn",id:"jiraNoParent"}, "The last sync didn't find Jira's Parent Link field, so a story that sits under a feature shows with No epic. If your Jira has Parent Link, run the sync's fields command to see what it found, then fields --set parentLink=<its id>.") : null,
     H.otherPlan ? h("div",{class:"msg warn",id:"jiraOtherPlan"}, `The plan's file name differs: these Jira files were synced for ${H.plan}, and this plan is ${H.mine}. If it's a copy or was renamed, run the sync with --save for this plan.`) : null);
 }
 // "Data checked": is the Jira data behind this view complete? One line, the same everywhere the numbers are used:

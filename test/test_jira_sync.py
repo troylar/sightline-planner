@@ -216,6 +216,15 @@ try:
         ok("sync: says when --limit cut the search short", listing["total"] == 250 and listing["truncated"] is True and len(listing["issues"]) == 10)
         ok("sync: the status file has only the plan's keys", set(status["issues"]) == {"ABC-2", "XYZ-9"} and "filter" not in status and "search" not in status and status["issues"]["ABC-2"]["summary"] == "Planned ABC-2")
         ok("sync: neither file contains the token", TOKEN not in open(out, encoding="utf-8").read() + open(iss, encoding="utf-8").read())
+        had = dict(js.CUSTOM); js.CUSTOM.pop("parentLink", None)
+        try:
+            js.sync_once(plan, out, SBASE, TOKEN, "project = ABC", 10)
+            ok("sync: says when it has no Parent Link field, so the page can explain stories with no epic", _json.load(open(out, encoding="utf-8")).get("noParentLink") is True)
+            js.CUSTOM["parentLink"] = "customfield_10008"
+            js.sync_once(plan, out, SBASE, TOKEN, "project = ABC", 10)
+            ok("sync: ...and says nothing when it has one", "noParentLink" not in _json.load(open(out, encoding="utf-8")))
+        finally:
+            js.CUSTOM.clear(); js.CUSTOM.update(had)
         other_path = _os.path.join(d, "sub", "mine.json")
         _os.makedirs(_os.path.dirname(other_path))
         js.sync_once(plan, out, SBASE, TOKEN, "project = ABC", 5, other_path)

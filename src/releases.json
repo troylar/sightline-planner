@@ -1,5 +1,27 @@
 [
   {
+    "version": "1.120.1",
+    "date": "2026-10-25",
+    "headline": "Stories under a feature are sorted under their epic",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Sort Jira work",
+        "title": "A story under a feature groups under its epic",
+        "before": "When Jira had a feature between an epic and its stories, a story the epic's list didn't include (its epic not on the plan, or the story not in a sprint) was grouped under the feature, often with no name, or shown with No epic.",
+        "now": "It's grouped under the first epic above it, with the epic's name, in the list and in In a sprint, not on the board.",
+        "where": "Work, then Sort Jira work"
+      },
+      {
+        "kind": "improved",
+        "area": "Jira sync",
+        "title": "Says when it can't trace stories to their epic",
+        "now": "If the sync didn't find Jira's Parent Link field, it says so after each run, and Sort Jira work explains why stories under a feature show with No epic and how to check.",
+        "where": "The sync's output, and Work, then Sort Jira work"
+      }
+    ]
+  },
+  {
     "version": "1.120.0",
     "date": "2026-10-25",
     "headline": "See where we are: the sprint we're in and today, on every timeline",
