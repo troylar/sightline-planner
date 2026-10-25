@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.113.1",
+    "date": "2026-10-25",
+    "headline": "Edit your assistant's milestone moves",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Assistant",
+        "title": "Edit shows a change's fields",
+        "before": "Edit on a change that moves a milestone, or on most other changes, opened an empty box.",
+        "now": "Edit shows the change's own fields, such as a milestone move's date and whether it's the stretch date, and checks your edit the same way as the assistant's version. A change with nothing you can edit says so: skip it and ask your assistant.",
+        "where": "Assistant panel, Changes"
+      },
+      {
+        "kind": "fixed",
+        "area": "Assistant",
+        "title": "Milestone moves read plainly",
+        "before": "A change that cleared a stretch date read \"move true → null\".",
+        "now": "It reads \"stretch date cleared\", and a move reads as a move to a date.",
+        "where": "Assistant panel, Changes"
+      }
+    ]
+  },
+  {
     "version": "1.113.0",
     "date": "2026-10-25",
     "headline": "Your assistant proposes where Jira work goes",

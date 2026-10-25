@@ -43,6 +43,9 @@ For the prepared example, use [brain-dump.txt](../examples/northstar/brain-dump.
 1. Discuss an organization or option in the external tool; an answer alone does not change the plan.
 2. Ask for supported changes in **sightline-amendments.json** when ready. Preserve or deliberately resolve any existing pending batch.
 3. Return to Sightline, inspect before/after values, then **Edit**, **Skip**, or **Apply**.
+   **Edit** shows the change's own fields (for a milestone move, its date and whether it's the stretch date) and
+   checks your edit the same way as the assistant's version. Ids aren't editable: a change that points somewhere else
+   is a new change, so a change with nothing else to edit says to skip it and ask your assistant.
 4. Follow the visible save state. Some quick updates save immediately; a deliberate editing session can still need **Save**.
 5. Have the tool reread fresh context and matching results, then identify what remains unresolved.
 
