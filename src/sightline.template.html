@@ -323,7 +323,8 @@ td.spname input{width:100%}
 .flag.unconfirmed::before{background:var(--surface);border:2px dotted var(--c)}
 .flag.stretch{color:var(--ink-3);font-style:italic;font-weight:500}
 .flag.stretch::before{background:transparent;border:1.5px dashed var(--ink-3)}
-.flag .slip{color:var(--bad);font-weight:600;font-style:normal}
+.flag .slip{color:var(--bad);font-weight:600;font-style:normal}.flag .fl-d{flex:none}.flag .fl-t{min-width:0;overflow:hidden;text-overflow:ellipsis}.flag.clip>:not(.fl-t){flex:none}
+.flag.clip:hover,.flag.clip:focus-visible{max-width:none!important;z-index:6;background:var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.18),0 0 0 1px var(--rule);padding-right:6px}
 .today{position:absolute;bottom:0;border-left:2px solid var(--today);margin-left:-1px;pointer-events:none;z-index:1}
 .nowband{position:absolute;bottom:0;background:var(--nowband);border-inline:1px solid color-mix(in srgb,var(--accent) 30%,transparent);pointer-events:none;z-index:0}
 .gsprint.now{background:var(--nowband);box-shadow:inset 0 3px 0 var(--accent)}
@@ -2938,8 +2939,10 @@ function focusGate(i){
 }
 function gateTitle(g){ return [`Gate: ${g.x.gate || "Untitled gate"}`, `Needed by ${g.day != null ? fmtDay(g.day) : g.x.neededBy || "no date"}`, own(g.x).length ? "Owner: " + ownerNames(g.x).join(", ") : "", g.x.blocks ? `Blocks: ${g.x.blocks}` : "", ""].filter(Boolean).join("\n"); }
 // Gates needed on the same day share one chip ("Mar 5 Security review +1"), so they stop stacking into a tall row.
-function gateGroups(list){
-  const by = new Map(); list.forEach(g=>{ const k = g.day; if (!by.has(k)) by.set(k, []); by.get(k).push(g); });
+// Gates on the same day share a flag; with near > 0, so do gates within that many days of the first in a run (markers a few pixels apart).
+function gateGroups(list, near = 0){
+  const by = new Map(); let k0 = null;
+  [...list].sort((a, b)=>a.day - b.day).forEach(g=>{ const k = k0 != null && g.day - k0 <= near ? k0 : g.day; if (k !== k0) k0 = k; if (!by.has(k)) by.set(k, []); by.get(k).push(g); });
   return [...by.values()].map(gs=>({day:gs[0].day, gates:gs, key:"g" + gs[0].i, text:`${fmtDay(gs[0].day)} ${gs[0].x.gate}` + (gs.length > 1 ? ` +${gs.length - 1}` : ""),
     selected:gs.some(g=>sel && sel.type==="gate" && sel.id===g.id), title:gs.map(gateTitle).join("\n\n")}));
 }
@@ -5663,6 +5666,11 @@ function textW(t){
   try { if (measureCtx === undefined){ const c = document.createElement("canvas").getContext("2d"); measureCtx = c || null; if (c) c.font = `${tsSize(11)}px "Instrument Sans", system-ui, sans-serif`; if ("fontStretch" in c) c.fontStretch = "semi-condensed"; } } catch(e){ measureCtx = null; }
   return measureCtx ? measureCtx.measureText(t).width : t.length * 6.3 * tsSize(11) / 11;
 }
+// A flag's label is bold; measure it as drawn. Falls back to an estimate where there's no canvas.
+function textWB(t){
+  textW(""); if (!measureCtx) return t.length * 6.8 * tsSize(11) / 11;
+  const was = measureCtx.font; measureCtx.font = `600 ${tsSize(11)}px "Instrument Sans", system-ui, sans-serif`; const w = measureCtx.measureText(t).width; measureCtx.font = was; return w;
+}
 function dayCols(){
   let a = startDay(), b = startDay() + S.meta.weeks*7 - 1;
   const f = UI.focus && barById(UI.focus);
@@ -7650,14 +7658,15 @@ const RD_FIELDS = {risks:["text","sev","state","owners","item","next","waitingOn
 });
 const nextSibling = b => { const sib = S.bars.filter(x=>x.lane===b.lane && (x.parent||"")===(b.parent||"")); const i = sib.indexOf(b); return i >= 0 && i < sib.length - 1 ? sib[i+1] : null; };
 const prevSibling = b => { const sib = S.bars.filter(x=>x.lane===b.lane && (x.parent||"")===(b.parent||"")); const i = sib.indexOf(b); return i > 0 ? sib[i-1] : null; };
-function packRows(items, s, e){
-  const rows = [], pos = new Map();
+function packRows(items, s, e, cap = Infinity){
+  const rows = [], last = [], pos = new Map(), clip = new Map();
   [...items].sort((a,b)=>s(a)-s(b)).forEach(it=>{
     let r = rows.findIndex(end => end <= s(it) + 1e-6);
-    if (r < 0){ r = rows.length; rows.push(0); }
-    rows[r] = e(it); pos.set(it.id, r);
+    if (r < 0 && rows.length < cap){ r = rows.length; rows.push(0); last.push(null); }
+    if (r < 0){ r = rows.reduce((m, end, i)=>end < rows[m] ? i : m, 0); if (last[r]) clip.set(last[r].id, s(it)); }   // full: the row that frees up first; cut the one before at this one's start
+    rows[r] = e(it); last[r] = it; pos.set(it.id, r);
   });
-  return {pos, count: rows.length};
+  return {pos, count: rows.length, clip};
 }
 function describeBar(b){
   const lines = [barTitle(b), `${wkDate(b.start)} → ${endDate(b)}` + (derived(b) ? " (from tasks)" : "")];
@@ -8023,12 +8032,14 @@ function glide(g, was){ glideLast = 0; if (!was || calmMotion()) return; const o
     el.animate([{transform:`translate(${dx}px,${dy}px)`, width:w + "px"}, {transform:"none", width:nw + "px"}], {duration:240, easing:EASE});
     el.animate([{boxShadow:`0 0 0 3px ${glow}`}, {boxShadow:"0 0 0 0 transparent"}], {duration:1100, delay:180, easing:"ease-out"}); });
   glideLast = moved.length; }
+let WPX = 40;                                                    // pixels per week on the Weeks chart as last drawn
 function renderGantt(){
   const W = S.meta.weeks, g = $("#gantt"), gw = $("#gscroll")?.clientWidth || 1100;   // measure before emptying the chart
   const was = glideSnap(g);
   g.replaceChildren(); g.style.minWidth = ""; g.style.setProperty("--lw", UI.labelW.weeks + "px");
   { const zw = zoomWeeks(), avail = Math.max(300, gw - UI.labelW.weeks - 2), on = zw > 0 && zw < W;
-    g.classList.toggle("zoomed", on); if (on) g.style.minWidth = (UI.labelW.weeks + avail * W / zw) + "px"; }
+    g.classList.toggle("zoomed", on); if (on) g.style.minWidth = (UI.labelW.weeks + avail * W / zw) + "px"; WPX = on ? avail / zw : avail / W; }
+  const wk = px => px / WPX;                                     // a label's width in pixels, as weeks on this chart
   const cols = h("div",{class:"gcols",style:{gridTemplateColumns:`repeat(${W},1fr)`}});
   let w0 = 0; const NS = nowSprint();
   S.sprints.forEach(sp=>{
@@ -8055,8 +8066,8 @@ function renderGantt(){
     const gatesHidden = hidKind("gate") || (fActive() && UI.filter.kinds.length && !UI.filter.kinds.includes("gate"));
     if (!gatesHidden && (gs.length || (editable() && !fActive()))) g.append(secHdr("sec:gates", "Gates", h("i",{class:"gh-ic"}), `${gs.length} with dates`));
     if (!gatesHidden && (gs.length || (editable() && !fActive())) && !folded("sec:gates")){
-      const grps = gateGroups(gs).map(x=>({...x, at:x.gates[0].at}));
-      const gp = packRows(grps.map(x=>({id:x.key, a:x.at, z:x.at + Math.max(1.4, x.text.length*0.075)})), x=>x.a, x=>x.z);
+      const grps = gateGroups(gs, Math.floor(6 / (WPX / 7))).map(x=>({...x, at:x.gates[0].at}));   // markers within a few pixels share a flag
+      const gp = packRows(grps.map(x=>({id:x.key, a:x.at, z:x.at + wk(textWB(x.text) + 26)})), x=>x.a, x=>x.z);
       const track = h("div",{class:"track",style:{height:(10 + Math.max(1,gp.count)*22)+"px",minHeight:"34px"},"data-add":"gates",ondblclick:e=>{ if (!e.target.closest(".flag,.insbtn")) createAt("gate", null, dayFromEvent(e)); }});
       track.append(h("div",{class:"grid",style:{backgroundImage:`repeating-linear-gradient(to right, transparent 0, transparent calc(${100/W}% - 1px), var(--rule-2) calc(${100/W}% - 1px), var(--rule-2) ${100/W}%)`}}));
       grps.forEach(x=>track.append(h("button",{type:"button","data-peek-type":x.gates.length === 1 ? "gate" : null,"data-peek-id":x.gates.length === 1 ? x.gates[0].id : null,title:x.gates.length > 1 ? x.title : null,"aria-haspopup":x.gates.length > 1 ? "menu" : null,
@@ -8065,7 +8076,7 @@ function renderGantt(){
     } }
   { const rels = (hidKind("release") ? [] : releasesInPlan()).map(r=>({r, at: dayToAt(isoToDay(r.date)), text:`${fmtDay(isoToDay(r.date))} ${r.name}`})).filter(x=>x.at >= 0 && x.at <= W);
     if (rels.length){ g.append(secHdr("sec:releases", "Releases", h("i",{class:"rel-ic","aria-hidden":"true"}, "◆"), `${rels.length} from Jira`));
-      if (!folded("sec:releases")){ const rp = packRows(rels.map(x=>({id:x.r.id, a:x.at, z:x.at + Math.max(1.2, x.text.length * 0.075)})), x=>x.a, x=>x.z);
+      if (!folded("sec:releases")){ const rp = packRows(rels.map(x=>({id:x.r.id, a:x.at, z:x.at + wk(textWB(x.text) + 22)})), x=>x.a, x=>x.z);
         const track = h("div",{class:"track",style:{height:(10 + Math.max(1, rp.count) * 22) + "px",minHeight:"34px"}});
         track.append(h("div",{class:"grid",style:{backgroundImage:`repeating-linear-gradient(to right, transparent 0, transparent calc(${100/W}% - 1px), var(--rule-2) calc(${100/W}% - 1px), var(--rule-2) ${100/W}%)`}}));
         rels.forEach(x=>track.append(h("button",{type:"button",class:"flag release " + relState(x.r) + (sel && sel.type === "release" && sel.id === x.r.id ? " selected" : ""),"data-rel":x.r.id,
@@ -8077,7 +8088,7 @@ function renderGantt(){
     if (items.length){ g.append(secHdr("sec:deliverables", "Deliverables", h("i",{class:"dv-ic","aria-hidden":"true"}, "▰"), [`${items.filter(x=>x.d.stage !== "done").length} planned`, items.some(x=>x.d.stage === "done") ? `${items.filter(x=>x.d.stage === "done").length} done` : "", broad ? `${broad} broader, on the Roadmap` : ""].filter(Boolean).join(" · ")));
       if (!folded("sec:deliverables")){
         const geo = items.map(x=>{ const at = dayToAt(x.s), to = Math.max(at + 0.3, dayToAt(x.e + 1)), P = dvProgress(x.d), prog = progText(P), text = x.d.name + (prog ? ` · ${prog}` : "");
-          return {...x, at, to, P, prog, text, id:x.d.id, z:Math.max(to, at + text.length * 0.075)}; });
+          return {...x, at, to, P, prog, text, id:x.d.id, z:Math.max(to, at + wk(textW(text) + 30))}; });
         const pk = packRows(geo, x=>x.at, x=>x.z);
         const track = h("div",{class:"track",style:{height:(10 + Math.max(1, pk.count) * 24) + "px",minHeight:"34px"}});
         track.append(h("div",{class:"grid",style:{backgroundImage:`repeating-linear-gradient(to right, transparent 0, transparent calc(${100/W}% - 1px), var(--rule-2) calc(${100/W}% - 1px), var(--rule-2) ${100/W}%)`}}));
@@ -8111,7 +8122,7 @@ function renderGantt(){
       const geo = it => it.type === "bar" ? {a:it.b.start, z:Math.min(W, visEndW(it.b))} : {a:(it.s - sd)/7, z:Math.min(W, (it.e - sd + 1)/7)};
       const pk = packRows(items.map(it=>({id:it.key, ...geo(it)})), x=>x.a, x=>x.z), rowsN = Math.max(1, pk.count);
       const pnotes = id ? S.notes.filter(n=>n.author===id && noteShown(n, FR)).map(n=>({n, id:"n:"+n.id, at:(isoToDay(n.date) - sd)/7})).filter(x=>x.at >= 0 && x.at < W) : [];
-      const npp = packRows(pnotes, x=>x.at, x=>x.at + Math.max(1.2, (noteSnippet(x.n).length + 4)*0.075));
+      const npp = packRows(pnotes, x=>x.at, x=>x.at + wk(textW(noteSnippet(x.n)) + 34));
       const track = h("div",{class:"track",style:{height:(14 + rowsN*30 + npp.count*24)+"px"},"data-person":id ?? "none"});
       pnotes.forEach(x=>track.append(noteEl(x.n, {left:`${x.at/W*100}%`, top:(8 + rowsN*30 + npp.pos.get(x.id)*24) + "px"})));
       track.append(h("div",{class:"grid",style:{backgroundImage:weekGrid}}));
@@ -8188,10 +8199,13 @@ function renderGantt(){
       return b.lane !== o.lane || slipBar(b) != null || Math.abs(o.start - b.start - (startDay()-isoToDay(S.baseline.start))/7) > .05;
     }).map(([id,o])=>({id:"g:"+id, start:o.start - (startDay()-isoToDay(S.baseline.start))/7, span:o.span, bar:barById(id)})) : [];
     const bp = nestLayout([...bars, ...ghosts.filter(gh=>gh.bar.lane!==lane.id)], b=>b.start, b=>b.bar ? b.start+b.span : visEndW(b), b=>!b.bar && !UI.collapsed[b.id]);
-    const fp = packRows(flags, f=>f.at, f=>f.at + Math.max(1.6, f.label.length*0.075));
+    flags.forEach(f=>{ const m = S.milestones.find(x=>x.id===f.mid), s = f.stretch ? null : slipMs(m);
+      f.px = textWB(f.label) + (s ? textWB(" " + fmtW(s)) : 0) + (!f.stretch && labelMismatch(m, f.stretch) ? 16 : 0) + (!f.stretch && notesOn("ms:" + m.id).length ? 20 : 0) + 18;
+      f.minPx = textWB(msDateText(m, f.stretch)) + 18; });
+    const fp = packRows(flags, f=>f.at, f=>f.at + wk(f.px), 3);         // three rows at most; past that a label is cut short, its date kept
     const barRows = Math.max(1,bp.count);
     const lnotes = S.notes.filter(n=>n.lane===lane.id && !noteOn(n) && noteShown(n, FR)).map(n=>({n, id:"n:"+n.id, at:(isoToDay(n.date) - startDay())/7})).filter(x=>x.at >= 0 && x.at < W);
-    const np = packRows(lnotes, x=>x.at, x=>x.at + Math.max(1.2, (noteSnippet(x.n).length + 4)*0.075));
+    const np = packRows(lnotes, x=>x.at, x=>x.at + wk(textW(noteSnippet(x.n)) + 34));
     const track = h("div",{class:"track",style:{height:(14 + barRows*30 + fp.count*22 + np.count*24 + (lmeet.length ? 26 : 0) + (lbt ? lbt.rows*24 + 6 : 0) + (bars.length ? 0 : 10))+"px"},"data-lane":lane.id, "data-add":"lane:"+lane.id, ondblclick:e=>addBarAt(e,lane.id)});
     lnotes.forEach(x=>track.append(noteEl(x.n, {left:`${x.at/W*100}%`, top:(8 + barRows*30 + fp.count*22 + np.pos.get(x.id)*24) + "px"})));
     if (lmeet.length) meetWeekChips(track, lmeet, lane.id, 8 + barRows*30 + fp.count*22 + np.count*24 + 2);
@@ -8244,10 +8258,11 @@ function renderGantt(){
     flags.forEach(f=>{
       const m = S.milestones.find(x=>x.id===f.mid);
       const s = f.stretch ? null : slipMs(m);
-      const el = h("div",{class:`flag ${f.kind}${sel&&sel.type==="ms"&&sel.id===f.mid?" selected":""}`, role:"button", tabindex:"0", "data-key":"ms:"+f.id,
+      const el = h("div",{class:`flag ${f.kind}${sel&&sel.type==="ms"&&sel.id===f.mid?" selected":""}${fp.clip.has(f.id)?" clip":""}`, role:"button", tabindex:"0", "data-key":"ms:"+f.id,
         "aria-label": `Milestone: ${f.label}, ${fmtDay(atToDay(f.at))}` + (s?`, moved ${fmtW(s)} from baseline`:""), "data-peek-type":"ms", "data-peek-id":f.mid,
-        style:{left:`${f.at/W*100}%`,top:(8+barRows*30+fp.pos.get(f.id)*22)+"px","--c":lane.color,color:f.stretch?"":labelOn(lane.color)}},
-        f.label, s ? h("span",{class:"slip"}, " " + fmtW(s)) : null, labelMismatch(m, f.stretch) ? h("span",{class:"mis-c",title:labelMismatch(m, f.stretch)},"⚠") : null, f.stretch ? null : noteBadge("ms:" + m.id));
+        style:{left:`${f.at/W*100}%`,top:(8+barRows*30+fp.pos.get(f.id)*22)+"px","--c":lane.color,color:f.stretch?"":labelOn(lane.color),
+          ...(fp.clip.has(f.id) ? {maxWidth:Math.max(f.minPx, (fp.clip.get(f.id) - f.at) * WPX - 4) + "px"} : {})}},
+        f.stretch ? [h("span",{class:"fl-t"}, "stretch"), h("span",{class:"fl-d"}, msDateText(m, true))] : [h("span",{class:"fl-d"}, msDateText(m, false)), h("span",{class:"fl-t"}, m.what)], s ? h("span",{class:"slip"}, " " + fmtW(s)) : null, labelMismatch(m, f.stretch) ? h("span",{class:"mis-c",title:labelMismatch(m, f.stretch)},"⚠") : null, f.stretch ? null : noteBadge("ms:" + m.id));
       el.addEventListener("pointerdown", e=>startDrag(e,"ms",f.mid,f.stretch?"stretch":"move"));
       el.addEventListener("keydown", e=>keyNudge(e,"ms",f.mid,f.stretch));
       el.addEventListener("click", ()=>{ if (!dragJustEnded) select("ms",f.mid); });
@@ -13948,7 +13963,9 @@ if (typeof ResizeObserver !== "undefined"){
   headerObserver.observe($(".top")); headerObserver.observe($("#wsbar"));
 }
 window.addEventListener("resize", ()=>{ syncHeaderGeometry();
-  if (UI.zoom === "days"){ clearTimeout(resizeT); resizeT = setTimeout(()=>{ if (drag || tdrag) return; const a = leftDay(); render(); dayScrollTo(a); }, 150); } });
+  if (UI.zoom === "days"){ clearTimeout(resizeT); resizeT = setTimeout(()=>{ if (drag || tdrag) return; const a = leftDay(); render(); dayScrollTo(a); }, 150); }
+  else if (UI.ws === "timeline"){ clearTimeout(resizeT); resizeT = setTimeout(()=>{ if (drag || tdrag) return; const gw = $("#gscroll")?.clientWidth || 1100, zw = zoomWeeks(), W = S.meta.weeks, on = zw > 0 && zw < W, avail = Math.max(300, gw - UI.labelW.weeks - 2);
+    if (Math.abs((on ? avail / zw : avail / W) - WPX) > .5) render(); }, 150); } });   // flags are packed by their width in pixels
 $("#theme").onclick = ()=>{ theme = theme === "auto" ? "light" : theme === "light" ? "dark" : "auto"; try { localStorage.setItem("timeline-planner-theme", theme); } catch(e){} applyTheme(); render(); setStatus(`Theme: ${THEMES[theme][1]}`); };
 applyTheme();
 $("#help").onclick = ()=>openHelp();

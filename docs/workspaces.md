@@ -30,6 +30,7 @@ Saved views and filters apply to Timeline, List and Capacity. Roadmap and Status
 - **Pin the top rows** keeps the Gates, Releases, Deliverables, Team meetings and Process rows in view under the dates while you scroll the workstreams, up to half the chart's height.
 - Under the toolbar, "3 hidden: meetings, process blocks, done work" names what's hidden, with **Show everything**. The Show button says how many.
 - In **Filters**, each kind cycles: Show only, Hide, off. Hide wins over Show only. Clear filters also shows everything.
+- **Crowded labels:** on Weeks, labels are spaced by their real width at the current zoom, window width and text size. A workstream's milestones (and their stretch dates) use three rows at most; past that a label is cut short where the next one starts, keeping its date, and shows in full on hover or when you tab to it. Gates whose markers would touch share one flag with a count.
 - What you hide is yours: it stays in this browser for each plan, and a saved view keeps its own choice. Find brings a hidden kind back when the result is one of them. Nothing is changed in the plan file.
 
 ## List

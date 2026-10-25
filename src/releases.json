@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.120.3",
+    "date": "2026-10-25",
+    "headline": "Milestone and gate labels that fall close together stay readable",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Labels close together no longer run into each other",
+        "before": "On Weeks, milestone, gate, release and note labels were spaced by a rough guess of their width, so at some zooms, window widths and text sizes neighbors overlapped and couldn't be read.",
+        "now": "Labels are spaced by their real width at the chart's current zoom, width and text size, and spaced again when any of those change. A workstream's milestones use three rows at most; past that, a label is cut short where the next one starts, keeping its date, and shows in full when you hover over it or tab to it. Gates whose markers would touch share one flag, with a count.",
+        "where": "Timeline, Weeks"
+      }
+    ]
+  },
+  {
     "version": "1.120.2",
     "date": "2026-10-25",
     "headline": "Install Sightline with npm",
