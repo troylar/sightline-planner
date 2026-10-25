@@ -12,10 +12,10 @@ to see how incoming issues can be placed without editing Jira facts.
 
 ## Configure your own trusted helper
 
-From the trusted source checkout, the helpers are in **tools/**. Use its absolute path in place of
-`/trusted/helpers` below. `node bin/sightline.js helpers` prints that directory. Public npm installation is
-not currently available; [build from source](availability.md) first. Python 3.10+ is required for the helpers;
-the HTML app itself does not require Python.
+`npx @troylar/sightline helpers` prints the folder that holds the helpers, stamped with the app's version. Use
+that absolute path in place of `/trusted/helpers` below. From a source checkout, run `./build.sh` and use **dist/**
+(`node bin/sightline.js helpers` prints it). Python 3.10+ is required for the helpers; the HTML app itself does not
+require Python. The helper only reads from Jira: it never creates, edits or deletes anything there.
 
 ```sh
 python3 /trusted/helpers/sightline-jira-sync.py setup

@@ -353,7 +353,7 @@ does not establish privacy or verified identity.
    connection configuration outside the repository and assistant folder. The command shows where it was written.
    You can edit this separate JSON file
    locally; no company details need to be shared with a developer. The invented example is
-   [tools/assistant.example.json](../tools/assistant.example.json).
+   [tools/assistant.example.json](https://github.com/troylar/sightline-planner/blob/main/tools/assistant.example.json).
 2. Set the exact HTTPS endpoint ending in `/chat/completions`, your model name, and the authentication mode.
    When a token is required, run `python3 tools/sightline-assistant.py set-token`; the command prompts privately
    and stores the token in the OS credential store. Do not put it in JSON, a plan, a message, or a command argument.

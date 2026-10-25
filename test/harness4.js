@@ -717,7 +717,7 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   // --- groups, meetings, time off ---
   ev(`S = normalize({meta:{start:"2026-10-05",weeks:12},lanes:[{id:"a",name:"A"}],people:[{id:"p1",name:"Pat"},{id:"p2",name:"Lee"},{id:"p3",name:"Kim"}],
     bars:[{id:"x",lane:"a",start:0,span:2,label:"First"}], holidays:[{date:"2026-10-12",name:"Columbus Day"}],
-    groups:[{id:"gr1",name:"Leads",members:["p1","p2","ghost"]}],
+    groups:[{id:"gr1",name:"Reviewers",members:["p1","p2","ghost"]}],
     meetings:[{id:"mt1",title:"Standup",date:"2026-10-05",time:"09:30",minutes:15,recur:{freq:"weekly"},attendees:["p3"],groups:["gr1"]},
               {id:"mt2",title:"Kickoff",date:"2026-10-07",attendees:["p1"]},
               {id:"mt3",title:"Monthly",date:"2026-10-30",recur:{freq:"monthly",until:"2026-12-31"}},

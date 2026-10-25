@@ -391,7 +391,7 @@
       "lane": "plat",
       "start": 0,
       "span": 3,
-      "label": "Identity fix · Admin consent",
+      "label": "Identity fix · Security review",
       "kind": "gated",
       "owner": "",
       "jira": "",
@@ -496,7 +496,7 @@
       "date": "~Oct 30",
       "stretch": "Oct 16",
       "what": "Integrations for all users",
-      "dep": "Identity fix + admin consent",
+      "dep": "Identity fix + security review",
       "status": "gated",
       "lane": "int",
       "at": 5.7,
@@ -561,7 +561,7 @@
       "owner": "AppSec"
     },
     {
-      "gate": "Admin consent",
+      "gate": "Security review",
       "neededBy": "Oct 16",
       "blocks": "Team tools",
       "owner": "Tenant admins"

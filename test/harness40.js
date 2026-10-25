@@ -112,9 +112,9 @@ async function page(opts = {}){
   await sec(async ()=>{ const {ev} = await page({jira:false});
     ev(`S.meta.start = "2026-09-07"; S.sprints = Array.from({length:8}, (_, i) => ({id:"sp" + i, name:"S" + i, weeks:3, goal: i === 5 ? "Launch" : ""})); S.meta.weeks = 24;
       JIRA = parseJiraStatus(JSON.stringify({kind:"sightline-jira-status", generatedAt:"2026-09-30T08:00:00Z", jiraBase:"https://jira.example.com", missing:[], issues:{}, rollups:{}, board:{id:7, name:"Team board", columns:[]},
-        sprints:[{id:14, name:"Team 2026.S14 09/03-09/16", state:"closed", start:"2026-09-03", end:"2026-09-16"}, {id:15, name:"Team 2026.S15 09/17-10/02", state:"active", start:"2026-09-17", end:"2026-09-30"}]}));`);
+        sprints:[{id:14, name:"Sprint 14 09/03-09/16", state:"closed", start:"2026-09-03", end:"2026-09-16"}, {id:15, name:"Sprint 15 09/17-09/30", state:"active", start:"2026-09-17", end:"2026-09-30"}]}));`);
     const P = JSON.parse(ev("JSON.stringify(sprintProposal())")), after = P.rows.filter(r=>r.plan);
-    ok("S1: after Jira's last sprint, names continue Jira's sprint number, not the dates in the name", after[0].name === "Team 2026.S16" && after[1].name === "Team 2026.S17", after.slice(0, 3).map(r=>r.name).join(", "));
+    ok("S1: after Jira's last sprint, names continue Jira's sprint number, not the dates in the name", after[0].name === "Sprint 16" && after[1].name === "Sprint 17", after.slice(0, 3).map(r=>r.name).join(", "));
     ok("S2: and follow Jira's schedule (its 2-week sprints), not the plan's old 3-week ones, to the plan's end", after.every(r=>r.weeks === 2) && P.rows.reduce((a, r)=>a + r.weeks, 0) >= 24, after.map(r=>r.weeks).join(","));
     ok("S2: the plan's goals for those weeks stay", after.some(r=>r.goal === "Launch")); });
 
@@ -124,13 +124,13 @@ async function page(opts = {}){
 
   await sec(async ()=>{ const o = JSON.parse(plan); o.meta.start = "2026-09-21"; o.meta.weeks = 12; o.sprints = Array.from({length:6}, (_, i) => ({id:"sp" + i, name:"S" + i, weeks:2, goal:""}));
     const JST = JSON.stringify({kind:"sightline-jira-status", generatedAt:"2026-09-30T08:00:00Z", jiraBase:"https://jira.example.com", missing:[], issues:{}, rollups:{}, board:{id:7, name:"Team board", columns:[]},
-      sprints:[{id:14, name:"Team 2026.S14 09/03-09/16", state:"closed", start:"2026-09-03", end:"2026-09-16"}, {id:15, name:"Team 2026.S15 09/17-10/02", state:"active", start:"2026-09-17", end:"2026-10-02"}]});
+      sprints:[{id:14, name:"Sprint 14 09/03-09/16", state:"closed", start:"2026-09-03", end:"2026-09-16"}, {id:15, name:"Sprint 15 09/17-09/30", state:"active", start:"2026-09-17", end:"2026-10-02"}]});
     const {d, ev, handle} = await page({file:true, jira:false, text: JSON.stringify(o)});
     ev(`JIRA = parseJiraStatus(${JSON.stringify(JST)}); render();`); await wait(20);
     d.querySelector("#noticeShow")?.click(); await wait(5);          // reading the shared plan: setup notes start folded into one line
     d.querySelector("#bnUseSprints").click(); await wait(400);
     const names = JSON.parse(handle._text).sprints.map(x=>x.name);
-    ok("J3: Use Jira's sprints from the banner is saved, so a refresh keeps it", names[0] === "Team 2026.S15 09/17-10/02" && names[1] === "Team 2026.S16" && !ev("file.dirty"), names.slice(0, 3).join(", "));
+    ok("J3: Use Jira's sprints from the banner is saved, so a refresh keeps it", names[0] === "Sprint 15 09/17-09/30" && names[1] === "Sprint 16" && !ev("file.dirty"), names.slice(0, 3).join(", "));
     ok("J3: and says what it did, with units", /1 sprint from Jira, then 5 more on Jira's schedule\. Saved\./.test(ev("document.querySelector('#status').textContent")), ev("document.querySelector('#status').textContent"));
     const R2 = await page({file:true, jira:false, text: handle._text}); R2.ev(`JIRA = parseJiraStatus(${JSON.stringify(JST)}); render();`); await wait(20);
     ok("J4: after a refresh the banner doesn't ask again", !R2.d.querySelector("#bnUseSprints")); });

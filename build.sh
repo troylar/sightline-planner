@@ -172,6 +172,7 @@ for t in sightline-app.py sightline-jira-sync.py; do
   grep -q "^PAGE_VERSION = \"$VER\"$" "dist/$t" || { echo "build: couldn't stamp $t with $VER" >&2; exit 1; }
   python3 -c "import ast, sys; ast.parse(open(sys.argv[1], encoding=\"utf-8\").read())" "dist/$t"
 done
+cp tools/sightline-assistant.py dist/      # beside the stamped two, so the package's helper folder has all three
 echo "built dist/sightline.html (+ sightline-app.py, sightline-jira-sync.py for $VER)"
 if [ -n "${PUBLISH_TO:-}" ]; then
   dest=$(dirname "$PUBLISH_TO")

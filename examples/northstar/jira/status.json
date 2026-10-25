@@ -739,7 +739,7 @@
       "type": "Story",
       "epic": "DEMO-3",
       "parent": "",
-      "sprint": "To be evaluated",
+      "sprint": "Parking lot",
       "sprintId": 99,
       "sprintStart": "2026-06-29",
       "sprintEnd": "2026-07-12",
@@ -1021,7 +1021,7 @@
     },
     {
       "id": 99,
-      "name": "To be evaluated",
+      "name": "Parking lot",
       "state": "future",
       "start": "2026-06-29",
       "end": "2026-07-12",

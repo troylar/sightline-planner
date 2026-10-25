@@ -1,6 +1,6 @@
 {
   "name": "@troylar/sightline",
-  "version": "1.120.1",
+  "version": "1.120.2",
   "description": "Your team's work, in plain sight. One HTML delivery planner, Jira context, and human-reviewed AI planning.",
   "license": "MIT",
   "keywords": [
@@ -18,9 +18,9 @@
     "bin/sightline.js",
     "dist/sightline.html",
     "skills/",
-    "tools/sightline-app.py",
-    "tools/sightline-assistant.py",
-    "tools/sightline-jira-sync.py",
+    "dist/sightline-app.py",
+    "dist/sightline-assistant.py",
+    "dist/sightline-jira-sync.py",
     "docs/",
     "README.md",
     "CHANGELOG.md",

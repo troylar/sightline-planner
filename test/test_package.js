@@ -44,7 +44,15 @@ try {
   ok('symlink destination is refused without writes',run('install',link).status !== 0 && fs.readdirSync(external).length === 0);
   fs.symlinkSync(path.join(temp,'missing'),path.join(temp,'dangling'),'dir');
   ok('dangling symlink destination is refused',run('install',path.join(temp,'dangling')).status !== 0);
-  ok('trusted helpers can be located',run('helpers').stdout.trim() === path.join(root,'tools'));
+  const helpers = run('helpers').stdout.trim();
+  ok('trusted helpers can be located, beside the built app', helpers === path.join(root,'dist'));
+  ok('the helpers are the three tools, the app and sync stamped with this version',
+    ['sightline-app.py','sightline-jira-sync.py','sightline-assistant.py'].every(f=>fs.existsSync(path.join(helpers,f))) &&
+    ['sightline-app.py','sightline-jira-sync.py'].every(f=>fs.readFileSync(path.join(helpers,f),'utf8').includes(`\nPAGE_VERSION = "${pkg.version}"\n`)));
+  ok('the package ships the stamped helpers, not the unstamped sources', ['dist/sightline-app.py','dist/sightline-jira-sync.py','dist/sightline-assistant.py'].every(f=>pkg.files.includes(f)) && !pkg.files.some(f=>f.startsWith('tools/')));
+  ok('no file in the package points at a private repository', !['README.md','docs','package.json'].some(p=>{ const all = fs.statSync(path.join(root,p)).isDirectory() ? fs.readdirSync(path.join(root,p)).filter(f=>f.endsWith('.md')).map(f=>path.join(root,p,f)) : [path.join(root,p)];
+    return all.some(f=>/github\.com\/troylar\/sightline(?![-\w])/.test(fs.readFileSync(f,'utf8'))); }));
+  ok('README says how to install with npm', /npx @troylar\/sightline install/.test(fs.readFileSync(path.join(root,'README.md'),'utf8')));
 } catch (e) {ok('package test completes',false); console.error(e.stack);}
 finally {fs.rmSync(temp,{recursive:true,force:true});}
 console.log(`${passed}/${total} passed`);process.exit(passed === total ? 0 : 1);

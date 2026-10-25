@@ -1,24 +1,33 @@
-# Which build and download instructions apply?
+# Which install route gives you which version?
 
 Use **What's new** in the app to check its version. Keep the app's version separate from the version of a
 repository, a customized skill folder, or a downloaded plan.
 
-As checked on October 24, 2026:
-
-| Capability or route | Availability |
+| Route | What you get |
 | --- | --- |
-| Public source checkout | Available at [troylar/sightline-planner](https://github.com/troylar/sightline-planner). Its current application source is 1.94.0. |
-| Public npm install | Not currently available; the public registry lookup returns E404. Do not use the old `npx @troylar/sightline` quick start. |
-| GitHub release HTML download | No public release assets are published yet. Build the source using the steps below. |
-| External assistant folder, proposals and six skill folders | Available in public source 1.94.0. |
-| Download/install skills from inside the HTML | Requires a build with 1.95.0 or later. Check that the Planning skills control exists. |
-| Rich planning export with capacity, dependencies, risks and decisions | Requires a build with 1.96.0 or later, and `planning.version: 1` in the exported context. |
+| npm: `npx @troylar/sightline install <folder>` | The released app, planning skills, example plan, and Python helpers, all of one version. |
+| Public source: [troylar/sightline-planner](https://github.com/troylar/sightline-planner) | The latest merged source. Build it to get the same files. |
+| GitHub release HTML download | Not published. Use npm or a source build. |
 
-The newer builds above have been developed locally; this table is not a claim that their source or binaries
-have been released publicly. A newer changelog entry in a working copy is not a download. Use the public-source
-path below unless a matching artifact has actually been published.
+To see what a version added, open **What's new** in the app, or read [CHANGELOG.md](../CHANGELOG.md).
 
-## Available source-build path
+## Install with npm
+
+With Node.js 18 or later:
+
+```sh
+npx @troylar/sightline install my-sightline
+```
+
+Open **my-sightline/sightline.html** in desktop Chrome or Edge. The planning skills are in
+**my-sightline/.sightline/skills/** and an invented example is in **my-sightline/example/**. No model account or
+Jira server is needed for the example. `npx @troylar/sightline skills --to <folder>` installs only the skills, and
+`npx @troylar/sightline helpers` prints where the Python helpers are.
+
+Install never replaces a different file that's already there. To update, install into a new folder and open your
+existing plan from the new app.
+
+## Build from source
 
 With Git, Node.js 18+, Python 3.10+, and Bash:
 
@@ -30,24 +39,16 @@ npm ci
 ```
 
 Open **dist/sightline.html** in desktop Chrome or Edge. The **skills/** and **examples/northstar/** folders are
-in the same checkout. No model account or Jira server is needed for the prepared example.
-
-To create a separate app/example folder from a built checkout, the local CLI also works without npm publication:
+in the same checkout. To make a separate app and example folder from a built checkout:
 
 ```sh
 node bin/sightline.js install ../my-plan
 ```
 
-The local CLI refuses to overwrite different existing files. Use a new destination when updating.
+## Before changing an install route
 
-## Before changing the advertised download route
+Maintainers check, for each release:
 
-Maintainers should verify the actual public route before adding a badge or replacing the instructions:
-
-- The registry returns the intended public package version, and the published tarball installs into a fresh directory.
-- The GitHub release has a real HTML asset, tied to the intended source commit and version.
-- A visitor without repository write access can obtain the app and example through the documented route.
-- The downloaded app identifies the expected version; the documented commands and screenshots match it.
-
-These are release checks, separate from a passing source build or package dry run. Update this page when those
-facts change. Until then, keep the working source path visible.
+- The registry returns the intended version, and the published package installs into a fresh folder.
+- The installed app shows that version, and its helpers carry the same version stamp.
+- A visitor without write access to the repository can get the app and example through the documented route.

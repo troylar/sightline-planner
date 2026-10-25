@@ -622,7 +622,7 @@ open(_os.path.join(_pg2, "zz-sightline.html"), "w").write('<meta name="sightline
 ok("page: many other files in the folder don't hide the page", (js.newest_page(_pg2) or {}).get("version") == "2.0.0")
 ok("keys: Jira work linked to a deliverable is fetched too", "DV-7" in js.plan_keys({"bars": [], "deliverables": [{"id": "d", "name": "x", "jira": ["dv-7", "bad key"]}, "junk"]}) and "BAD KEY" not in js.plan_keys({"deliverables": [{"jira": ["bad key"]}]}))
 ok("stories: a parked initiative's epics are known", js.parked_epics({"bars": [{"parked": True, "epics": ["ABC-1"], "jira": "abc-2"}, {"parked": True, "epics": ["ABC-4"]}, {"epics": ["ABC-3"]}]}) == {"ABC-1", "ABC-2", "ABC-4"})
-ok("rollup: a | inside a status name is escaped, so the key keeps three parts", js.state_part("Done | QA") == "Done %7C QA" and js.state_part("100%") == "100%25")
+ok("rollup: a | inside a status name is escaped, so the key keeps three parts", js.state_part("Done | Verified") == "Done %7C Verified" and js.state_part("100%") == "100%25")
 ok("rollup: children linked by parent count too", roll["ABC-20"]["total"] == 1 and roll["ABC-20"]["done"] == 1)
 ok("rollup: a child of an epic that wasn't asked about isn't counted", "ABC-30" not in roll and cut is False)
 js.ROLLUP_CAP, cap0 = 3, js.ROLLUP_CAP

@@ -48,15 +48,15 @@ async function page(opts = {}){
   const st = (pts, who, cat, res, sid) => ({summary:"s", status:"x", category:cat, type:"Story", points:pts, assigneeKey:who, assignee: who + " N.", sprintId:sid || 42, sprintState: (sid || 42) === 42 ? "active" : "future", resolvedAt:res || ""});
   const J2 = JSON.stringify({kind:"sightline-jira-status", version:1, generatedAt:"2026-09-30T08:00:00Z", jiraBase:"https://jira.example.com", missing:[], rollups:{},
     issues:{"A-1":st(5,"U1","done","2026-09-29"), "A-2":st(8,"U1","todo"), "A-3":st(3,"U2","inprogress"), "A-4":st(20,"U2","todo")},
-    sprints:[{id:42, name:"Planning 2026.S15 09/28-10/09", state:"active", start:"2026-09-28", end:"2026-10-09"}, {id:43, name:"Planning 2026.S16 10/12-10/23", state:"future", start:"2026-10-12", end:"2026-10-23"}]});
+    sprints:[{id:42, name:"Sprint 15 09/28-10/09", state:"active", start:"2026-09-28", end:"2026-10-09"}, {id:43, name:"Sprint 16 10/12-10/23", state:"future", start:"2026-10-12", end:"2026-10-23"}]});
   const prep = `JIRA = parseJiraStatus(${JSON.stringify(J2)}); const p = team(); p[0].jira = {key:"U1", user:"u1", name:"A"}; p[0].capacity = 10; goWs("standup"); render();`;
 
   await sec(async ()=>{ const {d, ev} = await page({jira:false}); ev(prep); await wait(10);
     const hd = d.querySelector("#standupWs .sprinthead")?.textContent || "";
-    ok("H1: the header names the sprint without its dates", d.querySelector("#standupWs .sprinthead h2")?.textContent === "Planning 2026.S15", hd.slice(0, 120));
+    ok("H1: the header names the sprint without its dates", d.querySelector("#standupWs .sprinthead h2")?.textContent === "Sprint 15", hd.slice(0, 120));
     ok("H1: and says the working day plainly", /Working day 3 of 10/.test(hd) && /7 working days left/.test(hd), hd);
     ok("H2: tiles count the cards by state", [...d.querySelectorAll("#standupWs .sustat")].map(x=>x.textContent).join("|").includes("In progress"));
-    ok("H3: the top bar agrees with Cards", /Planning 2026\.S15 · working day 3 of 10/.test(ev("scopeText()") || d.querySelector("#scope, .scope")?.textContent || ""), ev("scopeText()"));
+    ok("H3: the top bar agrees with Cards", /Sprint 15 · working day 3 of 10/.test(ev("scopeText()") || d.querySelector("#scope, .scope")?.textContent || ""), ev("scopeText()"));
     const cells = [...d.querySelectorAll("#suCap tr[data-cap] td.capc")];
     ok("C1: the heat map shades by load against capacity", cells.length >= 2 && cells[0].classList.contains("h3") && /^13\/10$/.test(cells[0].textContent), cells.map(c=>c.className + ":" + c.textContent).join(" "));
     ok("C2: no 'pts' on every number", !/\d pts/.test(d.querySelector("#suCap")?.textContent || ""));

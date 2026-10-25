@@ -229,7 +229,7 @@ def small(out: str, seed: int) -> None:
     category = {"Open": "todo", "To Do": "todo", "Backlog": "todo", "In Progress": "inprogress", "In Review": "inprogress", "Done": "done", "Closed": "done"}
     d = Demo("DEMO", people, columns, category)
     start = monday(dt.date.today()) - dt.timedelta(weeks=4)
-    sprints = board_sprints(start, 6, 0, "To be evaluated")
+    sprints = board_sprints(start, 6, 0, "Parking lot")
     done = [s for s in sprints if s["state"] == "closed"]
     going = next(s for s in sprints if s["state"] == "active")
     soon = [s for s in sprints if s["state"] == "future" and s["id"] != 99]
@@ -310,7 +310,7 @@ STORE_PEOPLE = [("ana.m", "Ana Moreno", "Engineering lead"), ("ben.o", "Ben Okaf
                 ("jonah.p", "Jonah Price", "Product owner"), ("kira.s", "Kira Shah", "Data analyst"), ("leo.f", "Leo Fontaine", "Engineer")]
 STORE_OUTSIDERS = ["contractor.qa1", "vendor.dev2"]                  # assignees who aren't on the team, to show linking people
 STORE_COLUMNS = [("Ready", ["Ready", "Backlog"]), ("To Do", ["To Do"]), ("In Progress", ["In Progress"]),
-                 ("In Testing/Review (Step 1)", ["Step 1"]), ("Pending Acceptance (Step 2)", ["Step 2"]),
+                 ("Testing (Step 1)", ["Step 1"]), ("Awaiting review (Step 2)", ["Step 2"]),
                  ("Done", ["Done", "Closed", "Completed", "In Production", "Abandoned", "Not Applicable", "Expired"])]
 STORE_CATEGORY = {"Ready": "todo", "Backlog": "todo", "To Do": "todo", "In Progress": "inprogress", "Step 1": "inprogress", "Step 2": "inprogress",
                   "Done": "done", "Closed": "done", "Completed": "done", "In Production": "done", "Abandoned": "done", "Not Applicable": "done", "Expired": "done"}
