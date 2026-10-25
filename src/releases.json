@@ -1,5 +1,54 @@
 [
   {
+    "version": "1.109.0",
+    "date": "2026-10-25",
+    "headline": "Stories: the why behind each item",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Write a story for any initiative or task",
+        "now": "Each initiative and task can have a story: why it exists, what it delivers and when it's done. Edit shows a live preview beside the text, and a new story starts from a template.",
+        "where": "Click an item, then Write a story or Edit"
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "See the story at a glance",
+        "now": "Hovering an item shows the first lines of its story, or No story yet. Click it to read the whole story in its details.",
+        "where": "Timeline and List"
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Walk an initiative's breakdown",
+        "now": "An initiative's details list its tasks with their owner, status and whether each has a story. Click one to open it, and Up and Down move to the next item while the details are open.",
+        "where": "An initiative's details, Breakdown"
+      },
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Jira descriptions as stories",
+        "now": "An item linked to Jira shows the issue's description, marked From Jira. What the plan had before is kept as a draft, and is shown when Jira's description is empty. Run the updated sync to bring descriptions in.",
+        "where": "An item's details, Story"
+      },
+      {
+        "kind": "new",
+        "area": "Settings",
+        "title": "Story templates",
+        "now": "Set the starting text for new initiative and task stories, for the whole plan.",
+        "where": "Settings, Planning guide, Story templates"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Assistants can read and propose stories",
+        "now": "The assistant context includes stories and templates, and an assistant can propose stories for many items at once. Review shows each story in full and Edit opens it in a text box. A batch applies as one update with one undo. Older copies of Sightline open a plan with stories read-only.",
+        "where": "Assistant panel"
+      }
+    ]
+  },
+  {
     "version": "1.108.0",
     "date": "2026-10-25",
     "headline": "Hide what you don't need, and pin the top rows",

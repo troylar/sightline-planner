@@ -1001,6 +1001,19 @@ with _vt.TemporaryDirectory() as vt:
     v = subprocess.run([sys.executable, str(vt / "sync.py"), "--version"], capture_output=True, text=True)
     ok("version: --version prints the page it matches", v.stdout.strip() == "sightline-jira-sync.py for Sightline 1.105.1")
 
+# stories: an issue's description, cleaned, capped, and kept only for issues the plan links as an initiative or task
+ok("story: clean_desc strips control characters and caps the text", js.clean_desc("a\x07b\nc\x1b") == "ab\nc" and len(js.clean_desc("z" * 9000)) == js.DESC_MAX and js.clean_desc(None) == "")
+ok("story: shape_issue keeps a description when the field is there", js.shape_issue({"key": "ABC-9", "fields": {"description": "h2. Why\n\x00text"}}, "https://j")[1]["description"] == "h2. Why\ntext")
+ok("story: and leaves it out when the field isn't", "description" not in js.shape_issue({"key": "ABC-9", "fields": {}}, "https://j")[1])
+ok("story: an empty description stays, as empty", js.shape_issue({"key": "ABC-9", "fields": {"description": None}}, "https://j")[1].get("description") == "")
+ok("story: own_keys finds initiative and task links", js.own_keys({"bars": [{"jira": "abc-1", "tasks": [{"jira": "ABC-2"}, {"jira": "not a key"}]}, {"tasks": []}, "junk"]}) == {"ABC-1", "ABC-2"})
+_iss_d = {"ABC-1": {"description": "one"}, "ABC-2": {"description": "two"}, "ABC-3": {"summary": "no field"}}
+js.keep_descriptions(_iss_d, {"ABC-1"})
+ok("story: keep_descriptions drops every description but the plan's own", _iss_d["ABC-1"]["description"] == "one" and "description" not in _iss_d["ABC-2"] and _iss_d["ABC-3"] == {"summary": "no field"})
+_iss_d = {f"ABC-{i}": {"description": "x" * js.DESC_MAX} for i in range(1, 400)}
+js.keep_descriptions(_iss_d, set(_iss_d))
+ok("story: and stops at the budget, so the file stays readable", sum(len(v.get("description", "")) for v in _iss_d.values()) <= js.DESC_BUDGET and any("description" not in v for v in _iss_d.values()))
+
 search.shutdown()
 other.shutdown()
 jira.shutdown()

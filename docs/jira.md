@@ -45,6 +45,8 @@ that computer. The default output is a **jira** folder beside the plan.
    first** before choosing to follow Jira's sprints.
 4. Use **Work → Sort Jira work** to arrange returned issues. Open an item: **From Jira** stays read-only;
    **Added here** is your planning context.
+5. An initiative or task linked to an issue shows the issue's description as its story, marked **From Jira**
+   (Sightline 1.109.0 or later, with the matching sync). The sync reads descriptions only for issues the plan links.
 
 For repeated syncs, run `python3 /trusted/helpers/sightline-jira-sync.py watch`. Read `install --help` before
 configuring startup behavior. Run trusted helper code from your own computer, never a mutable shared folder.
