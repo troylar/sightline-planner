@@ -67,20 +67,17 @@ async function page(){
     }
     ev("setWs('timeline'); render();");
     ok("returning to Timeline preserves its filter", ev("UI.filter.lanes.length") === 1 && ev("UI.filter.lanes[0] === S.lanes[0].id"));
-    const visible = () => [...d.querySelectorAll('#primaryNav button')].filter(b=>!b.hidden).map(b=>b.id);
-    ok("three primary jobs replace workspace clutter", ["nav-work", "nav-delivery", "nav-updates"].every(id=>visible().includes(id)));
-    ok("Settings has only one navigation button", d.querySelectorAll('#tab-plan').length === 1 && d.querySelectorAll('#primaryNav [data-ws="plan"]').length <= 1);
-    d.querySelector("#nav-updates").click();
+    ok("three primary jobs and Settings head the menu", ["nav-work", "nav-delivery", "nav-updates", "tab-plan"].every(id=>d.querySelector("#sidenav .snh#" + id)));
+    ok("Settings has only one navigation entry", d.querySelectorAll('#tab-plan').length === 1);
+    d.querySelector("#tab-roadmap").click();
     ok("Updates opens the existing Roadmap", ev("UI.ws") === "roadmap" && !d.querySelector("#ws-roadmap").hidden);
     d.querySelector("#delivery-status").click();
     ok("delivery status opens the existing whole-plan report", ev("UI.ws") === "plan" && ev("UI.planTab") === "report" && !d.querySelector("#ws-plan").hidden);
-    d.querySelector("#tab-plan").click();
-    d.querySelector('#plannav [data-pt="calendar"]').click();
-    d.querySelector("#nav-delivery").click();
-    d.querySelector("#tab-plan").click();
+    d.querySelector("#set-calendar").click();
+    ev("goMainGroup('delivery')"); ev("goMainGroup('settings')");
     ok("Settings remembers Calendar after a visit to Delivery", ev("UI.ws") === "plan" && ev("UI.planTab") === "calendar" && [...d.querySelectorAll('#ws-plan [data-plan="calendar"]')].every(section=>!section.hidden));
     d.querySelector("#tab-plan").click();
-    ok("clicking active Settings keeps the selected Calendar section", ev("UI.planTab") === "calendar" && d.querySelector('#plannav [data-pt="calendar"]').getAttribute("aria-selected") === "true");
+    ok("clicking the Settings heading keeps the selected Calendar section", ev("UI.planTab") === "calendar" && d.querySelector('#set-calendar').getAttribute("aria-current") === "page");
     ok("workspace transitions raise no page errors", !w.errors.length, w.errors.join(" | "));
     await wait(30);
   });

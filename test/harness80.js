@@ -30,7 +30,7 @@ async function page(fileText){
   await sec(async ()=>{ const {ev, d, handle} = await page();
     const F = () => JSON.parse(handle._text);
     ev(`setMe(S.people[0].id); UI.ws = "plan"; UI.planTab = "snapshots"; render();`); await wait(20);
-    ok("Z1 Manage has a Snapshots tab", !!d.querySelector('[data-pt="snapshots"]') && !!d.querySelector("#snapAdd"));
+    ok("Z1 Delivery has a Snapshots page", !!d.querySelector('#snp-delivery [data-section="snapshots"]') && !!d.querySelector("#snapAdd"));
     d.querySelector("#snapName").value = "Q4 commit"; d.querySelector("#snapAdd").dispatchEvent(new d.defaultView.Event("submit", {cancelable:true})); await wait(80);
     const f1 = F(), sn = (f1.snapshots || [])[0];
     ok("Z2 saving writes it to the shared file", sn && sn.name === "Q4 commit" && Object.keys(sn.info.b).length === f1.bars.length && (f1.meta.features || []).includes("snapshots"), sn ? sn.name : "none");

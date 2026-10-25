@@ -111,11 +111,11 @@ async function page(){
     ok("Today names decider and distinguishes owners",decision?.textContent.includes("Decider: "+ev("personName(S.people[0].id)")) && decision.textContent.includes("Owners: "+ev("personName(S.people[1].id)")));
     ok("Today explicitly identifies missing decider",unassigned?.textContent.includes("Decider: not set"));
     const sort=d.querySelector("#work-sort"); ok("Work exposes Sort Jira work directly",!!sort && !sort.hidden); sort?.click();
-    ok("Sort uses existing plan section and Work navigation",ev("UI.ws==='plan' && UI.planTab==='epics' && workspaceGroup()==='work'") && d.querySelector("#nav-work").getAttribute("aria-pressed")==="true");
-    ok("daily Sort workspace hides Settings section navigation",d.querySelector("#plannav").hidden);
-    d.querySelector("#nav-delivery").click(); d.querySelector("#nav-work").click();
+    ok("Sort uses existing plan section and Work navigation",ev("UI.ws==='plan' && UI.planTab==='epics' && workspaceGroup()==='work'") && d.querySelector('.sngroup[data-group="work"]').classList.contains("here") && d.querySelector("#work-sort").getAttribute("aria-current")==="page");
+    ok("daily Sort workspace is not listed under Settings",!d.querySelector('#snp-settings [data-section="epics"]'));
+    ev("goMainGroup('delivery'); goMainGroup('work')");
     ok("Work remembers its Sort Jira page",ev("UI.ws==='plan' && UI.planTab==='epics'"));
-    d.querySelector("#tab-plan").click(); ok("Settings still opens connection configuration",ev("workspaceGroup()==='settings' && UI.planTab!=='epics'") && !d.querySelector("#plannav").hidden);
+    d.querySelector("#set-jira").click(); ok("Settings still opens connection configuration",ev("workspaceGroup()==='settings' && UI.planTab==='jira'") && d.querySelector("#set-jira").getAttribute("aria-current")==="page");
     ev("openEpics();"); ok("old Sort Jira entry keeps working",ev("UI.ws==='plan' && UI.planTab==='epics'"));
     const identity=d.querySelector("#identityBtn"); ok("identity is visible outside Notes",!!identity && !identity.hidden && identity.textContent.includes(ev("personName(S.people[0].id)")));
     identity?.click(); await wait(10); ok("identity opens the existing browser-local person chooser",d.querySelector("#addMenu").getAttribute("aria-label")==="Who are you?" && !d.querySelector("#addMenu").hidden);

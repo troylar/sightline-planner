@@ -1,5 +1,35 @@
 [
   {
+    "version": "1.116.0",
+    "date": "2026-10-25",
+    "headline": "A menu down the left side",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Navigation",
+        "title": "Every page has one home",
+        "before": "Pages were split between tabs, a More menu and Settings, and Sort Jira work opened from Settings but showed up under Work.",
+        "now": "A menu on the left lists Work, Delivery, Product updates and Settings with every page under its group. Sort Jira work and Jira change proposals live only in Work, and counts and warnings sit on the page they belong to.",
+        "where": "Left side of the page"
+      },
+      {
+        "kind": "new",
+        "area": "Navigation",
+        "title": "Fold the menu to a rail",
+        "now": "Collapse the menu to a narrow rail of icons with the button at its top or the \\ key, and hover or focus an icon to open its group. Sightline remembers your choice in this browser, and narrow windows start with the rail.",
+        "where": "Top of the left menu"
+      },
+      {
+        "kind": "fixed",
+        "area": "Navigation",
+        "title": "Settings key and Jira hints",
+        "before": "Pressing 4 didn't open Settings, and some messages sent you to Settings to sort Jira work.",
+        "now": "Pressing 4 opens Settings, and messages point to Work, then Sort Jira work, or to Settings, then Jira connection.",
+        "where": "Keyboard shortcuts and Jira messages"
+      }
+    ]
+  },
+  {
     "version": "1.115.0",
     "date": "2026-10-25",
     "headline": "Workstream names stay in view",

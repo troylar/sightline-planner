@@ -256,12 +256,11 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   ok("SR12: unreadable lane colors fall back to ink for labels", ev(`labelOn("#f0e68c")`)==="var(--ink)" && ev(`labelOn("#1f3f6b")`)==="#1f3f6b");
   // --- workspaces ---
   d.querySelector("#nav-delivery").click(); d.querySelector("#delivery-status").click();
-  d.querySelector('#plannav [data-pt="milestones"]').click();
+  d.querySelector('#sidenav [data-section="milestones"]').click();
   ok("Delivery lists show one list at a time", !d.querySelector("#ws-plan").hidden && d.querySelector("#ws-timeline").hidden && [...d.querySelectorAll("#ws-plan [data-plan]")].filter(x=>!x.hidden).every(x=>x.dataset.plan==="milestones"));
-  [...d.querySelectorAll("#plannav [role=tab]")].find(x=>x.dataset.pt==="gates").click();
-  ok("Plan nav switches to Gates with a count", !d.querySelector("#sec-gates").hidden && d.querySelector("#sec-milestones").hidden && /Gates\s*\d/.test(d.querySelector("#plannav").textContent));
-  d.querySelector("#tab-plan").click();
-  [...d.querySelectorAll("#plannav [role=tab]")].find(x=>x.dataset.pt==="calendar").click();
+  d.querySelector('#sidenav [data-section="gates"]').click();
+  ok("Plan nav switches to Gates with a count", !d.querySelector("#sec-gates").hidden && d.querySelector("#sec-milestones").hidden && /Gates\s*\d/.test(d.querySelector('#sidenav [data-section="gates"]').textContent));
+  d.querySelector('#sidenav [data-section="calendar"]').click();
   ok("Calendar holds sprints and holidays", [...d.querySelectorAll("#ws-plan [data-plan=calendar]")].every(x=>!x.hidden));
   d.querySelector("#nav-delivery").click(); d.querySelector("#tab-people").click(); ok("Capacity tab shows load", !d.querySelector("#ws-people").hidden && d.querySelector("#ws-timeline").hidden);
   ev(`select("bar", S.bars[0].id)`); ok("selecting an item returns to Timeline", !d.querySelector("#ws-timeline").hidden);
@@ -384,7 +383,7 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   ev("clearView(); setWs('timeline')");
   ok("views persist per plan id", ev("!!readPV()[S.meta.planId]"));
   ev("S.milestones.forEach(m=>{ m.stretch=''; m.date=''; }); render()");
-  ok("no 'null' text anywhere in the chrome", !/null/.test(d.querySelector(".top").textContent + d.querySelector("#wsbar").textContent + d.querySelector("#plannav").textContent));
+  ok("no 'null' text anywhere in the chrome", !/null/.test(d.querySelector(".top").textContent + d.querySelector("#wsbar").textContent + d.querySelector("#sidenav").textContent));
   // --- roster + owner pickers ---
   const realPlan = require("fs").readFileSync(require("path").join(__dirname,"fixtures","sample-plan.json"),"utf8");
   ev(`loadExternal(${JSON.stringify(realPlan)},"real")`); await wait(30); ev("UI.view=null; UI.filter=normFilter({}); setWs('timeline'); setZoom('weeks'); sel=null; render()");

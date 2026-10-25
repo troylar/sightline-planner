@@ -75,7 +75,7 @@ setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT"); process.exit
     ok("MM1: 'Move just this one' moves one retro (others stay)", occ === JSON.stringify(["2026-10-16","2026-10-29","2026-11-13"]), occ);
     ok("MM2: and at its own time", ev(`occTime(meetingById(${JSON.stringify(retro)}), isoToDay("2026-10-29")).time`) === "11:00" && ev(`occTime(meetingById(${JSON.stringify(retro)}), isoToDay("2026-11-13")).time`) === "14:30"); }
   ev(`UI.planTab = "types"; setWs("plan")`);
-  ok("SG1: Manage → Timeboxes has sprints, ceremonies and process blocks together", [...d.querySelectorAll('#ws-plan [data-plan="types"]')].filter(x=>!x.hidden).length === 3 && d.querySelectorAll("#t-ceremonies tbody tr").length === 3 && d.querySelectorAll("#t-types tbody tr").length === 3 && /Timeboxes/.test(d.querySelector("#plannav").textContent));
+  ok("SG1: Manage → Timeboxes has sprints, ceremonies and process blocks together", [...d.querySelectorAll('#ws-plan [data-plan="types"]')].filter(x=>!x.hidden).length === 3 && d.querySelectorAll("#t-ceremonies tbody tr").length === 3 && d.querySelectorAll("#t-types tbody tr").length === 3 && /Timeboxes/.test(d.querySelector("#set-types").textContent));
   ok("SG2: the moved retro shows as a changed date", [...d.querySelectorAll("#t-ceremonies tbody tr")].some(r=>/Retrospective/.test(r.textContent) && /\b1\b/.test(r.textContent)));
   ev(`setWs("timeline")`);
   ok("MM3: sprint rule text for meetings", /last day of every sprint/.test(ev(`recurText(meetingById(${JSON.stringify(retro)}))`)));

@@ -37,7 +37,7 @@ For leadership, ask:
 > Explain what changed, what needs attention, and the next decision. Name the scope and freshness. Use a
 > previous snapshot only if one is supplied; otherwise describe the current state without inventing a change history.
 
-Use **Delivery → Status update** for the shared delivery conversation and **Product updates → Release notes**
+Use **Delivery → Status update** for the shared delivery conversation and **Product updates → Customer release notes**
 for customer wording. A proposed or planned outcome is not something that shipped.
 
 ## Between meetings
