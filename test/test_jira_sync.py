@@ -1014,6 +1014,28 @@ _iss_d = {f"ABC-{i}": {"description": "x" * js.DESC_MAX} for i in range(1, 400)}
 js.keep_descriptions(_iss_d, set(_iss_d))
 ok("story: and stops at the budget, so the file stays readable", sum(len(v.get("description", "")) for v in _iss_d.values()) <= js.DESC_BUDGET and any("description" not in v for v in _iss_d.values()))
 
+# check-amendments checks a batch in order: an action may use an id an earlier change adds, and it says what it checked
+with _vt.TemporaryDirectory() as bt:
+    bt = pathlib.Path(bt)
+    plan = _vj.loads((HERE / "fixtures" / "sample-plan.json").read_text(encoding="utf-8")); plan["meta"].update({"planId": "p-batch", "schema": 2})
+    (bt / "plan.json").write_text(_vj.dumps(plan), encoding="utf-8")
+    A = lambda name, args: {"op": "action", "action": name, "args": args}
+    am = {"kind": "sightline-amendments", "version": 1, "planId": "p-batch", "batchId": "b-order", "createdAt": "2026-10-25T00:00:00Z", "basedOn": {"planRevision": 0}, "changes": [
+        {"id": "c1", "summary": "Add a task", "ops": [A("task.add", {"id": "task-ba-1", "bar": "m2", "start": "2026-10-05", "label": "Write the adapter"})]},
+        {"id": "c2", "summary": "Link to it", "ops": [A("task.add", {"id": "task-ba-2", "bar": "m2", "start": "2026-10-07", "label": "Review"}), A("task.link", {"id": "task-ba-2", "after": "task-ba-1"})]},
+        {"id": "c3", "summary": "Link to nothing", "ops": [A("task.link", {"id": "task-ba-1", "after": "task-nowhere"})]},
+        {"id": "c4", "summary": "Clear a stretch date", "ops": [A("milestone.move", {"id": "ms2", "day": None, "stretch": True})]}]}
+    (bt / "am.json").write_text(_vj.dumps(am), encoding="utf-8")
+    run = lambda *x: subprocess.run([sys.executable, str(HERE.parent / "tools" / "sightline-jira-sync.py"), "check-amendments", str(bt / "plan.json"), str(bt / "am.json"), *x], capture_output=True, text=True, timeout=60)
+    r = run("--json"); out = _vj.loads(r.stdout) if r.stdout.strip().startswith("{") else {}
+    st = {c["id"]: c["status"] for c in out.get("changes", [])}
+    ok("batch: a change may use an id an earlier change in the batch adds", st.get("c2") == "ready")
+    ok("batch: a reference nothing adds is still invalid", st.get("c3") == "invalid")
+    ok("batch: milestone.move takes day null to clear a stretch date", st.get("c4") == "ready")
+    ok("batch: the JSON says what was checked here and what only Sightline checks", "action names and their arguments" in out.get("checked", []) and any("each action's own rules" in x for x in out.get("notCheckedHere", [])) and "in order" in out.get("checkedWhen", ""))
+    r = run()
+    ok("batch: and so does the text output", "Checked here: " in r.stdout and "Not checked here: " in r.stdout and "checks those when it applies the batch" in r.stdout)
+
 search.shutdown()
 other.shutdown()
 jira.shutdown()

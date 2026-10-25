@@ -71,7 +71,7 @@ const wait = ms=>new Promise(resolve=>setTimeout(resolve, ms));
     ev(`AM = {hash:'stable',file:{batchId:'stable',source:'Tester',changes:[change]}}; amMemo = null;`);
     ok('C8 completed add changes appear in the completed group on a fresh browser', ev(`amRows()[0].group === 'completed'`));
     before = ev('snapshot()'); saved = await ev(`amApply(['stable'])`);
-    ok('C9 applying an already completed change records a receipt without a plan mutation', saved === false && before === ev('snapshot()') && ev(`amReceipt('stable',change) === 'applied'`));
+    ok('C9 applying an already completed change records a receipt without a plan mutation, not as applied', saved === false && before === ev('snapshot()') && ev(`amReceipt('stable',change) === 'already'`));
     ev(`reset(); window.clearOwners = {id:'clear-owners',ops:[
       {op:'add',type:'initiative',id:'bar-clear',value:{label:'Clear',lane:S.lanes[0].id,start:S.meta.start,weeks:2,owners:[S.people[0].id]}},
       {op:'set',type:'initiative',id:'bar-clear',field:'owners',prev:[S.people[0].id],value:null},

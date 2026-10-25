@@ -1,5 +1,72 @@
 [
   {
+    "version": "1.110.0",
+    "date": "2026-10-25",
+    "headline": "Assistant batches apply in order, and the right tools are one click away",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Changes that build on each other are ready together",
+        "before": "A change that used a task an earlier change in the same batch adds showed red until the earlier one was applied.",
+        "now": "The panel checks a batch in order. A change an earlier one enables shows Ready after change N, with that change's summary. Skip a change and the ones it enables say they need it, with Reopen.",
+        "where": "Assistant panel, Changes"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Apply ready applies in order and says what happened",
+        "before": "Apply ready left out changes that depended on others, and it was hard to tell what had landed.",
+        "now": "Apply ready applies the ready changes from the top as one update with one undo, and stops at the first one that can't apply. It then says which changes applied, which were already in the plan, which was skipped, what waits and why, and whether the plan was saved.",
+        "where": "Assistant panel, Apply ready"
+      },
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "Put assistant tools in this folder",
+        "now": "One click puts the assistant tools that match this page in the assistant folder, each with a .sha256 checksum. Files it doesn't recognize are never replaced, and it asks before replacing an older copy. The context file says whether the folder's tools match.",
+        "where": "Assistant panel, Files and assistant handoff"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Held changes hold what they enable",
+        "now": "When a change waits for review, is paused, has expired or was written against an older plan, the changes it enables wait with it and say why. Size and delete checks look at the plan as the earlier changes leave it.",
+        "where": "Assistant panel, When your assistant writes changes"
+      },
+      {
+        "kind": "fixed",
+        "area": "Assistant",
+        "title": "Results right after an apply while editing",
+        "before": "After applying a change while editing, the results file still said it was waiting and the change it enabled was invalid.",
+        "now": "The results file describes the plan as it is in this browser, says when it isn't saved yet, and carries the same summary the page shows.",
+        "where": "sightline-assistant-results.json"
+      },
+      {
+        "kind": "fixed",
+        "area": "Assistant",
+        "title": "Moving a milestone with its date as prev",
+        "before": "An assistant moving a milestone with prev given as a date was told the milestone had changed since.",
+        "now": "prev is a date, as the context gives it, and a stretch date can now be cleared (stretch true, day null).",
+        "where": "Assistant changes, milestone.move"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "The checking tool says what it checked",
+        "now": "check-amendments checks a batch in order, and lists what it checked and what only Sightline checks when it applies the batch.",
+        "where": "sightline-jira-sync.py check-amendments"
+      },
+      {
+        "kind": "improved",
+        "area": "Saving",
+        "title": "Start-up help for synced folders",
+        "now": "If Sightline doesn't start, the first step it suggests is to wait for OneDrive or another synced folder to finish syncing, then reload.",
+        "where": "The Sightline didn't start screen"
+      }
+    ]
+  },
+  {
     "version": "1.109.0",
     "date": "2026-10-25",
     "headline": "Stories: the why behind each item",

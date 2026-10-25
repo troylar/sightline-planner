@@ -40,7 +40,7 @@ def ok(name, cond, extra=""):
         print("  FAIL", name, extra)
 
 
-def build(releases, skill_mutator=None):
+def build(releases, skill_mutator=None, tool_mutator=None):
     with tempfile.TemporaryDirectory() as t:
         t = pathlib.Path(t)
         shutil.copytree(ROOT / "src", t / "src")
@@ -50,6 +50,8 @@ def build(releases, skill_mutator=None):
         shutil.copytree(ROOT / "tools", t / "tools")
         if skill_mutator:
             skill_mutator(t / "skills")
+        if tool_mutator:
+            tool_mutator(t / "tools")
         (t / "src" / "releases.json").write_text(json.dumps(releases), encoding="utf-8")
         r = subprocess.run(["bash", str(t / "build.sh")], capture_output=True, text=True)
         page = (t / "dist" / "sightline.html").read_text(encoding="utf-8") if r.returncode == 0 else ""
@@ -81,6 +83,12 @@ with tempfile.TemporaryDirectory() as t, tempfile.TemporaryDirectory() as pub:
     v = subprocess.run([sys.executable, str(pub / "sightline-app.py"), "--version"], capture_output=True, text=True)
     ok("the published sightline-app.py says which page it matches", v.stdout.strip() == f"sightline-app.py for Sightline {ver}", v.stdout + v.stderr)
     ok("no compiled files are left in dist", not (t / "dist" / "__pycache__").exists())
+    tpage = (t / "dist" / "sightline.html").read_text(encoding="utf-8")
+    tb = json.loads(tpage.split("const BUNDLED_TOOLS = ", 1)[1].split(";\n", 1)[0])
+    ok("the page embeds both tools as the exact stamped bytes in dist", tb["version"] == ver and [f["name"] for f in tb["files"]] == ["sightline-app.py", "sightline-jira-sync.py"]
+       and all(f["text"].encode("utf-8") == (t / "dist" / f["name"]).read_bytes() for f in tb["files"]))
+    ok("and the published copies, whose checksums match the embedded ones", all(f["text"].encode("utf-8") == (pub / f["name"]).read_bytes()
+       and (pub / (f["name"] + ".sha256")).read_text().split()[0] == f["sha256"] == hashlib.sha256(f["text"].encode("utf-8")).hexdigest() for f in tb["files"]))
 import io, zipfile, base64, hashlib
 bundle = json.loads(page.split("const BUNDLED_SKILLS = ", 1)[1].split(";\n", 1)[0])
 ok("the HTML carries versioned planning skills", bundle["version"] == GOOD[0]["version"] and len(bundle["files"]) == len(list((ROOT / "skills").glob("*/SKILL.md"))))
@@ -95,6 +103,15 @@ code, out, skill_page = build(GOOD, mutate_skill)
 ok("untrusted skills cannot close the script", code == 0 and skill_page.count("<script>") == 2 and "</script><script>window.skillPwned" not in skill_page)
 skill_bundle = json.loads(skill_page.split("const BUNDLED_SKILLS = ", 1)[1].split(";\n", 1)[0])
 ok("escaping keeps original skill text", any("</script><script>window.skillPwned=1</script><!--<script>\u2028\U0001f642" in item["text"] for item in skill_bundle["files"]))
+def mutate_tool(root):
+    p = root / "sightline-app.py"
+    p.write_text(p.read_text(encoding="utf-8") + '\n# </script><script>window.toolPwned=1</script><!--<script>\u2028\n', encoding="utf-8")
+code, out, tool_page = build(GOOD, tool_mutator=mutate_tool)
+ok("tool text cannot close the page's script", code == 0 and tool_page.count("<script>") == 2 and "</script><script>window.toolPwned" not in tool_page, out[-200:])
+tool_bundle = json.loads(tool_page.split("const BUNDLED_TOOLS = ", 1)[1].split(";\n", 1)[0]) if code == 0 else {"files": []}
+ok("and the embedded tool keeps its text exactly", any("</script><script>window.toolPwned=1</script><!--<script>\u2028" in f["text"] for f in tool_bundle["files"]))
+code, out, _ = build(GOOD, tool_mutator=lambda root: (root / "sightline-jira-sync.py").write_text((root / "sightline-jira-sync.py").read_text(encoding="utf-8") + "#" + "x" * 600000 + "\n", encoding="utf-8"))
+ok("tools over the size budget fail the build", code != 0 and "512 KiB" in out, out[-200:])
 code, out, _ = build(GOOD, lambda root: next(root.glob("*/SKILL.md")).unlink())
 ok("missing skill fails the build", code != 0 and "missing SKILL.md" in out)
 def too_large_skill(root):
