@@ -1368,6 +1368,8 @@ def sync_once(plan_path: str, out_path: str, base: str, token: str, jql: str | N
            "jiraBase": base, "issues": issues, "missing": [k for k in keys if k not in issues],
            **({"keysCut": {"linked": linked[0], "fetched": len(keys)}} if linked and linked[0] > len(keys) else {}),
            **({"ancestors": ancestors} if ancestors else {}),
+           # without Parent Link, a story under a feature can't be traced to its epic: the page says so where it shows
+           **({} if FIELD_ID_RE.match(CUSTOM.get("parentLink", "")) else {"noParentLink": True}),
            # how this file is kept up to date, so the page can say when it's overdue (no computer or user names)
            "sync": {"by": (how or {}).get("by", "sync"), "every": int((how or {}).get("every") or 0), "plan": os.path.basename(plan_path)[:200]}}
     if board:
@@ -1518,6 +1520,8 @@ def report_run(res: dict, out: str, issues_out: str, label: str = "") -> None:
         return
     kids = sum(len(r.get("children") or []) for r in (res.get("rollups") or {}).values())
     print(f"[{stamp}] {label}{len(res['issues'])} issue(s) written to {out}" + (f" ({kids} of them stories under your epics)" if kids else "") + (f"; not found in Jira: {', '.join(res['missing'][:10])}" if res["missing"] else ""))
+    if res.get("noParentLink"):
+        print("        no Parent Link field found: a story that sits under a feature will show with no epic. Run fields to check.")
     if res.get("keysCut"):
         print(f"        this plan links {res['keysCut']['linked']} Jira items; only the first {res['keysCut']['fetched']} were fetched. Remove links the plan no longer needs.")
     if "sprints" in res:

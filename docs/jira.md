@@ -24,7 +24,11 @@ python3 /trusted/helpers/sightline-jira-sync.py fields
 
 `setup` asks for your Jira HTTPS address and personal access token and stores the token in your OS credential
 store. Do not put tokens in a shared folder, plan, command argument or screenshot. `fields` helps identify your
-server's Epic Link, Sprint and Story Points fields. Use each command's `--help` for local field overrides.
+server's Epic Link, Sprint, Story Points and Parent Link fields. Use each command's `--help` for local field overrides.
+If your Jira puts a feature (or another level) between epics and stories through Parent Link, the sync needs that
+field to trace each story to its epic. Without it, the sync says so after each run, and **Sort Jira work** explains
+why such stories show with **No epic**. Sort Jira work groups a story under the first epic above it, through any
+feature in between, even when that epic isn't on the plan.
 
 Save a JSON plan first. Then, with an explicit Jira board ID and JQL that you choose locally:
 
