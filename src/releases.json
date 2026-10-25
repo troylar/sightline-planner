@@ -1,5 +1,48 @@
 [
   {
+    "version": "1.124.0",
+    "date": "2026-10-25",
+    "headline": "Jira stories on sprint shelves, sized by points",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Sprint shelves for Jira stories",
+        "before": "In Weeks, every Jira story in a sprint was drawn as its own full-width bar, so a busy workstream became a wall of identical bars that said nothing about size or status.",
+        "now": "Each workstream's Jira stories sit on a shelf per sprint, grouped under their initiative. A tile's width follows its points, on one scale for the whole chart, and it shows its points, a status symbol, and who has it. Not estimated stories get their own strip, and stories with no sprint are counted as Unscheduled. Nothing in the plan changes.",
+        "where": "Timeline, Weeks, under each workstream"
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Honest shelf summaries",
+        "now": "Each shelf sums its stories, estimated points and done points, next to the stories not estimated. It says when filters apply, and that capacity isn't compared yet.",
+        "where": "Timeline, under each sprint's shelf"
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Summaries at Fit, tiles at one sprint",
+        "now": "At Fit or several sprints, each shelf shows a short summary. Pick one or two sprints to see the tiles. Show the stories, beside a workstream's shelves, opens or folds them by hand, and that choice is kept in this browser.",
+        "where": "Timeline, the shelf row's label"
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Spotlight one person",
+        "now": "Pick a person in Spotlight to light up their tiles across the shelves, with their stories, points and stories not estimated.",
+        "where": "Timeline, the shelf row's label, while the stories show"
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Go back to bars if you prefer",
+        "now": "Show, then On sprint shelves, turns the shelves off and draws each story as a bar again. Days keeps its story rows either way.",
+        "where": "Timeline, Show"
+      }
+    ]
+  },
+  {
     "version": "1.123.0",
     "date": "2026-10-25",
     "headline": "Size List's columns, and choose which ones wrap",

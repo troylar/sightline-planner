@@ -40,7 +40,7 @@ async function page(){
     L[1].tasks = [{id:"tk", label:"Task on ABC-2", start:"2026-11-02", days:4, owners:[], jira:"ABC-2", status:"notstarted"}]; L[1].datesFrom = "manual";
     L[2].jira = "ABC-3"; L[3].jira = "ABC-4"; L[4].epics = ["ABC-10"]; L[4].jira = ""; L[4].start = 0; L[4].span = 1; L[4].dependsOn = [];
     window.IDS = L.slice(0,5).map(b=>b.id);
-    file.handle = null; resetHistory(); sel = null; setWs("timeline"); setZoom("weeks"); JIRA = parseJiraStatus(ST); render();`);
+    file.handle = null; resetHistory(); sel = null; setWs("timeline"); setZoom("weeks"); UI.shelves = false; JIRA = parseJiraStatus(ST); render();`);
   return {w, d: w.document, ev, B: i => ev(`IDS[${i}]`)};
 }
 (async()=>{

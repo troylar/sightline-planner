@@ -55,6 +55,7 @@ run_suite harness138 90 node harness138.js
 run_suite harness140 90 node harness140.js
 run_suite harness141 90 node harness141.js
 run_suite harness142 90 node harness142.js
+run_suite harness143 90 node harness143.js
 run_suite harness139 90 node harness139.js
   run_suite build 240 python3 test_build.py
   run_suite jira-sync 120 python3 test_jira_sync.py
