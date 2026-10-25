@@ -224,7 +224,13 @@ def check_jira_place(sort: dict, name: str, args: dict) -> list:
     placed = {up(k): v for k, v in (sort.get("placed") or {}).items() if isinstance(v, dict)}
     epics = {up(x.get("key")) for x in sort.get("epics") or [] if isinstance(x, dict)}
     targets = sort.get("targets") or {}
-    lanes = {x.get("id") for x in targets.get("workstreams") or [] if isinstance(x, dict)}
+    lane_of = {}                                       # a workstream's id, or a former id it keeps (was) -> its id now
+    for x in targets.get("workstreams") or []:
+        if isinstance(x, dict) and isinstance(x.get("id"), str):
+            lane_of[x["id"]] = x["id"]
+            for o in x.get("was") if isinstance(x.get("was"), list) else []:
+                lane_of.setdefault(o, x["id"])
+    lanes = set(lane_of)
     bars = {x.get("id"): x for x in targets.get("initiatives") or [] if isinstance(x, dict)}
     bad = []
     if name in ("jira.epicLink", "jira.epicNew"):
@@ -237,7 +243,7 @@ def check_jira_place(sort: dict, name: str, args: dict) -> list:
             bad.append("list at least one Jira key in keys.")
         if len(keys) > JIRA_KEYS_MAX:
             bad.append(f"one change places up to {JIRA_KEYS_MAX} issues.")
-        dest = ("notOurs", None) if name == "jira.notOurs" else ("lane", args.get("lane")) if name == "jira.toWorkstream" else ("initiative", args.get("id"))
+        dest = ("notOurs", None) if name == "jira.notOurs" else ("lane", lane_of.get(args.get("lane"), args.get("lane"))) if name == "jira.toWorkstream" else ("initiative", args.get("id"))
         for k in keys:
             if k in pile:
                 continue

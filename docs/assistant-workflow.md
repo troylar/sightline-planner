@@ -216,6 +216,15 @@ action, field `aiHint`.
 workstream. `workstream.del` {id} removes one only when it's empty (no work, splits, own reserve, deliverables or
 block types) and always waits for a person, at every review level. Its guidance goes with it.
 
+`workstream.reid` {lane, id, prev} changes a workstream's id, so the id says what the workstream is now: `lane` is its id
+now and `id` the new one. Everything that names it changes in the same update, with one Undo: initiatives, milestones,
+notes, meetings, process types and blocks, deliverables, people's time splits, its guidance, saved views, the baseline,
+snapshots and the last status update. The old id stays on the workstream (`was`, exported with it), so a file written
+before the change still finds it; review says when a change used an old id, and what it applies names the new one. The
+new id follows the rules for a new workstream's (1 to 60 letters, digits, dots, dashes or underscores, starting with a
+letter or digit) and is never one in use, or one another workstream had before. It always waits for a person. A plan
+with a former id needs this version or later: older copies open it read-only.
+
 ### What's missing
 
 `coverage.context` lists, counted from the whole plan before anything is trimmed: workstreams without guidance,
