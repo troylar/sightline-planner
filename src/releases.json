@@ -1,5 +1,35 @@
 [
   {
+    "version": "1.111.0",
+    "date": "2026-10-25",
+    "headline": "The assistant keeps your timeboxes in line with the work",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "The assistant can set timebox goals and names",
+        "before": "No assistant change could touch a sprint, so goals had to be typed in by hand after a plan cleanup.",
+        "now": "The assistant can set the name and goal of the plan's own timeboxes, add one at the end, or add timeboxes through a date, the same way Add timeboxes through does: at most 60 at a time, and asking again once they reach the date changes nothing. Several goals in one change apply as one update with one undo.",
+        "where": "Assistant panel, Changes"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "The context lists your timeboxes and what finishes in each",
+        "now": "The context file lists the plan's timeboxes in order: Jira sprints, the rows between them and the plan's own, with the plan's dates, Jira's own dates, the goal, and the tasks, initiatives and milestones finishing in each. The guide says to write a goal as one plain line about what that timebox finishes.",
+        "where": "Assistant panel, Files and assistant handoff"
+      },
+      {
+        "kind": "improved",
+        "area": "Settings",
+        "title": "Jira sprints stay where Jira puts them",
+        "before": "A Jira sprint's name and goal were read-only, but its length could change and rows could be moved or deleted around it, which moved its dates.",
+        "now": "A Jira sprint can't be lengthened, moved or deleted here, and neither can a row whose change would move one, such as the weeks between two Jira sprints. Those rows' goals are still yours. Each locked control says why, and the assistant is refused the same way: This sprint comes from Jira; change it in Jira.",
+        "where": "Plan, Timeboxes & ceremonies"
+      }
+    ]
+  },
+  {
     "version": "1.110.0",
     "date": "2026-10-25",
     "headline": "Assistant batches apply in order, and the right tools are one click away",

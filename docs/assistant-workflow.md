@@ -215,6 +215,30 @@ adds. It checks the file's shape, action names and arguments, ids, and deliverab
 their `prev`. It doesn't check each action's own rules, `prev` for actions, what an earlier change sets, holds, or
 unsaved edits in the page; Sightline checks those when it applies the batch. Its output says so.
 
+## Timeboxes
+
+The assistant can keep the plan's timeboxes in line with the work: set a goal from the work finishing in a timebox, rename one of the plan's own, and add timeboxes when the plan runs past the last one.
+
+- `sprint.set {id, field, value, prev}` sets the `name` or `goal` of a timebox. A name is up to 60 characters and a goal up to 300.
+- `sprint.add {id, name?, goal?}` adds one timebox at the end, as long as the plan's usual sprint and named on from the last, like the page's own Add. The id makes a retry safe.
+- `sprint.addThrough {date}` does what **Add timeboxes through** does: it adds timeboxes until one reaches the date, at most 60 per call. Send it again to finish; once the timeboxes reach the date it changes nothing.
+
+The context file lists the timeboxes under `planning.timeboxes.list`, in order. Each has its id, name, kind, the plan's dates (`chartStart`, `chartEnd`), weeks, goal, Jira's own dates for a Jira sprint, and `finishing`: the tasks, initiatives without tasks and milestones whose computed finish falls in it. A Jira key on two items counts once, and long lists say how many were left out. `finishingAfterLast` counts work that finishes after the last timebox.
+
+There are three kinds:
+
+| Kind | What it is | What can change |
+|------|-----------|-----------------|
+| `jira` | A sprint from your Jira board | Nothing here. Change it in Jira. |
+| `gap` | A row that keeps Jira's sprints on their dates, such as the weeks between two of them | Its goal. Its name and length follow Jira. |
+| `plan` | The plan's own timebox | Name and goal. |
+
+The guide asks for a goal written as one line in plain words saying what that timebox finishes, taken from its `finishing` list, and never a goal for work the plan doesn't show. Put several goals in one change and they apply as one update with one undo.
+
+The same rules hold in **Plan > Timeboxes & ceremonies**: a Jira sprint can't be lengthened, moved or deleted, and neither can a row whose change would move one. Each locked control says why. If you later follow Jira's sprints, timeboxes keep their ids where the switch reuses them, and a pending change whose timebox became a Jira sprint, or no longer exists, is refused with the reason.
+
+Changing a timebox's length and deleting one aren't available to the assistant yet.
+
 ## Existing changes files
 
 Expand **Use individual files instead** for **Export for your assistant** and **Connect that file**. These still work when you already have an amendments JSON file or prefer manual context exports. Browsers without folder access show this alternative expanded. A browser without file access can export context, but connecting changes requires Edge or Chrome. Automatic shared-plan refresh uses **File → Check for teammates' saves every 15 s**. Folder integration does not replace existing merge, conflict, backup, undo or Jira proposal controls.

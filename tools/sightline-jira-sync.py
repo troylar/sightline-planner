@@ -1850,6 +1850,9 @@ ACTIONS = {
     "gate.move": ({"id": "id", "day": "str"}, True),
     "gate.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "gate.del": ({"id": "id"}, False),
+    "sprint.set": ({"id": "id", "field": "str", "value": "any"}, True),
+    "sprint.add": ({"id": "id", "name": "str?", "goal": "str?"}, False),
+    "sprint.addThrough": ({"date": "iso"}, False),
     "risk.add": ({"id": "id?", "text": "str", "sev": "any?", "state": "any?", "owners": "any?", "item": "any?", "next": "any?", "waitingOn": "any?", "escalateBy": "any?"}, False),
     "risk.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "risk.del": ({"id": "id"}, False),
@@ -1860,7 +1863,7 @@ ACTIONS = {
 ACT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,79}$")
 # What an id-like argument points at, by the action's first word (id) or the argument's own name.
 ACT_REF_BY_NOUN = {"initiative": "bar", "link": "bar", "task": "task", "outcome": "dv", "workstream": "lane", "person": "person",
-                   "milestone": "ms", "gate": "gate", "risk": "risk", "decision": "dec"}
+                   "milestone": "ms", "gate": "gate", "risk": "risk", "decision": "dec", "sprint": "sprint"}
 ACT_REF_BY_ARG = {"outcome": "dv", "after": "bar", "parent": "bar", "target": "bar", "bar": "bar", "lane": "lane", "person": "person",
                   "owners": "person", "members": "person", "item": "bar", "decider": "person"}
 
@@ -1952,7 +1955,7 @@ def _plan_ids(plan) -> dict:
     pick = lambda key: {x.get("id") for x in plan.get(key) or [] if isinstance(x, dict)}
     return {"bar": {b.get("id") for b in bars}, "task": {t.get("id") for b in bars for t in b.get("tasks") or [] if isinstance(t, dict)},
             "dv": pick("deliverables"), "lane": pick("lanes"), "person": pick("people"), "ms": pick("milestones"), "gate": pick("gates"),
-            "block": pick("blocks"), "risk": pick("risks"), "dec": pick("decisions")}
+            "block": pick("blocks"), "risk": pick("risks"), "dec": pick("decisions"), "sprint": pick("sprints")}
 
 
 def _plan_start(plan) -> _dt.date:
