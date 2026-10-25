@@ -92,7 +92,7 @@ async function page(opts = {}){
     await ev("epicPark('ABC-40')"); ev("renderJiraWs()"); await wait(10);
     const r = d.querySelector('#jiraInSprint [data-sprint-epic="ABC-40"]');
     ok("K1: a parked epic with sprint work is flagged in the group, not hidden in Parked", !!r && /parked/.test(r.textContent) && !d.querySelector('#jiraWs .egroup.parked [data-epic="ABC-40"]'));
-    ok("K2: the Plan badge counts sprint work first", /in a sprint/.test(d.querySelector("#jiraBadge").textContent) && d.querySelector("#jiraBadge").classList.contains("hot")); });
+    ok("K2: the Plan badge counts sprint work first", /in a sprint/.test(d.querySelector("#jiraBadge .vh").textContent) && d.querySelector("#jiraBadge").classList.contains("hot")); });
 
   await sec(async ()=>{ const {d, ev} = await page();
     ok("H1: a feature-level epic under another epic rolls up into it, not its own row", !d.querySelector('#jiraWs [data-epic="ABC-50"]'));

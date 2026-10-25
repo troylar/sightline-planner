@@ -15,10 +15,12 @@ Every button answers when you hover and click.
 - **Controls answer your hover and click** (Interface). Every button, chip, tab, menu item and row lightens when you point at it and presses in when you click. Filled buttons keep their color on hover, and the keyboard focus ring stays visible everywhere. *Where:* Everywhere
 - **Switches slide to what you pick** (Interface). The selected option is a raised pill that slides to the one you pick. The main navigation underlines the view you're on. *Where:* Timeline, List and Plan toolbars
 - **A new typeface, built into the page** (Interface). Sightline uses Instrument Sans, with narrower headings and bar labels so more of a name fits. The font is part of the file, so it looks the same offline and the page makes no network requests. *Where:* Everywhere
+- **A short count on the Settings tab** (Interface). It shows just the number. Point at it to read what it counts; screen readers still hear the full words. The warning sign has its own space. *Where:* Main navigation, Settings
 
 ### Fixed
 
 - **Long links in Breakdown read left to right** (Side panel). It lines up on the left like the text around it. *Where:* Side panel, Breakdown
+- **Similar sprint names no longer look the same** (Settings). The name column has room for typical sprint names. Where a name still has to be cut, the timeline header and the commitment table cut it in the middle and keep the end, such as S15, in view. Point at a name to see all of it. *Where:* Settings, Timeboxes and ceremonies; Timeline header
 
 ## 1.111.0 · Oct 25, 2026
 

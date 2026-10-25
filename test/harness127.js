@@ -70,7 +70,7 @@ async function page(opts = {}){
     ok("H4 menus, rows and links press too", has(/\.menu button:active:not\(:disabled\)/) && has(/\.urow, \.oopt/, r=>/:active/.test(r.sel)) && has(/^\.linkish:active:not\(:disabled\)$/) && has(/^\.ltable tr\.lrow:active > td$/));
     ok("H5 inputs: hover darkens the border; focus is a soft ring in the accent", has(/select, textarea\):not\(:disabled\):not\(\[readonly\]\):hover/) && has(/select, textarea\):focus-visible$/, r=>/box-shadow:\s*var\(--ring\)/.test(r.text)));
     ok("H6 timeline bars: hover and press tint, a dragged bar lifts", has(/^:is\(\.bar, \.tbar, \.minibar/, r=>/:hover/.test(r.sel) && /brightness/.test(r.text)) && has(/^:is\(\.bar, \.tbar\):active$/) && has(/^\.bar\.dragging, \.tbar\.dragging$/, r=>/box-shadow/.test(r.text)));
-    ok("H7 focus stays visible inside controls that sit edge to edge", has(/\.seg button, \.tabs \[role="tab"\], \.ltable tr\.lrow, \.bar, \.tbar\):focus-visible/, r=>/outline-offset:\s*-2px/.test(r.text)));
+    ok("H7 focus stays visible inside controls that sit edge to edge", has(/\.seg button, \.tabs \[role="tab"\], \.primarynav button, \.ltable tr\.lrow, \.bar, \.tbar\):focus-visible/, r=>/outline-offset:\s*-2px/.test(r.text)));
     ok("H8 transitions are on color, shadow and transform only, and fast", rules.some(r=>/transition:/.test(r.text) && /background-color var\(--state\)/.test(r.text) && !/(?:^|[ ,])(width|left|top|height) /.test(r.text.split("transition:")[1].split(";")[0])));
     ok("H9 the interaction block is screen only, so print is unchanged", rules.filter(r=>/:active/.test(r.sel) && /scale|translateY/.test(r.text) && !/^\.btn/.test(r.sel)).every(r=>/screen/.test(r.media)));
     ok("H10 reduced motion turns transitions, animations and the press step off", /@media \(prefers-reduced-motion:\s*reduce\)\s*\{\s*\*, \*::before, \*::after\s*\{[^}]*transition-duration:\s*0s\s*!important/.test(css.replace(/\s+/g, " ").replace(/,(\S)/g, ", $1").replace(/\{ /g, "{").replace(/ \}/g, "}").replace(/\{/g, " { ").replace(/\s+/g, " ")) || /prefers-reduced-motion:reduce\)\{\s*\*,\*::before,\*::after\{transition-duration:0s!important/.test(css.replace(/\s+/g, "")));
@@ -101,6 +101,20 @@ async function page(opts = {}){
     segBtns[to].dispatchEvent(new w.MouseEvent("pointerdown", {bubbles:true})); segBtns[to].click(); await wait(40);
     const pill = w.animations.find(a=>a.o && a.o.pseudoElement === "::before");
     ok("M6 the selected pill slides from the option that was on to the one picked", !!pill && /translateX\(-?\d+px\) scaleX\(1\)/.test(pill.k[0].transform) && pill.k[1].transform === "none", pill ? pill.k[0].transform : "no animation");
+    ev(`JIRA = {issues:{}, sprints:[], rollups:{}}; jiraEpicList = () => Array.from({length:7}, (_, i)=>({key:"ABC-" + (i + 1), state:"unsorted", finished:false})); render();`);
+    const jb = d.querySelector("#jiraBadge");
+    ok("B1 the Settings badge is a short count; the words go to the tooltip and screen readers", !jb.hidden && jb.firstChild.nodeType === 3 && jb.firstChild.textContent === "7" && jb.querySelector(".vh").textContent === "7 to sort" && /7 epics to sort/.test(jb.title), jb.textContent);
+    ok("B1 …the words are hidden visually, not removed", has(/^\.vh$/, r=>/clip-path:\s*inset\(50%\)/.test(r.text) && /position:\s*absolute/.test(r.text)));
+    ok("B2 the warning sign on Settings has room from the word", has(/^\.primarynav \.warnc$/, r=>/margin-left:\s*4px/.test(r.text)));
+    ok("B3 the main nav's focus ring sits inside the tab, like its underline", has(/\.primarynav button/, r=>/:focus-visible/.test(r.sel) && /outline-offset:\s*-2px/.test(r.text)));
+    ev(`S.sprints.forEach((x, i)=>{ x.name = "Platform team 2026.S" + (15 + i); }); goWs('timeline'); render();`);
+    const heads = [...d.querySelectorAll("#gantt .gsprint .spn")];
+    ok("N1 similar long sprint names keep their distinguishing end whole in the timeline header", heads.length >= 3 && heads.every((x, i)=>x.querySelector(".spn-b").textContent === "S" + (15 + i) && x.querySelector(".spn-a").textContent === "Platform team 2026."), heads.slice(0, 3).map(x=>x.textContent).join(" | "));
+    ok("N1 …only the start clips, and the full name is in the tooltip", has(/^\.spn-a$/, r=>/text-overflow:\s*ellipsis/.test(r.text)) && has(/^\.spn-b$/, r=>/flex:\s*none/.test(r.text)) && d.querySelector("#gantt .gsprint").title.startsWith("Platform team 2026.S15") && heads[0].textContent === "Platform team 2026.S15");
+    ev(`UI.planTab = 'types'; goWs('plan'); render();`);
+    const nm = [...d.querySelectorAll('#t-sprints input[aria-label="Sprint name"]')];
+    ok("N2 Settings gives sprint names room (20 characters), and the full name is in the tooltip", nm.length >= 3 && nm.every(x=>x.closest("td").classList.contains("spname") && x.title.split("\n")[0] === x.value) && has(/^td\.spname$/, r=>/width:\s*20ch/.test(r.text)), nm.slice(0, 2).map(x=>x.title).join(" | "));
+    ev(`goWs('timeline'); render();`);
     ok("M7 no page errors", !w.errs.length, w.errs.join(" | "));
 
     // ---- reduced motion: nothing animates ----

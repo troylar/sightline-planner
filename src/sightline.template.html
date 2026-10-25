@@ -67,6 +67,7 @@ button:disabled{cursor:default}
 .primarynav button[aria-pressed="true"]{background:transparent;color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent);border-radius:6px 6px 0 0}
 .primarynav button:hover:not([aria-pressed="true"]){background:var(--hov);color:var(--ink)}
 .primarynav #tab-plan{margin-left:auto;font-weight:400}
+.primarynav .warnc{margin-left:4px;color:var(--warn)}
 .assistant-status{max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #identityBtn{display:block;max-width:min(220px,60vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .delivery-reasons{margin:0;padding:8px 10px;background:var(--paper);border-radius:6px;font-size:12.5px}
@@ -232,6 +233,11 @@ body:not(.hasSel) #side{display:none}
 .gcorner{padding:10px 12px;font-size:12px;color:var(--ink-3);display:flex;align-items:flex-end;justify-content:space-between;gap:6px}
 .gcols{display:grid}
 .gsprint{padding:8px 8px 2px;border-left:1px solid var(--rule);font-family:var(--font-ui);font-stretch:85%;font-weight:600;font-size:13.5px;min-width:0}
+.spn{display:flex;min-width:0;max-width:100%;white-space:nowrap}
+.spn-a{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.spn-b{flex:none}
+td.spname{width:20ch;min-width:20ch}
+td.spname input{width:100%}
 .gsprint small{display:block;font-family:var(--font-ui);font-weight:400;font-size:11px;color:var(--ink-3)}
 .gsprint em{display:block;font-family:var(--font-ui);font-stretch:100%;font-style:normal;font-weight:400;font-size:11px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gweek{padding:0 6px 6px;font-size:10.5px;color:var(--ink-3);border-left:1px solid var(--rule-2);font-family:var(--font-ui)}
@@ -501,6 +507,7 @@ body.presenting #filterBtn,body.presenting #viewSave{display:none!important}
 .slipres ul{margin:4px 0;padding-left:18px;font-size:12.5px}
 @media (max-width:640px){.erow.insprint{grid-template-columns:18px 1fr}.erow.insprint .es,.erow.insprint .hint{grid-column:2}.erow.insprint .eacts{grid-column:1 / -1;grid-row:auto;margin-top:4px}.erow.insprint .espsel{flex:1 1 100%;max-width:none}}
 .egroup.insprint>summary{font-weight:700}.erow.insprint .eacts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.espsel{border:1px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:6px;padding:4px 6px;font:inherit;max-width:200px}.esub{margin:12px 0 4px;font-size:13px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .tbadge{display:inline-block;min-width:16px;margin-left:5px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font-size:10.5px;font-weight:700;line-height:16px;text-align:center}
 #today{padding:16px;display:flex;flex-direction:column;gap:14px}
 .thead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}
@@ -1062,7 +1069,7 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
   :is(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]),select,textarea):not(:disabled):not([readonly]):hover{border-color:color-mix(in srgb,var(--ink) 28%,var(--rule))}
   :is(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]),select,textarea):focus-visible{outline:none;border-color:var(--accent);box-shadow:var(--ring)}
   input[type=checkbox],input[type=radio],input[type=range]{accent-color:var(--accent)}
-  :is(.seg button,.tabs [role=tab],.ltable tr.lrow,.bar,.tbar):focus-visible{outline-offset:-2px}
+  :is(.seg button,.tabs [role=tab],.primarynav button,.ltable tr.lrow,.bar,.tbar):focus-visible{outline-offset:-2px}
   :is(.bar,.tbar,.minibar,.ibar,.blk,.dvtl){transition:filter var(--state) var(--ease),box-shadow var(--state) var(--ease)}
   :is(.bar,.tbar,.minibar,.ibar,.blk,.dvtl):hover{filter:brightness(.95) saturate(1.06)}
   :is(.bar,.tbar):active{filter:brightness(.9) saturate(1.1)}
@@ -6359,6 +6366,9 @@ const visibleCount = () => { const R = fRangeDays(); return S.bars.filter(b=>bar
 const cap1 = t => t ? t[0].toUpperCase() + t.slice(1) : t;
 function dayOfSprint(n, of, work){ return work ? `working day ${n} of ${of}` : `${n} of ${of} working days done`; }
 // A Jira sprint's name without the dates teams put at its end ("Planning 2026.S15 09/17-10/02" -> "Planning 2026.S15").
+// A sprint's name, clipped in the middle when it must be: the end ("S15") is what tells similar names apart.
+function sprintLabel(name){ const t = String(name || ""), m = /[^\s._\-\/]{1,8}$/.exec(t), cut = m && m.index > 0 ? m.index : t.length;
+  return h("span",{class:"spn"}, h("span",{class:"spn-a"}, t.slice(0, cut)), cut < t.length ? h("span",{class:"spn-b"}, t.slice(cut)) : null); }
 function sprintBase(name){ return String(name || "").replace(/\s*\d{1,2}\/\d{1,2}(\/\d{2,4})?\s*[-–]\s*\d{1,2}\/\d{1,2}(\/\d{2,4})?\s*$/, "").replace(/\s*\d{4}-\d{2}-\d{2}(\s*[-–]\s*\d{4}-\d{2}-\d{2})?\s*$/, "").trim(); }
 function planSprintDays(){
   const t = todayDay(), hs = HS(); let w0 = 0;
@@ -6507,7 +6517,7 @@ function renderWs(){
   { const L = jiraEpicList(), SR = sprintRows(L), e = SR.epics.length, st = SR.loose.length, sp = e + st;
     const n = L.filter(x=>x.state === "unsorted" && !x.finished && !SR.SW.byEpic.has(x.key)).length, b = $("#jiraBadge");
     const words = [e ? `${e} epic${e===1?"":"s"}` : "", st ? `${st} stor${st===1?"y":"ies"}` : ""].filter(Boolean).join(", ");
-    b.hidden = !n && !sp; b.textContent = sp ? `${words} in a sprint` : n ? `${n} to sort` : ""; b.classList.toggle("hot", !!sp);
+    b.hidden = !n && !sp; b.replaceChildren(...(sp || n ? [String(sp || n), h("span",{class:"vh"}, sp ? `${words} in a sprint` : `${n} to sort`)] : [])); b.classList.toggle("hot", !!sp);
     b.title = [sp ? `${words} in a sprint and not on the board` : "", n ? `${n} epic${n===1?"":"s"} to sort` : ""].filter(Boolean).join("; "); }
   { const rm = rowsMode(); $("#rLanes").setAttribute("aria-pressed", String(rm === "lanes")); $("#rPeople").setAttribute("aria-pressed", String(rm === "people")); $("#rEpics").setAttribute("aria-pressed", String(rm === "epics")); $("#rEpics").hidden = !hasJiraTree(); }
   $("#layerSeg").hidden = (ws !== "timeline" && ws !== "standup" && ws !== "list") || (!hasJiraWork() && !(S.changes || []).length && !mineOnly());
@@ -7538,7 +7548,7 @@ function renderGantt(){
   let w0 = 0;
   S.sprints.forEach(sp=>{
     { const a = wkDay(w0), z = wkDay(w0+sp.weeks)-3, hol = holidaysIn(a, z), wd = sp.weeks*5 - hol.length;
-      cols.append(h("div",{class:"gsprint" + sprintSide(sp),title:[sp.name, sprintFrom(sp), `${wkDate(w0)} – ${fmtDay(z)}`, `${wd} working days` + (hol.length ? ` (${hol.map(x=>x.name||fmtDay(isoToDay(x.date))).join(", ")})` : ""), sp.goal].filter(Boolean).join("\n"),style:{gridColumn:`${w0+1} / span ${sp.weeks}`}}, sp.name, h("small",{}, `${wkDate(w0)} – ${fmtDay(z)}` + (hol.length ? ` · ${wd}d` : "")), sp.goal ? h("em",{}, sp.goal) : null)); }
+      cols.append(h("div",{class:"gsprint" + sprintSide(sp),title:[sp.name, sprintFrom(sp), `${wkDate(w0)} – ${fmtDay(z)}`, `${wd} working days` + (hol.length ? ` (${hol.map(x=>x.name||fmtDay(isoToDay(x.date))).join(", ")})` : ""), sp.goal].filter(Boolean).join("\n"),style:{gridColumn:`${w0+1} / span ${sp.weeks}`}}, sprintLabel(sp.name), h("small",{}, `${wkDate(w0)} – ${fmtDay(z)}` + (hol.length ? ` · ${wd}d` : "")), sp.goal ? h("em",{}, sp.goal) : null)); }
     w0 += sp.weeks;
   });
   const tw = Math.floor(todayWeek());
@@ -8295,7 +8305,7 @@ function renderDays(){
       if (a < 0 || z < a) return;
       if (a > 0) sprintStarts.push(a);
       head.append(h("div",{class:"gsprint" + sprintSide(sp),title:[sp.name, sprintFrom(sp), `${fmtDay(s0)} – ${fmtDay(s1)}`, sp.goal].filter(Boolean).join("\n"),style:{gridColumn:`${a+1} / span ${z-a+1}`, gridRow:"1"}},
-        h("span",{class:"stk"}, sp.name, h("small",{}, `${fmtDay(s0)} – ${fmtDay(s1)}` + (holidaysIn(s0,s1).length ? ` · ${sp.weeks*5 - holidaysIn(s0,s1).length} working days` : "")), sp.goal ? h("em",{}, sp.goal) : null)));
+        h("span",{class:"stk"}, sprintLabel(sp.name), h("small",{}, `${fmtDay(s0)} – ${fmtDay(s1)}` + (holidaysIn(s0,s1).length ? ` · ${sp.weeks*5 - holidaysIn(s0,s1).length} working days` : "")), sp.goal ? h("em",{}, sp.goal) : null)));
     }); }
   // row 2: weeks
   cols.forEach((d,i)=>{ if (i === 0 || dow(d) === 1){ let span = 1; while (i+span < N && dow(cols[i+span]) !== 1) span++; head.append(h("div",{class:"gwk",title:"Week of " + fmtDay(mondayOf(d)),style:{gridColumn:`${i+1} / span ${span}`, gridRow:"2"}}, h("span",{class:"stk"}, (span*colW >= 110 ? "Week of " : "") + fmtDay(mondayOf(d))))); } });
@@ -10145,7 +10155,7 @@ function renderSprints(){
     const start = w0; w0 += sp.weeks;
     const why = what => sprintProblem(S.sprints, i, what) || null, kind = sprintKind(S.sprints, i);
     tb.append(h("tr",{"data-sprint":sp.id},
-      h("td",{style:{width:"110px"}}, h("input",{"aria-label":"Sprint name",value:sp.name,maxlength:String(SPRINT_NAME_MAX),readonly:!!why("name"),title:why("name"),onfocus:endCoalesce,oninput:e=>{ if (!refuse(i, "name")) commit(()=>sp.name=e.target.value,{quiet:true,coalesce:"sp-name:"+sp.id}); },onchange:()=>{endCoalesce(); if (UI.ws === "timeline") renderGantt();}})),
+      h("td",{class:"spname"}, h("input",{"aria-label":"Sprint name",value:sp.name,maxlength:String(SPRINT_NAME_MAX),readonly:!!why("name"),title:[sp.name, why("name")].filter(Boolean).join("\n"),onfocus:endCoalesce,oninput:e=>{ if (!refuse(i, "name")) commit(()=>sp.name=e.target.value,{quiet:true,coalesce:"sp-name:"+sp.id}); },onchange:()=>{endCoalesce(); if (UI.ws === "timeline") renderGantt();}})),
       h("td",{class:"hint",style:{whiteSpace:"nowrap"}}, kind === "jira" ? "Jira sprint" : kind === "gap" ? "Between Jira sprints" : "Plan timebox"),
       h("td",{style:{width:"80px"}}, h("input",{class:"num","aria-label":"Length in weeks",type:"number",min:"1",max:"8",value:sp.weeks,disabled:!!why("weeks"),"data-locked":why("weeks") ? "1" : null,title:why("weeks"),onchange:e=>{ if (refuse(i, "weeks")) return; changeSprints(s=>{ const x = s.sprints.find(y=>y.id===sp.id); x.weeks = clampInt(e.target.value,1,8,x.weeks); }, ()=>{ e.target.value = sp.weeks; }); }})),
       h("td",{class:"mono",style:{whiteSpace:"nowrap",padding:"7px 6px",color:"var(--ink-2)"}}, `${wkDate(start)} – ${fmtDay(wkDay(start+sp.weeks)-3)}`),
@@ -10810,7 +10820,7 @@ function capacityPanel(){
     h("header",{}, h("h3",{}, "Capacity"), h("span",{class:"hint"}, "story points assigned in Jira, against each person's share of the team's capacity (less time off)")),
     capRatesEditor(canEdit, "", true),
     h("div",{class:"tbl"}, h("table",{}, h("thead",{}, h("tr",{}, h("th",{}, "Person"), h("th",{title:"Share of their time on this team. Blank: from their days per week."}, "Allocation"),
-        ...sps.map(sp=>h("th",{title:sp.name}, sprintBase(sp.name) || sp.name, h("div",{class:"hint"}, `${fmtDay(isoToDay(sp.start))} – ${fmtDay(isoToDay(sp.end))}`), rated ? h("div",{class:"hint caprate"}, rateFor(sp) != null ? `${rateFor(sp)} per person` : "no team figure") : null)))),
+        ...sps.map(sp=>h("th",{title:sp.name}, sprintLabel(sprintBase(sp.name) || sp.name), h("div",{class:"hint"}, `${fmtDay(isoToDay(sp.start))} – ${fmtDay(isoToDay(sp.end))}`), rated ? h("div",{class:"hint caprate"}, rateFor(sp) != null ? `${rateFor(sp)} per person` : "no team figure") : null)))),
       h("tbody",{}, ...shown.map(pp=>h("tr",{"data-cap":pp.id}, h("td",{}, pp.name, !rated && pp.capacity ? h("span",{class:"hint",title:"Their own points per sprint, from before team capacity"}, ` · ${pp.capacity} own`) : null),
           h("td",{}, canEdit ? allocIn(pp, "alloc-" + pp.id) : `${Math.round(allocOf(pp) * 100)}%`),
           ...sps.map(sp=>pp.jira ? cell(load(pp.jira.key, sp), capOf(pp, sp)) : h("td",{class:"capc h0",title:"Link their Jira user to see assigned work","aria-label":`${pp.name}: can take ${capOf(pp, sp) ?? "—"}; no Jira user linked`}, h("span",{class:"capn"}, "—"), capOf(pp, sp) != null ? h("small",{}, `/${capOf(pp, sp)}`) : null)))),

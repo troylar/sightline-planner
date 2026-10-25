@@ -42,6 +42,22 @@
         "before": "A link that wrapped onto two lines in an initiative's Breakdown was centered.",
         "now": "It lines up on the left like the text around it.",
         "where": "Side panel, Breakdown"
+      },
+      {
+        "kind": "fixed",
+        "area": "Settings",
+        "title": "Similar sprint names no longer look the same",
+        "before": "In Settings, long sprint names were cut off at the end, so names like \"Team 2026.S15\" and \"Team 2026.S16\" read the same.",
+        "now": "The name column has room for typical sprint names. Where a name still has to be cut, the timeline header and the commitment table cut it in the middle and keep the end, such as S15, in view. Point at a name to see all of it.",
+        "where": "Settings, Timeboxes and ceremonies; Timeline header"
+      },
+      {
+        "kind": "improved",
+        "area": "Interface",
+        "title": "A short count on the Settings tab",
+        "before": "The Settings tab showed a sentence such as \"87 stories in a sprint\" in a red pill, with the warning sign pressed against the word.",
+        "now": "It shows just the number. Point at it to read what it counts; screen readers still hear the full words. The warning sign has its own space.",
+        "where": "Main navigation, Settings"
       }
     ]
   },
