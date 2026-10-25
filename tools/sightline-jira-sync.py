@@ -1830,6 +1830,16 @@ ACTIONS = {
     "workstream.addMember": ({"id": "id", "person": "id"}, False),
     "workstream.removeMember": ({"id": "id", "person": "id"}, False),
     "workstream.setReserve": ({"id": "id", "reserve": "any"}, True),
+    "workstream.set": ({"id": "id", "field": "str", "value": "str"}, True),
+    "workstream.move": ({"id": "id", "index": "int"}, True),
+    "workstream.del": ({"id": "id"}, False),
+    "guide.set": ({"section": "str", "value": "str"}, True),
+    "guide.setWorkstream": ({"lane": "id", "value": "str"}, True),
+    "template.set": ({"kind": "str", "value": "str"}, True),
+    "skill.add": ({"id": "id", "label": "str"}, False),
+    "skill.rename": ({"id": "id", "label": "str"}, True),
+    "skill.remove": ({"id": "id"}, False),
+    "meeting.set": ({"id": "id", "field": "str", "value": "str"}, True),
     "person.add": ({"id": "id?", "name": "str", "role": "str?", "days": "int?", "outside": "any?"}, False),
     "person.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "person.setAlloc": ({"id": "id", "alloc": "any"}, True),
@@ -1858,16 +1868,16 @@ ACTIONS = {
     "jira.notOurs": ({"keys": "keys"}, False),
     "jira.epicLink": ({"epic": "str", "id": "id"}, False),
     "jira.epicNew": ({"epic": "str", "lane": "id", "id": "id?"}, False),
-    "risk.add": ({"id": "id?", "text": "str", "sev": "any?", "state": "any?", "owners": "any?", "item": "any?", "next": "any?", "waitingOn": "any?", "escalateBy": "any?"}, False),
+    "risk.add": ({"id": "id?", "text": "str", "sev": "any?", "state": "any?", "owners": "any?", "item": "any?", "next": "any?", "waitingOn": "any?", "escalateBy": "any?", "aiHint": "any?"}, False),
     "risk.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "risk.del": ({"id": "id"}, False),
-    "decision.add": ({"id": "id?", "text": "str", "state": "any?", "owners": "any?", "item": "any?", "due": "any?", "decider": "any?", "next": "any?", "waitingOn": "any?", "escalateBy": "any?"}, False),
+    "decision.add": ({"id": "id?", "text": "str", "state": "any?", "owners": "any?", "item": "any?", "due": "any?", "decider": "any?", "next": "any?", "waitingOn": "any?", "escalateBy": "any?", "aiHint": "any?"}, False),
     "decision.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "decision.del": ({"id": "id"}, False),
 }
 ACT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,79}$")
 # What an id-like argument points at, by the action's first word (id) or the argument's own name.
-ACT_REF_BY_NOUN = {"initiative": "bar", "link": "bar", "task": "task", "outcome": "dv", "workstream": "lane", "person": "person",
+ACT_REF_BY_NOUN = {"initiative": "bar", "link": "bar", "task": "task", "outcome": "dv", "workstream": "lane", "person": "person", "skill": "skill", "meeting": "meeting",
                    "milestone": "ms", "gate": "gate", "risk": "risk", "decision": "dec", "sprint": "sprint", "jira": "bar"}
 ACT_REF_BY_ARG = {"outcome": "dv", "after": "bar", "parent": "bar", "target": "bar", "bar": "bar", "lane": "lane", "person": "person",
                   "owners": "person", "members": "person", "item": "bar", "decider": "person"}
@@ -1964,7 +1974,7 @@ def _plan_ids(plan) -> dict:
     pick = lambda key: {x.get("id") for x in plan.get(key) or [] if isinstance(x, dict)}
     return {"bar": {b.get("id") for b in bars}, "task": {t.get("id") for b in bars for t in b.get("tasks") or [] if isinstance(t, dict)},
             "dv": pick("deliverables"), "lane": pick("lanes"), "person": pick("people"), "ms": pick("milestones"), "gate": pick("gates"),
-            "block": pick("blocks"), "risk": pick("risks"), "dec": pick("decisions"), "sprint": pick("sprints")}
+            "block": pick("blocks"), "risk": pick("risks"), "dec": pick("decisions"), "sprint": pick("sprints"), "skill": pick("skills"), "meeting": pick("meetings")}
 
 
 def _plan_start(plan) -> _dt.date:

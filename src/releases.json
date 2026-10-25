@@ -1,5 +1,70 @@
 [
   {
+    "version": "1.117.0",
+    "date": "2026-10-25",
+    "headline": "What each workstream is for, and skills on the team",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "See what a workstream is for",
+        "now": "Point at a workstream's name, or move to it with the keyboard, to see its description with headings, lists and links, who works in it and what it holds. An item's panel links to its workstream's description, and the workstream's panel lets you edit it.",
+        "where": "Workstream names in Weeks and Days, and the item panel"
+      },
+      {
+        "kind": "new",
+        "area": "Team",
+        "title": "Skills on people and on work",
+        "now": "Keep a list of the skills your team cares about, give people theirs, and say which skills an initiative or task needs. Renaming a skill keeps it everywhere, and a skill still in use can't be removed until it's taken off.",
+        "where": "Settings, then Team, and each person's, initiative's and task's panel"
+      },
+      {
+        "kind": "new",
+        "area": "Milestones",
+        "title": "Milestones get a story",
+        "now": "Write what a milestone marks and when it's reached, in Markdown, from a template you can change. Gates get a description the same way. Both show when you point at them.",
+        "where": "The milestone or gate panel, and Settings for the template"
+      },
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "Notes for your assistant",
+        "now": "Leave a short note for your assistant on people, work, milestones, gates, deliverables, decisions and risks. It sits under For the assistant, closed, and is only ever advice: it can't approve or authorize a change. Anyone who can open the plan, and your assistant's provider, can read it.",
+        "where": "Each item's panel"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Your assistant can keep descriptions and skills up to date",
+        "before": "Your assistant couldn't change workstream guidance, skills, milestone stories or meeting notes.",
+        "now": "Your assistant can suggest workstream descriptions, the planning guide, skills and needs, milestone stories, gate descriptions and meeting notes, and change a workstream's color, dates and order. Deleting a workstream always waits for you, and only works on an empty one. Review shows the text as it is now and as it would be.",
+        "where": "Assistant panel"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Your assistant sees what's missing",
+        "now": "What your assistant reads now includes skills, needs, milestone stories, gate descriptions and Jira descriptions, and lists exactly which workstreams, people, work and milestones are still missing a description, skills or needs. The planning guide preview shows the same list.",
+        "where": "Settings, then Planning guide"
+      },
+      {
+        "kind": "fixed",
+        "area": "Assistant",
+        "title": "Moves from the assistant",
+        "before": "An assistant's move of an initiative or milestone could be refused as changed since, even when nothing had changed.",
+        "now": "Moves written from what the assistant reads apply, including for initiatives that start and milestones that fall partway through a week.",
+        "where": "Assistant panel"
+      },
+      {
+        "kind": "improved",
+        "area": "Files",
+        "title": "Older copies open these plans read-only",
+        "now": "A plan with skills, assistant notes, milestone stories or gate descriptions opens read-only in older copies of Sightline, so they can't drop them. Update every copy your team uses to keep editing.",
+        "where": "Opening a plan"
+      }
+    ]
+  },
+  {
     "version": "1.116.0",
     "date": "2026-10-25",
     "headline": "A menu down the left side",
