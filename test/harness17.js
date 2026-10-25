@@ -38,7 +38,7 @@ const rows = (d, g) => [...d.querySelectorAll(`#jiraWs .egroup.${g} .erow`)].map
 
   // ---- T1: where it lives ----
   await sec(async ()=>{ const {d, ev} = await page();
-    ok("T1: the Plan tab's badge counts epics nobody has sorted", d.querySelector("#tab-plan #jiraBadge")?.textContent === "12 to sort" && !d.querySelector("#tab-jira"));
+    ok("T1: the Plan tab's badge counts epics nobody has sorted", d.querySelector("#tab-plan #jiraBadge .vh")?.textContent === "12 to sort" && !d.querySelector("#tab-jira"));
     ev("openEpics()");
     ok("T1: Epics is a list under Plan", ev("UI.ws") === "plan" && ev("UI.planTab") === "epics" && !!d.querySelector("#ws-plan [data-plan=epics] #jiraWs .egroup.uns"));
     ok("T1: the Manage list says how many epics are waiting", /Jira work/.test(d.querySelector('#plannav [data-pt="epics"]')?.textContent || "") && /12 to sort/.test(d.querySelector('#plannav [data-pt="epics"]').textContent));

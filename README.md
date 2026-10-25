@@ -103,7 +103,7 @@ changed from supplied evidence. [Run a team planning session](docs/team-planning
 
 There is no planning server or account to set up. Shared files need coordinated editing and handoffs: locks are
 advisory, author names are not verified identities, and a local save does not prove cloud delivery. Use file-service
-permissions for access. The app can request Google Fonts and falls back to system fonts.
+permissions for access. The page makes no network requests: its font is embedded too.
 
 [Assistant setup](docs/assistant-workflow.md) · [Jira setup](docs/jira.md) · [Sharing and recovery](docs/onedrive.md).
 

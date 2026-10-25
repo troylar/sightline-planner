@@ -18,6 +18,7 @@ change that doesn't fit the charter changes `vision.md` first, in its own PR.
 |------|-----------|
 | `src/sightline.template.html` | **The source.** All HTML, CSS and JS (~5,500 lines). Edit this. |
 | `src/js-yaml.min.js` | Vendored js-yaml 4.1.0 (MIT). Embedded at build time. Do not edit. |
+| `src/fonts/` | Vendored Instrument Sans (SIL OFL 1.1), pinned in `fonts.json`, embedded as data URIs. Do not edit. |
 | `dist/sightline.html` | Build output. Generated — **never edit by hand**, it is overwritten. |
 | `test/harness*.js` | jsdom test harnesses. |
 | `test/fixtures/sample-plan.json` | Synthetic plan the tests load. |
@@ -78,7 +79,7 @@ prevention is the only real control.
   (Start / Save / Done, 30-minute TTL, clock-skew tolerant) prevents two editors clobbering
   each other. There is no true compare-and-swap; last-writer-wins is still possible, and
   OneDrive conflict copies are the backstop.
-- **No remote code, and only our own scripts.** js-yaml is embedded. CSP is `default-src 'none'`,
+- **No remote code, and only our own scripts.** js-yaml and the font are embedded. CSP is `default-src 'none'`, `font-src data:`,
   `connect-src 'none'`, `object-src 'none'`, `base-uri 'none'`, and `script-src` lists the two inline
   scripts **by SHA-256 hash**, computed by `build.sh`. The source template keeps `'unsafe-inline'` as the
   placeholder the build replaces. Any script that isn't byte-for-byte one of those two will not run.
@@ -171,8 +172,6 @@ prevention is the only real control.
 
 - Decision and risk text have no length cap (notes are capped at 500), so one long paste can push a
   plan toward the 2 MB limit. The write-size check now refuses it with a clear message.
-- `style-src` / `font-src` allow Google Fonts, so the page makes one outbound request for
-  fonts. Self-hosting them as data URIs would make it fully offline.
 
 ## Working style
 

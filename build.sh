@@ -52,6 +52,21 @@ y = open("src/js-yaml.min.js", encoding="utf-8").read()
 t = s.replace("<script>/*__JSYAML__*/</script>",
   "<script>/* js-yaml 4.1.0 · MIT · embedded so the app works offline and loads no remote code */\n" + y + "\n</script>")
 assert t != s, "js-yaml placeholder not found in template"
+# The interface font (Instrument Sans, SIL OFL 1.1), embedded so the page makes no font request and looks the same
+# everywhere. Each file is pinned by its SHA-256 in src/fonts/fonts.json; a changed or missing file fails the build.
+fm = json.load(open("src/fonts/fonts.json", encoding="utf-8"))
+faces = []
+for f in fm["files"]:
+    b = open("src/fonts/" + f["file"], "rb").read()
+    assert hashlib.sha256(b).hexdigest() == f["sha256"], f"font {f['file']} doesn't match its pinned SHA-256"
+    assert b[:4] == b"wOF2", f"font {f['file']} isn't WOFF2"
+    assert re.fullmatch(r"[0-9A-Fa-fU+, -]+", f["unicodeRange"]), f"font {f['file']} has an odd unicode-range"
+    faces.append("@font-face{font-family:\"%s\";font-style:%s;font-weight:%s;font-stretch:%s;font-display:swap;src:url(data:font/woff2;base64,%s) format(\"woff2\");unicode-range:%s}"
+                 % (fm["family"], f["style"], fm["weight"], fm["stretch"], base64.b64encode(b).decode(), f["unicodeRange"]))
+font_css = "/* Instrument Sans, Copyright 2022 The Instrument Sans Project Authors (github.com/Instrument/instrument-sans). SIL Open Font License 1.1: openfontlicense.org. Embedded so the page makes no font request. */\n" + "\n".join(faces)
+assert len(font_css) < 300 * 1024, f"embedded fonts are {len(font_css) // 1024} KiB; the budget is 300 KiB"
+assert t.count("/*__FONTS__*/") == 1, "fonts placeholder not found in template"
+t = t.replace("/*__FONTS__*/", font_css)
 assert t.count("/*__RELEASES__*/[]") == 1, "release notes placeholder not found in template"
 t = t.replace("/*__RELEASES__*/[]", data)
 # Bundle the maintained skills into the existing application script. The HTML can

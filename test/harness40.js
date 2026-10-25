@@ -88,7 +88,7 @@ async function page(opts = {}){
       S = normalize(JSON.parse(JSON.stringify(S)), false); render();`); await wait(10);
     const r = d.querySelector('#jiraInSprint [data-sprint-epic="ABC-40"]');
     ok("K1: a parked initiative with sprint work has no pick box (it comes back where it was, it isn't moved)", !!r && !r.querySelector(".epick") && !!r.querySelector('[data-on="ABC-40"]') && /parked in /.test(r.textContent));
-    const n = d.querySelectorAll("#jiraInSprint [data-sprint-epic]").length, badge = d.querySelector("#jiraBadge").textContent;
+    const n = d.querySelectorAll("#jiraInSprint [data-sprint-epic]").length, badge = d.querySelector("#jiraBadge .vh").textContent;
     ok("K2: the badge counts what the group lists, with units", new RegExp("^" + n + " epics?(, \\d+ stor(y|ies))? in a sprint$").test(badge), badge + " vs " + n); });
 
   await sec(async ()=>{ const {d, ev} = await page();

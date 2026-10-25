@@ -172,8 +172,9 @@ SIGHTLINE_HTML=/path/to/old.html node test/harnessN.js
   template's `script-src 'unsafe-inline'` is a build placeholder, not the shipped
   policy. The build expects two script blocks; update its validation and tests if
   that structure changes.
-- Do not add remote scripts or a backend. Google Fonts are currently external;
-  do not describe the existing app as making zero network requests.
+- Do not add remote scripts, remote fonts or a backend. The interface font (Instrument Sans) is embedded at
+  build time from `src/fonts/`, pinned by SHA-256 in `src/fonts/fonts.json`; the page itself makes no network
+  requests, and `font-src` is `data:` only.
 - Jira requests remain read-only GETs over verified HTTPS. Keep redirects refused
   and authorization headers protected. The helper reads more endpoints than search
   alone; preserve the security boundary for every request.

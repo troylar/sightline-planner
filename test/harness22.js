@@ -47,7 +47,7 @@ const rows = (d, g) => [...d.querySelectorAll(`#jiraWs .egroup.${g} .erow`)].map
 
   await sec(async ()=>{ const {d, ev} = await page();
     const n = ev("jiraEpicList().filter(x=>x.state==='unsorted' && !x.finished).length");
-    ok("F2: the to-sort badge doesn't count finished epics", d.querySelector("#jiraBadge").textContent === `${n} to sort` && n === 11, `${d.querySelector("#jiraBadge").textContent} vs ${n}`);
+    ok("F2: the to-sort badge doesn't count finished epics", d.querySelector("#jiraBadge .vh").textContent === `${n} to sort` && n === 11, `${d.querySelector("#jiraBadge").textContent} vs ${n}`);
     ok("F2: Park all names only the live ones", d.querySelector("#jiraParkRest")?.textContent === "Park all 11"); });
 
   await sec(async ()=>{ const {d, ev} = await page();
