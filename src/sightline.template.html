@@ -6760,6 +6760,7 @@ function actLine(id, args, p){ const a = args && typeof args === "object" ? args
     "jira.toWorkstream": () => `${jpKeys(a)} on ${nm("", a.lane)}` + (a.epic ? ` (${upKey(a.epic)}'s stories, together)` : ""),
     "jira.toInitiative": () => `${jpKeys(a)} on ${who}`, "jira.notOurs": () => `Mark ${jpKeys(a)} not ours`,
     "jira.epicLink": () => `Link epic ${upKey(a.epic || "")} to ${who}`, "jira.epicNew": () => `Epic ${upKey(a.epic || "")} as a new initiative in ${nm("", a.lane)}`,
+    "milestone.move": () => { const at = validIso(a.day) ? fmtDay(isoToDay(a.day)) : String(a.day); return a.stretch === true ? (a.day === null ? `${who}: stretch date cleared` : `${who}: stretch date ${at}`) : `Move ${who} to ${at}`; },
     "sprint.addThrough": () => `Add timeboxes through ${validIso(a.date) ? fmtDay(isoToDay(a.date)) : a.date}`,
     "initiative.add": () => `New initiative "${a.label || "New initiative"}"`, "task.add": () => `New task "${a.label || "New task"}" in ${nm("", a.bar)}`, "outcome.add": () => `New deliverable "${a.name}"`,
   }[id];
@@ -7113,7 +7114,7 @@ defAction("milestone.add", {scope:"milestones", risk:"routine", done:(p, a)=>!!a
     if (a.owners && !actPeople(p, a.owners)) return actMissing("person"); if (a.after && a.after.some(x=>!actBar(p, x))) return actMissing("initiative it's done after"); },
   run:(p, a)=>{ const id = actNewId(p, a, "ms");
     p.milestones.push({id, date:"", owners:[...(a.owners || [])], stretch:"", what:a.what.trim(), dep:"", status:a.status || "commit", lane:a.lane || p.lanes[0]?.id || "", at: a.day ? msAt(p, a.day) : null, stretchAt:null, after:[...new Set(a.after || [])]}); return id; }});
-defAction("milestone.move", {scope:"schedule", risk:"routine", args:{id:"id", day:"isoOrNull", stretch:"any?"},
+defAction("milestone.move", {scope:"schedule", risk:"routine", args:{id:"id", day:"isoOrNull", stretch:"any?"}, edit:{day:["date", "Date (YYYY-MM-DD; blank clears a stretch date)"], stretch:["bool", "The stretch date"]},
   cur:(p, a)=>{ const m = actMs(p, a.id), at = m ? (a.stretch === true ? m.stretchAt : m.at) : undefined; return at === undefined ? undefined : at == null ? null : amWeekIso(p, at); },   // a date, as prev is written
   check:(p, a)=>{ const m = actMs(p, a.id); if (!m) return actMissing("milestone");
     if (a.day === null && a.stretch !== true) return actInvalid("Only a stretch date can be cleared (stretch: true, day: null).");
@@ -12005,6 +12006,12 @@ function amChip(){ if (present) return null;
 const amStoryOp = o => o && o.op === "action" && o.args && typeof o.args === "object" && ((/^(initiative|task)\.set$/.test(o.action) && o.args.field === "story" && typeof o.args.value === "string") || (/^(initiative|task)\.add$/.test(o.action) && typeof o.args.story === "string"));
 function amStories(ops){ return (Array.isArray(ops) ? ops : []).filter(amStoryOp).map(o=>{ const add = o.action.endsWith(".add"), b = !add && barById(o.args.id), t = !add && taskById(o.args.id);
   return {label:`Story for ${add ? `the new ${o.action.startsWith("task") ? "task" : "initiative"} "${String(o.args.label || "").slice(0, 80)}"` : `"${String(b ? barTitle(b) : t ? taskTitle(t.t) : o.args.id).slice(0, 80)}"`}`, text:add ? o.args.story : o.args.value}; }); }
+// What Edit offers for an action op: the action's own list (edit), or its plain date, text and number arguments. Ids,
+// field names and prev aren't offered: changing what a change points at is a new change.
+function amActFields(o){ const A = amHas(planActions, String(o.action)) ? planActions[o.action] : null; if (!A) return [];
+  if (A.edit) return Object.entries(A.edit).map(([k, [t, label]])=>({k, t, label, opt:String(A.args[k] || "").endsWith("?"), arg:String(A.args[k] || "").replace("?", "")}));
+  return Object.entries(A.args).filter(([k, t])=>!["id", "prev", "field"].includes(k) && /^(iso|isoOrNull|str|int|num)\??$/.test(t))
+    .map(([k, t])=>{ const arg = t.replace("?", ""); return {k, t:arg === "iso" || arg === "isoOrNull" ? "date" : arg === "str" ? "text" : "number", label:k + (arg.startsWith("iso") ? " (YYYY-MM-DD)" : ""), opt:t.endsWith("?"), arg}; }); }
 function amEditor(c, eff){
   const ops = clone(eff.ops), P = S, ids = [];
   const inp = (id, label, v, opts = {}) => { ids.push(id); return h("label",{class:"field amf"}, h("span",{class:"flabel"}, label), opts.choices
@@ -12028,12 +12035,21 @@ function amEditor(c, eff){
     if (o.op === "link" || o.op === "unlink") return h("fieldset",{class:"amop"}, h("legend",{}, `${o.op === "link" ? "Link to" : "Unlink from"} ${(dvById(o.id) || {}).name || o.id}`), inp(`${k}-jira`, "Jira keys, comma-separated", o.jira || []));
     if (o.op === "propose") return h("fieldset",{class:"amop"}, h("legend",{}, `Propose in Jira: ${o.key} · ${o.field}`), inp(`${k}-value`, "Value", o.value), inp(`${k}-why`, "Why", o.why, {area:true, max:500}));
     if (amStoryOp(o)) return h("fieldset",{class:"amop"}, h("legend",{}, amStories([o])[0].label), inp(`${k}-story`, "Story (markdown)", o.action.endsWith(".add") ? o.args.story : o.args.value, {area:true, rows:"12", max:STORY_MAX}));
+    if (o.op === "action" && o.args && typeof o.args === "object"){ const F = amActFields(o), legend = h("legend",{}, actLine(o.action, o.args, P));
+      if (!F.length) return h("fieldset",{class:"amop"}, legend, h("p",{class:"hint","data-amnoedit":c.id}, "This change can't be edited here; skip it and ask your assistant."));
+      return h("fieldset",{class:"amop"}, legend, ...F.map(f=>f.t === "bool" ? inp(`${k}-${f.k}`, f.label, o.args[f.k] === true ? "yes" : "no", {choices:[["yes", "Yes"], ["no", "No"]]})
+        : inp(`${k}-${f.k}`, f.label, o.args[f.k], {area:f.t === "text" && String(o.args[f.k] || "").length > 80, max:f.t === "text" ? 4000 : 40}))); }
     return null; }).filter(Boolean);
   const read = id => { const el = document.getElementById(id); return el ? el.value.trim() : null; };
   const keys = v => [...new Set(String(v || "").split(/[\s,]+/).map(x=>x.trim().toUpperCase()).filter(Boolean))];
   const num = (f, v) => ["weeks","days"].includes(f) && v !== "" && !isNaN(Number(v)) ? Number(v) : v;
-  const save = () => { ops.forEach((o, i)=>{ const k = `amed-${c.id}-${i}`; if (!o || typeof o !== "object") return;
+  const save = () => { const bad = []; ops.forEach((o, i)=>{ const k = `amed-${c.id}-${i}`; if (!o || typeof o !== "object") return;
       if (amStoryOp(o)){ const v = read(`${k}-story`); if (v != null){ if (o.action.endsWith(".add")) o.args.story = v; else o.args.value = v; } return; }
+      if (o.op === "action" && o.args && typeof o.args === "object"){ amActFields(o).forEach(f=>{ const v = read(`${k}-${f.k}`); if (v == null) return;
+          if (f.t === "bool"){ if (v === "yes") o.args[f.k] = true; else delete o.args[f.k]; return; }
+          if (v === ""){ if (f.arg === "isoOrNull") o.args[f.k] = null; else if (f.opt) delete o.args[f.k]; else o.args[f.k] = ""; return; }
+          o.args[f.k] = f.t === "number" ? Number(v) : v; });
+        const why = amHas(planActions, String(o.action)) ? actArgsProblem(planActions[o.action], o.args) : null; if (why) bad.push(why); return; }
       if (o.type === "initiative" || o.type === "task"){
         if (o.op === "add" && o.value) ["label","lane","start","weeks","days","status"].forEach(f=>{ const v = read(`${k}-${f}`); if (v == null) return; if (v) o.value[f] = num(f, v); else delete o.value[f]; });
         if (o.op === "set"){ const v = read(`${k}-value`); if (v != null) o.value = num(o.field, v); }
@@ -12043,6 +12059,7 @@ function amEditor(c, eff){
       if (o.op === "set"){ const v = read(`${k}-value`); if (v != null) o.value = v === "" ? null : v; }
       if (o.op === "link" || o.op === "unlink"){ const v = read(`${k}-jira`); if (v != null) o.jira = keys(v); }
       if (o.op === "propose"){ const v = read(`${k}-value`), w = read(`${k}-why`); if (v != null) o.value = o.field === "points" && v !== "" && !isNaN(Number(v)) ? Number(v) : v; if (w != null){ if (w) o.why = w; else delete o.why; } } });
+    if (bad.length){ setStatus(`Not saved: ${bad[0]}`); return; }
     if (!amSetEdit(AM.file.batchId, c, jeq(ops, c.ops) ? null : ops)){ setStatus("Couldn't keep your edits: this browser's storage is full or blocked. Nothing was changed."); return; }
     UI.amEditing = null; render(); setStatus(jeq(ops, c.ops) ? "No edits: the change is as your assistant wrote it." : "Saved your edits to this change. It's checked again as edited."); };
   return h("div",{class:"amedit",id:"amEdit-" + c.id}, ...parts, h("div",{class:"qrow"}, h("button",{type:"button",class:"btn sm primary","data-amsave":c.id,onclick:save},"Save edits"),
