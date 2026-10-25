@@ -6,10 +6,10 @@ not grant access to its file.
 
 The menu runs down the left side. Every page has one home:
 
-- **Work**: Today shows attention and next actions. Sprint shows the current sprint by person, workstream or epic. Sort Jira work places synced issues on the plan, and Jira change proposals reviews what the sync suggests.
+- **Work**: Today shows attention and next actions. Sprint shows the current sprint by person, workstream or epic. Sort Jira work places synced issues on the plan. Cards shows the plan's Jira work as cards by workstream. Jira change proposals reviews what the sync suggests.
 - **Delivery**: Timeline shows planned work. List shows the same work as rows. Capacity shows the forecast, people and time off. Status update, Decisions and Risks support delivery reviews. Milestones, Gates, Snapshots and Activity hold the supporting lists.
 - **Product updates**: Roadmap explains what the team plans to ship. Customer release notes opens the customer wording approved for each Jira release.
-- **Settings**: Plan (Tags, Planning guide), Team (Team, Work calendar, Meetings, Timeboxes and ceremonies) and Connections (Jira connection).
+- **Settings**: Plan (Tags, Cards, Planning guide), Team (Team, Work calendar, Meetings, Timeboxes and ceremonies) and Connections (Jira connection).
 
 Counts and warnings sit on the page they belong to, such as open risks on Risks. Click a group's heading to fold it;
 the group you're in stays open. The button at the top of the menu, or the `\` key, collapses the menu to a rail of
@@ -19,6 +19,31 @@ On a narrow window the menu starts as a rail.
 Each group remembers your last page. Existing saved startup choices and links still open their original destinations. Views express audience preferences; file permissions control access.
 
 Saved views and filters apply to Timeline, List and Capacity. Roadmap and Status update use the whole plan and say so. Your filters remain available when you return to Timeline.
+
+## Cards
+
+**Work > Cards** shows every Jira story, Jira task and one-issue initiative on the plan as a card. Rows are workstreams in
+plan order. Inside a workstream, cards sit under their initiative, and the ones that aren't on an initiative come last.
+Rows can also be people or epics. Columns are status (to do, in progress, done, and canceled when you tick it) or sprint
+(earlier sprints, the active one, the next ones, no sprint). Filter by sprint, person, status, epic or text, or click
+**Mine**. Each total says what it leaves out: cards not estimated, cards you hid, and cards the filters hide, each counted
+on its own.
+
+- **Drag a card to another workstream or onto an initiative** to place it there. It's the same change Sort Jira work
+  makes: a story leaves its epic's initiative (switched off there), and a Jira task leaves its initiative. One save, with
+  Undo. A one-issue initiative moves between workstreams; to put it inside another initiative, change its parent in its panel.
+- **Drag a card to another status or sprint** to propose that change for Jira. Jira doesn't change. When a status column
+  covers several of your workflow's statuses, Sightline asks which one and remembers your choice in this browser.
+- **Without a mouse**: focus a card and press **M**, choose a place with the arrow keys, then press **Enter** (or **Esc** to cancel).
+- **Hide** keeps a Jira item off the plan's views (cards, the timeline and List), with an optional reason, using the plan's
+  own ways: a story is switched off in its initiative, an epic is parked, and an issue the plan doesn't show is marked not
+  ours. **Hidden** lists each one, how it's hidden and why, with **Bring back**. Work that's on the plan as its own task or
+  initiative can't be hidden; take it off the plan instead.
+
+**Settings > Cards** sets what a card shows: the fields and their order, the density (compact, normal or detailed) and
+whether cards get wider for more points. The plan holds the team's layout (change it while editing). **Mine** is your own
+layout in this browser, with **Reset to the team's layout**. A plan with a team layout or hide reasons opens read-only in
+an older copy of Sightline.
 
 ## Declutter: hide what you don't need
 

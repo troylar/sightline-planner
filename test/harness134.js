@@ -38,7 +38,7 @@ const shown = el => !!el && !el.closest("[hidden]");
     for (const b of pages){ b.click(); await wait(5); const name = b.querySelector(".snl").textContent;
       const visible = [...d.querySelectorAll("#ws-plan [data-plan] h1, #ws-plan [data-plan] h2")].filter(shown).map(x=>x.textContent.trim());
       if (t.hidden || t.textContent !== name || visible.includes(name)) bad.push(`${name}: title "${t.hidden ? "" : t.textContent}", also ${visible.filter(x=>x === name).length}`); }
-    ok("T1 every Settings page is titled with its name in the menu, and no heading below says it again", !bad.length && pages.length === 8, bad.join("; "));
+    ok("T1 every Settings page is titled with its name in the menu, and no heading below says it again", !bad.length && pages.length === 9, bad.join("; "));
     ok("T1 …so Jira's page says Jira connection, and Team's list is People", (d.querySelector("#set-jira").click(), t.textContent === "Jira connection") && (d.querySelector("#set-team").click(), shown([...d.querySelectorAll('[data-plan="team"] h2')].find(x=>x.textContent === "People"))));
     ok("T2 the group names in the Settings menu are read out, not hidden", [...d.querySelectorAll("#snp-settings .snsub")].every(x=>!x.hasAttribute("aria-hidden")) && d.querySelectorAll("#snp-settings .snsub").length === 3);
     d.querySelector("#delivery-milestones").click(); await wait(5);

@@ -1873,6 +1873,9 @@ ACTIONS = {
     "jira.notOurs": ({"keys": "keys"}, False),
     "jira.epicLink": ({"epic": "str", "id": "id"}, False),
     "jira.epicNew": ({"epic": "str", "lane": "id", "id": "id?"}, False),
+    "jira.hide": ({"keys": "keys", "why": "str?"}, False),
+    "jira.unhide": ({"keys": "keys"}, False),
+    "cards.set": ({"field": "str", "value": "any"}, True),
     "risk.add": ({"id": "id?", "text": "str", "sev": "any?", "state": "any?", "owners": "any?", "item": "any?", "next": "any?", "waitingOn": "any?", "escalateBy": "any?", "aiHint": "any?"}, False),
     "risk.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "risk.del": ({"id": "id"}, False),
@@ -1967,6 +1970,12 @@ def check_action_op(o, at: str, ids: dict, made: dict) -> str:
                 continue
             if not any(x in ids.get(kd, set()) or x in made.get(kd, set()) for kd in kind.split("|")):
                 return f"{at}: {x[:60]} isn't in the plan (for {k})"
+    if name == "cards.set":
+        e = _cards_set_problem(args)
+        if e:
+            return f"{at}: {e}"
+    if name == "jira.hide" and isinstance(args.get("why"), str) and len(args["why"].strip()) > HIDE_REASON_MAX:
+        return f"{at}: a reason is up to {HIDE_REASON_MAX} characters."
     if name == "workstream.reid":
         e = _reid_problem(ids, args)
         if e:
@@ -1975,6 +1984,30 @@ def check_action_op(o, at: str, ids: dict, made: dict) -> str:
         return f"{at}: one change places up to 100 issues"
     if creates and isinstance(args.get("id"), str):
         made.setdefault(ACT_REF_BY_NOUN.get(noun, noun), set()).add(args["id"])
+    return ""
+
+
+# The Cards page's layout, as the page has it (harness144 checks these against the page): the fields a card can show,
+# in the order Settings lists them, and the densities. cards.set changes one part of the team's layout.
+CARD_LAYOUT_FIELDS = ["key", "summary", "status", "assignee", "points", "sprint", "epic", "parent", "labels", "priority", "due", "blocked", "initiative"]
+CARD_DENSITY = ["compact", "normal", "detailed"]
+HIDE_REASON_MAX = 200
+
+
+def _cards_set_problem(args) -> str:
+    f, v = args.get("field"), args.get("value")
+    if f not in ("fields", "density", "width"):
+        return "field is one of fields, density, width."
+    if f == "fields":
+        if not isinstance(v, list) or not v:
+            return "fields is a list of at least one field."
+        bad = next((x for x in v if x not in CARD_LAYOUT_FIELDS), None)
+        if bad is not None:
+            return f"{str(bad)[:30]} isn't a card field. They are {', '.join(CARD_LAYOUT_FIELDS)}."
+    if f == "density" and v not in CARD_DENSITY:
+        return f"density is one of {', '.join(CARD_DENSITY)}."
+    if f == "width" and v not in ("fixed", "points"):
+        return 'width is "fixed" or "points".'
     return ""
 
 

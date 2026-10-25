@@ -208,7 +208,7 @@ def check_offline(folder: Path, batch: dict) -> list:
                     bad.append(f"{where}: {k} isn't a valid {'date (YYYY-MM-DD)' if t.startswith('iso') else t.rstrip('?')}.")
             if name.endswith(".add") and "id" in spec and not (isinstance(args.get("id"), str) and args["id"]):
                 bad.append(f"{where}: give the new item an id (like risk-vendor-limits), so reading the file again can't add it twice.")
-            if str(name).startswith("jira."):
+            if str(name).startswith("jira.") and name not in ("jira.hide", "jira.unhide"):      # hiding isn't a placement
                 bad.extend(f"{where}: {x}" for x in check_jira_place(ctx.get("jiraSort") or {}, name, args))
     return bad
 
