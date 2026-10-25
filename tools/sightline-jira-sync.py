@@ -77,7 +77,9 @@ PLAN_SCHEMA = 2        # the plan format this script reads; must equal SCHEMA in
 STATUS_FORMAT = 1      # the formats this script writes; the page refuses files newer than it knows (a test checks)
 ISSUES_FORMAT = 2
 TIMEOUT = 30
-FIELDS = "summary,status,assignee,duedate,updated,resolution,issuetype,priority,parent,labels,fixVersions,created,resolutiondate"
+FIELDS = "summary,status,assignee,duedate,updated,resolution,issuetype,priority,parent,labels,fixVersions,created,resolutiondate,description"
+DESC_MAX = 4000                    # a description, like a story in the plan
+DESC_BUDGET = 1_000_000            # all descriptions in one file, so a plan of long descriptions can't outgrow the page's read limit
 CUSTOM: dict[str, str] = {}                                    # epicLink / sprint / storyPoints / parentLink -> customfield_NNN, from `fields`
 FIELD_ID_RE = re.compile(r"^customfield_[0-9]{1,9}$")
 # Jira Data Center gives these fields a different customfield_NNN on every server, but the field *type* is the same
@@ -398,6 +400,38 @@ def clean(v, n=200) -> str:
     return v.strip()[:n] if isinstance(v, str) else ""
 
 
+CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def clean_desc(v) -> str:
+    """A description as plain text: Jira's wiki markup kept as written (the page converts it), control characters out."""
+    return CTRL_RE.sub("", v).strip()[:DESC_MAX] if isinstance(v, str) else ""
+
+
+def own_keys(plan: dict) -> set:
+    """Keys an initiative or task links as itself: the only issues whose description the page shows."""
+    out = set()
+    for bar in plan.get("bars", []) if isinstance(plan.get("bars"), list) else []:
+        for item in [bar, *[t for t in bar.get("tasks", []) if isinstance(t, dict)]] if isinstance(bar, dict) else []:
+            k = str(item.get("jira", "")).strip().upper()
+            if KEY_RE.match(k):
+                out.add(k)
+    return out
+
+
+def keep_descriptions(issues: dict, keys: set) -> None:
+    """Drop descriptions except for `keys`, and stop at DESC_BUDGET characters in all (key order, so it's stable)."""
+    room = DESC_BUDGET
+    for k in sorted(issues):
+        v = issues[k]
+        if not isinstance(v, dict) or "description" not in v:
+            continue
+        if k not in keys or len(v["description"]) > room:
+            v.pop("description")
+            continue
+        room -= len(v["description"])
+
+
 USER_RE = re.compile(r"^[A-Za-z0-9._+-]{1,100}$")
 EMAILISH = re.compile(r"[^\s@]+@[^\s@]+")
 
@@ -437,6 +471,7 @@ def shape_issue(raw: dict, base: str) -> tuple[str, dict] | None:
     return key, {
         "jid": clean(raw.get("id"), 20) if re.match(r"^[0-9]{1,18}$", clean(raw.get("id"), 20)) else "",
         "summary": clean(f.get("summary"), 300),
+        **({"description": clean_desc(f.get("description"))} if "description" in f else {}),   # "" is an empty one; absent, not fetched
         "status": clean(st.get("name"), 60),
         "category": {"new": "todo", "indeterminate": "inprogress", "done": "done"}.get(clean(cat.get("key"), 20), ""),
         "assignee": display_name(who, aname) if who else "",
@@ -1325,6 +1360,8 @@ def sync_once(plan_path: str, out_path: str, base: str, token: str, jql: str | N
     fold_nested(rollups, {k: issues.get(k) or issues_all.get(k) or {} for k in rollups})
     for k, v in stories.items():                     # an epic's stories, for the page; issues the plan links keep their own entry
         issues.setdefault(k, v)
+    keep_descriptions(issues, own_keys(plan))
+    keep_descriptions(issues_all, set())             # the search file never carries them
     ancestors = jira_ancestors(base, token, {**issues_all, **issues})
     out = {"kind": "sightline-jira-status", "version": STATUS_FORMAT, "snapshot": secrets.token_hex(8),   # both files from one run share it
            "generatedAt": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
@@ -1756,7 +1793,7 @@ STATUS_KEYS = ["notstarted", "inprogress", "done", "atrisk"]
 # table against the page's own. Offline, an action is checked for shape and references; its rules (loops, Jira dates,
 # blacked-out time) are checked by the page, which runs it on a copy before showing it for review.
 ACTIONS = {
-    "initiative.add": ({"id": "id?", "lane": "id?", "parent": "id?", "start": "num?", "day": "iso?", "span": "num?", "label": "str?", "owners": "ids?", "tags": "ids?"}, False),
+    "initiative.add": ({"id": "id?", "lane": "id?", "parent": "id?", "start": "num?", "day": "iso?", "span": "num?", "label": "str?", "owners": "ids?", "tags": "ids?", "story": "str?"}, False),
     "initiative.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "initiative.setStatus": ({"id": "id", "status": "str"}, True),
     "initiative.move": ({"id": "id", "start": "num?", "day": "iso?", "span": "num?"}, True),
@@ -1768,7 +1805,7 @@ ACTIONS = {
     "initiative.setScope": ({"id": "id", "scope": "str"}, True),
     "initiative.delivers.add": ({"id": "id", "outcome": "id"}, False),
     "initiative.delivers.remove": ({"id": "id", "outcome": "id"}, False),
-    "task.add": ({"id": "id?", "bar": "id", "start": "iso", "days": "int?", "label": "str?", "owners": "ids?", "tags": "ids?"}, False),
+    "task.add": ({"id": "id?", "bar": "id", "start": "iso", "days": "int?", "label": "str?", "owners": "ids?", "tags": "ids?", "story": "str?"}, False),
     "task.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "task.setStatus": ({"id": "id", "status": "str"}, True),
     "task.move": ({"id": "id", "start": "iso?", "days": "int?"}, True),
