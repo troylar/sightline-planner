@@ -36,6 +36,10 @@ Choose **Download both copies** to keep separate backups, or **Decide later** to
 
 Inspect the draft, restore any newer work you intend to keep, then use normal **Save** and **Done editing**. Previewing never deletes work. Copy contents reach the shared plan only after your explicit choice and Save. Finish or put aside existing unsaved edits before starting a review; a different plan, a newer unsupported format, different plan dates or sprint settings, another person's active edit lock, or a shared file that changed during review must be addressed first. Keep those copies for a separate comparison.
 
+## When an update doesn't stay saved
+
+After a quick update, Sightline reads the file again. If a save at the same moment overwrote the update, it is put back, once. If the file changes back again, something keeps restoring an older version: another open copy of the plan (another tab, browser or computer) or a sync tool such as OneDrive. Sightline stops, downloads your version as a backup and says so in a red notice, naming whoever saved the file last when the file says. Close the other copies, let OneDrive finish syncing, open the plan in one tab and make the change again.
+
 ## Two-device check before a team rollout
 
 **Not executed:** no real OneDrive two-device environment was available for this change. The matrix below is a manual check to perform on your organization's actual computers and sync configuration. Browser file-operation tests use simulated file handles; they do not prove cloud synchronization or conflict-copy behavior.
