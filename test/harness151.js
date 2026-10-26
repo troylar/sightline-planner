@@ -45,7 +45,7 @@ const HOSTILE = '<img src=x onerror="window.pwned=1"> Support desk';
     // By asker.
     const tb = q("#triBy-asker"); if (tb) tb.click(); await wait(10);
     const groups = [...d.querySelectorAll("#rmTriage .capgroup[data-asker]")].map(g=>g.dataset.asker), inG = k => [...d.querySelectorAll(`#rmTriage .capgroup[data-asker="${k}"] li[data-cap]`)].map(x=>x.dataset.cap);
-    ok("B1 By asker groups captures by who raised them, Not known last, and remembers the choice", groups.length === 4 && groups[groups.length - 1] === "none" && groups.includes("group:grp-support") && T("UI.triBy") === "asker"
+    ok("B1 By asker groups captures by who raised them, most still open first, fully closed after, Not known last, and remembers the choice", groups.join() === `group:grp-support,group:grp-sales,person:${pa},none` && T("UI.triBy") === "asker"
       && d.activeElement === q("#triBy-asker") && q("#triBy-asker").getAttribute("aria-pressed") === "true", groups.join());
     ok("B2 a capture raised again by someone else shows under them too, and roadmap items never show", inG("group:grp-sales").join() === "dv-a" && inG("group:grp-support").includes("dv-a")
       && !d.querySelector('#rmTriage [data-cap="dv-road"]'), inG("group:grp-sales").join());
@@ -67,6 +67,7 @@ const HOSTILE = '<img src=x onerror="window.pwned=1"> Support desk';
     // The meeting recap.
     const rb = q("#rmRecap"); if (rb) rb.focus(), rb.click(); await wait(10);
     ok("R1 Meeting recap opens with Since set to the last meeting before today (not a future one)", q("#dlgRecap") && q("#dlgRecap").open && q("#recapSince").value === "2026-09-30" && !q("#recapNames").checked, q("#recapSince") ? q("#recapSince").value : "no dialog");
+    ok("R1b the intro says what Since means", /since the date below, to read out or paste/.test(txt("#dlgRecap .hint")));
     const r1 = txt("#recapText");
     ok("R2 it lists what's new, raised again, closed and reopened since then, and what's still open", /^Captures since Sep 30, 2026/.test(r1) && /New \(1\)\n- Who signs off a weekend release\?/.test(r1)
       && /Raised again \(1\)\n- Release notes for partner teams/.test(r1) && /Closed \(2\)/.test(r1) && /Rollback runbook: declined: Covered by the incident guide/.test(r1)

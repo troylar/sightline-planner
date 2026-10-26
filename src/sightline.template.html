@@ -14071,7 +14071,7 @@ function openRecap(){
   const dialog = h("dialog",{id:"dlgRecap",class:"recapdlg","aria-labelledby":"recapTitle"},
     h("form",{method:"dialog",onsubmit:e=>{ e.preventDefault(); copyText(recapText(day(), names.checked), "the recap"); }},
       h("h2",{id:"recapTitle"}, "Meeting recap"),
-      h("p",{class:"hint"}, "What happened to captures since a day, to read out or paste. It starts from your last meeting."),
+      h("p",{class:"hint"}, "What happened to captures since the date below, to read out or paste. It starts from your last meeting."),
       h("div",{class:"qrow"}, field("recapSince", "Since", since), h("label",{class:"chk"}, names, " Say who asked")),
       out,
       h("div",{class:"qrow"}, h("button",{type:"submit",class:"btn primary",id:"recapCopy"}, "Copy the recap"), h("button",{type:"button",class:"linkish",id:"recapClose",onclick:()=>dialog.close()}, "Close"))));
@@ -14244,7 +14244,8 @@ function triageList(can){
       h("ul",{}, ...by.get(id).sort(old).map(row))))));
 }
 // By asker: everything each person or group raised, open first, then what became of the rest, with a note to send them.
-function askerGroups(){ const by = capsByAsker(), keys = [...by.keys()].sort((a, b)=>!a ? 1 : !b ? -1 : askerName(a).localeCompare(askerName(b)));
+function askerGroups(){ const by = capsByAsker(), open = k => by.get(k).filter(capOpen).length;   // most still waiting first, then fully closed, Not known last
+  const keys = [...by.keys()].sort((a, b)=>!a ? 1 : !b ? -1 : open(b) - open(a) || askerName(a).localeCompare(askerName(b)));
   if (!keys.length) return [h("p",{class:"hint"}, "Nothing captured yet.")];
   return keys.map(k=>{ const L = by.get(k), open = L.filter(capOpen).length, nm = askerName(k);
     return h("div",{class:"capgroup","data-asker":k || "none"}, h("h4",{}, `${nm} (${open} open, ${L.length - open} closed)`,
