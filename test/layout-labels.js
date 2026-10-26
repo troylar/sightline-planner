@@ -2,7 +2,7 @@
 // whose start is off to the left keeps its name at the chart's left edge, inside the bar, shrinking with an ellipsis
 // to the part still showing; a milestone, gate or stretch label whose marker is off to the left does the same with ‹;
 // scrolling never redraws the chart; print puts every label back where it starts. Two widths, and 150% text.
-// Run by hand, not by run.sh (CI has no browser yet): node test/layout-labels.js. Playwright comes from node_modules,
+// run.sh runs it when Playwright is installed, and CI always does. By hand: node test/layout-labels.js. Playwright comes from node_modules,
 // or from PLAYWRIGHT=/path/to/node_modules/playwright. The plan is fixtures/sample-plan.json; every name is invented.
 const fs = require("fs"), path = require("path");
 let pw; try { pw = require(process.env.PLAYWRIGHT || "playwright"); } catch(e){ console.log("FAIL  Playwright isn't installed. Run npm ci, then npx playwright install chromium (or set PLAYWRIGHT)."); console.log("\n0/1 passed"); process.exit(1); }
