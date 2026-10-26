@@ -1,6 +1,7 @@
 // Performance harness: drives the built page in Chromium on synthetic plans and reports what's slow.
 //   node test/perf/run.js [--sizes S,M] [--cpu 1,4] [--runs 5] [--only tl.,ui.find] [--html dist.html]
 //                         [--out results.json] [--report report.html] [--compare baseline.json] [--budgets [file]]
+//                         [--report-only]  (list missed budgets but exit 0, as CI does while the budgets settle)
 // Playwright comes from node_modules, or from PLAYWRIGHT=/path/to/node_modules/playwright.
 // Every number is from this machine: compare a run with a baseline taken on the same machine.
 const fs = require("fs"), path = require("path"), os = require("os");
@@ -200,7 +201,8 @@ async function main(){
   fs.writeFileSync(REPORT, report(meta, results, flags));
   console.log(`Results: ${OUT}\nReport: ${REPORT}`);
   if (flags.length){ console.log(flags.length + " flagged:"); flags.forEach(f => console.log("  " + f.text)); }
-  process.exit(flags.some(f => f.fail) ? 1 : 0);
+  if (opt("report-only", false) && flags.some(f => f.fail)) console.log("Report only: a budget was missed, but this run doesn't fail. See the flags above and the report.");
+  process.exit(flags.some(f => f.fail) && !opt("report-only", false) ? 1 : 0);
 }
 
 // Budgets and the baseline. A scenario fails a budget at the sizes and CPU the budget names; "known" entries are

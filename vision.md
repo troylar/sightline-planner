@@ -102,6 +102,8 @@ Each principle is a test a change can pass or fail.
 | Effort ranges, skills, workstream shares, scenarios | Plan | Sightline | Added here, with who added them |
 | Forecast finishes, critical chain, workstream load | Computed by Sightline from the plan's inputs and Jira's facts | Inputs in Jira and Sightline | Likely and high finish, with the reason for each wait and what the forecast assumed |
 | Saved team views and tag colors | Plan | Sightline | Named views; tag style |
+| Captured requests and ideas: what was raised, its capture type, who asked, its source and meeting date, and what became of it | Plan | Sightline | Added here, with who added them and who asked |
+| How long a captured item has been open, and what it was handed off to | Computed by Sightline from the plan | Inputs in Sightline | Age from when it was added; unknown shown as unknown |
 | What I've hidden from my own view | The viewer | That viewer's browser | View indicator with hidden counts |
 | Which apps I've connected, and how much each may do | The viewer | That viewer's browser | Settings, Apps; "via" on every change an app made |
 | Proposed changes to Jira (later) | Plan | Sightline, applied by the sync script | Shown as pending on the Jira item until Jira has them |
@@ -120,6 +122,29 @@ chosen people. A team view (for example "refinement board") saves a combination 
 items). Jira's own labels appear as tags marked as Jira's, read-only. A plan tag and a Jira label
 with the same name stay separate; a filter can pick either or both. Tags filter, show-only and hide, together with
 people, authors and layers.
+
+## Captured requests and ideas
+
+Meetings raise things that belong to a workstream but aren't work yet: "the support team wants to hear when the
+release process changes", "we have no way to send release notes to the teams that use them". The plan keeps them, so
+they're there when the team sets priorities and shapes the roadmap, and so whoever asked hears what happened.
+
+- **A captured item is a roadmap idea with a capture type:** idea, request, process gap or question. The capture type
+  is its own field; it never changes what a roadmap item's kind (new, improved, fixed) means for release notes.
+- **Who asked is a person or a group** already in the plan, recorded apart from who added the item and who owns it.
+  Unknown stays unknown. Nobody becomes the requester, or the owner, because their name was mentioned.
+- **Where it came from:** a short source and the meeting's date. A capture holds the request, never a transcript.
+- **What became of it is separate from delivery.** Handing an item off to an initiative or a Jira issue, or declining
+  it with a reason, closes it as a capture; neither marks anything done or planned. A date alone never turns a
+  capture into a commitment, a Jira link alone never counts as a handoff, and a closed capture can be reopened. The
+  Jira issue it became is still Jira's: the plan records the key, never a copy of the issue.
+- **Unsorted is a place.** An item whose workstream isn't known yet is shown as unassigned, not hidden or guessed.
+- **Triage is a view:** open captures by workstream, oldest first, with who asked and where it came from.
+- **Any assistant can capture,** through the same export and changes file as everything else (principle 16). It
+  reuses the people, groups and workstreams the plan already has, by ID. A change that adds a new person or group,
+  or invents a category, always waits for a person, whatever the assistant is allowed to do on its own.
+- **A request names other teams in a shared file.** Principle 11 holds: capture only what the team would say in
+  the room.
 
 ## Many views
 
@@ -171,6 +196,9 @@ authorization; the token holder decides.
 - One workstream placement per epic; other workstreams refer to it rather than placing it again.
 - Notes on Jira issues attach by Jira key and follow the issue.
 - Write-back comes later, through proposed changes first, then the sync script.
+- Meeting requests and ideas are captured as roadmap ideas with a capture type, who asked and what became of
+  them, kept apart from delivery stage. Requesters are existing people and groups; there is no separate list of
+  teams yet.
 
 **Open**
 
@@ -180,6 +208,8 @@ authorization; the token holder decides.
 - Is a note's text editable only by its author? Recommended: the page asks before editing someone else's words, and
   says plainly that this is a courtesy, not a lock.
 - Should one person's hidden choices follow them across computers?
+- Projects and platforms: tie people, groups and work to what they build on, own or use. Deferred until captured
+  requests show which of those relationships a planning view needs; a plain project tag can't tell them apart.
 
 ## Original implementation gap list
 
