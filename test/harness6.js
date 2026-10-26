@@ -263,8 +263,9 @@ setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT after " + R.len
   d.activeElement.blur(); key("s"); ok("K12: S jumps to the sticky note box", d.activeElement?.id === "sticky-in");
   d.activeElement.blur(); const z0 = ev("UI.zoom"); key("."); await wait(10); ok("K13: . goes to today and keeps the zoom (Weeks stays Weeks)", ev("UI.zoom") === z0 && ev("UI.ws") === "timeline");
   key("w"); key("t"); ok("K14: T opens Today", ev("UI.ws") === "today"); key("2");
-  ev(`sel = null; openAddMenu(document.querySelector("#addBtn").getBoundingClientRect(), {day: isoToDay("2026-10-10")})`);
-  ok("AM1: the Add menu says plainly where a new item goes, using the weekday it will really get", /^New item: Fri Oct 9 in /.test(d.querySelector("#addMenu .mh").textContent) && /click a workstream or item first/.test(d.querySelector("#addMenu").textContent), d.querySelector("#addMenu .mh").textContent);
+  const sat = ev("(() => { let n = startDay() + 7; while (dow(n) !== 6) n++; return n; })()"), fri = "Fri " + ev(`fmtDay(${sat - 1})`);
+  ev(`sel = null; openAddMenu(document.querySelector("#addBtn").getBoundingClientRect(), {day: ${sat}})`);
+  ok("AM1: the Add menu says plainly where a new item goes, using the weekday it will really get", d.querySelector("#addMenu .mh").textContent.startsWith(`New item: ${fri} in `) && /click a workstream or item first/.test(d.querySelector("#addMenu").textContent), d.querySelector("#addMenu .mh").textContent);
   ev("closeAddMenu(false)");
   ev(`UI.planTab = "risks"; setWs("plan"); openAddMenu(document.querySelector("#addBtn").getBoundingClientRect(), {})`);
   { const btns = [...d.querySelectorAll("#addMenu button")].map(b=>b.textContent);
