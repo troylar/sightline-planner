@@ -13,5 +13,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      # Chromium for the layout checks in test/run.sh; the version comes from the playwright pinned in package.json.
+      - run: npx playwright install --with-deps chromium
       - run: npm run check
       - run: npm pack --dry-run --ignore-scripts

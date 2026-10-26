@@ -1,7 +1,7 @@
 // Owner avatars laid out in a real browser (jsdom has no layout): on every story bar the avatar sits whole inside the bar's
 // right end and the name stops before it, however narrow the bar; when a bar's name is pinned at the chart's left edge
 // while scrolling, it still stops before the avatar. Days and Weeks by person, two widths.
-// Run by hand, not by run.sh (CI has no browser yet): node test/layout-avatars.js. Playwright comes from node_modules,
+// run.sh runs it when Playwright is installed, and CI always does. By hand: node test/layout-avatars.js. Playwright comes from node_modules,
 // or from PLAYWRIGHT=/path/to/node_modules/playwright. The plan is fixtures/shelf-plan.js; every name is invented.
 const fs = require("fs"), path = require("path");
 let pw; try { pw = require(process.env.PLAYWRIGHT || "playwright"); } catch(e){ console.log("FAIL  Playwright isn't installed. Run npm ci, then npx playwright install chromium (or set PLAYWRIGHT)."); console.log("\n0/1 passed"); process.exit(1); }
