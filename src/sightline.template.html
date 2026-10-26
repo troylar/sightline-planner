@@ -876,6 +876,7 @@ body:not(.hasSel) #side.floating{display:none}
 .cvcolh{display:grid;grid-template-columns:repeat(var(--cols),minmax(180px,1fr));gap:0;position:sticky;top:0;z-index:3;background:var(--paper);border-bottom:1px solid var(--rule);border-radius:12px 12px 0 0}
 .cvch{padding:8px 12px;font-size:12px;font-weight:600;color:var(--ink-2);display:flex;gap:6px;align-items:center}.cvch .cnt{margin-left:auto;color:var(--ink-3);font-weight:500}.cvch.now{color:var(--accent)}
 .cvrow{border-top:1px solid var(--rule-2);content-visibility:auto;contain-intrinsic-size:auto 160px}.cvrow:first-of-type{border-top:0}
+@media print{.cvrow{content-visibility:visible}}
 .cvrowh{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px 4px;position:sticky;top:34px;z-index:2;background:var(--surface)}.cvrowh b{font-size:14px}.cvrowh .ini{width:10px;height:10px;border-radius:3px}.cvrt{font-size:12px}
 .cvgl{padding:2px 12px;font-size:12px;font-weight:600;color:var(--ink-2)}.cvgl .hint{font-weight:400}
 .cvgc{display:grid;grid-template-columns:repeat(var(--cols),minmax(180px,1fr))}
