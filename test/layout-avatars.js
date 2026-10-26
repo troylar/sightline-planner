@@ -1,7 +1,8 @@
 // Owner avatars laid out in a real browser (jsdom has no layout): on every story bar the avatar sits whole inside the bar's
 // right end and the name stops before it, however narrow the bar; when a bar's name is pinned at the chart's left edge
-// while scrolling, it still stops before the avatar. Days and Weeks by person, two widths.
-// Run by hand, not by run.sh (CI has no browser yet): node test/layout-avatars.js. Playwright comes from node_modules,
+// while scrolling, it still stops before the avatar. Days and Weeks by person, two widths, and once with a wide fallback
+// font (as on Linux), where three-letter initials once grew past the room the bar keeps for them.
+// run.sh runs it when Playwright is installed, and CI always does. By hand: node test/layout-avatars.js. Playwright comes from node_modules,
 // or from PLAYWRIGHT=/path/to/node_modules/playwright. The plan is fixtures/shelf-plan.js; every name is invented.
 const fs = require("fs"), path = require("path");
 let pw; try { pw = require(process.env.PLAYWRIGHT || "playwright"); } catch(e){ console.log("FAIL  Playwright isn't installed. Run npm ci, then npx playwright install chromium (or set PLAYWRIGHT)."); console.log("\n0/1 passed"); process.exit(1); }
@@ -25,13 +26,14 @@ function measure(){
   const b = await pw.chromium.launch();
   try {
     const errs = [];
-    for (const [w, zoom, rows] of [[1200, "days", "lanes"], [1600, "days", "lanes"], [1200, "weeks", "people"], [1600, "weeks", "people"], [1200, "fit", "people"]]){
+    for (const [w, zoom, rows, wide] of [[1200, "days", "lanes"], [1600, "days", "lanes"], [1200, "weeks", "people"], [1600, "weeks", "people"], [1200, "fit", "people"], [1200, "fit", "people", true], [1200, "days", "lanes", true]]){
       const page = await b.newPage({viewport:{width:w, height:900}}); page.on("pageerror", e=>errs.push(String(e)));
       await page.addInitScript(() => { const RD = Date, now = new RD("2026-10-07T14:00:00").getTime(); window.Date = class extends RD { constructor(...a){ a.length ? super(...a) : super(now); } static now(){ return now; } }; });
-      await page.goto("file://" + HTML); await page.waitForTimeout(300);
+      if (wide) await page.route(/fonts\./, r=>r.abort());
+      await page.goto("file://" + HTML); if (wide) await page.addStyleTag({content:"*{font-family:'DejaVu Sans',Verdana,sans-serif !important}"}); await page.waitForTimeout(300);
       await page.evaluate(setup, [FIX, SHELF, zoom, rows]); await page.keyboard.press("Escape"); await page.waitForTimeout(200);
       if (zoom === "fit") await page.evaluate(()=>[...document.querySelectorAll("#gantt .bar.story")].slice(0, 4).forEach((b, i)=>{ b.style.width = [44, 32, 26, 60][i] + "px"; }));   // squeeze some bars: padding sits outside the width, so the narrowest a bar draws is about 38px
-      const tag = `${zoom === "days" ? "Days" : zoom === "fit" ? "Weeks by person at Fit (narrow bars)" : "Weeks by person"}, ${w}px`, m = await page.evaluate(measure), bad = m.filter(x=>!(x.has && x.whole && x.clear && x.seen));
+      const tag = `${zoom === "days" ? "Days" : zoom === "fit" ? "Weeks by person at Fit (narrow bars)" : "Weeks by person"}, ${w}px${wide ? ", wide font" : ""}`, m = await page.evaluate(measure), bad = m.filter(x=>!(x.has && x.whole && x.clear && x.seen));
       ok(`V1 ${tag}: every story bar shows its avatar whole at the right end, with the name stopping before it`, m.length >= 4 && !bad.length && (zoom !== "fit" || Math.min(...m.map(x=>x.w)) <= 40), JSON.stringify(bad.slice(0, 2)) + ` of ${m.length}, narrowest ${Math.min(...m.map(x=>x.w))}px`);
       if (zoom === "weeks"){
         const pinned = [];

@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.128.1",
+    "date": "2026-10-26",
+    "headline": "Owner initials stay clear of names",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Three-letter owner initials no longer cover the name on a short bar",
+        "before": "On a short bar, three-letter initials, or a wide system font, could make the owner's circle wider than the space kept for it, so the end of the name ran underneath.",
+        "now": "Three-letter initials are set slightly smaller, and the circle on a bar never grows past its space, so the name always stops before it.",
+        "where": "Weeks and Days, on Jira stories and tasks"
+      }
+    ]
+  },
+  {
     "version": "1.128.0",
     "date": "2026-10-26",
     "headline": "See who owns each Jira item at a glance",
