@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.124.6",
+    "date": "2026-10-26",
+    "headline": "Days opens and scrolls smoothly in big plans",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Performance",
+        "title": "Days lays out only the rows near the screen",
+        "before": "Days laid out every initiative's row at once, so in a large plan it took several seconds to open and scrolling stuttered.",
+        "now": "The rows near the screen are laid out first and the rest as you scroll to them. In a large plan Days opens in about a third of the time and scrolls smoothly. Every row is still on the page, so finding text and printing work as before.",
+        "where": "Timeline, Days"
+      }
+    ]
+  },
+  {
     "version": "1.124.5",
     "date": "2026-10-26",
     "headline": "Opening and closing an item is quicker",
