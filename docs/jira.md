@@ -54,6 +54,11 @@ that computer. The default output is a **jira** folder beside the plan.
    [Sorting Jira work](assistant-workflow.md#sorting-jira-work).
 5. An initiative or task linked to an issue shows the issue's description as its story, marked **From Jira**
    (Sightline 1.109.0 or later, with the matching sync). The sync reads descriptions only for issues the plan links.
+6. Every Jira item shows who owns it as a small circle with their initials. You'll see it on story and Jira-linked
+   bars, sprint shelf tiles, cards, List rows, and the hover card and details. A dashed empty circle means unassigned.
+   An outlined circle is an owner outside the team. Hover it, or use a screen reader, for the full name. Spotlight
+   rings that person's circles. The initials come from the plan's people and Jira's display names. No pictures are
+   fetched. If two people share initials, each gets a third letter.
 
 For repeated syncs, run `python3 /trusted/helpers/sightline-jira-sync.py watch`. Read `install --help` before
 configuring startup behavior. Run trusted helper code from your own computer, never a mutable shared folder.

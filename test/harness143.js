@@ -55,7 +55,7 @@ async function open(){
     ok("C1 status reads without color: a symbol on the tile, the real status name in its label", /●/.test(tile("story:ABC-101").textContent) && /◐/.test(tile("story:ABC-102").textContent) && /○/.test(tile("story:ABC-103").textContent) && /In Review \(in progress\)/.test(lb("story:ABC-102")), lb("story:ABC-102"));
     ok("C2 blocked comes from the plan and says so", tile("bar:lf1").classList.contains("shblk") && /⛔/.test(tile("bar:lf1").textContent) && /blocked in the plan/.test(lb("bar:lf1")));
     ok("C3 the label carries the full facts: key, summary, points, assignee", /^ABC-101: Cursor paging for lists\. Done\. 5 points\. Avery Stone\. In /.test(lb("story:ABC-101")), lb("story:ABC-101"));
-    ok("C3 …and unassigned is shown as unassigned", /unassigned/.test(tile("story:ABC-106").querySelector(".who").textContent) && /Unassigned\./.test(lb("story:ABC-106")));
+    ok("C3 …and unassigned is shown as unassigned", tile("story:ABC-106").querySelector(".oav.none")?.title === "Unassigned" && /Unassigned\./.test(lb("story:ABC-106")));
     ok("H1 a hostile summary is drawn as text", tile("story:ABC-106").querySelector(".tt").textContent === "<img src=x onerror=alert(1)> literal title" && !row().querySelector("img") && !w.alerted);
     // Grouped by initiative, stable order.
     const g1 = [...cells()[0].querySelectorAll(".shgrp h5 .shgn")].map(x=>x.textContent);

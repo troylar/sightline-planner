@@ -1,5 +1,27 @@
 [
   {
+    "version": "1.128.0",
+    "date": "2026-10-26",
+    "headline": "See who owns each Jira item at a glance",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Jira",
+        "title": "Owner initials on every Jira item",
+        "before": "Who owned a Jira story showed as plain text in some places, as initials in others, and not at all on most bars.",
+        "now": "Every Jira item shows its owner as a small circle with their initials, at the right end of bars and on tiles, cards, List rows and details. A dashed empty circle means unassigned; an outlined one is an owner outside the team. Hover for the full name. People who share initials get a third letter. No pictures are fetched.",
+        "where": "Timeline (Weeks and Days), sprint shelves, Cards, List, and the details panel"
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Spotlight rings the person's circles",
+        "now": "With Spotlight on from the Show menu, that person's owner circles get a ring wherever they appear, so their work stands out on bars as well as on the shelves.",
+        "where": "Timeline, Show menu, Spotlight"
+      }
+    ]
+  },
+  {
     "version": "1.127.0",
     "date": "2026-10-26",
     "headline": "List shows workstreams",

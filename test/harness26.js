@@ -66,7 +66,7 @@ const drag = (w, el, x0, x1) => { const mk = (t, x) => { const e = new w.Event(t
     ev("UI.filter = normFilter({}); taskById('tj').t.owners = [AV]; render();");
     ok("F5: an owner that's just the assignee (copied in) isn't shown as a lead", ev("leadOf(taskById('tj').t).length") === 0);
     ev("select('task', 'tj'); render();"); await wait(10);
-    ok("F5: the card shows Jira's assignee (in From Jira) and offers the plan's lead", /Assignee\s*Avery/.test(d.querySelector("#f-jfacts")?.textContent || "") && /Lead \(the plan's/.test(d.querySelector("#side").textContent)); });
+    ok("F5: the card shows Jira's assignee (in From Jira) and offers the plan's lead", /Assignee\s*Avery/.test((n => { if (!n) return ""; n = n.cloneNode(true); n.querySelectorAll(".oav").forEach(x=>x.remove()); return n.textContent; })(d.querySelector("#f-jfacts"))) && /Lead \(the plan's/.test(d.querySelector("#side").textContent)); });
 
   await sec(async ()=>{ const {d, ev} = await page();
     ev("UI.planTab = 'types'; setWs('plan');"); await wait(10);
