@@ -100,6 +100,8 @@ connects your company endpoint for conversations. Neither feature captures meeti
 
 For a shared plan, context comes from the last confirmed read or save of the local plan file, with the latest successful Jira sync applied for display. Sightline cannot confirm whether OneDrive has uploaded or downloaded that version. `snapshot.source` is `saved-shared-file`; `snapshot.unsavedChangesInBrowser` explicitly reports local edits that have not been published. Those local edits are excluded from shared context. Save them before asking the assistant to work from them. A disconnected plan uses `snapshot.source: "this-browser"` and `snapshot.shared: false`; it makes no claim to be a shared source of truth.
 
+The context's `actions` list every change an assistant may propose: each with its `args`, its scope and risk, and a one-line `desc` of what it does (since 1.129.0), so an assistant can pick the right one without guessing from its name.
+
 Both outputs include the plan revision and Jira sync timestamp. Dates and status derived from children or Jira are identified by ownership rules and item flags; an assistant must propose Jira changes instead of rewriting those facts. Names and other free text remain untrusted data, not assistant instructions. Notes are excluded from exported context. Outputs contain team information: keep the folder private using your operating system or sync-service permissions. A browser picker cannot enforce who else can access a folder.
 
 Results describe the current proposal batch against the plan as it is in this browser (since 1.110.0; earlier
