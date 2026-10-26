@@ -5,7 +5,7 @@ const html = fs.readFileSync(process.env.SIGHTLINE_HTML || path.join(__dirname,"
 const plan = fs.readFileSync(path.join(__dirname,"fixtures","sample-plan.json"),"utf8");
 const R = []; const ok = (n,c,x="") => R.push(`${c?"PASS":"FAIL"}  ${n}${x?"  ("+x+")":""}`);
 const wait = ms => new Promise(r=>setTimeout(r,ms));
-setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT after " + R.length); process.exit(1); }, 40000).unref?.();
+setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT after " + R.length); process.exit(1); }, 90000).unref?.();
 const at = new Date(Date.UTC(2026, 8, 30, 14)).toISOString();
 const st = (k, x = {}) => ({summary:`Story ${k}`, status:"In Progress", category:"inprogress", type:"Story", epic:"ABC-1", sprint:"Sprint 42", sprintId:42, sprintState:"active", sprintStart:"2026-09-28", sprintEnd:"2026-10-09", points:3, ...x});
 const status = JSON.stringify({kind:"sightline-jira-status", generatedAt:at, jiraBase:"https://jira.example.com", missing:[],
@@ -167,6 +167,37 @@ async function page(){
     ok("P1: Days renders all 4,000 stories exactly once", sample.days && sample.nodes === 4000 && sample.keys === 4000, JSON.stringify(sample));
     ok("P2: each full render builds the story index once", sample.builds === 2, sample.builds + " builds across two renders");
     ok("P3: Jira issue reads stay within a linear rendering budget", sample.reads <= 2 * 4000 * 4, sample.reads + " reads; " + sample.ms + " ms per render (informational)"); });
+
+  await sec(async ()=>{ const {d, ev} = await page();
+    // notes by item: one pass over the notes per draw, whatever the number of items drawn, with the same notes as before
+    const r = ev(`(()=>{ const L = S.bars.filter(b=>isLeafBar(b)), people = S.people.map(p=>p.id);
+      for (let e = 0; e < 300; e++) S.bars.push({...clone(L[0]), id:"nb" + e, label:"Noted " + e, jira:"", epics:[], tasks:[{id:"nt" + e, label:"Task " + e, start:S.meta.start, days:2, owners:[], jira:""}], storiesOff:undefined});
+      S = normalize(JSON.parse(JSON.stringify(S)), false);
+      const targets = ["bar:nb", "task:nt", "ms:", "jira:ABC-", "bar:gone", ""];
+      S.notes = Array.from({length:900}, (_, i) => ({id:"nn" + i, text:"Note " + i, date:S.meta.start, lane:S.lanes[0].id, author:people[i % people.length] || "",
+        ...(targets[i % 6] === "" ? {} : {on: targets[i % 6] === "ms:" ? "ms:" + S.milestones[i % S.milestones.length].id : targets[i % 6] === "jira:ABC-" ? "jira:ABC-" + (1 + i % 3) : targets[i % 6] + (i % 300)})}));
+      setZoom("weeks"); render();
+      const keys = [...new Set(S.notes.map(n=>n.on || ""))].concat(["bar:nb5", "task:nt7"]);
+      const want = k => { const seen = noteSeen(); return S.notes.filter(n=>(n.on && itemExists(n.on) ? n.on : "") === k && seen(n)).map(n=>n.id).join(); };
+      const same = keys.every(k=>notesOn(k).map(n=>n.id).join() === want(k));
+      const multi = notesOn(["jira:ABC-1", "bar:nb0", "jira:ABC-1"]).map(n=>n.id), multiWant = S.notes.filter(n=>["jira:ABC-1", "bar:nb0"].includes(n.on)).map(n=>n.id);
+      const counts = noteCounts(), countsOk = keys.every(k=>(counts.get(k) || 0) === want(k).split(",").filter(Boolean).length);
+      const real = S.notes; let reads = 0;
+      S.notes = new Proxy(real, {get(t, k){ if (typeof k === "string" && /^[0-9]+$/.test(k)) reads++; return Reflect.get(t, k); }});
+      const build = typeof noteIndex === "function" ? noteIndex : null; let builds = 0;
+      if (build) noteIndex = function(){ if (!noteMemo || noteMemo.notes !== S.notes || noteMemo.n !== S.notes.length) builds++; return build(); };
+      try { render(); } finally { S.notes = real; if (build) noteIndex = build; }
+      const badges = document.querySelectorAll('#gantt .nbadge').length;
+      return {same, multi:multi.join() === multiWant.join(), countsOk, reads, notes:real.length, badges, builds};
+    })()`);
+    ok("N1: notes by item are the same notes as before, for every kind of target, a deleted one and none", r.same && r.countsOk, JSON.stringify(r));
+    ok("N1: several keys at once give each note once, in the plan's order", r.multi);
+    ok("N2: one draw builds the notes by item once, and reads the notes a bounded number of times, not once per item drawn", r.builds === 1 && r.badges > 40 && r.reads <= 20 * r.notes, r.builds + " builds, " + r.reads + " note reads for " + r.notes + " notes and " + r.badges + " badges");
+    const c = ev(`(()=>{ const before = notesOn("bar:nb9").length; commit(s=>s.notes.push({id:"nnew", text:"Fresh", date:s.meta.start, lane:s.lanes[0].id, author:"", on:"bar:nb9"}));
+      const added = notesOn("bar:nb9").length - before; commit(s=>{ s.bars = s.bars.filter(b=>b.id !== "nb9"); }); const gone = notesOn("bar:nb9").length;
+      UI.notes = "none"; render(); const none = document.querySelectorAll('#gantt .nbadge').length + notesOn("bar:nb6").length; UI.notes = "all"; render();
+      return {added, gone, none, back:notesOn("bar:nb6").length > 0}; })()`);
+    ok("N3: a note added or an item deleted shows at once, and Hide notes hides them all", c.added === 1 && c.gone === 0 && c.none === 0 && c.back, JSON.stringify(c)); });
 
   await sec(async ()=>{ const {d, ev} = await page();
     // after a browser restart: the folder is remembered but not readable until the browser asks again

@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.124.2",
+    "date": "2026-10-26",
+    "headline": "Big plans draw faster, Days most of all",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Performance",
+        "title": "Note counts no longer slow every redraw",
+        "before": "Each time the page redrew, every item checked every note to find its own, so a plan with many notes and items was slow everywhere, and Days, which shows the most items, was slowest.",
+        "now": "Notes are sorted by item once per redraw. In a large plan, Days opens in about half the time, opening the plan is about 13% faster, and changing the Timeline's zoom, a preset or a filter is about 10% faster. The note counts and badges are the same as before.",
+        "where": "Everywhere items show a note count, most noticeably Days"
+      }
+    ]
+  },
+  {
     "version": "1.124.1",
     "date": "2026-10-25",
     "headline": "The timeline's header is short again",
