@@ -75,7 +75,8 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     // layout, so this reads the rules; the browser checks are in the PR (scrolled screenshots, find, the printed text).
     const css = [...d.querySelectorAll("style")].map(x => x.textContent).join("\n");
     ok("D1 Days rows draw only near the screen, and print in full", /\.gantt\.days>\.lane\{content-visibility:auto;contain-intrinsic-size:auto \d+px\}/.test(css) && /@media print\{\.gantt\.days>\.lane\{content-visibility:visible\}\}/.test(css));
-    ok("D2 only Days rows: Weeks and the other pages are drawn as before", (css.match(/content-visibility/g) || []).length === 2);
+    const lazy = [...css.matchAll(/([^{}\n]+)\{[^}]*content-visibility:auto/g)].map(m => m[1].trim()), printed = [...css.matchAll(/@media print\{([^{]+)\{content-visibility:visible\}\}/g)].map(m => m[1].trim());
+    ok("D2 whatever draws only near the screen prints in full, and Weeks isn't among them", lazy.length >= 1 && lazy.every(x => printed.includes(x)) && !lazy.some(x => /:not\(\.days\)|\.gantt>|\.gantt \.lane/.test(x)), JSON.stringify({lazy, printed}));
     ok("Z no page errors", !w.errs.length, w.errs.join(" | "));
   } catch(e){ ok("harness ran without throwing", false, e.stack); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

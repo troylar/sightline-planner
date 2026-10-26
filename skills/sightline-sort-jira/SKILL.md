@@ -24,6 +24,7 @@ Read `sightline-assistant-view.json` afresh from the private assistant folder th
    - `jira.toWorkstream {keys:[key], lane}`: its own initiative in that workstream.
    - `jira.toInitiative {keys:[key], id}`: a task on an existing initiative from `jiraSort.targets.initiatives`, when the summary clearly belongs to that initiative.
    - `jira.notOurs {keys:[key]}`: only when the issue is clearly another team's work. It hides the issue from Sort Jira work, and a person can bring it back.
+   - Don't use `jira.hide` to sort: it's for work the team already decided to keep off the plan's views, and it needs a reason a person gave.
 3. To place a whole epic, use `jira.epicLink {epic, id}` (onto an existing initiative) or `jira.epicNew {epic, lane}` (a new initiative for it).
 4. Give every change a `reason`, one plain line about why it belongs there (the workstream's guidance, the epic, the initiative it extends), and a `confidence` of `high` or `low`. Say `low` when you are going on the assignee alone.
 5. When you can't justify a placement, don't guess. Put the issue in your own report under **Couldn't place**, with the one question you'd need answered (for example, "Who owns cleanup work with no epic?"). It is not a change.
