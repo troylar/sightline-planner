@@ -892,6 +892,15 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   ev("sel=null; render()");
   { const r = JSON.parse(ev(`JSON.stringify([...document.querySelectorAll("#gantt .track > .bar")].map(b=>({bin:b.querySelectorAll(":scope > .bin").length, nm:!!b.querySelector(":scope > .bin .nm"), h:[...b.querySelectorAll(".h")].every(x=>x.parentElement === b)})))`));
     ok("PL1: every Weeks bar keeps its name in one box that can ride along the left edge, its drag handles outside it", r.length >= 1 && r.every(x=>x.bin === 1 && x.nm && x.h), r.length + " bars " + JSON.stringify(r.find(x=>!(x.bin === 1 && x.nm && x.h)))); }
+  { // a narrow bar hides a tag it can't fit whole (cutTags), so a late task bar must say "late" in its own accessible name
+    w.__tlPlan = JSON.stringify(plan);
+    const r = JSON.parse(ev(`(()=>{ const was = JSON.stringify(S), out = []; S = parseText(window.__tlPlan); const b0 = S.bars.find(b=>!b.parked && own(b).length);
+      act("task.add", {id:"t-late", bar:b0.id, start:"2026-09-28", days:3, label:"Overdue check", owners:[own(b0)[0]]}, S); actTask(S, "t-late").t.status = "inprogress";   // the clock is fixed at Oct 7, so it ended last week
+      try { for (const [z, rows] of [["weeks", "people"], ["days", "people"], ["days", "lanes"]]){ goWs("timeline"); UI.zoom = z; UI.rows = rows; render();
+        out.push(...[...document.querySelectorAll("#gantt .taskbar, #gantt .tbar")].filter(b=>b.dataset.peekType === "task").filter(b=>b.classList.contains("late")).map(b=>({z:z + "/" + rows, cls:b.className.split(" ").slice(0, 2).join("."), late:true, said:/late/i.test(b.getAttribute("aria-label") || "")}))); } }
+      finally { S = JSON.parse(was); render(); }
+      return JSON.stringify(out); })()`));
+    ok("TL1: every late task bar says late in its accessible name, in Weeks and Days, by person and by workstream", r.length >= 2 && r.every(x=>x.late && x.said), JSON.stringify(r) + ` of ${r.length}: ` + [...new Set(r.map(x=>x.z))].join(", ")); }
   ok("no runtime errors", w.errs.length===0, w.errs.join(" | "));
   console.log(R.join("\n")); const f=R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length-f}/${R.length} passed`); process.exit(f ? 1 : 0);
 })();

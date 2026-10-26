@@ -1,7 +1,8 @@
 // Labels stay readable while the Timeline scrolls sideways, laid out in a real browser (jsdom has no layout): a bar
 // whose start is off to the left keeps its name at the chart's left edge, inside the bar, shrinking with an ellipsis
 // to the part still showing; a milestone, gate or stretch label whose marker is off to the left does the same with ‹;
-// scrolling never redraws the chart; print puts every label back where it starts. Two widths, and 150% text.
+// scrolling never redraws the chart; print puts every label back where it starts; a tag (late, +1) is whole or hidden, never
+// cut off, while scrolling and on the short bars of Fit. Two widths, and 150% text.
 // run.sh runs it when Playwright is installed, and CI always does. By hand: node test/layout-labels.js. Playwright comes from node_modules,
 // or from PLAYWRIGHT=/path/to/node_modules/playwright. The plan is fixtures/sample-plan.json; every name is invented.
 const fs = require("fs"), path = require("path");
@@ -24,8 +25,13 @@ function crossing(){
   // anything else crossing the edge is pinned or hidden: never a cut-off fragment like "ion test"
   const bits = [...g.querySelectorAll(".track > .flag, .track > .bar")].filter(e=>{ const r = box(e); return r.left < edge - 2 && r.right > edge + 2; })
     .filter(e=>!e.classList.contains("pinl") && getComputedStyle(e.querySelector(":scope > .bin") || e).visibility !== "hidden").map(e=>e.textContent.slice(0, 30));
-  return {bars, flags, bits, scrollLeft:sc.scrollLeft};
+  const tags = [...g.querySelectorAll(".tags > .tag")].filter(t=>getComputedStyle(t).visibility !== "hidden" && box(t).width && box(t).right > box(t.parentElement).right + 0.5 && box(t).left < box(t.parentElement).right - 0.5).map(t=>t.textContent);
+  return {bars, flags, bits, tags, scrollLeft:sc.scrollLeft};
 }
+// Tags (late, +1, a workstream) shown only in part, like "lat": each must be whole or hidden.
+function partTags(){ const box = e => e.getBoundingClientRect();
+  return [...document.querySelectorAll("#gantt .tags > .tag")].filter(t=>getComputedStyle(t).visibility !== "hidden" && box(t).width).filter(t=>{ const c = box(t.parentElement), q = box(t); return q.right > c.right + 0.5 && q.left < c.right - 0.5; })
+    .map(t=>`${t.textContent}@${Math.round(box(t.parentElement).right - box(t).left)}/${Math.round(box(t).width)}`); }
 function setup([FIX, z]){
   askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); S = parseText(FIX); UI.zoom = z === "days" ? "days" : "weeks"; UI.rows = "lanes"; goWs("timeline");
   if (z !== "days") setZoomN(z, z); render();
@@ -52,6 +58,8 @@ function setup([FIX, z]){
       ok(`M1 ${tag}: a marker label whose marker is off to the left sticks at the edge with ‹, clear of its neighbors, with some of its name showing`, flags.length >= 1 && flags.every(f=>f.mark === '"‹"' && f.inView && f.clear && f.named), JSON.stringify(flags.filter(f=>!(f.mark === '"‹"' && f.inView && f.clear && f.named)).slice(0, 2)) + ` of ${flags.length}`);
       const bits = steps.flatMap(s=>s.bits);
       ok(`M2 ${tag}: nothing crossing the left edge shows a cut-off fragment: it's pinned, or hidden when too little is left`, !bits.length, JSON.stringify(bits.slice(0, 3)));
+      const tags = steps.flatMap(s=>s.tags);
+      ok(`T1 ${tag}: while scrolling, a tag is whole or hidden, never cut off`, !tags.length, tags.slice(0, 4).join(", "));
       ok(`R1 ${tag}: scrolling never redraws the chart`, await page.evaluate(()=>window.__draws) === 0, String(await page.evaluate(()=>window.__draws)));
       await page.emulateMedia({media:"print"}); await page.waitForTimeout(50);
       const printed = await page.evaluate(()=>[...document.querySelectorAll("#gantt .pinl, #gantt .pinl .bin")].every(e=>getComputedStyle(e).transform === "none"));
@@ -60,6 +68,18 @@ function setup([FIX, z]){
       ok(`B4 ${tag}: scrolled back, nothing stays pinned or hidden`, await page.evaluate(()=>!document.querySelector("#gantt .pinl, #gantt .pingone") && [...document.querySelectorAll("#gantt .bin")].every(x=>!x.style.transform)));
       await page.close();
     }
+    for (const rows of ["lanes", "people"]){   // Fit squeezes short bars hardest: the peer saw "late" cut to "lat" here
+      const page = await b.newPage({viewport:{width:1200, height:900}}); page.on("pageerror", e=>errs.push(String(e)));
+      await page.addInitScript(() => { const RD = Date, now = new RD("2026-10-07T14:00:00").getTime(); window.Date = class extends RD { constructor(...a){ a.length ? super(...a) : super(now); } static now(){ return now; } }; });
+      await page.goto("file://" + HTML); await page.waitForTimeout(300);
+      await page.evaluate(setup, [FIX, 2]); await page.evaluate(rows=>{ UI.rows = rows; setZoomN(0, 0); render(); }, rows); await page.keyboard.press("Escape"); await page.waitForTimeout(300);
+      const part = await page.evaluate(partTags), m = await page.evaluate(()=>({late:[...document.querySelectorAll("#gantt .bar.late")].length, hidLate:[...document.querySelectorAll("#gantt .bar.late .tag.bad.tagcut")].length,
+        // a hidden tag leaves the accessibility tree too, so the bar's own name must still say it: late, and every owner behind +N
+        unsaid:[...document.querySelectorAll("#gantt .tagcut")].filter(t=>{ const a = t.closest("[aria-label]").getAttribute("aria-label") || "", n = /^\+(\d+)$/.exec(t.textContent.trim());
+          return t.textContent.trim() === "late" ? !/late/i.test(a) : n ? !(/Owner: ([^.]*)/.exec(a) && /Owner: ([^.]*)/.exec(a)[1].split(",").length >= +n[1] + 1) : false; }).map(t=>t.textContent + " on " + t.closest("[aria-label]").getAttribute("aria-label").slice(0, 60))}));
+      ok(`T2 Fit by ${rows === "people" ? "person" : "workstream"}, 1200px: a tag that doesn't fit a short bar is hidden whole, and the bar keeps its late ring`, !part.length && m.late >= 1 && (rows === "lanes" || m.hidLate >= 1), part.slice(0, 4).join(", ") + ` late ${m.late}, late tag hidden on ${m.hidLate}`);
+      ok(`T3 Fit by ${rows === "people" ? "person" : "workstream"}, 1200px: a bar whose tag is hidden still says it to a screen reader (late, every owner behind +N)`, !m.unsaid.length, m.unsaid.slice(0, 3).join(" | "));
+      await page.close(); }
     ok("Z no page errors", !errs.length, errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, e.stack); }
   await b.close();

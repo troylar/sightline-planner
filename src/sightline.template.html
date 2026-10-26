@@ -169,7 +169,7 @@ button.lchip{padding:2px 9px;cursor:pointer}
 .spill{position:absolute;height:26px;line-height:26px;font-size:11.5px;color:var(--ink-2);white-space:nowrap;cursor:pointer;z-index:2;font-weight:500}
 .spill:hover{color:var(--ink);text-decoration:underline}
 /* A label whose bar or marker starts left of the screen rides along the chart's left edge (pinLabels moves it). */
-.bin{display:flex;align-items:center;gap:inherit;flex:0 1 auto;min-width:0;max-width:100%}.pingone{visibility:hidden}
+.bin{display:flex;align-items:center;gap:inherit;flex:0 1 auto;min-width:0;max-width:100%}.pingone{visibility:hidden}.tagcut{visibility:hidden}
 .gantt .track>.flag.pinl{overflow:clip}
 .gantt .track>.flag.pinl::before{content:"‹";transform:none;width:auto;height:auto;background:none;border:0;box-shadow:none;margin:0 1px 0 0;color:var(--ink-3);font-weight:700;font-style:normal}
 @media print{.bin,.gantt .track>.flag.pinl{transform:none!important;max-width:none!important}.gantt .track>.flag.pinl::before{display:none}.pingone{visibility:visible}}
@@ -6564,7 +6564,7 @@ function weekItemEl(it, style, id, canDrag){
     const t = it.t, selected = sel && sel.type==="task" && sel.id===t.id, late = taskLate(t, HS());
     const tj = sideOf(t, "task") === "jira";
     const el = h("div",{"data-sel":"task:"+t.id,class:["bar","taskbar","st-"+t.status, late?"late":"", selected?"selected":"", tj ? "jira" : "plan"].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id+":"+(id ?? "none"),
-      "aria-label":`${taskTitle(t)}. In ${chartLabel(b)}. ${fmtDay(it.s)} to ${fmtDay(it.e)}`, "data-peek-type":"task", "data-peek-id":t.id, style:Object.assign(style, tj ? jiraPaint(lane) : {backgroundColor:lane.color, color:fg})},
+      "aria-label":`${taskTitle(t)}. In ${chartLabel(b)}. ${fmtDay(it.s)} to ${fmtDay(it.e)}${late ? ". Late" : ""}`, "data-peek-type":"task", "data-peek-id":t.id, style:Object.assign(style, tj ? jiraPaint(lane) : {backgroundColor:lane.color, color:fg})},
       keyChip(t, "task"), h("span",{class:"nm"}, (t.status==="done" ? "✓ " : "") + taskTitle(t)), noteBadge(noteKeysOf(t, "task")), canDrag ? h("span",{class:"tags"}, h("span",{class:"tag soft"}, chartLabel(b).slice(0,22))) : null, t.jira && jiraOf(t.jira) ? ownerAv(jiraWho(jiraOf(t.jira))) : null);
     el.addEventListener("click", ()=>select("task", t.id));
     el.addEventListener("keydown", e=>{ if (e.key==="Enter" || e.key===" "){ e.preventDefault(); select("task", t.id); } });
@@ -6630,7 +6630,7 @@ function dayItemEl(it, style, id, canDrag){
   Object.assign(style, {backgroundColor:lane.color, color:fg});
   if (it.type === "task"){
     const t = it.t, late = taskLate(t, HS()), selected = sel && sel.type==="task" && sel.id===t.id;
-    const title = [taskTitle(t), `In: ${chartLabel(b)}`, `${fmtDay(it.s)} → ${fmtDay(it.e)} · ${t.days} working day${t.days===1?"":"s"}`, canDrag ? "Drag sideways to move, or onto another person to reassign" : "From the plan; open it to change it"].join("\n");
+    const title = [taskTitle(t), `In: ${chartLabel(b)}`, `${fmtDay(it.s)} → ${fmtDay(it.e)} · ${t.days} working day${t.days===1?"":"s"}` + (late ? " · late" : ""), canDrag ? "Drag sideways to move, or onto another person to reassign" : "From the plan; open it to change it"].join("\n");
     const el = h("div",{"data-sel":"task:"+t.id,class:["tbar","st-"+t.status, late?"late":"", selected?"selected":""].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id+":"+(id ?? "none"), "aria-label":title.replace(/\n/g,". "), "data-peek-type":"task", "data-peek-id":t.id, style},
       canDrag ? h("span",{class:"h l","data-edge":"l","aria-hidden":"true"}) : keyChip(t, "task"), h("span",{class:"nm"}, (t.status==="done" ? "✓ " : "") + taskTitle(t)),
       h("span",{class:"tags"}, late ? h("span",{class:"tag bad"},"late") : null, canDrag ? h("span",{class:"tag"}, chartLabel(b).slice(0,18)) : null),
@@ -9448,12 +9448,19 @@ function pinLabels(){
     if (on){ p.box.style.transform = `translateX(${over}px)`; p.box.style.maxWidth = room + "px"; if (!p.on) p.el.classList.add("pinl"); p.on = true; }
     else if (p.on){ p.box.style.transform = ""; p.box.style.maxWidth = p.mw; p.el.classList.remove("pinl"); p.on = false; }
     if (gone !== !!p.gone){ p.box.classList.toggle("pingone", gone); p.gone = gone; } });   // too little left to read: nothing, never a fragment
+  cutTags(pins.filter(p=>p.bar && (p.on || p.was)).map(p=>p.el)); pins.forEach(p=>{ p.was = p.on; });
 }
+// A tag (late, +1, a workstream) that doesn't fit whole in its bar is hidden, never shown cut off ("lat"). Hiding keeps
+// its box, so every rect is read before any class changes: one layout, not one per bar.
+function cutTags(els){ const m = [];
+  els.forEach(el=>el.querySelectorAll(".tags").forEach(c=>{ const r = c.getBoundingClientRect().right; c.querySelectorAll(":scope > .tag").forEach(t=>m.push([t, t.getBoundingClientRect().right > r + 0.5])); }));
+  m.forEach(([t, cut])=>t.classList.toggle("tagcut", cut)); }
 function watchPins(){ const sc = $("#gscroll"); if (!sc || sc.dataset.pins) return; sc.dataset.pins = "1";
   sc.addEventListener("scroll", ()=>{ cancelAnimationFrame(pinRaf); pinRaf = requestAnimationFrame(pinLabels); }, {passive:true}); }
 function spillLabels(){
   const g = $("#gantt");
   g.querySelectorAll(".spill").forEach(x=>x.remove()); g.querySelectorAll(".bar.spilled").forEach(x=>x.classList.remove("spilled"));   // idempotent: several redraws may queue this
+  cutTags([g]);
   if (UI.zoom === "days") return;
   g.querySelectorAll(".track").forEach(track=>{
     const bars = [...track.querySelectorAll(":scope > .bar[data-peek-type]")];
