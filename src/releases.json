@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.135.0",
+    "date": "2026-10-26",
+    "headline": "Dates in words",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "Give dates the way people say them",
+        "before": "Every date in an assistant's proposed change had to be YYYY-MM-DD, so \"start it next Monday\" had to be worked out first.",
+        "now": "Any date in a proposed change can be words like tomorrow, +3d, next Friday, 2 weeks ago, next month or next sprint: a task's start, a milestone, time off, when something was raised, a due date. The review says which date each one became, and Apply uses that date. A task's start that lands on a weekend moves to the next working day. Anything else is refused with the forms that work.",
+        "where": "Your assistant's proposed changes, in the review panel"
+      }
+    ]
+  },
+  {
     "version": "1.134.0",
     "date": "2026-10-26",
     "headline": "Who asked, and what happened since",

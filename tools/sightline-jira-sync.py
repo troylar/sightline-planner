@@ -1912,7 +1912,7 @@ def _act_type_ok(t: str, v) -> bool:
     if t == "int":
         return isinstance(v, int) and not isinstance(v, bool)
     if t == "iso":
-        return _valid_iso(v)
+        return _valid_iso(v) or _rel_day(v)
     if t == "keys":
         return isinstance(v, list) and len(v) <= 500 and all(isinstance(k, str) and len(k) <= 40 for k in v)
     if t == "any":
@@ -1922,6 +1922,26 @@ def _act_type_ok(t: str, v) -> bool:
     if t == "weights":
         return v is None or (isinstance(v, dict) and len(v) <= 20 and all(_act_type_ok("id", k) and _act_type_ok("int", x) for k, x in v.items()))
     return False
+
+
+_REL_DAY = re.compile(r"^(today|tomorrow|yesterday|(\+ ?|in )\d{1,3} ?(d|days?|w|wks?|weeks?)|- ?\d{1,3} ?(d|days?|w|wks?|weeks?)|\d{1,3} (days?|weeks?) ago"
+                      r"|((this|next|last) )?(mon|tue|wed|thu|fri|sat|sun)[a-z]{0,6}|(next|last) (week|month)|(this|next) sprint)$")
+_REL_WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+
+
+def _rel_day(v) -> bool:
+    """A day said in words (next Monday, +3d, 2 weeks ago...): the page reads it against today when it checks the change."""
+    if not isinstance(v, str) or len(v) > 40:
+        return False
+    t = " ".join(v.strip().lower().split())
+    if not _REL_DAY.match(t):
+        return False
+    m = re.match(r"^((this|next|last) )?([a-z]+)$", t)    # a weekday: the start of its name, at least three letters
+    if m and m.group(3) == "month":
+        return m.group(2) in ("next", "last")
+    if m and m.group(3) not in ("today", "tomorrow", "yesterday", "week", "sprint"):
+        return any(d.startswith(m.group(3)) for d in _REL_WEEKDAYS)
+    return True
 
 
 def _valid_iso(v) -> bool:
