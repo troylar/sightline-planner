@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.129.0",
+    "date": "2026-10-26",
+    "headline": "Assistants see what each change does",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Every change an assistant can propose comes with a plain description",
+        "before": "The context file listed each change an assistant could propose by its name and arguments only, so an assistant had to guess what some of them did.",
+        "now": "Each change in the context file now has a one-line description of what it does. The planning skills tell the assistant to choose by that description and use the arguments exactly.",
+        "where": "The assistant folder's context file, and the bundled planning skills"
+      }
+    ]
+  },
+  {
     "version": "1.128.1",
     "date": "2026-10-26",
     "headline": "Owner initials stay clear of names",
