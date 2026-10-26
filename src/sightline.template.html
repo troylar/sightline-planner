@@ -5667,6 +5667,7 @@ function openInitiative(id){ setZoom("days", id); }
 // Zoom is how many sprints fit on screen, the same in Weeks and Days: + shows one sprint fewer, − one more, out to
 // "Fit": exactly the work the filters show, from where it starts to where it ends. Change the filter and Fit follows.
 const sprintLen = () => { const w = (S.sprints || []).map(x=>x.weeks).sort((a, b)=>a - b); return w[Math.floor(w.length / 2)] || S.meta.sprintWeeks || 2; };
+let noteMemo = null;                       // notes by item within one draw (noteIndex); render and commit drop it
 let fitMemo = null;                        // fitSpan within one draw (the zoom asks it many times); render and commit drop it
 function fitSpan(){ if (fitMemo) return fitMemo; return fitMemo = fitSpan0(); }
 function fitSpan0(){                      // the days the shown work covers: its first start to its last end, inside the plan
@@ -5844,7 +5845,7 @@ function dayCols(){
 // ================= rendering =================
 function remember(){ const a = document.activeElement; if (!a || !a.dataset) return null; return a.dataset.key || (a.id && a.closest("#side") ? "#" + a.id : null); }
 function restore(key){ if (!key) return; const el = key[0] === "#" ? document.getElementById(key.slice(1)) : document.querySelector(`[data-key="${CSS.escape(key)}"]`); if (el && !el.disabled) el.focus({preventScroll:true}); }
-const dropJiraMemos = () => { fitMemo = null; storyMemo = null; countMemo = new Map(); epicListMemo = null; layerMemo = null; hideMemo = null; kindsMemo = null; tagMemo = null; seenMemo = null; };   // after any change to the plan, Jira data or the day
+const dropJiraMemos = () => { noteMemo = null; fitMemo = null; storyMemo = null; countMemo = new Map(); epicListMemo = null; layerMemo = null; hideMemo = null; kindsMemo = null; tagMemo = null; seenMemo = null; };   // after any change to the plan, Jira data or the day
 function render(){
   cancelDerived();
   closePeek(); dropJiraMemos(); surfMemo = null;
@@ -6282,8 +6283,19 @@ function itemName(key){ const i = key.indexOf(":"), t = key.slice(0,i), id = key
   return t === "block" ? (instById(id)?.label || "block") : t === "bar" ? chartLabel(barById(id)) : t === "task" ? (taskById(id) ? taskTitle(taskById(id).t) : "task") : t === "ms" ? (S.milestones.find(m=>m.id===id)?.what || "milestone") : t === "gate" ? (gateById(id)?.gate || "gate") : (meetingById(id)?.title || "meeting"); }
 function noteSeen(){ const mode = UI.notes || "all", me = meId(), narrow = viewNarrowed();   // the notes the view shows: the Notes setting, and people you hid
   return n => mode !== "none" && !(mode === "mine" && (!me || n.author !== me)) && !(mode === "others" && me && n.author === me) && !(narrow && viewHidesPlan(n)); }
-function notesOn(key){ const keys = Array.isArray(key) ? key : [key], seen = noteSeen(); return S.notes.filter(n=>keys.includes(noteOn(n)) && seen(n)); }
-function noteCounts(){ const seen = noteSeen(), m = new Map(); S.notes.forEach(n=>{ if (seen(n)){ const k = noteOn(n); m.set(k, (m.get(k) || 0) + 1); } }); return m; }
+// The notes the view shows, by the item they're on, in the plan's order: built once per draw instead of once per item drawn.
+// A draw-time cache (noteMemo, dropped by dropJiraMemos), and only for the notes list, Notes setting, person and filter it was built from.
+function noteIndex(){
+  const sig = (UI.notes || "all") + "|" + meId() + "|" + JSON.stringify(UI.filter || null);
+  if (noteMemo && noteMemo.notes === S.notes && noteMemo.n === S.notes.length && noteMemo.sig === sig) return noteMemo.m;
+  const seen = noteSeen(), m = new Map();
+  S.notes.forEach((n, i)=>{ if (!seen(n)) return; const k = noteOn(n); if (!m.has(k)) m.set(k, []); m.get(k).push(i); });
+  noteMemo = {notes:S.notes, n:S.notes.length, sig, m}; return m;
+}
+function notesOn(key){ const m = noteIndex(), keys = [...new Set(Array.isArray(key) ? key : [key])];
+  const at = keys.length === 1 ? (m.get(keys[0]) || []) : keys.flatMap(k=>m.get(k) || []).sort((a, b)=>a - b);
+  return at.map(i=>S.notes[i]); }
+function noteCounts(){ return new Map([...noteIndex()].map(([k, at])=>[k, at.length])); }
 const noteKeysOf = (x, type) => { const own = type + ":" + x.id, k = (type === "bar" || type === "task") && sideOf(x, type) === "jira" ? keysOf(x, type)[0] : null; return k ? ["jira:" + k, own] : [own]; };
 function noteBadge(key){
   const ns = notesOn(key); if (!ns.length) return null;
