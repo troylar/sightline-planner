@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.125.2",
+    "date": "2026-10-26",
+    "headline": "The side panel stays where you were",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Side panel",
+        "title": "Buttons in the side panel no longer jump it back to the top",
+        "before": "Clicking a button partway down the side panel, such as Copy files or Approve in the assistant panel, or a status in an initiative's panel, scrolled the panel back to the top every time.",
+        "now": "The panel stays where you were after a click. Opening a different item still starts at the top.",
+        "where": "The panel on the right: the planning assistant, and any item you open"
+      }
+    ]
+  },
+  {
     "version": "1.125.1",
     "date": "2026-10-26",
     "headline": "Calmer story shelves on the timeline",

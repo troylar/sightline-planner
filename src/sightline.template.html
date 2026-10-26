@@ -10636,9 +10636,13 @@ function composerSubmitted(key, entries, plan){
   for (const [field, value] of entries){ const id = composerKey(key, field, plan); if (composerDrafts.get(id) === value) composerDrafts.delete(id); }
   if (S.meta.planId === plan) renderSide();
 }
+// Redrawing the panel empties it first, which drops its scroll to the top; the same item keeps its place.
+let sideAt = null;
 function renderSide(){
   const ae = document.activeElement, id = ae?.closest("#side") && ae.id, start = id ? ae.selectionStart : null, end = id ? ae.selectionEnd : null;
+  const side = $("#side"), at = sel ? sel.type + ":" + sel.id : null, top = at && at === sideAt ? side.scrollTop : 0;
   renderSide0(); sideExtras(); foldItemOptions();
+  sideAt = sel ? sel.type + ":" + sel.id : null; if (top && sideAt === at) side.scrollTop = top;
   if (id){ const next = document.getElementById(id); if (next && !next.disabled){ next.focus({preventScroll:true}); if (start != null && typeof next.setSelectionRange === "function") next.setSelectionRange(start, end); } }
   if (pendingDelete){ const a = document.querySelector('#side [data-armed="1"]'); if (a) a.focus({preventScroll:true}); }
 }
