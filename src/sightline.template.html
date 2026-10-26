@@ -464,6 +464,11 @@ body.presenting #filterBtn,body.presenting #viewSave{display:none!important}
 .oopt small{margin-left:auto;color:var(--ink-3)}
 .oopt.act,.oopt:hover{background:var(--paper)}
 .oopt.add{color:var(--accent)}
+.oav{display:inline-flex;align-items:center;justify-content:center;flex:none;box-sizing:border-box;min-width:16px;height:16px;border-radius:8px;padding:0 3px;background:var(--pc);color:var(--pf);font-size:8.5px;font-weight:700;font-style:normal;line-height:1;letter-spacing:.02em;box-shadow:0 0 0 1px var(--surface);vertical-align:middle}
+.oav.ext{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--pc),0 0 0 1px var(--surface)}
+.oav.none{background:var(--surface);box-shadow:none;border:1.5px dashed var(--ink-3)}
+.oav.spot{box-shadow:0 0 0 2px var(--accent)}
+.bar>.oav,.tbar>.oav{position:absolute;right:3px;top:50%;margin-top:-8px}.bar:has(>.oav){padding-right:23px}.tbar:has(>.oav){padding-right:21px}.ownav{display:inline-flex;align-items:center;gap:6px}
 .tbar .who{display:inline-flex;gap:2px}
 .tbar .who .ini{min-width:15px;height:15px;font-size:8.5px;box-shadow:0 0 0 1px rgba(255,255,255,.6)}
 .offlist{display:flex;flex-direction:column;gap:5px}
@@ -1944,6 +1949,29 @@ function assigneeOf(x){
 const leadOf = x => { const a = assigneeOf(x); return a && a.id ? own(x).filter(id=>id !== a.id) : own(x); };
 const peopleOf = x => { const a = assigneeOf(x); return [...new Set([...(a && a.id ? [a.id] : []), ...leadOf(x)])]; };
 const iniFg = c => /^#[0-9a-f]{6}$/i.test(c || "") ? textOn(c) : "#ffffff";
+// Who owns a Jira item, as an avatar: initials in a circle, computed here from the plan's people and the Jira files'
+// display names. No pictures and nothing fetched. Two owners with the same initials get a third letter.
+let avMemo = null;
+function avIndex(){
+  if (avMemo && avMemo.J === JIRA && avMemo.P === S.people) return avMemo;
+  const ents = S.people.map(p=>({k:p.id, name:p.name, base:String(p.initials || autoInitials(p.name)).toUpperCase()})), seen = new Set();
+  [JIRA, JIRA_ISSUES].forEach(src=>Object.values(src && src.issues || {}).forEach(j=>{ const nm = String(j && j.assignee || "").trim();
+    if (!nm || seen.has(nm) || j.assigneeKey && personByJiraKey(j.assigneeKey)) return; seen.add(nm); ents.push({k:"~" + nm, name:nm, base:autoInitials(nm)}); }));
+  const by = new Map(), ini = new Map(); ents.forEach(e=>{ if (!by.has(e.base)) by.set(e.base, []); by.get(e.base).push(e); });
+  by.forEach(es=>es.forEach(e=>{ const w = e.name.trim().split(/\s+/), last = w[w.length - 1] || ""; ini.set(e.k, es.length > 1 && last.length > 1 ? e.base.slice(0, 2) + last[1].toLowerCase() : e.base); }));
+  return avMemo = {J:JIRA, P:S.people, ini};
+}
+const avColor = name => { let n = 0; for (const c of String(name)) n = (n * 31 + c.codePointAt(0)) | 0; return PERSON_COLORS[Math.abs(n) % PERSON_COLORS.length]; };
+// {id} for someone in the plan, {name} for a Jira assignee nobody linked, null for unassigned; undefined when there's no issue.
+const jiraWho = j => { if (!j) return undefined; const pp = j.assigneeKey ? personByJiraKey(j.assigneeKey) : null; return pp ? {id:pp.id} : j.assignee ? {name:j.assignee} : null; };
+const storyWho = x => x.owner ? {id:x.owner} : x.j && x.j.assignee ? {name:x.j.assignee} : null;
+function ownerAv(who, beside){   // beside: the name is written next to it, so it's decoration for a screen reader
+  const pp = who && who.id ? personById(who.id) : null, name = pp ? pp.name : who && who.name;
+  const named = say => beside ? {"aria-hidden":"true",title:say} : {role:"img",title:say,"aria-label":say};
+  if (!name) return h("i",{class:"oav none",...named("Unassigned")});
+  const k = pp ? pp.id : "~" + name, c = pp ? pp.color : avColor(name), say = `Owner: ${name}` + (pp && pp.external ? " (outside the team)" : "");
+  return h("i",{class:"oav" + (pp && pp.external ? " ext" : "") + (UI.spot && UI.spot === k ? " spot" : ""),...named(say),"data-who":k,style:{"--pc":c,"--pf":iniFg(c)}}, avIndex().ini.get(k) || autoInitials(name));
+}
 // An item's title. If its own Jira key is in the Jira files, it's Jira's summary (shown, never copied into the plan);
 // if the files aren't loaded, the stored label, marked stale; otherwise the plan's label. from: "jira" | "stale" | "plan".
 // The last title seen for each Jira key in this plan, kept in this browser only (never in the plan file), so an item a
@@ -5931,7 +5959,7 @@ function dayCols(){
 // ================= rendering =================
 function remember(){ const a = document.activeElement; if (!a || !a.dataset) return null; return a.dataset.key || (a.id && a.closest("#side") ? "#" + a.id : null); }
 function restore(key){ if (!key) return; const el = key[0] === "#" ? document.getElementById(key.slice(1)) : document.querySelector(`[data-key="${CSS.escape(key)}"]`); if (el && !el.disabled) el.focus({preventScroll:true}); }
-const dropJiraMemos = () => { noteMemo = null; fitMemo = null; storyMemo = null; countMemo = new Map(); epicListMemo = null; layerMemo = null; hideMemo = null; kindsMemo = null; tagMemo = null; seenMemo = null; };   // after any change to the plan, Jira data or the day
+const dropJiraMemos = () => { avMemo = null; noteMemo = null; fitMemo = null; storyMemo = null; countMemo = new Map(); epicListMemo = null; layerMemo = null; hideMemo = null; kindsMemo = null; tagMemo = null; seenMemo = null; };   // after any change to the plan, Jira data or the day
 // Selecting an item, or closing its panel, keeps the chart on screen when nothing it shows has changed since it was drawn:
 // the highlight moves to the elements tagged data-sel and the rest of the page draws as usual. Anything else draws in full:
 // another page or zoom, an edit, Jira, a new day or width, a kind of item not listed here, an item that isn't drawn yet, or
@@ -6506,7 +6534,7 @@ function weekItemEl(it, style, id, canDrag){
       style:Object.assign(style, barPaint(b, lane, fg))},
       canDrag ? h("span",{class:"h l","data-edge":"l","aria-hidden":"true"}) : null, keyChip(b, "bar"), h("span",{class:"nm"}, (st==="done" ? "✓ " : "") + chartLabel(b)),
       h("span",{class:"tags"}, shared ? h("span",{class:"tag soft",title:ownerNames(b).join(", ")}, `+${own(b).length-1}`) : null, isLate(b) ? h("span",{class:"tag bad"},"late") : null),
-      canDrag ? h("span",{class:"h r","data-edge":"r","aria-hidden":"true"}) : null);
+      b.jira && jiraOf(b.jira) ? ownerAv(jiraWho(jiraOf(b.jira))) : null, canDrag ? h("span",{class:"h r","data-edge":"r","aria-hidden":"true"}) : null);
     if (canDrag) el.addEventListener("pointerdown", e=>{ startDrag(e, "bar", b.id, e.target.dataset.edge || "move"); if (drag) drag.fromPerson = id ?? "none"; });
     if (canDrag) el.addEventListener("keydown", e=>keyNudge(e, "bar", b.id));
     else el.addEventListener("keydown", e=>{ if (e.key==="Enter" || e.key===" "){ e.preventDefault(); select("bar", b.id); } });
@@ -6516,7 +6544,7 @@ function weekItemEl(it, style, id, canDrag){
     const x = it.x, late = x.e < todayDay() && x.status !== "done";
     const el = h("div",{"data-sel":"story:"+x.key,class:["bar","taskbar","story","jlock","jira","st-" + x.status, late ? "late" : "", sel && sel.type === "story" && sel.id === x.key ? "selected" : ""].join(" "), role:"button", tabindex:"0", "data-key":"story:"+x.key+":"+(id ?? "none"),
       "aria-label":`${x.key}: ${x.j.summary || x.key}. In ${chartLabel(b)}. ${fmtDay(it.s)} to ${fmtDay(it.e)}. From Jira`, "data-peek-type":"story", "data-peek-id":x.key, style:Object.assign(style, jiraPaint(lane))},
-      h("span",{class:"jkey"}, x.key), h("span",{class:"nm"}, (x.status==="done" ? "✓ " : "") + (x.j.summary || x.key)), canDrag ? h("span",{class:"tags"}, h("span",{class:"tag soft"}, chartLabel(b).slice(0,22))) : null);
+      h("span",{class:"jkey"}, x.key), h("span",{class:"nm"}, (x.status==="done" ? "✓ " : "") + (x.j.summary || x.key)), canDrag ? h("span",{class:"tags"}, h("span",{class:"tag soft"}, chartLabel(b).slice(0,22))) : null, ownerAv(storyWho(x)));
     el.addEventListener("click", ()=>select("story", x.key));
     el.addEventListener("keydown", e=>{ if (e.key==="Enter" || e.key===" "){ e.preventDefault(); select("story", x.key); } });
     return el;
@@ -6525,7 +6553,7 @@ function weekItemEl(it, style, id, canDrag){
     const tj = sideOf(t, "task") === "jira";
     const el = h("div",{"data-sel":"task:"+t.id,class:["bar","taskbar","st-"+t.status, late?"late":"", selected?"selected":"", tj ? "jira" : "plan"].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id+":"+(id ?? "none"),
       "aria-label":`${taskTitle(t)}. In ${chartLabel(b)}. ${fmtDay(it.s)} to ${fmtDay(it.e)}`, "data-peek-type":"task", "data-peek-id":t.id, style:Object.assign(style, tj ? jiraPaint(lane) : {backgroundColor:lane.color, color:fg})},
-      keyChip(t, "task"), h("span",{class:"nm"}, (t.status==="done" ? "✓ " : "") + taskTitle(t)), noteBadge(noteKeysOf(t, "task")), canDrag ? h("span",{class:"tags"}, h("span",{class:"tag soft"}, chartLabel(b).slice(0,22))) : null);
+      keyChip(t, "task"), h("span",{class:"nm"}, (t.status==="done" ? "✓ " : "") + taskTitle(t)), noteBadge(noteKeysOf(t, "task")), canDrag ? h("span",{class:"tags"}, h("span",{class:"tag soft"}, chartLabel(b).slice(0,22))) : null, t.jira && jiraOf(t.jira) ? ownerAv(jiraWho(jiraOf(t.jira))) : null);
     el.addEventListener("click", ()=>select("task", t.id));
     el.addEventListener("keydown", e=>{ if (e.key==="Enter" || e.key===" "){ e.preventDefault(); select("task", t.id); } });
     return el;
@@ -6605,7 +6633,7 @@ function dayItemEl(it, style, id, canDrag){
     const el = h("div",{"data-sel":"story:"+x.key,class:["tbar story jlock jira","st-" + x.status, late ? "late" : "", selected ? "selected" : ""].join(" "), role:"button", tabindex:"0", "data-key":"story:"+x.key+":"+(id ?? "none"), "aria-label":title.replace(/\n/g,". "), "data-peek-type":"story", "data-peek-id":x.key,
       style:Object.assign(style, jiraPaint(lane))},
       h("span",{class:"jkey"}, x.key), h("span",{class:"nm"}, (x.status === "done" ? "✓ " : "") + (x.j.summary || x.key)),
-      h("span",{class:"tags"}, late ? h("span",{class:"tag bad"},"late") : null, canDrag ? h("span",{class:"tag"}, chartLabel(b).slice(0,18)) : null));
+      h("span",{class:"tags"}, late ? h("span",{class:"tag bad"},"late") : null, canDrag ? h("span",{class:"tag"}, chartLabel(b).slice(0,18)) : null), ownerAv(storyWho(x)));
     el.addEventListener("click", ()=>select("story", x.key));
     el.addEventListener("keydown", e=>{ if (e.key==="Enter" || e.key===" "){ e.preventDefault(); select("story", x.key); } });
     return el;
@@ -8626,7 +8654,7 @@ function renderGantt(){
           s ? h("span",{class:"tag " + (s>0?"bad":"")}, fmtW(s)) : null,
           r && st!=="done" ? h("span",{class:"tag",title:`${r.done} of ${r.n} done · ${r.pct}% of the work by task-days`}, `${r.done}/${r.n} ${hasKids(b) ? "items" : "tasks"}`) : null,
           (()=>{ const jr = epicRollup(b); return jr && jr.total ? h("span",{class:"tag jr",title:`From Jira: ${jr.done} of ${jr.total} stories done, ${jr.inprogress} in progress` + (jr.points ? ` · ${fmtPts(jr.pointsDone)} of ${fmtPts(jr.points)} points` : "") + (jr.cut ? " · counted in part" : "")}, `${jr.done}/${jr.total} stories` + (jr.cut ? " (partial)" : "")) : null; })()),
-        sideOf(b, "bar") === "plan" ? authorChip(b) : null,
+        sideOf(b, "bar") === "plan" ? authorChip(b) : null, b.jira && jiraOf(b.jira) ? ownerAv(jiraWho(jiraOf(b.jira))) : null,
         derived(b) ? null : h("span",{class:"h r","data-edge":"r","aria-hidden":"true"}));
       el.addEventListener("dblclick", e=>{ e.stopPropagation(); openInitiative(b.id); });
       el.addEventListener("pointerdown", e=>startDrag(e,"bar",b.id,derived(b) ? "move" : (e.target.dataset.edge||"move")));
@@ -8685,7 +8713,7 @@ function shelfTile(t){
     onclick:t.open, onkeydown:e=>{ if (e.key === "Enter" || e.key === " "){ e.preventDefault(); t.open(); } }},
     h("span",{class:"tt"}, t.title),
     h("span",{class:"mt"}, propChip([t.key]), h("b",{class:"pts"}, t.pts == null ? "?" : fmtPts(t.pts) + " pt"), h("span",{class:"sym","aria-hidden":"true"}, SHELF_SYM[t.st] + (t.blk ? " ⛔" : "")),
-      h("span",{class:"who" + (nm ? "" : " none")}, pp ? pp.initials || initials(pp.name) : nm ? initials(nm) : "unassigned")));
+      ownerAv(t.who ? {id:t.who} : t.whoName ? {name:t.whoName} : null)));
 }
 // One tab stop per shelf: arrows move along it, Home and End go to its ends, Enter opens the story.
 function shelfKeys(e){
@@ -9115,7 +9143,7 @@ function peekContent(type, id){
     story = h("div",{class:"pk-story"}, typeof x.j.description === "string" && x.j.description.trim() ? [h("div",{class:"pk-src"}, "From Jira"), mdRender(wikiToMd(x.j.description), 4)] : h("p",{class:"pk-nostory"}, "No description in Jira"));
     row("Sprint", x.when ? `${x.j.sprint} (${fmtDay(x.when.s)} → ${fmtDay(x.when.e)})` : "Not in a sprint yet");
     row("Status", x.label + (x.label !== JSTATE_LABEL[x.state] && JSTATE_LABEL[x.state] ? ` · ${JSTATE_LABEL[x.state].toLowerCase()} here` : ""));
-    row("Assignee", x.owner ? initialsRow([x.owner]) : x.j.assignee);
+    row("Assignee", h("span",{class:"ownav"}, ownerAv(storyWho(x), true), x.owner ? personById(x.owner)?.name || x.j.assignee : x.j.assignee || "Unassigned"));
     row("Points", typeof x.j.points === "number" ? fmtPts(x.j.points) : "");
     hint = "From Jira; change it there · click for details";
   } else if (type === "task"){
@@ -9265,7 +9293,7 @@ function wirePeekOn(g){
 function pinBarLabels(g){
   if (UI.zoom === "days") return;
   g.querySelectorAll(".track > .bar").forEach(el=>{ if (el.querySelector(":scope > .bin")) return;
-    const kids = [...el.childNodes].filter(k=>!(k.classList && k.classList.contains("h"))); if (!kids.length) return;
+    const kids = [...el.childNodes].filter(k=>!(k.classList && (k.classList.contains("h") || k.classList.contains("oav"))));   // the avatar stays at the bar's right end if (!kids.length) return;
     const bin = document.createElement("span"); bin.className = "bin"; bin.append(...kids);
     const l = el.querySelector(":scope > .h.l"); l ? l.after(bin) : el.prepend(bin); });
 }
@@ -9277,9 +9305,11 @@ let pins = null, pinRaf = 0;
 function pinLabels(){
   const sc = $("#gscroll"), g = $("#gantt"); if (!sc || !g || UI.ws !== "timeline") return;
   if (!pins){ const gr = g.getBoundingClientRect(), at = (el, box) => { const r = el.getBoundingClientRect(); return {el, box, x:r.left - gr.left, w:r.width, mw:el.style.maxWidth, on:false}; };
-    pins = [...g.querySelectorAll(".track > .flag")].map(el=>{ const t = el.querySelector(":scope > .fl-t"); return {...at(el, el), need:t ? el.getBoundingClientRect().width - t.getBoundingClientRect().width + 30 : 28}; }).concat([...g.querySelectorAll(".track > .bar")].map(el=>{ const b = el.querySelector(":scope > .bin"); return b ? {...at(el, b), mw:b.style.maxWidth, bar:true} : null; }).filter(Boolean)).filter(p=>p.w); }
+    pins = [...g.querySelectorAll(".track > .flag")].map(el=>{ const t = el.querySelector(":scope > .fl-t"); return {...at(el, el), need:t ? el.getBoundingClientRect().width - t.getBoundingClientRect().width + 30 : 28}; }).concat([...g.querySelectorAll(".track > .bar")].map(el=>{ const b = el.querySelector(":scope > .bin"); const av = el.querySelector(":scope > .oav");
+      const r = el.getBoundingClientRect();   // with an avatar, the name stops 4px before it, wherever the bar's padding puts the name
+      return b ? {...at(el, b), mw:b.style.maxWidth, bar:true, pad:av ? b.getBoundingClientRect().left - r.left + r.right - av.getBoundingClientRect().left + 4 : 22} : null; }).filter(Boolean)).filter(p=>p.w); }
   const edge = sc.scrollLeft + (parseFloat(g.style.getPropertyValue("--lw")) || 0);
-  pins.forEach(p=>{ const over = edge - p.x, room = p.w - over - (p.bar ? 22 : 0), on = over > 1 && room >= (p.bar ? 16 : p.need), gone = over > 1 && !on && over < p.w;
+  pins.forEach(p=>{ const over = edge - p.x, room = p.w - over - (p.bar ? p.pad : 0), on = over > 1 && room >= (p.bar ? 16 : p.need), gone = over > 1 && !on && over < p.w;
     if (on){ p.box.style.transform = `translateX(${over}px)`; p.box.style.maxWidth = room + "px"; if (!p.on) p.el.classList.add("pinl"); p.on = true; }
     else if (p.on){ p.box.style.transform = ""; p.box.style.maxWidth = p.mw; p.el.classList.remove("pinl"); p.on = false; }
     if (gone !== !!p.gone){ p.box.classList.toggle("pingone", gone); p.gone = gone; } });   // too little left to read: nothing, never a fragment
@@ -9580,7 +9610,7 @@ function renderDays(){
           keyChip(t, "task"),
           h("span",{class:"nm"}, (t.status==="done" ? "✓ " : "") + taskTitle(t)), noteBadge(noteKeysOf(t, "task")),
           h("span",{class:"tags"}, late ? h("span",{class:"tag bad"},"late") : null, isBlocked(t) ? h("span",{class:"tag bad",title:"Blocked: " + t.blocked.reason},"⛔") : null, (m => m ? h("span",{class:"tag jira",title:"Jira and the plan disagree"}, `Jira: ${JCAT_LABEL[m.category]}`) : null)(jiraMismatch(t)), sl ? h("span",{class:"tag"+(sl>0?" bad":"")}, fmtD(sl)) : null),
-          own(t).length ? h("span",{class:"who"}, ...own(t).map(id=>{ const pp = personById(id); return h("i",{class:"ini",style:{background:pp?.color||"#888", color:iniFg(pp?.color)},title:pp?.name||""}, pp?.initials || "?"); })) : null,
+          t.jira && jiraOf(t.jira) ? ownerAv(jiraWho(jiraOf(t.jira))) : own(t).length ? h("span",{class:"who"}, ...own(t).map(id=>{ const pp = personById(id); return h("i",{class:"ini",style:{background:pp?.color||"#888", color:iniFg(pp?.color)},title:pp?.name||""}, pp?.initials || "?"); })) : null,
           h("span",{class:"h r","data-edge":"r","aria-hidden":"true"}));
         el.addEventListener("pointerdown", e=>startTaskDrag(e, t.id, e.target.dataset.edge || "move"));
         el.addEventListener("keydown", e=>taskKey(e, t.id));
@@ -9596,13 +9626,11 @@ function renderDays(){
         if (!vis(y.s, y.e)) return;
         const x = y.x, selected = sel && sel.type === "story" && sel.id === x.key, late = x.e < todayDay() && x.status !== "done", top = (22 + tp.pos.get(y.id)*28) + "px";
         const title = [`${x.key}: ${y.nm}`, `${x.j.sprint} (${fmtDay(x.when.s)} → ${fmtDay(x.when.e)})`, "Status: " + x.label + (late ? " (late)" : ""), x.j.assignee ? "Assignee: " + x.j.assignee : "", "From Jira; change it there"].filter(Boolean).join("\n");
-        const who = x.owner && personById(x.owner);
         const el = h("div",{"data-sel":"story:"+x.key,class:["tbar story jlock jira","st-" + x.status, late ? "late" : "", selected ? "selected" : ""].join(" "), role:"button", tabindex:"0", "data-key":"story:" + x.key, "aria-label":title.replace(/\n/g, ". "), "data-peek-type":"story", "data-peek-id":x.key,
           style:Object.assign(pos(y.s, y.e), {top}, jiraPaint(lane))},
           h("span",{class:"jkey",title:"From Jira: " + x.key}, x.key), noteBadge("jira:" + x.key), propChip([x.key]),
           h("span",{class:"nm"}, (x.status === "done" ? "✓ " : "") + y.nm),
-          h("span",{class:"tags"}, late ? h("span",{class:"tag bad"},"late") : null),
-          who ? h("span",{class:"who"}, h("i",{class:"ini",style:{background:who.color || "#888", color:iniFg(who.color)},title:who.name}, who.initials || "?")) : null);
+          h("span",{class:"tags"}, late ? h("span",{class:"tag bad"},"late") : null), ownerAv(storyWho(x)));
         el.addEventListener("click", ()=>select("story", x.key));
         el.addEventListener("keydown", e=>{ if (e.key === "Enter" || e.key === " "){ e.preventDefault(); select("story", x.key); } });
         if (y.out){ el.classList.add("narrow"); el.querySelector(".nm").textContent = x.status === "done" ? "✓" : ""; el.querySelector(".tags").remove(); }
@@ -10390,7 +10418,7 @@ function jiraFacts(x, type){
   const st = jiraStateOf(j); row("Status", st ? st.label + (JSTATE_LABEL[st.state] && st.label !== JSTATE_LABEL[st.state] ? ` (${JSTATE_LABEL[st.state].toLowerCase()} here)` : "") : j.status);
   if (isEpic(j) && type === "bar"){ const r = epicRollup(x); if (r) row("Stories", `${r.done} of ${r.total} done` + (r.inprogress ? `, ${r.inprogress} in progress` : "") + (r.off ? `, ${r.off} switched off here` : "") + (r.cut ? " (partial)" : ""));
     if (r && r.sprintStart && r.sprintEnd) row("Sprints", `${fmtDay(isoToDay(r.sprintStart))} – ${fmtDay(isoToDay(r.sprintEnd))}`); if (keys.length > 1) row("Also", `${keys.length - 1} more epic${keys.length > 2 ? "s" : ""}: ${keys.slice(1).join(", ")}`); }
-  else { row("Assignee", j.assignee || "Nobody"); row("Sprint", j.sprint ? j.sprint + (j.sprintStart && j.sprintEnd ? ` (${fmtDay(isoToDay(j.sprintStart))} – ${fmtDay(isoToDay(j.sprintEnd))})` : "") : "Not in a sprint");
+  else { row("Assignee", h("span",{class:"ownav"}, ownerAv(jiraWho(j), true), j.assignee || "Nobody")); row("Sprint", j.sprint ? j.sprint + (j.sprintStart && j.sprintEnd ? ` (${fmtDay(isoToDay(j.sprintStart))} – ${fmtDay(isoToDay(j.sprintEnd))})` : "") : "Not in a sprint");
     if (typeof j.points === "number") row("Points", fmtPts(j.points)); }
   row("Type", j.type); if ((j.labels || []).length) row("Labels", j.labels.join(", "));
   { const dv = JIRA && JIRA.dev && JIRA.dev[key]; if (dv && dv.prs.length) row("Pull requests", h("ul",{class:"prlist"}, ...dv.prs.slice(0, 8).map(p=>h("li",{},
@@ -12201,7 +12229,7 @@ function drawCards(host){
   const sel0 = sel && ["story","task","bar"].includes(sel.type) ? sel.type + ":" + sel.id : "";
   const field = (k, c) => { const j = c.j;
     if (k === "status") return h("span",{class:"cvst st-" + c.state}, h("i",{"aria-hidden":"true"}, (CV_STATES.find(x=>x[0] === c.state) || [])[2] || "○"), " ", c.label || j.status || "");
-    if (k === "assignee") return h("span",{class:"cvwho"}, c.who ? (personById(c.who) || {}).name : c.whoName || "Unassigned");
+    if (k === "assignee") return h("span",{class:"cvwho ownav"}, ownerAv(c.who ? {id:c.who} : c.whoName ? {name:c.whoName} : null, true), c.who ? (personById(c.who) || {}).name : c.whoName || "Unassigned");
     if (k === "points") return c.pts == null ? h("span",{class:"cvpts none"}, "no points") : h("span",{class:"cvpts"}, `${fmtPts(c.pts)} pts`);
     if (k === "sprint") return h("span",{}, c.sp === "none" ? "No sprint" : j.sprint || "");
     if (k === "epic") return c.epic ? h("span",{class:"cvep"}, h("span",{class:"jkey"}, c.epic), " ", (issueOf(c.epic) || {}).summary || "") : null;
@@ -13973,7 +14001,7 @@ function drawStandup(host){
   const card = it => { const lane = lanes.get(it.lane) || {color:"#5c6878"};
     return h("button",{type:"button",class:`sucard ${it.side} st-${it.state}`,"data-card":it.key,style:{"--lc":lane.color},...(it.type === "jira" ? {"aria-label":`Open ${it.jkey} in Jira (new tab): ${it.title}`} : {"aria-expanded":String(!!sel && sel.type === it.type && sel.id === it.id),"aria-controls":"side"}),onclick:()=>{ if (it.type === "jira") return openCardItem(it); select(it.type, it.id); const hd = document.querySelector("#side .sidehead h3"); if (hd){ hd.tabIndex = -1; hd.focus(); } }},
       h("span",{class:"sutop"}, it.jkey ? h("span",{class:"jkey"}, it.jkey) : null, h("span",{class:"sut"}, it.title)),
-      h("span",{class:"sumeta"}, it.where, it.whoName && !it.who.length ? " · " + it.whoName : "", it.notes ? ` · ✎ ${it.notes} note${it.notes===1?"":"s"}` : ""),
+      h("span",{class:"sumeta"}, it.where, it.whoName && !it.who.length ? h("span",{class:"ownav"}, " · ", ownerAv({name:it.whoName}, true), it.whoName) : "", it.notes ? ` · ✎ ${it.notes} note${it.notes===1?"":"s"}` : ""),
       fieldBits(it).length ? h("span",{class:"sufields" + (it.j && updDay(it.j) && todayDay() - isoToDay(updDay(it.j)) >= 7 && it.state !== "done" ? " stale" : "")}, fieldBits(it).join(" · ")) : null,
       (sv => sv.length ? h("span",{class:"suserves",title:sv.map(d=>d.name).join("\n")}, h("span",{class:"sv-l"}, "Serves"), " ", sv.slice(0, 2).map(d=>d.name).join(", ") + (sv.length > 2 ? ` +${sv.length - 2}` : "")) : null)(servesOf(it.jkey)),
       it.flags.length ? h("span",{class:"suflags"}, ...it.flags.map(([k, t])=>h("span",{class:"tag " + k}, t))) : null); };
@@ -14327,7 +14355,7 @@ function storiesField(b){
   const row = x => h("li",{class:"storyrow " + x.state + (x.off ? " off" : ""), "data-story":x.key},
     h("span",{class:"ek"}, jiraUrl(x.key) ? h("a",{class:"jlink",href:jiraUrl(x.key),target:"_blank",rel:"noopener noreferrer",title:`Open ${x.key} in Jira`}, x.key) : x.key),
     h("span",{class:"es",title:x.j.summary}, x.j.summary || x.key),
-    h("span",{class:"hint"}, [x.label, x.when ? (x.j.sprint || "") + (x.inPlan ? "" : " (outside this plan)") : "no sprint yet", x.j.assignee, x.task ? "also a task here" : ""].filter(Boolean).join(" · ")),
+    ownerAv(storyWho(x)), h("span",{class:"hint"}, [x.label, x.when ? (x.j.sprint || "") + (x.inPlan ? "" : " (outside this plan)") : "no sprint yet", x.j.assignee, x.task ? "also a task here" : ""].filter(Boolean).join(" · ")),
     quick && x.state !== "abandoned" ? h("button",{type:"button",class:"linkish sw","data-sw":x.key,"aria-label":`${x.off ? "Switch on" : "Switch off"}: ${x.key}`,onclick:()=>storyOff(b.id, [x.key], x.off)}, x.off ? "Switch on" : "Switch off") : null);
   const grp = (title, list, hint, openIt) => list.length ? h("details",{class:"sgroup", open:openIt}, h("summary",{}, `${title} (${list.length})`, hint ? h("span",{class:"hint"}, " · " + hint) : null), h("ul",{class:"storylist"}, ...list.map(row))) : null;
   const drawn = all.filter(x=>x.drawn).length;
@@ -14514,6 +14542,7 @@ function setListLayout(v){ setListLayoutQuiet(v); render(); }
 const listTree = layout => layout === "initiative" || layout === "lane";   // these keep the initiative tree: headers, indents
 const listLane = id => S.lanes.find(l=>l.id === id)?.name || "";
 const listLaneChip = id => { const l = S.lanes.find(x=>x.id === id); return l ? h("i",{class:"lsw","aria-hidden":"true",style:{"--lc":l.color}}) : null; };
+const listAv = r => r.type === "story" ? storyWho(r.x) : r.x.jira && jiraOf(r.x.jira) ? jiraWho(jiraOf(r.x.jira)) : undefined;   // Jira items show their owner's avatar
 const listWhen = n => n == null ? "" : dayToDate(n).getUTCFullYear() === dayToDate(todayDay()).getUTCFullYear() ? fmtDay(n) : fmtDayY(n);
 const listPerson = id => { const p = personById(id); return p ? p.name + (p.inactive ? " (inactive)" : p.external ? " (outside the team)" : "") : "Former member"; };
 // Who's on an item: plan owners for plan items; for Jira items, the Jira assignee and, labeled apart, any plan lead.
@@ -14689,7 +14718,7 @@ function renderList(){
       : x.url ? h("a",{href:x.url,target:"_blank",rel:"noopener noreferrer",class:"linkish",onclick:e=>e.stopPropagation()}, x.text + " ↗") : x.text))) : "";
     return h("tr",{class:["lrow", r.header ? "lhead" : "", on ? "lsel" : "", r.why ? "loff" : ""].join(" "), tabindex:"-1", "data-key":keyOf(r) + (g && g.person != null ? "@" + g.person : ""), "data-lk":keyOf(r),
       "data-peek-type":r.type, "data-peek-id":r.id, "aria-selected":on ? "true" : "false", onclick:()=>{ listFocus = keyOf(r); select(r.type, r.id); }},
-      h("td",cc("start", "ld"), listWhen(r.s)), h("td",cc("end", "ld"), listWhen(r.e)), name, layout === "lane" ? null : h("td",cc("lane", "llane"), listLaneChip(r.b.lane), listLane(r.b.lane)), h("td",cc("owner", "lown"), ...o.text.map((t, i)=>h("div",{class:i ? "hint" : ""}, t))),
+      h("td",cc("start", "ld"), listWhen(r.s)), h("td",cc("end", "ld"), listWhen(r.e)), name, layout === "lane" ? null : h("td",cc("lane", "llane"), listLaneChip(r.b.lane), listLane(r.b.lane)), h("td",cc("owner", "lown"), ...o.text.map((t, i)=>h("div",{class:i ? "hint" : i === 0 && listAv(r) !== undefined ? "ownav" : ""}, i === 0 && listAv(r) !== undefined ? ownerAv(listAv(r), true) : null, t))),
       h("td",cc("waits", "lw"), waits), h("td",cc("status", "lst"), h("div",{}, s.text), s.jira ? h("div",{class:"hint"}, s.jira) : null));
   };
   const head = h("thead",{}, h("tr",{}, ...listColsShown(layout).map(([k, t])=>h("th",{scope:"col","data-col":k}, t,
