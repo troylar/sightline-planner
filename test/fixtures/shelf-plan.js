@@ -1,13 +1,15 @@
 // A synthetic plan for sprint shelves, built on sample-plan.json after it loads. API v2 (lane "chat") gets an epic
 // initiative with stories in two sprints (every status category, with and without points, zero points, one very large,
 // one canceled, one with no sprint, one with a hostile summary), and one-story initiatives: one blocked in the plan, one
-// under a parent initiative, and one with no sprint (which stays a bar). Sprints: S0 from Sep 21, two weeks each.
+// under a parent initiative, and one with no sprint (which stays a bar). Search (rag) has a short shelf: one story this
+// sprint and one in Sprint 3. Sprints: S0 from Sep 21, two weeks each.
 // Every name and key here is invented.
 module.exports = `window.shelfPlan = () => {
   const B = id => S.bars.find(b=>b.id === id);
   S.people = [{id:"pa", name:"Avery Stone", jira:{key:"u-avery", user:"avery", name:"Avery Stone"}}, {id:"pb", name:"Blake Ito", jira:{key:"u-blake", user:"blake", name:"Blake Ito"}},
     {id:"pc", name:"Casey Moore", jira:{key:"u-casey", user:"casey", name:"Casey Moore"}}];
   B("c3").epics = ["ABC-100"];
+  B("r2").epics = ["ABC-200"];
   S.bars.push({id:"lf1", lane:"chat", label:"Rate-limit headers", start:2, span:2, jira:"ABC-120", status:"inprogress", blocked:{reason:"Waiting on the gateway team"}},
     {id:"lf2", lane:"chat", label:"SDK version bump", start:2, span:2, jira:"ABC-121", status:"done"},
     {id:"lf3", lane:"chat", label:"Retry hints", start:6, span:2, jira:"ABC-122", parent:"c4", status:"notstarted"},
@@ -29,8 +31,11 @@ module.exports = `window.shelfPlan = () => {
     "ABC-120":{...st("In Progress", "inprogress"), ...s1, summary:"Rate-limit headers", points:3, assignee:"Blake Ito", assigneeKey:"u-blake"},
     "ABC-121":{...st("Done", "done"), ...s1, summary:"SDK version bump", points:2, assignee:"Avery Stone", assigneeKey:"u-avery"},
     "ABC-122":{...st("To Do", "todo"), ...s3, summary:"Retry hints"},
-    "ABC-123":{...st("To Do", "todo"), summary:"Webhooks spike"}};
+    "ABC-123":{...st("To Do", "todo"), summary:"Webhooks spike"},
+    "ABC-200":{summary:"Ranking pass", status:"In Progress", category:"inprogress", type:"Epic"},
+    "ABC-201":{...st("In Progress", "inprogress"), ...s1, summary:"Synonym table", points:2, assignee:"Blake Ito", assigneeKey:"u-blake"},
+    "ABC-202":{...st("To Do", "todo"), ...s3, summary:"Boost recent results", assignee:"Avery Stone", assigneeKey:"u-avery"}};
   JIRA = {kind:"sightline-jira-status", version:1, generatedAt:"2026-10-07T08:00:00Z", sprints:[], releases:[], issues:I,
-    rollups:{"ABC-100":{children:["ABC-101","ABC-102","ABC-103","ABC-104","ABC-105","ABC-106","ABC-107","ABC-108","ABC-109"]}}};
+    rollups:{"ABC-100":{children:["ABC-101","ABC-102","ABC-103","ABC-104","ABC-105","ABC-106","ABC-107","ABC-108","ABC-109"]}, "ABC-200":{children:["ABC-201","ABC-202"]}}};
   dropJiraMemos(); resetHistory(); sel = null; render();
 };`;

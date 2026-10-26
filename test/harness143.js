@@ -2,7 +2,8 @@
 // on one scale (a minimum, a cap past 13), instead of a bar each; one-story initiatives become loose stories and stay in
 // the plan. Not estimated is its own strip; status reads without color; canceled is left out; no sprint is Unscheduled;
 // summaries are honest; folded at Fit, tiles at one sprint, a choice per workstream beats the zoom; arrows move within
-// a shelf; a spotlight lights up one person. Fixed clock; the plan from fixtures/shelf-plan.js. Every name is invented.
+// a shelf; a spotlight from the Show menu lights up one person on every shelf. The label is two short lines with the
+// whole summary in its hover and screen-reader text. Fixed clock; the plan from fixtures/shelf-plan.js. Every name is invented.
 const {JSDOM, VirtualConsole} = require("jsdom"), fs = require("fs"), path = require("path");
 const html = fs.readFileSync(process.env.SIGHTLINE_HTML || path.join(__dirname, "..", "dist", "sightline.html"), "utf8").replace(/<link[^>]+fonts[^>]+>/, "");
 const FIX = fs.readFileSync(path.join(__dirname, "fixtures", "sample-plan.json"), "utf8"), SHELF = require("./fixtures/shelf-plan.js");
@@ -38,9 +39,12 @@ async function open(){
     ok("S1 the summary is honest: estimated points, done (estimated points), the unestimated count", /^API v2, S1: 8 stories · 35 pts estimated, 7 done \(estimated points\) · 1 not estimated/.test(s1), s1);
     ok("S2 canceled is left out of every count", !/Old offset shim/.test(row().textContent) && !/43 pts/.test(s1));
     ok("S3 the row says capacity is unknown, never a load against it", (cells()[0].click(), /capacity unavailable/.test(row().textContent)));
+    const foot = cells()[0].querySelector(".shsum"), whole = "S1: 8 stories · 35 pts estimated, 7 done (estimated points) · 1 not estimated · capacity unavailable";
+    ok("S4 a sprint's footer is short like the label; the whole sentence is its hover and screen-reader text", foot.querySelector(".shsumt").textContent === "S1· 8 stories· 35 pts· 7 done· 1 not est." && foot.title === whole && foot.querySelector(".vh").textContent === whole, foot.querySelector(".shsumt").textContent);
     // Expanded by hand at Fit: the manual choice beats the zoom.
     ok("E1 opening a workstream's shelves by hand shows the tiles, even at Fit", ev("UI.shelfOpen.chat") === true && !!tile("story:ABC-101"));
-    ok("E1 …and the label's button says what it does now", row().querySelector(".shtog").getAttribute("aria-expanded") === "true" && /Show summaries only/.test(row().querySelector(".shtog").textContent));
+    const tg = () => row().querySelector('[data-key="shtog:chat"]');
+    ok("E1 …and the label's toggle is pressed, with a name and a tooltip that say what it does", tg().classList.contains("shtgl") && tg().getAttribute("aria-pressed") === "true" && tg().getAttribute("aria-label") === "Show API v2's stories as tiles" && /Click for summaries only/.test(tg().title));
     const wd = k => parseFloat(tile(k).style.width);
     ok("W1 widths follow points on one scale: 118 px, plus 11 a point", wd("story:ABC-101") === 118 + 5 * 11 && wd("story:ABC-102") === 118 + 3 * 11 && wd("bar:lf1") === 118 + 3 * 11, [wd("story:ABC-101"), wd("story:ABC-102")].join(","));
     ok("W2 zero points is a real estimate: the minimum width, shown as 0 pt", wd("story:ABC-105") === 118 && /0 pt/.test(tile("story:ABC-105").textContent));
@@ -59,7 +63,7 @@ async function open(){
     ok("G2 a one-story initiative under a parent sits with its parent", tile("bar:lf3").closest(".shgrp").querySelector(".shgn").textContent === ev("chartLabel(barById('c4'))"));
     const order = [...cells()[0].querySelector(".shgrp .shelf").querySelectorAll(".shtile")].map(t=>t.dataset.key.split(":")[1]);
     ok("G3 a stable reading order: in progress, not started, done, then by key", order.join(",") === "ABC-102,ABC-103,ABC-106,ABC-101,ABC-105,ABC-104", order.join(","));
-    ok("N1 a story with no sprint is in the Unscheduled count, not on a shelf", /Unscheduled: 1 story/.test(row().querySelector(".shlab").textContent) && !tile("story:ABC-109"));
+    ok("N1 a story with no sprint is in the Unscheduled count, not on a shelf", row().querySelector(".shunb").textContent === "1 unscheduled story›" && row().querySelector(".shunb").title === "Unscheduled: 1 story with no sprint in this plan" && row().querySelector(".shunb").getAttribute("aria-label") === row().querySelector(".shunb").title && !tile("story:ABC-109") && /1 no sprint/.test(row().querySelector(".shl2").textContent));
     row().querySelector('[data-key="shnone:chat"]').click();
     ok("N1 …and opens to show it", !!tile("story:ABC-109"));
     // Keyboard: one tab stop per shelf, arrows move, Enter opens the panel.
@@ -74,10 +78,30 @@ async function open(){
     ok("K3 …and focus comes back to the tile after the redraw", d.activeElement?.dataset.key === "story:ABC-104");
     tile("bar:lf1").click();
     ok("K4 a one-story initiative opens as itself", J("sel").type === "bar" && J("sel").id === "lf1" && tile("bar:lf1").classList.contains("selected"));
-    // Spotlight.
-    const sp = row().querySelector(".shspot select"); sp.value = "pb"; sp.dispatchEvent(new w.Event("change", {bubbles:true}));
-    ok("P1 a spotlight lights up one person's tiles and dims the rest", row().classList.contains("spot") && tile("story:ABC-102").classList.contains("me") && tile("bar:lf1").classList.contains("me") && !tile("story:ABC-101").classList.contains("me"));
-    ok("P1 …with their points and unknowns", /Blake Ito: 3 stories, 6 pts/.test(row().querySelector(".shme").textContent), row().querySelector(".shme").textContent);
+    // The label: two short lines, the full summary in its hover and screen-reader text; no controls or notes crowd it.
+    const lab = () => row().querySelector(".shlab"), seen = el => [...el.querySelectorAll(".shl1t,.shl2")].map(x=>x.textContent).join(" | ");
+    ok("L1 the label reads Jira · 11 stories, then the short points line", seen(lab()) === "Jira · 11 stories | 45 pts· 7 done· 2 not est.· 1 no sprint", seen(lab()));
+    const full = "Jira stories: 11 stories · 45 pts estimated, 7 done (estimated points) · 2 not estimated · 1 story with no sprint in this plan";
+    ok("L2 the whole summary is its hover text and its screen-reader text; the short lines are hidden from readers", lab().querySelector(".shstick").title === full && lab().querySelector(".vh").textContent === full
+      && [...lab().querySelectorAll(".shl1t,.shl2")].every(x=>x.getAttribute("aria-hidden") === "true"), lab().querySelector(".shstick").title);
+    ok("L3 no select, no note and no (estimated points) in the label's visible text", !lab().querySelector("select") && !/Tiles are sized|estimated points/.test(seen(lab())));
+    ok("L4 the note is said once, in the Key, while shelves are on", d.querySelectorAll(".lg-shelf").length === 1 && /Story tiles are sized by points, one scale for the whole chart\. Where a tile sits in a sprint says nothing about when\./.test(d.querySelector(".lg-shelf").textContent)
+      && d.querySelector("#legend").classList.contains("shelves") && (d.querySelector("#gscroll").textContent.match(/says nothing about when/g) || []).length === 1);
+    // Spotlight: one control for the whole chart, in the Show menu.
+    ev("openShowMenu()");
+    const spots = () => [...d.querySelectorAll('#showMenu [role="menuitemradio"]')];
+    ok("P0 Show lists everyone with stories on the shelves, with how many, and No one", spots().map(b=>b.textContent).join(" | ") === "No one | Avery Stone4 | Blake Ito4 | Casey Moore2", spots().map(b=>b.textContent).join(" | "));
+    spots()[0].focus(); spots()[0].dispatchEvent(new w.KeyboardEvent("keydown", {key:"ArrowDown", bubbles:true}));
+    ok("P0 …reachable with the arrow keys like the rest of the menu", d.activeElement === spots()[1]);
+    d.querySelector('#showMenu [data-spot="pb"]').click();
+    const rag = () => d.querySelector('.shelfrow[data-shelf="rag"]');
+    ok("P1 a spotlight lights up one person's tiles and dims the rest, on every shelf", row().classList.contains("spot") && rag().classList.contains("spot") && tile("story:ABC-102").classList.contains("me") && tile("bar:lf1").classList.contains("me") && !tile("story:ABC-101").classList.contains("me"));
+    ok("P1 …and each shelf gives their count there, short in the label and whole for readers", /^Blake· 3 here· 6 pts$/.test(row().querySelector(".shl2.shme").textContent) && /Blake Ito: 3 stories, 6 pts/.test(row().querySelector(".vh").textContent)
+      && /^Blake· 1 here/.test(rag().querySelector(".shl2").textContent), row().querySelector(".shl2").textContent + " / " + rag().querySelector(".shl2").textContent);
+    ok("P1 …and the menu marks who it is, focus staying on the choice", d.querySelector('#showMenu [data-spot="pb"]').getAttribute("aria-checked") === "true" && d.activeElement === d.querySelector('#showMenu [data-spot="pb"]'));
+    d.querySelector('#showMenu [data-spot=""]').click();
+    ok("P2 No one turns it off everywhere", !row().classList.contains("spot") && !rag().classList.contains("spot") && ev("UI.spot") === null);
+    d.querySelector('#showMenu [data-spot="pb"]').click(); ev("closeShowMenu()");
     // Zoom: one sprint opens the shelves; Fit folds them unless chosen by hand.
     ev("UI.shelfOpen = {chat:false}; saveUI(); render()");
     ok("Z0 a selected story opens its folded shelf, so it's on screen", !!tile("bar:lf1") && tile("bar:lf1").classList.contains("selected"));
@@ -87,6 +111,10 @@ async function open(){
     ok("Z1 back to the zoom's choice, Fit folds them", !!cells()[0].classList.contains("shmini"));
     const pick = d.querySelector("#zoomSprint"); pick.value = String(ev("isoToDay('2026-10-05')")); pick.dispatchEvent(new w.Event("change", {bubbles:true}));
     ok("Z2 one sprint shows the tiles", !!tile("story:ABC-101") && !cells()[0].classList.contains("shmini"));
+    ok("Z2 …only in the sprint on screen: one out of view stays a one-line summary, so it never makes the row tall", cells()[1].classList.contains("shmini") && !tile("story:ABC-108"));
+    pick.value = String(ev("isoToDay('2026-10-19')")); pick.dispatchEvent(new w.Event("change", {bubbles:true}));
+    ok("Z2 …and a shelf with nothing on screen takes one compact line: summaries only, and the label's points line folded away", [row(), rag()].every(r=>![...r.querySelectorAll(".shcell")].some(c=>c.querySelector(".shtile")) && r.querySelector(".shlab").classList.contains("flat")));
+    pick.value = String(ev("isoToDay('2026-10-05')")); pick.dispatchEvent(new w.Event("change", {bubbles:true}));
     row().querySelector('[data-key="shtog:chat"]').click();
     ok("Z3 and a workstream folded by hand stays folded there", ev("UI.shelfOpen.chat") === false && cells().every(c=>!c.querySelector(".shtile")));
     ok("Z3 …remembered in this browser", JSON.parse(w.localStorage.getItem("timeline-planner-ui")).shelfOpen.chat === false);

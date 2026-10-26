@@ -1,5 +1,43 @@
 [
   {
+    "version": "1.125.1",
+    "date": "2026-10-26",
+    "headline": "Calmer story shelves on the timeline",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Story shelf labels fit in two short lines",
+        "before": "The label beside a workstream's Jira stories wrapped to six lines or more, with a Spotlight list and a note that could spill over the chart, so the row grew tall around a few small summaries.",
+        "now": "The label reads Jira and the story count, then points, done and not estimated on a second line. Hover it for the whole summary; screen readers hear all of it. A small button beside it switches between tiles and summaries. A shelf with nothing on screen takes one line.",
+        "where": "Timeline, in Weeks, by workstream"
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Zoomed in, only the sprints on screen open",
+        "before": "At one or two sprints, every sprint's stories opened as tiles, so a sprint scrolled out of view could make a row tall and empty.",
+        "now": "Only the sprints in view show tiles; the rest stay as one-line summaries. Click a summary, or the button beside the label, to open them all. Stories with no sprint sit on their own strip under the sprints.",
+        "where": "Timeline, This sprint or This + next"
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Spotlight is one choice for the whole chart",
+        "before": "Each workstream had its own Spotlight list next to its stories.",
+        "now": "Pick a person once, under Spotlight a person in the Show menu, and their stories stay lit on every shelf while the rest dim. Each name shows how many stories they have, and each shelf's label gives their count there.",
+        "where": "Timeline, Show, then Spotlight a person"
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "What tile sizes mean is in the Key",
+        "now": "The note that tiles are sized by points, and that a tile's place in a sprint says nothing about when, is said once, in the Key, instead of beside every shelf.",
+        "where": "Timeline, Key"
+      }
+    ]
+  },
+  {
     "version": "1.125.0",
     "date": "2026-10-26",
     "headline": "Cards: the plan's Jira work, by workstream",
