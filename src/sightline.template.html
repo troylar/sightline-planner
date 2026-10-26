@@ -388,7 +388,8 @@ button.flag{border:0;background:transparent;font-family:inherit;cursor:pointer;c
 .ltable thead th:hover .lrz::after{opacity:.45}.lrz:hover::after,.lrz.drag::after,.lrz:focus-visible::after{opacity:1}.lrz:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}body.lresizing,body.lresizing *{cursor:col-resize!important;user-select:none}
 .listcols{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 18px;align-items:center;margin:0 0 10px;padding:8px 10px;border:1px solid var(--rule);border-radius:8px}.listcols .lcrow{display:flex;gap:8px;align-items:baseline}.listcols .lcname{font-weight:600;min-width:72px}.listcols .btn{justify-self:start}.listcols p{grid-column:1/-1;margin:2px 0 0}
 @media (prefers-reduced-motion:reduce){.lrz::after{transition:none}}.ltable tr.lrow{cursor:pointer}.ltable tr.lrow:hover td,.ltable tr.lrow:hover th{background:color-mix(in srgb,var(--accent) 6%,transparent)}
-.ltable tr.lrow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}.ltable tr.lsel td,.ltable tr.lsel th{background:color-mix(in srgb,var(--accent) 12%,transparent)}.ltable tr.lhead .lt{font-weight:600}.ltable tr.lgroup th{text-align:left;padding:10px 8px 4px;font-size:13px;border-bottom:1px solid var(--rule)}
+.ltable tr.lrow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}.ltable tr.lsel td,.ltable tr.lsel th{background:color-mix(in srgb,var(--accent) 12%,transparent)}.ltable tr.lhead .lt{font-weight:600}.ltable tr.lgroup th{text-align:left;padding:10px 8px 4px;font-size:13px;border-bottom:1px solid var(--rule);text-transform:none;letter-spacing:normal;color:var(--ink);font-weight:600;white-space:normal}
+.ltable .lsw{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--lc);box-shadow:0 0 0 1px var(--ink-3);margin-right:7px;vertical-align:.05em}
 .ltable th.lname{text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink);font-family:inherit}
 .ltable .lkey{margin-left:6px;font-size:11px;color:var(--ink-3)}.ltable .lin,.ltable .lwhy{display:block}.ltable .lshared{margin-left:6px;font-size:11px;padding:0 5px;border-radius:8px;border:1px solid var(--rule);color:var(--ink-2)}.lwaits{margin:0;padding:0;list-style:none}.lwaits li{margin:0 0 2px}.ltable tr.loff td{color:var(--ink-3)}
 @media print{body.on-list>:not(#ws-list){display:none!important}body.on-list #ws-list{display:block!important}body.on-list .listbar,body.on-list .listcopy,body.on-list #listSelHidden{display:none!important}body.on-list .lwrap{overflow:visible}body.on-list .ltable th[scope=col]{position:static}body.on-list .ltable thead{display:table-header-group}body.on-list .ltable tr{break-inside:avoid}body.on-list .ltable.lfixed{table-layout:auto;width:100%!important}body.on-list .ltable .nw,body.on-list .ltable .nw *{white-space:normal}body.on-list .lrz{display:none}body.on-list .panel{border:0;box-shadow:none}}
@@ -14499,17 +14500,20 @@ function renderPlanningGuide(){
 // ================= List: the plan's work as rows (docs/workspaces.md) =================
 // The same items Timeline draws for the same filters, read top to bottom: initiatives as group headers, their tasks and
 // the Jira stories placed under them. It only reads; edits happen in the side panel.
-const LIST_KEY = "sightline-list-layout", LIST_LAYOUTS = [["initiative", "By initiative"], ["person", "By person"], ["start", "Everything by start date"]];
+const LIST_KEY = "sightline-list-layout", LIST_LAYOUTS = [["initiative", "By initiative"], ["lane", "By workstream"], ["person", "By person"], ["start", "By start date", "Everything in one list, by start date"]], LIST_DEFAULT = "lane";
 let listMemo = null, listFocus = null;
 function listLayout(){
   if (listMemo !== null) return listMemo;
-  try { const o = JSON.parse(localStorage.getItem(LIST_KEY) || "{}"), v = o && o[S.meta.planId]; listMemo = LIST_LAYOUTS.some(x=>x[0] === v) ? v : "initiative"; } catch(e){ listMemo = "initiative"; }
+  try { const o = JSON.parse(localStorage.getItem(LIST_KEY) || "{}"), v = o && o[S.meta.planId]; listMemo = LIST_LAYOUTS.some(x=>x[0] === v) ? v : LIST_DEFAULT; } catch(e){ listMemo = LIST_DEFAULT; }
   return listMemo;
 }
-function setListLayoutQuiet(v){ const L = LIST_LAYOUTS.some(x=>x[0] === v) ? v : "initiative";
-  try { const o = JSON.parse(localStorage.getItem(LIST_KEY) || "{}") || {}; if (L !== "initiative") o[S.meta.planId] = L; else delete o[S.meta.planId]; localStorage.setItem(LIST_KEY, JSON.stringify(o)); } catch(e){}
+function setListLayoutQuiet(v){ const L = LIST_LAYOUTS.some(x=>x[0] === v) ? v : LIST_DEFAULT;
+  try { const o = JSON.parse(localStorage.getItem(LIST_KEY) || "{}") || {}; if (L !== LIST_DEFAULT) o[S.meta.planId] = L; else delete o[S.meta.planId]; localStorage.setItem(LIST_KEY, JSON.stringify(o)); } catch(e){}
   listMemo = L; }
 function setListLayout(v){ setListLayoutQuiet(v); render(); }
+const listTree = layout => layout === "initiative" || layout === "lane";   // these keep the initiative tree: headers, indents
+const listLane = id => S.lanes.find(l=>l.id === id)?.name || "";
+const listLaneChip = id => { const l = S.lanes.find(x=>x.id === id); return l ? h("i",{class:"lsw","aria-hidden":"true",style:{"--lc":l.color}}) : null; };
 const listWhen = n => n == null ? "" : dayToDate(n).getUTCFullYear() === dayToDate(todayDay()).getUTCFullYear() ? fmtDay(n) : fmtDayY(n);
 const listPerson = id => { const p = personById(id); return p ? p.name + (p.inactive ? " (inactive)" : p.external ? " (outside the team)" : "") : "Former member"; };
 // Who's on an item: plan owners for plan items; for Jira items, the Jira assignee and, labeled apart, any plan lead.
@@ -14571,6 +14575,13 @@ function listModel(f = UI.filter){
 function listGroups(m, layout){
   const items = m.rows.filter(r=>!r.header), byStart = (a, b) => (a.s ?? 1e12) - (b.s ?? 1e12) || a.ord - b.ord;
   if (layout === "start") return [{label:null, rows:items.slice().sort(byStart)}];
+  if (layout === "lane"){
+    // Each workstream in its order, its initiatives as on By initiative; a sub-initiative in another workstream starts at its own top level.
+    const depth = b => { let n = 0; for (let p = b.parent && barById(b.parent), seen = new Set(); p && p.lane === b.lane && !seen.has(p.id); p = p.parent && barById(p.parent)){ seen.add(p.id); n++; b = p; } return n; };
+    const groups = new Map(S.lanes.map(l=>[l.id, []]));
+    m.rows.forEach(r=>{ const g = groups.get(r.b.lane); if (g) g.push({...r, depth:depth(r.b) + (r.type === "bar" ? 0 : 1)}); });
+    return [...groups].filter(([, rows])=>rows.length).map(([id, rows])=>({label:listLane(id), lane:id, rows, count:rows.filter(r=>!r.header).length}));
+  }
   if (layout === "person"){
     const ppl = [...team(), ...outsiders()].map(p=>p.id), at = new Map(ppl.map((id, i)=>[id, i])), groups = new Map();
     items.forEach(r=>{ const ids = listOwners(r.type, r.x).ids.filter((id, i, a)=>a.indexOf(id) === i);
@@ -14582,15 +14593,16 @@ function listGroups(m, layout){
 // The table as markdown, exactly as shown: pipes escaped, line breaks flattened.
 function listMarkdown(groups, layout){
   const cell = v => String(v == null ? "" : v).replace(/\r?\n|\r/g, " ").replace(/\\/g, "\\\\").replace(/\|/g, "\\|").trim();
-  const lines = ["| Start | End | Item | Owner | Waits on | Status |", "| --- | --- | --- | --- | --- | --- |"];
-  groups.forEach(g=>{ if (g.label) lines.push(`|  |  | **${cell(g.label)}** (${g.rows.length}) |  |  |  |`);
+  const cols = listColsShown(layout).map(c=>c[0]), row = v => "| " + cols.map(k=>cell(v[k])).join(" | ") + " |";
+  const lines = [row(Object.fromEntries(listColsShown(layout))), "|" + cols.map(()=>" --- |").join("")];
+  groups.forEach(g=>{ if (g.label) lines.push(row({item:`**${g.label}** (${g.count ?? g.rows.length})`}));
     g.rows.forEach(r=>{ const o = listOwners(r.type, r.x), s = listStatus(r.type, r.x), w = listRowWaits(r, layout);
-      const name = (layout === "initiative" ? "› ".repeat(r.depth) : "") + (r.header ? `**${r.label}**` : r.label) + (r.key && r.type !== "bar" ? ` (${r.key})` : "") + (layout !== "initiative" && r.type !== "bar" ? ` in ${chartLabel(r.b)}` : "") + (r.shared ? " (shared)" : "");
-      lines.push("| " + [listWhen(r.s), listWhen(r.e), name, o.text.join("; "), w.map(x=>x.text).join("; "), s.text + (s.jira ? "; " + s.jira : "")].map(cell).join(" | ") + " |"); }); });
+      const name = (listTree(layout) ? "› ".repeat(r.depth) : "") + (r.header ? `**${r.label}**` : r.label) + (r.key && r.type !== "bar" ? ` (${r.key})` : "") + (!listTree(layout) && r.type !== "bar" ? ` in ${chartLabel(r.b)}` : "") + (r.shared ? " (shared)" : "");
+      lines.push(row({start:listWhen(r.s), end:listWhen(r.e), item:name, lane:listLane(r.b.lane), owner:o.text.join("; "), waits:w.map(x=>x.text).join("; "), status:s.text + (s.jira ? "; " + s.jira : "")})); }); });
   return lines.join("\n") + "\n";
 }
 // In the flat layouts there's no initiative header, so a task's row also carries what its initiative waits on.
-const listRowWaits = (r, layout) => [...listWaits(r.type, r.x, r.s), ...(layout !== "initiative" && r.type !== "bar" ? listWaits("bar", r.b, r.s, "its initiative") : [])];
+const listRowWaits = (r, layout) => [...listWaits(r.type, r.x, r.s), ...(!listTree(layout) && r.type !== "bar" ? listWaits("bar", r.b, r.s, "its initiative") : [])];
 function listCopy(text){
   const show = () => { const box = $("#listCopyBox"); if (!box) return; box.hidden = false; const ta = box.querySelector("textarea"); ta.value = text; ta.focus(); ta.select();
     setStatus("This browser didn't allow copying. The table is selected below: copy it with Ctrl+C (Cmd+C on a Mac)."); };
@@ -14601,7 +14613,8 @@ function listCopy(text){
 }
 // Column widths and wrapping are the viewer's own, kept in this browser. The first resize fixes every column at the width
 // it shows, so nothing else jumps; a column that doesn't wrap keeps one line, cut short with the full text on hover.
-const LIST_COLS = [["start", "Start", 96], ["end", "End", 96], ["item", "Item", 320], ["owner", "Owner", 180], ["waits", "Waits on", 220], ["status", "Status", 170]];
+const LIST_COLS = [["start", "Start", 96], ["end", "End", 96], ["item", "Item", 320], ["lane", "Workstream", 150], ["owner", "Owner", 180], ["waits", "Waits on", 220], ["status", "Status", 170]];
+const listColsShown = (layout = listLayout()) => LIST_COLS.filter(c=>c[0] !== "lane" || layout !== "lane");   // By workstream names the workstream once, in its group
 const LCOL_MIN = 48, LCOL_MAX = 900, LCOL_NW = ["start", "end"], lcolW = v => Math.round(Math.max(LCOL_MIN, Math.min(LCOL_MAX, v)));
 let listColsOpen = false;
 function listCols(){
@@ -14616,13 +14629,13 @@ function setListCols(c){
 }
 function listFixAll(c){
   const ths = [...document.querySelectorAll("#listTable thead th[data-col]")];
-  LIST_COLS.forEach(([k, , d])=>{ if (c.w[k]) return; const th = ths.find(t=>t.dataset.col === k), m = th ? th.getBoundingClientRect().width : 0; c.w[k] = lcolW(m || d); });
+  listColsShown().forEach(([k, , d])=>{ if (c.w[k]) return; const th = ths.find(t=>t.dataset.col === k), m = th ? th.getBoundingClientRect().width : 0; c.w[k] = lcolW(m || d); });
   return c;
 }
 function listApplyCols(tbl, c){
   if (!tbl) return; const fixed = Object.keys(c.w).length > 0, wOf = (k, d) => c.w[k] || d;
-  tbl.classList.toggle("lfixed", fixed); tbl.style.width = fixed ? LIST_COLS.reduce((n, [k, , d])=>n + wOf(k, d), 0) + "px" : "";
-  LIST_COLS.forEach(([k, label, d])=>{ const col = tbl.querySelector(`col[data-col="${k}"]`), rz = tbl.querySelector(`.lrz[data-col="${k}"]`);
+  tbl.classList.toggle("lfixed", fixed); tbl.style.width = fixed ? listColsShown().reduce((n, [k, , d])=>n + wOf(k, d), 0) + "px" : "";
+  listColsShown().forEach(([k, label, d])=>{ const col = tbl.querySelector(`col[data-col="${k}"]`), rz = tbl.querySelector(`.lrz[data-col="${k}"]`);
     if (col) col.style.width = fixed ? wOf(k, d) + "px" : "";
     if (rz){ if (fixed) rz.setAttribute("aria-valuenow", String(wOf(k, d))); else rz.removeAttribute("aria-valuenow");
       rz.setAttribute("aria-valuetext", fixed ? `${wOf(k, d)} pixels` : "fits its text"); } });
@@ -14667,31 +14680,31 @@ function renderList(){
   if (m.off.length) sum.push(`${m.off.length} not on the timeline (parked, switched off or undated), listed at the end`);
   const lc = listCols(), cc = (k, cls) => ({"data-col":k, class:(cls ? cls + " " : "") + (lc.nw.includes(k) ? "nw" : "")});
   const row = (r, g) => { const o = listOwners(r.type, r.x), s = listStatus(r.type, r.x), w = listRowWaits(r, layout), on = cur && cur.type === r.type && cur.id === r.id;
-    const name = h(r.header ? "th" : "td",{...cc("item", "lname"), ...(r.header ? {scope:"row"} : {}), style:layout === "initiative" ? {paddingLeft:(8 + r.depth * 18) + "px"} : null},
+    const name = h(r.header ? "th" : "td",{...cc("item", "lname"), ...(r.header ? {scope:"row"} : {}), style:listTree(layout) ? {paddingLeft:(8 + r.depth * 18) + "px"} : null},
       h("span",{class:"lt"}, r.label), r.key && r.type !== "bar" ? h("span",{class:"lkey mono"}, r.key) : null,
       r.header ? h("span",{class:"hint"}, ` ${r.count} item${r.count === 1 ? "" : "s"}`) : null,
-      layout !== "initiative" && r.type !== "bar" ? h("span",{class:"hint lin"}, `in ${chartLabel(r.b)}`) : null, r.shared ? h("span",{class:"lshared"}, "shared") : null,
+      !listTree(layout) && r.type !== "bar" ? h("span",{class:"hint lin"}, `in ${chartLabel(r.b)}`) : null, r.shared ? h("span",{class:"lshared"}, "shared") : null,
       r.why ? h("span",{class:"hint lwhy"}, r.why) : null);
     const waits = w.length ? h("ul",{class:"lwaits"}, ...w.map(x=>h("li",{}, x.open ? h("button",{type:"button",class:"linkish",onclick:e=>{ e.stopPropagation(); listFocus = keyOf(r); select(x.open[0], x.open[1]); }}, x.text)
       : x.url ? h("a",{href:x.url,target:"_blank",rel:"noopener noreferrer",class:"linkish",onclick:e=>e.stopPropagation()}, x.text + " ↗") : x.text))) : "";
     return h("tr",{class:["lrow", r.header ? "lhead" : "", on ? "lsel" : "", r.why ? "loff" : ""].join(" "), tabindex:"-1", "data-key":keyOf(r) + (g && g.person != null ? "@" + g.person : ""), "data-lk":keyOf(r),
       "data-peek-type":r.type, "data-peek-id":r.id, "aria-selected":on ? "true" : "false", onclick:()=>{ listFocus = keyOf(r); select(r.type, r.id); }},
-      h("td",cc("start", "ld"), listWhen(r.s)), h("td",cc("end", "ld"), listWhen(r.e)), name, h("td",cc("owner", "lown"), ...o.text.map((t, i)=>h("div",{class:i ? "hint" : ""}, t))),
+      h("td",cc("start", "ld"), listWhen(r.s)), h("td",cc("end", "ld"), listWhen(r.e)), name, layout === "lane" ? null : h("td",cc("lane", "llane"), listLaneChip(r.b.lane), listLane(r.b.lane)), h("td",cc("owner", "lown"), ...o.text.map((t, i)=>h("div",{class:i ? "hint" : ""}, t))),
       h("td",cc("waits", "lw"), waits), h("td",cc("status", "lst"), h("div",{}, s.text), s.jira ? h("div",{class:"hint"}, s.jira) : null));
   };
-  const head = h("thead",{}, h("tr",{}, ...LIST_COLS.map(([k, t])=>h("th",{scope:"col","data-col":k}, t,
+  const head = h("thead",{}, h("tr",{}, ...listColsShown(layout).map(([k, t])=>h("th",{scope:"col","data-col":k}, t,
     h("span",{class:"lrz",role:"separator",tabindex:"0","data-col":k,"aria-orientation":"vertical","aria-label":`Resize the ${t} column`,"aria-valuemin":String(LCOL_MIN),"aria-valuemax":String(LCOL_MAX),
       title:"Drag to resize. Double-click for the default width.",onpointerdown:e=>listResizeDrag(e, k),onkeydown:e=>listResizeKey(e, k),ondblclick:e=>listResizeReset(e, k),onclick:e=>e.stopPropagation()})))));
-  const cols = h("colgroup",{}, ...LIST_COLS.map(([k])=>h("col",{"data-col":k})));
-  const bodies = groups.map(g=>h("tbody",{...(g.label ? {"aria-label":`${g.label}, ${g.rows.length} item${g.rows.length === 1 ? "" : "s"}`} : {})},
-    g.label ? h("tr",{class:"lgroup"}, h("th",{scope:"colgroup",colspan:"6"}, g.label, h("span",{class:"hint"}, ` ${g.rows.length} item${g.rows.length === 1 ? "" : "s"}`))) : null, ...g.rows.map(r=>row(r, g))));
-  const offBody = m.off.length ? [h("tbody",{class:"loffg"}, h("tr",{class:"lgroup"}, h("th",{scope:"colgroup",colspan:"6"},
+  const cols = h("colgroup",{}, ...listColsShown(layout).map(([k])=>h("col",{"data-col":k})));
+  const bodies = groups.map(g=>h("tbody",{...(g.label ? {"aria-label":`${g.label}, ${g.count ?? g.rows.length} item${(g.count ?? g.rows.length) === 1 ? "" : "s"}`} : {})},
+    g.label ? h("tr",{class:"lgroup"}, h("th",{scope:"colgroup",colspan:String(listColsShown(layout).length)}, g.lane ? listLaneChip(g.lane) : null, g.label, h("span",{class:"hint"}, ` · ${g.count ?? g.rows.length} item${(g.count ?? g.rows.length) === 1 ? "" : "s"}`))) : null, ...g.rows.map(r=>row(r, g))));
+  const offBody = m.off.length ? [h("tbody",{class:"loffg"}, h("tr",{class:"lgroup"}, h("th",{scope:"colgroup",colspan:String(listColsShown(layout).length)},
     h("button",{type:"button",class:"linkish",id:"listOffToggle","aria-expanded":String(!!UI.listOff),onclick:()=>{ UI.listOff = !UI.listOff; saveUI(); renderList(); }}, `${UI.listOff ? "▾" : "▸"} Not on the timeline (${m.off.length})`))),
     ...(UI.listOff ? m.off.map(r=>row(r, null)) : []))] : [];
   const md = () => listMarkdown([...groups, ...(m.off.length ? [{label:"Not on the timeline", rows:m.off.map(r=>({...r, depth:0}))}] : [])], layout);
   host.replaceChildren(...[
     h("div",{class:"listbar"},
-      h("div",{class:"seg",role:"group","aria-label":"List layout"}, ...LIST_LAYOUTS.map(([k, label])=>h("button",{type:"button",class:"btn" + (k === layout ? " on" : ""),"aria-pressed":String(k === layout),"data-layout":k,onclick:()=>setListLayout(k)}, label))),
+      h("div",{class:"seg",role:"group","aria-label":"List layout"}, ...LIST_LAYOUTS.map(([k, label, tip])=>h("button",{type:"button",title:tip || null,class:"btn" + (k === layout ? " on" : ""),"aria-pressed":String(k === layout),"data-layout":k,onclick:()=>setListLayout(k)}, label))),
       h("span",{class:"hint",id:"listSummary"}, sum.join(". ") + "."),
       h("button",{type:"button",class:"btn" + (listColsOpen ? " on" : ""),id:"listColsToggle","aria-expanded":String(listColsOpen),"aria-controls":"listColsBox",onclick:()=>{ listColsOpen = !listColsOpen; renderList(); const f = $("#listColsToggle"); if (f) f.focus(); }}, "Columns"),
       h("button",{type:"button",class:"btn",id:"listCopy",onclick:()=>listCopy(md())}, "Copy as table"),
