@@ -231,8 +231,10 @@ the change:
 | this sprint, next sprint | the sprint's first day |
 
 The review says which date each one became ("next Friday" is Friday, Oct 16, 2026), and Apply uses that date. A
-task's start that lands on a weekend or holiday moves to the next working day, as a typed date does. Anything else is
-refused with the forms that work, never guessed. Because words are read on the day you review, review a change on the
+task's start that lands on a weekend or holiday moves to the next working day, as a typed date does, and the review
+says so ("+3d" is Saturday, Oct 10, 2026, so the task starts Monday, Oct 12). A day that turns out to be before today is
+flagged "(that's in the past)", unless the words mean the past on purpose (yesterday, last Friday, 3 days ago, -2d).
+Anything else is refused with the forms that work, never guessed. Because words are read on the day you review, review a change on the
 day it was written if the exact day matters.
 
 ## Skills, needs and hints

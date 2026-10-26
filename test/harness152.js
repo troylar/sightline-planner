@@ -62,9 +62,18 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
       rv && rv.status === "ready" && rv.notes.some(n=>/"next Monday" is Monday, Oct 12, 2026\./.test(n)) && rv.start === "2026-10-12", JSON.stringify(rv && {s:rv.status, n:rv.notes}));
     ev(`RA(S, 'task.add', {id:'task-base', bar:${JSON.stringify(bar)}, start:'2026-10-08', label:'Base'})`); const tid = "task-base";
     const pv = T(`(()=>{ const r = amCheck({id:'c-rel2', ops:[{op:'set', type:'task', id:${JSON.stringify(tid)}, field:'start', value:'this saturday', prev:'2026-10-08'}]}, S); const q = P(); if (r.status === 'ready') r.apply(q); return {status:r.status, reasons:r.reasons, notes:r.notes, start:actTask(q, ${JSON.stringify(tid)}).t.start}; })()`);
-    ok("R2 a plain change to a task's start takes words too, and a weekend becomes the next working day", pv && pv.status === "ready" && pv.start === "2026-10-12" && pv.notes.some(n=>/"this saturday" is Monday, Oct 12, 2026/.test(n)), JSON.stringify(pv));
+    ok("R2 a plain change to a task's start takes words too, and a weekend becomes the next working day", pv && pv.status === "ready" && pv.start === "2026-10-12" && pv.notes.some(n=>n === '"this saturday" is Saturday, Oct 10, 2026, so the task starts Monday, Oct 12.'), JSON.stringify(pv));
     const nv = T(`amCheck({id:'c-rel3', ops:[{op:'action', action:'task.add', args:{id:'task-rel7', bar:${JSON.stringify(bar)}, start:'someday', label:'x'}}]}, S)`);
     ok("R3 a proposal with a day nobody can read is invalid, saying what works", nv && nv.status === "invalid" && nv.reasons.some(x=>/next Monday/.test(x)), JSON.stringify(nv && nv.reasons));
+
+    const mv = T(`amCheck({id:'c-rel4', ops:[{op:'action', action:'task.add', args:{id:'task-rel8', bar:${JSON.stringify(bar)}, start:'+3d', label:'Weekend'}}]}, S).notes`);
+    ok("R4 when a task's start moves off a weekend, the note says the day the words mean, then the day it starts", Array.isArray(mv) && mv.includes('"+3d" is Saturday, Oct 10, 2026, so the task starts Monday, Oct 12.'), JSON.stringify(mv));
+    const pn = T(`amCheck({id:'c-rel5', ops:[{op:'action', action:'milestone.add', args:{id:'ms-p1', what:'A', day:'this monday'}}, {op:'action', action:'milestone.add', args:{id:'ms-p2', what:'B', day:'last monday'}},
+      {op:'action', action:'milestone.add', args:{id:'ms-p3', what:'C', day:'3 days ago'}}, {op:'action', action:'milestone.add', args:{id:'ms-p4', what:'D', day:'yesterday'}}, {op:'action', action:'milestone.add', args:{id:'ms-p5', what:'E', day:'-2d'}}]}, S).notes`);
+    ok("R5 a day in the past is flagged, unless the words mean the past on purpose (yesterday, last, ago, -2d)", Array.isArray(pn) && pn.includes('"this monday" is Monday, Oct 5, 2026 (that\'s in the past).')
+      && pn.filter(n=>/in the past/.test(n)).length === 1 && pn.length === 5, JSON.stringify(pn));
+    const ns = T(`[RA({...P(), sprints:[]}, 'task.add', {id:'task-rel9', bar:${JSON.stringify(bar)}, start:'this sprint', label:'x'}).reason, RA({...P(), sprints:[]}, 'task.add', {id:'task-rel9', bar:${JSON.stringify(bar)}, start:'next sprint', label:'x'}).reason]`);
+    ok("A9 this sprint or next sprint that doesn't exist says why, not just the list of forms", Array.isArray(ns) && /today isn't in any sprint/.test(ns[0]) && /no sprint after today/.test(ns[1]), JSON.stringify(ns));
 
     // The sync's offline check of a changes file agrees.
     const py = spawnSync("python3", ["-I", "-c", `import importlib.util, json, sys; sp = importlib.util.spec_from_file_location('s', sys.argv[1]); m = importlib.util.module_from_spec(sp); sp.loader.exec_module(m)

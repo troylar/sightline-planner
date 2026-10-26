@@ -7417,6 +7417,9 @@ function relDay(v, p){ if (typeof v !== "string") return null; if (validIso(v)) 
 // Day arguments said in words become dates before anything checks them, so the review shows the date that will be used.
 const DATE_FIELDS = new Set(["raised","from","until","leaves","escalateBy","due","date","day"]);     // fields a .set action takes as a date
 const dateArg = (A, k, args) => /^(iso|isoOrNull)\??$/.test(A.args[k] || "") || (k === "value" && /\.set$/.test(A.id) && DATE_FIELDS.has(args.field));
+// Why words that look like a day aren't one here, when there's a better reason than the list of forms.
+function relWhy(v){ const t = typeof v === "string" ? v.trim().toLowerCase().replace(/\s+/g, " ") : "";
+  return t === "this sprint" ? "today isn't in any sprint in this plan" : t === "next sprint" ? "this plan has no sprint after today" : ""; }
 function actDays(A, args, p){ if (!args || typeof args !== "object" || Array.isArray(args)) return args; let out = args;
   Object.keys(args).forEach(k=>{ if (typeof args[k] !== "string" || !args[k].trim() || validIso(args[k]) || !dateArg(A, k, args)) return; const iso = relDay(args[k], p); if (iso){ if (out === args) out = {...args}; out[k] = iso; } });
   return out; }
@@ -7441,6 +7444,7 @@ function actArgsProblem(a, args){
   for (const [k, t] of Object.entries(a.args)){ const opt = t.endsWith("?"), ty = opt ? t.slice(0, -1) : t;
     if (!(k in args) || args[k] === undefined){ if (opt) continue; return `${a.id} needs ${k}.`; }
     if ((ty === "str" || ty === "any") && typeof args[k] === "string" && args[k].length > 4000) return `${k} is up to 4,000 characters.`;
+    if ((ty === "iso" || ty === "isoOrNull") && relWhy(args[k])) return `${k} isn't a date here: ${relWhy(args[k])}.`;
     if (!ACT_ARG[ty](args[k])) return `${k} isn't a valid ${ty === "iso" || ty === "isoOrNull" ? `date (${REL_HELP})` : ty === "ids" || ty === "keys" ? "list" : ty === "id" ? "id" : ty === "num" || ty === "int" ? "number" : ty === "weights" ? "split ({workstream id: weight})" : "value"}.`; }
   return null;
 }
@@ -12601,7 +12605,7 @@ function amItemErr(fields, field, v, p){ const t = amHas(fields, field) ? fields
   if (t === "people") return Array.isArray(v) && v.every(id=>p.people.some(x=>x.id === id)) ? "" : "owners must be ids of people in the plan";
   if (t === "lane") return p.lanes.some(l=>l.id === v) ? "" : `workstream "${String(v).slice(0, 40)}" isn't in the plan`;
   if (t === "start"){ if (!validIso(v)) return `start must be ${REL_HELP}`; const w = amIsoWeek(p, v); return w < 0 || w >= p.meta.weeks ? "start is outside the plan's dates" : ""; }
-  if (t === "tstart"){ if (!validIso(v)) return `start must be ${REL_HELP}`; const d = isoToDay(v), a = isoToDay(p.meta.start); return d < a || d > a + p.meta.weeks * 7 ? "start is outside the plan's dates" : isWeekend(d) ? "start is a weekend" : ""; }
+  if (t === "tstart"){ if (!validIso(v)) return relWhy(v) ? `start isn't a date here: ${relWhy(v)}` : `start must be ${REL_HELP}`; const d = isoToDay(v), a = isoToDay(p.meta.start); return d < a || d > a + p.meta.weeks * 7 ? "start is outside the plan's dates" : isWeekend(d) ? "start is a weekend" : ""; }
   if (t === "weeks") return typeof v === "number" && v >= 0.5 && v <= 104 && Math.round(v * 2) === v * 2 ? "" : "weeks must be a number from 0.5 to 104, in halves";
   if (t === "days") return Number.isInteger(v) && v >= 1 && v <= 260 ? "" : "days must be a whole number from 1 to 260";
   return ""; }
@@ -12688,8 +12692,11 @@ function amAliasLanes(c, p){ const map = laneAliases(p); if (!map.size || !c || 
 // Dates said in words (in action ops and plain ops) become dates once, before checking, so the review and Apply use the
 // same day, and the review says which day each one became. A task's start moves to its next working day, as a date does.
 function amRelDays(c, p){ if (!c || !Array.isArray(c.ops)) return {c, notes:[]}; const notes = [];
+  const say = n => { const wd = REL_DAYS[dow(n)]; return `${wd[0].toUpperCase() + wd.slice(1)}, ${fmtDay(n)}`; };
   const fix = (v, task) => { if (typeof v !== "string" || validIso(v)) return v; const iso = relDay(v, p); if (!iso) return v;
-    const d = task ? nextWork(isoToDay(iso), holidaySet(p)) : isoToDay(iso), out = dayToIso(d); const wd = REL_DAYS[dow(d)]; notes.push(`"${v.trim().slice(0, 40)}" is ${wd[0].toUpperCase() + wd.slice(1)}, ${fmtDay(d)}, ${out.slice(0, 4)}.`); return out; };
+    const b = isoToDay(iso), d = task ? nextWork(b, holidaySet(p)) : b, words = v.trim().toLowerCase();
+    const past = b < todayDay() && !/^(yesterday|last |-)|ago$/.test(words) ? " (that's in the past)" : "";      // meant on purpose: yesterday, last, ago, -3d
+    notes.push(`"${v.trim().slice(0, 40)}" is ${say(b)}, ${iso.slice(0, 4)}${past}${d !== b ? `, so the task starts ${say(d)}` : ""}.`); return dayToIso(d); };
   const ops = c.ops.map(o=>{ if (!o || typeof o !== "object" || Array.isArray(o)) return o;
     if (o.op === "action" && o.args && typeof o.args === "object" && !Array.isArray(o.args) && amHas(planActions, String(o.action))){ const A = planActions[o.action];
       const ks = Object.keys(o.args).filter(k=>typeof o.args[k] === "string" && o.args[k].trim() && !validIso(o.args[k]) && dateArg(A, k, o.args));

@@ -8,7 +8,7 @@ Dates in words.
 
 ### New
 
-- **Give dates the way people say them** (Assistant). Any date in a proposed change can be words like tomorrow, +3d, next Friday, 2 weeks ago, next month or next sprint: a task's start, a milestone, time off, when something was raised, a due date. The review says which date each one became, and Apply uses that date. A task's start that lands on a weekend moves to the next working day. Anything else is refused with the forms that work. *Where:* Your assistant's proposed changes, in the review panel
+- **Give dates the way people say them** (Assistant). Any date in a proposed change can be words like tomorrow, +3d, next Friday, 2 weeks ago or next sprint. The review says which date each became, flags one in the past, and says when a task's start moves off a weekend. Apply uses that date. Anything else is refused with the forms that work. *Where:* Your assistant's proposed changes, in the review panel
 
 ## 1.134.0 · Oct 26, 2026
 
