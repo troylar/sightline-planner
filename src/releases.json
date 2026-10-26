@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.125.3",
+    "date": "2026-10-26",
+    "headline": "Jira stories stay with their epic when the epic has a parent",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Jira",
+        "title": "Stories group under their epic, not the initiative above it",
+        "before": "When the plan linked an epic that has its own parent in Jira (an initiative above it), that epic's stories were filed under the initiative instead. In a sprint, not on the board listed them as loose work missing a parent, and Sort Jira work grouped them under the initiative.",
+        "now": "Stories group under their epic again, the same as when the epic isn't linked in the plan. After you update, some stories move from the loose list and the initiative's group into their epic's group. Nothing in the plan file changes. An epic inside another epic still rolls up to the top epic.",
+        "where": "Work, Sort Jira work, and the In a sprint, not on the board list"
+      }
+    ]
+  },
+  {
     "version": "1.125.2",
     "date": "2026-10-26",
     "headline": "The side panel stays where you were",

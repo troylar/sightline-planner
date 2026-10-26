@@ -4587,8 +4587,10 @@ function sprintWork(){
 // sync only brought as ancestors (a feature between a story and its epic) are climbed through, up to the first epic.
 function topOf(k, j, epicOf){
   let cur = k, x = j; const seen = new Set([k]);
+  const epicAt = e => isEpic(hierOf(e)) || !!(JIRA && JIRA.rollups && JIRA.rollups[e]);
   for (let n = 0; n < 8; n++){ const up = epicOf.get(cur) || (x && (x.epic || x.parent)) || ""; if (!up) break;
     if (seen.has(up)) return "";                     // a loop in Jira's parent links: no top to trust
+    if (cur !== k && epicAt(cur) && !epicAt(up)) break;   // an epic under an initiative: the epic is the top
     seen.add(up); cur = up; x = issueOf(cur);
     if (!x){ const a = JIRA && JIRA.ancestors && JIRA.ancestors[cur]; if (a && !isEpic(a)) x = a; }
     if (!x && !epicOf.has(cur)) break; }
