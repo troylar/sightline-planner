@@ -68,6 +68,13 @@ have no way to send release notes to the teams that use them". Keep them in the 
 - **To triage**, on the Roadmap, lists open captures by workstream, oldest first, with **Unassigned** last. Open one
   to **Hand off** (to an initiative or a Jira issue) or **Decline** with a reason; **Reopen** puts it back.
 
+**By asker**, in To triage, lists everything each person or group raised, open ones first, then what became of the
+rest. **Copy a note for them** copies a short plain-text note to send back: each thing they raised and where it stands,
+naming no one else. **Meeting recap** says what's new, raised again, closed and reopened since your last meeting (pick
+another day if you like), with how many are still open. It leaves out who asked unless you tick **Say who asked**, since
+a recap is often pasted where others read it. Closed and reopened come from the plan's change log, which keeps 30 days.
+Neither saves anything to the plan (since 1.134.0).
+
 A date doesn't commit a capture, and handing it off doesn't mark anything done: those stay roadmap decisions. A Jira
 issue it became stays Jira's; the plan keeps only its key. Captures sit in the shared plan file, so write them as you'd
 say them in the room.
