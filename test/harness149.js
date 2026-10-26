@@ -61,6 +61,9 @@ const HOSTILE = '<img src=x onerror="window.pwned=1"> Support desk';
     const lc = J(`(()=>{ const p = clone(Q), q = clone(Q); RA(p, 'outcome.drop', {id:'dv-a', reason:'Not this year'}); RA(q, 'outcome.handoff', {id:'dv-a', jira:'ABC-7'});
       return [RA(p, 'outcome.handoff', {id:'dv-a', jira:'ABC-7'}), RA(q, 'outcome.drop', {id:'dv-a', reason:'Changed our mind'})]; })()`);
     ok("A8 a declined capture can't be handed off, nor a handed-off one declined, until it's reopened", !lc[0].ok && !lc[1].ok && /Reopen it first/.test(lc[0].reason) && /Reopen it first/.test(lc[1].reason), lc.map(x=>x.reason).join(" / "));
+    const rv = J(`(()=>{ const p = clone(Q); RA(p, 'outcome.drop', {id:'dv-a', reason:'Not this year'}); const q = clone(Q); RA(q, 'outcome.handoff', {id:'dv-a', jira:'ABC-8'});
+      return [amCheck({id:'c-ho', ops:[{op:'action', action:'outcome.handoff', args:{id:'dv-a', jira:'ABC-9'}}]}, p), amCheck({id:'c-dr', ops:[{op:'action', action:'outcome.drop', args:{id:'dv-a', reason:'Changed our mind'}}]}, q)]; })()`);
+    ok("A9 an assistant's proposal to hand off a declined capture, or decline a handed-off one, is refused at review with the same reason", rv.every(x=>x.status === "invalid" && x.reasons.some(y=>/Reopen it first/.test(y))), rv.map(x=>x.status + ": " + x.reasons.join(" ")).join(" / "));
     const risk = k => ev(`amRiskOf({ops:[{op:'action', action:'${k}', args:{}}]})`);
     ok("R1 a new person, group or skill always waits for a person; a capture itself is routine", risk("person.add") === "floor" && risk("group.add") === "floor" && risk("skill.add") === "floor" && risk("outcome.add") === "routine",
       ["person.add", "group.add", "skill.add", "outcome.add"].map(risk).join());
