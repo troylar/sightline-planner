@@ -5708,9 +5708,9 @@ function snapSprint(){ const sw = UI.ws === "timeline" ? sprintWindow() : null; 
 const ZOOM_PRESETS = [[1, "This sprint"], [2, "This + next"], [3, "Next 3"], [0, "Fit"]];
 function zoomPreset(n){
   const NS = nowSprint();
-  if (!n){ setZoomN(0); UI.zoomPreset = 0; saveUI(); render(); return; }
+  if (!n) return setZoomN(0, 0);
   if (!NS) return setStatus("There's no sprint now or ahead in this plan's timeboxes.");
-  UI.zoomN = n; chooseSprint(NS.a); UI.zoomPreset = n; saveUI(); render();
+  UI.zoomN = n; chooseSprint(NS.a, n);
 }
 const presetOn = n => { if (!n) return !zoomN(); const c = chosenSprint(), NS = nowSprint(); return !!c && !!NS && c.a === NS.a && zoomN() === n; };
 let presetLoaded = false;              // once a visit: a remembered preset, or the first-open default, anchored to today's sprint
@@ -5720,8 +5720,8 @@ function loadPreset(){
   if (UI.zoomN == null && UI.zoomPreset == null){ UI.zoomPreset = 2; UI.zoomN = 2; UI.zoomSp = dayToIso(NS.a); saveUI(); return; }
   if (Number.isInteger(UI.zoomPreset) && UI.zoomPreset > 0){ UI.zoomN = UI.zoomPreset; UI.zoomSp = dayToIso(NS.a); }
 }
-function chooseSprint(a){
-  delete UI.zoomPreset;
+function chooseSprint(a, preset){        // preset: the zoom preset this choice comes from, remembered with it
+  delete UI.zoomPreset; if (preset != null) UI.zoomPreset = preset;
   const c = a == null ? null : sprintList().find(x=>x.a === a); UI.zoomSp = c ? dayToIso(c.a) : null; if (c && !zoomN()) UI.zoomN = 1;
   saveUI(); sprintKey = ""; fitKey = ""; render();
   if (!c) return setStatus("No sprint chosen: the view scrolls freely");
@@ -5735,9 +5735,9 @@ function stepSprint(dir){
   chooseSprint(n.a);
 }
 const zoomText = () => { const n = zoomN(); return n ? `${n} sprint${n===1?"":"s"}` : "Fit"; };
-function setZoomN(n){
-  delete UI.zoomPreset;
-  const max = maxZoomN(); n = n >= 1 && n <= max ? n : 0; if (n === zoomN() && UI.zoomN != null) return;
+function setZoomN(n, preset){
+  delete UI.zoomPreset; if (preset != null) UI.zoomPreset = preset;
+  const max = maxZoomN(); n = n >= 1 && n <= max ? n : 0; if (n === zoomN() && UI.zoomN != null){ if (preset != null){ saveUI(); render(); } return; }
   const t = todayDay(), anchor = zoomN() ? viewLeftDay() : Math.max(startDay(), sprintStartOf(t));
   if (!n) UI.zoomSp = null;                                    // Fit isn't a sprint
   UI.zoomN = n; saveUI(); fitKey = ""; sprintKey = ""; render(); if (n && !sprintWindow()) scrollViewTo(anchor);
