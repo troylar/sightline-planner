@@ -827,17 +827,32 @@ body:not(.hasSel) #side.floating{display:none}
 .track.mini .minibar{position:absolute;top:8px;height:8px;border-radius:4px;opacity:.85;cursor:pointer}
 /* Sprint shelves: a workstream's Jira stories as tiles on a shelf per sprint. Status shows as fill and as a symbol */
 .lane.shelfrow{position:relative;z-index:2;background:color-mix(in srgb,var(--lc,var(--accent)) 3%,var(--surface))}
-.shlab{border-right:1px solid var(--rule-2);padding:6px 10px 8px 26px;min-width:0;font-size:11px;color:var(--ink-3)}
-.shstick{display:flex;flex-direction:column;align-items:flex-start;gap:3px;position:sticky;top:var(--lhtop,0px)}
-.shlab b{font-size:12px;color:var(--ink-2)}
-.shlab .shtog{font-size:11px}.shlab .shnote{font-style:italic;max-width:30ch}.shlab .shme{color:var(--ink-2);font-weight:600}
-.shspot{display:flex;gap:4px;align-items:center;color:var(--ink-2)}.shspot select{font:inherit;max-width:12em}
+.shlab{border-right:1px solid var(--rule-2);padding:6px 8px 6px 22px;min-width:0;font-size:11px;line-height:1.35;color:var(--ink-3)}
+.shstick{display:flex;flex-direction:column;gap:1px;min-width:0;overflow:hidden;position:sticky;top:var(--lhtop,0px)}
+.shl1,.shl2{display:flex;align-items:center;gap:5px;min-width:0;white-space:nowrap}
+.shl1t,.shl2{overflow:hidden;text-overflow:ellipsis}.shl1t{color:var(--ink-2)}.shl1t b{font-weight:600;color:var(--ink)}
+.shl2{display:flex;flex-wrap:wrap;column-gap:.3em;height:1.35em;overflow:hidden;font-variant-numeric:tabular-nums}   /* pieces that don't fit drop whole, never mid-word */
+.shl2.shme{color:var(--ink);font-weight:600}.shl2.shme::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:5px;vertical-align:1px}
+.shlab.flat .shl2{display:none}.shlab.flat{padding-top:4px;padding-bottom:4px}
+.shtgl{flex:none;display:inline-grid;place-items:center;width:18px;height:18px;padding:0;border:1px solid var(--rule);border-radius:4px;background:var(--surface);color:var(--ink-3);cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.shtgl .ic,.shtgl svg{width:12px;height:12px;display:block}
+.shtgl:hover{color:var(--ink);border-color:var(--ink-3)}
+.shtgl[aria-pressed="true"]{background:color-mix(in srgb,var(--lc,var(--accent)) 16%,var(--surface));border-color:color-mix(in srgb,var(--lc,var(--accent)) 55%,var(--surface));color:var(--ink)}
+.shtgl:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.shun{grid-row:2;display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:0;padding:2px 5px;background:transparent;border-left-style:dashed;border-right:0}.shun .shelf{align-self:stretch}
+.shunb{display:inline-flex;align-items:center;gap:4px;padding:1px 6px;border:0;border-radius:4px;background:transparent;font:inherit;font-size:10.5px;color:var(--ink-3);cursor:pointer}
+.shunb:hover{color:var(--ink);background:color-mix(in srgb,var(--lc,var(--accent)) 9%,transparent)}.shunb:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.shunc{display:inline-block;transition:transform .15s}.shunb[aria-expanded=true] .shunc{transform:rotate(90deg)}
+@media (prefers-reduced-motion:reduce){.shunc{transition:none}}
+.showmenu .vname.spot[aria-checked="false"]{color:inherit}.showmenu .vname.spot .vcount{margin-left:auto;font-size:11px}
+.legend .lg-shelf{white-space:normal}.legend:not(.shelves) .lg-shelf,.legend.days .lg-shelf{display:none}
+.legend i.lg-tile{width:18px;height:11px;border-radius:3px;background:var(--surface);border:1.5px solid var(--ink-3)}
 .shelves{display:grid;align-items:start;min-width:0}
 .shcell{position:relative;z-index:2;background:var(--surface);min-width:0;margin:4px 2px;padding:4px 5px 5px;border-left:2px solid color-mix(in srgb,var(--lc,var(--accent)) 55%,transparent);border-right:1px solid var(--rule)}
 .shcell.now{background:color-mix(in srgb,var(--accent) 7%,var(--surface))}
 .shmini{display:flex;flex-direction:column;gap:3px;align-items:stretch;background:transparent;border-top:0;border-bottom:0;font:inherit;font-size:10.5px;color:var(--ink-2);cursor:pointer;text-align:left}
 .shmini:hover,.shmini:focus-visible{background:color-mix(in srgb,var(--lc,var(--accent)) 9%,transparent)}
-.shmini .shn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shmini .shn{display:flex;flex-wrap:wrap;column-gap:.3em;height:1.35em;line-height:1.35;overflow:hidden;white-space:nowrap}
 .shbar{display:flex;height:7px;border-radius:4px;overflow:hidden;border:1px solid var(--rule);background:var(--surface);min-width:24px}
 .shbar i{display:block}.shbar .d{background:var(--lc,var(--accent))}.shbar .p{background:repeating-linear-gradient(135deg,var(--lc,var(--accent)) 0 2px,transparent 2px 5px)}
 .shgrp{margin:0 0 6px}
@@ -845,9 +860,9 @@ body:not(.hasSel) #side.floating{display:none}
 .shgrp h5 .shgn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.shgrp h5 .shgs{margin-left:auto;font-weight:500;color:var(--ink-3);font-size:10.5px;white-space:nowrap}
 .shelf{display:flex;flex-wrap:wrap;gap:4px;padding:4px;border:1px solid var(--rule);border-radius:6px;background:var(--surface)}
 .shelf:focus-within{outline:2px solid var(--accent);outline-offset:1px}
-.shtile{position:relative;box-sizing:border-box;height:42px;min-width:min(118px,100%);max-width:100%;border-radius:5px;padding:3px 6px;font-size:11.5px;display:flex;flex-direction:column;justify-content:space-between;border:1.5px solid var(--lc,var(--accent));color:var(--ink);background:var(--surface);overflow:hidden;cursor:pointer}
+.shtile{position:relative;box-sizing:border-box;min-height:42px;gap:2px;min-width:min(118px,100%);max-width:100%;border-radius:5px;padding:3px 6px;font-size:11.5px;display:flex;flex-direction:column;justify-content:space-between;border:1.5px solid var(--lc,var(--accent));color:var(--ink);background:var(--surface);overflow:hidden;cursor:pointer}
 .shtile .tt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
-.shtile .mt{display:flex;gap:6px;align-items:center;font-size:10.5px;color:var(--ink-2)}
+.shtile .mt{display:flex;gap:6px;align-items:center;font-size:10.5px;color:var(--ink-2);white-space:nowrap;min-width:0}
 .shtile .pts{font-weight:700;color:var(--ink)}.shtile .who{margin-left:auto}.shtile .who.none{font-style:italic;color:var(--ink-3)}
 .shtile.done{background:color-mix(in srgb,var(--lc,var(--accent)) 22%,var(--surface));border-color:color-mix(in srgb,var(--lc,var(--accent)) 45%,var(--surface));color:var(--ink-2)}
 .shtile.prog{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--lc,var(--accent)) 16%,var(--surface)) 0 6px,var(--surface) 6px 12px)}
@@ -860,9 +875,8 @@ body:not(.hasSel) #side.floating{display:none}
 .shstrip>b{font-size:10.5px;color:var(--ink-2);margin-right:2px;font-weight:600}
 .shstrip .shtile{border-style:dashed}
 .shmore{font-size:11px;align-self:center}
-.shsum{display:flex;gap:8px;align-items:center;margin:2px 0 0;font-size:10.5px;color:var(--ink-2)}.shsum .shbar{flex:0 0 min(160px,30%)}
+.shsum{display:flex;gap:8px;align-items:center;margin:2px 0 0;font-size:10.5px;color:var(--ink-2);min-width:0}.shsumt{display:flex;flex-wrap:wrap;column-gap:.3em;height:1.35em;line-height:1.35;overflow:hidden;white-space:nowrap;min-width:0;font-variant-numeric:tabular-nums}.shsum .shbar{flex:0 0 min(160px,30%)}
 .shelfrow.spot .shtile:not(.me){opacity:.3}.shelfrow.spot .shtile.me{box-shadow:0 0 0 2px var(--accent)}
-.shlab .shelf{margin-top:4px;max-width:100%}
 @media (forced-colors:active){.shtile.done{border-style:double;border-width:3px}.shtile.shblk::after{border-color:transparent CanvasText transparent transparent}}
 /* Cards: the plan's Jira work by workstream. Status is a glyph and a word, never color alone. */
 .cvws{padding:16px}.cvhead header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}.cvhead h2{margin:0}
@@ -1503,6 +1517,7 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
       <span class="lg-weeks"><i class="lg-ghost"></i>Baseline</span>
       <span class="lg-weeks"><i class="lg-dia"></i>Milestone</span><span class="lg-weeks"><i class="lg-dia lg-open"></i>Gated milestone</span><span class="lg-weeks"><i class="lg-dia lg-dot"></i>Unconfirmed</span>
       <span><i class="lg-hol"></i>Holiday</span>
+      <span class="lg-shelf"><i class="lg-tile"></i>Story tiles are sized by points, one scale for the whole chart. Where a tile sits in a sprint says nothing about when.</span>
       <span class="tip edit lg-weeks">Hover the chart and click + to add here · double-click a bar for its tasks</span>
       <span class="tip edit lg-days">Hover a row and click + to add a task, milestone, note or meeting · double-click adds a task · drag edges to resize</span>
     </div></div>
@@ -4353,6 +4368,7 @@ function shelfSum(ts){
 }
 const storiesWord = n => `${n.toLocaleString("en-US")} ${n === 1 ? "story" : "stories"}`;
 const shelfText = s => `${storiesWord(s.n)} · ${fmtPts(s.pts)} pts estimated, ${fmtPts(s.done)} done (estimated points)` + (s.un ? ` · ${s.un} not estimated` : "");
+const shelfShort = s => [`${fmtPts(s.pts)} pts`, `${fmtPts(s.done)} done`, s.un ? `${s.un} not est.` : null].filter(Boolean);
 function storyVisible(x, f = UI.filter, R = fRangeDays(f)){
   if (hidKind("done") && x.status === "done") return false;
   if (tagHides(x, "story", f)) return false;
@@ -5404,6 +5420,7 @@ Object.assign(ICON_PATHS, {
   play:'<path d="M7.5 5v14l11-7z"/>',
   link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
   check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  tiles:'<rect x="3.5" y="5" width="9" height="6" rx="1.5"/><rect x="14.5" y="5" width="6" height="6" rx="1.5"/><rect x="3.5" y="13" width="6" height="6" rx="1.5"/><rect x="11.5" y="13" width="9" height="6" rx="1.5"/>',
 });
 function typeIcon(t){ const ty = String(t).startsWith("block:") ? (S.types||[]).find(x=>x.id === t.slice(6)) : null; return ty ? icon(ty.icon, ty.emoji) : icon(KIND_ICON[t] || "flag"); }
 // Returns a <span class="ic"> holding the icon. For a custom type, an emoji can stand in for the icon.
@@ -5958,7 +5975,7 @@ function render(keepChart){
   document.body.classList.toggle("hasSel", !!sel);
   offerJiraSprints();
   document.documentElement.style.setProperty("--toph", $(".top").offsetHeight + "px");
-  $("#legend").classList.toggle("days", UI.zoom === "days");
+  $("#legend").classList.toggle("days", UI.zoom === "days"); $("#legend").classList.toggle("shelves", shelvesOn());
   $("#help").setAttribute("aria-pressed", String(!!sel && sel.type === "help")); renderTables(); renderDerived();
   applyReadonly(); if (UI.ws === "timeline") decorateLinks(); restore(key);
   syncNav();
@@ -8203,9 +8220,22 @@ function openShowMenu(focusKind){
     h("div",{class:"mh"}, "While scrolling"),
     item({role:"menuitemcheckbox","aria-checked":String(!!UI.pinTop),id:"showPin",title:"Keep gates, releases, deliverables, meetings and process in view while you scroll the workstreams, up to half the chart's height. Fold or hide one to make room for the next",onclick:()=>{ UI.pinTop = !UI.pinTop; saveUI(); render(); openShowMenu(); $("#showPin")?.focus(); setStatus(UI.pinTop ? "The top rows stay in view while you scroll" : "The top rows scroll with the chart"); }}, "Pin the top rows", "t"),
     h("div",{class:"mh"}, "Jira stories"),
-    item({role:"menuitemcheckbox","aria-checked":String(UI.shelves !== false),id:"showShelves",title:"In Weeks, put each workstream's Jira stories on a shelf per sprint, sized by points, instead of a bar each",onclick:()=>{ UI.shelves = UI.shelves === false; saveUI(); render(); openShowMenu(); $("#showShelves")?.focus(); setStatus(UI.shelves ? "Jira stories sit on sprint shelves" : "Jira stories are drawn as bars"); }}, "On sprint shelves", "s"));
+    item({role:"menuitemcheckbox","aria-checked":String(UI.shelves !== false),id:"showShelves",title:"In Weeks, put each workstream's Jira stories on a shelf per sprint, sized by points, instead of a bar each",onclick:()=>{ UI.shelves = UI.shelves === false; saveUI(); render(); openShowMenu(); $("#showShelves")?.focus(); setStatus(UI.shelves ? "Jira stories sit on sprint shelves" : "Jira stories are drawn as bars"); }}, "On sprint shelves", "s"),
+    ...spotItems());
   placePop(m, $("#showBtn")); $("#showBtn").setAttribute("aria-expanded", "true");
   (focusKind && m.querySelector(`[data-show="${CSS.escape(focusKind)}"]`) || m.querySelector("button"))?.focus();
+}
+// Spotlight, for the whole chart: one person's story tiles stay lit on every shelf and the rest dim. Each name says how
+// many stories they have on the shelves now; each shelf's label gives their count there.
+function spotItems(){
+  if (!shelvesOn() || !shelfPeople.size && !UI.spot) return [];
+  const ppl = [...shelfPeople].map(([id, n])=>({p:personById(id), n})).filter(x=>x.p).sort((a, z)=>a.p.name.localeCompare(z.p.name));
+  if (UI.spot && !ppl.some(x=>x.p.id === UI.spot) && personById(UI.spot)) ppl.push({p:personById(UI.spot), n:0});
+  const pick = (id, say) => { UI.spot = id; saveUI(); render(); openShowMenu(); $(`#showMenu [data-spot="${CSS.escape(id || "")}"]`)?.focus(); setStatus(say); };
+  const it = (id, label, n) => h("button",{type:"button",class:"vname spot",role:"menuitemradio","aria-checked":String((UI.spot || "") === id),"data-spot":id,
+    title:id ? `Light up ${label}'s stories on every shelf` : "Show every story the same",onclick:()=>pick(id || null, id ? `Spotlight on ${label}` : "Spotlight off")},
+    label, n == null ? null : h("span",{class:"vcount","aria-label":storiesWord(n)}, String(n)));
+  return [h("div",{class:"mh"}, "Spotlight a person"), it("", "No one"), ...ppl.map(x=>it(x.p.id, x.p.name, x.n))];
 }
 function closeShowMenu(refocus){ const m = $("#showMenu"); if (m.hidden) return; m.hidden = true; $("#showBtn").setAttribute("aria-expanded", "false"); if (refocus) $("#showBtn").focus(); }
 // Pinned top rows stick under the dates as you scroll, each below the last: whole sections (a header and its rows), up to
@@ -8375,6 +8405,7 @@ function glide(g, was){ glideLast = 0; if (!was || calmMotion()) return; const o
   glideLast = moved.length; }
 let WPX = 40;                                                    // pixels per week on the Weeks chart as last drawn
 function renderGantt(){
+  shelfPeople.clear();
   const W = S.meta.weeks, g = $("#gantt"), gw = chartW = $("#gscroll")?.clientWidth || 1100;   // measure before emptying the chart
   const was = glideSnap(g);
   g.replaceChildren(); g.style.minWidth = ""; g.style.setProperty("--lw", UI.labelW.weeks + "px");
@@ -8632,6 +8663,7 @@ function renderGantt(){
 // One workstream's shelf row: a cell per sprint (borders at the sprint's own dates), its stories grouped by initiative.
 // Folded to a summary at Fit or several sprints; tiles at one or two sprints, or when the workstream is opened by hand.
 const shelfMore = new Set();          // "Show all" per group, for this visit
+const shelfPeople = new Map();        // who has stories on the shelves in this draw, and how many: the Show menu's Spotlight
 const SHELF_SYM = {done:"●", prog:"◐", todo:"○"}, SHELF_ST = {done:"Done", prog:"In progress", todo:"Not started"};
 function shelfBar(s){
   const by = s.pts ? [s.done, s.prog, s.pts] : [s.cn.done, s.cn.prog, s.n], w = v => (by[2] ? v / by[2] * 100 : 0) + "%";
@@ -8661,37 +8693,52 @@ function shelfGroup(ts, label, gk){
   const tl = g.querySelectorAll(".shtile"); (g.querySelector(".shtile.selected") || tl[0])?.setAttribute("tabindex", "0");
   return g;
 }
+// The sprints a zoom shows: the one picked and the next, or, zoomed without one, from the sprint we're in.
+function shelfWindow(){ const sw = sprintWindow(); if (sw || !zoomN()) return sw; const NS = nowSprint(); if (!NS) return null;
+  const weeks = zoomN() * sprintLen(); return {a:NS.a, z:NS.a + weeks * 7 - 3, weeks}; }
 function shelfRow(lane, sh, W){
-  const open = shelfOpen(lane.id) || sh.tiles.some(t=>t.sel), L = sprintList(), NS = nowSprint(), sd = startDay(), fl = fActive() ? " · filters apply" : "";
-  const toggle = () => { UI.shelfOpen = {...(UI.shelfOpen || {}), [lane.id]:!open}; saveUI(); render(); };
+  // Opened by hand, every sprint shows its tiles; opened by the zoom, only the sprints in its window do, so a sprint
+  // scrolled out of view never makes the row tall. A selected story always shows.
+  const hand = typeof (UI.shelfOpen || {})[lane.id] === "boolean", open = shelfOpen(lane.id), sw = hand ? null : shelfWindow();
+  const L = sprintList(), NS = nowSprint(), sd = startDay(), fl = fActive() ? " · filters apply" : "";
+  const toggle = to => { UI.shelfOpen = {...(UI.shelfOpen || {}), [lane.id]:to}; saveUI(); render(); };
+  let tilesShown = 0;
   const cells = L.map((x, i)=>{ const ts = sh.tiles.filter(t=>t.sp === i); if (!ts.length) return null;
     const s = shelfSum(ts), w0 = Math.round((x.a - sd) / 7), name = x.gap ? "No sprint" : x.sp.name, now = NS && NS.now && NS.sp === x.sp ? " now" : "";
-    const pos = {gridColumn:`${w0 + 1} / span ${x.weeks}`, gridRow:"1"};
-    if (!open) return h("button",{type:"button",class:"shcell shmini" + now,style:pos,"data-key":`shcell:${lane.id}:${i}`,"aria-label":`${lane.name}, ${name}: ${shelfText(s)}. Show the stories`,onclick:toggle},
-      shelfBar(s), h("span",{class:"shn"}, `${s.n} · ${fmtPts(s.pts)} pt` + (s.un ? ` · ${s.un} ?` : "")));
+    const pos = {gridColumn:`${w0 + 1} / span ${x.weeks}`, gridRow:"1"}, inWin = !sw || x.a < sw.z && x.a + x.weeks * 7 > sw.a;
+    if (!(open && inWin) && !ts.some(t=>t.sel)) return h("button",{type:"button",class:"shcell shmini" + now,style:pos,"data-key":`shcell:${lane.id}:${i}`,"aria-label":`${lane.name}, ${name}: ${shelfText(s)}. Show the stories`,onclick:()=>toggle(true)},
+      shelfBar(s), h("span",{class:"shn"}, [storiesWord(s.n)].concat(shelfShort(s)).map((x, i)=>h("span",{}, (i ? "· " : "") + x))));
+    tilesShown++;
     const grps = []; ts.forEach(t=>{ const k = t.grp ? t.grp.id : ""; let gr = grps.find(y=>y.k === k); if (!gr) grps.push(gr = {k, b:t.grp, ts:[]}); gr.ts.push(t); });
     const order = new Map(sh.order.map((id, n)=>[id, n])); grps.sort((a, z)=>(a.k ? order.get(a.k) ?? 1e6 : 1e7) - (z.k ? order.get(z.k) ?? 1e6 : 1e7));
     return h("div",{class:"shcell" + now,style:pos,role:"group","aria-label":`${lane.name}, ${name}`},
       grps.map(gr=>{ const gs = shelfSum(gr.ts), nm = gr.b ? chartLabel(gr.b) : "Not on an initiative";
         return h("section",{class:"shgrp"}, h("h5",{}, h("span",{class:"shgn"}, nm), h("span",{class:"shgs"}, `${storiesWord(gs.n)} · ${fmtPts(gs.pts)} pt` + (gs.un ? ` · ${gs.un} not estimated` : ""))),
           shelfGroup(gr.ts, `${nm}, ${name}`, `${lane.id}:${i}:${gr.k}`)); }),
-      h("p",{class:"shsum"}, shelfBar(s), h("span",{}, `${name}: ${shelfText(s)} · capacity unavailable${fl}`))); });
-  const all = shelfSum(sh.tiles.concat(sh.none)), people = [...new Set(sh.tiles.concat(sh.none).map(t=>t.who).filter(Boolean))].map(personById).filter(Boolean);
-  if (UI.spot && !people.some(p=>p.id === UI.spot) && personById(UI.spot)) people.push(personById(UI.spot));
-  const mine = UI.spot ? shelfSum(sh.tiles.concat(sh.none).filter(t=>t.who === UI.spot)) : null;
-  const spot = open && people.length ? h("label",{class:"shspot"}, "Spotlight ", h("select",{"data-key":"shspot:" + lane.id,onchange:e=>{ UI.spot = e.target.value || null; saveUI(); render(); }},
-    h("option",{value:""}, "No one"), ...people.map(p=>h("option",{value:p.id, selected:UI.spot === p.id}, p.name)))) : null;
-  const unOpen = shelfMore.has("none:" + lane.id);
-  const label = h("div",{class:"shlab"}, h("div",{class:"shstick"},
-    h("b",{}, "Jira stories"), h("span",{}, shelfText(all)),
-    h("button",{type:"button",class:"linkish shtog","aria-expanded":String(open),"data-key":"shtog:" + lane.id,onclick:toggle}, open ? "Show summaries only" : "Show the stories"),
-    spot, mine ? h("span",{class:"shme"}, `${personName(UI.spot)}: ${storiesWord(mine.n)}, ${fmtPts(mine.pts)} pts` + (mine.un ? `, ${mine.un} not estimated` : "")) : null,
-    open ? h("span",{class:"shnote"}, "Tiles are sized by points, one scale for the whole chart. Where a tile sits in a sprint says nothing about when.") : null,
-    sh.none.length ? h("button",{type:"button",class:"linkish shtog","aria-expanded":String(unOpen),"data-key":"shnone:" + lane.id,onclick:()=>{ unOpen ? shelfMore.delete("none:" + lane.id) : shelfMore.add("none:" + lane.id); render(); }}, `Unscheduled: ${storiesWord(sh.none.length)} with no sprint in this plan`) : null,
-    sh.none.length && unOpen ? shelfGroup(sh.none, `${lane.name}, unscheduled`, "un:" + lane.id) : null));
+      h("p",{class:"shsum",title:`${name}: ${shelfText(s)} · capacity unavailable${fl}`}, shelfBar(s), h("span",{class:"vh"}, `${name}: ${shelfText(s)} · capacity unavailable${fl}`),
+        h("span",{class:"shsumt","aria-hidden":"true"}, [name, storiesWord(s.n)].concat(shelfShort(s)).map((x, i)=>h("span",{}, (i ? "· " : "") + x))))); });
+  // Stories with no sprint in this plan: a strip of their own under the sprints, once the tiles are showing.
+  const unOpen = shelfMore.has("none:" + lane.id), unWord = `${storiesWord(sh.none.length)} with no sprint in this plan`;
+  const uw = sw || shelfWindow();
+  const un = sh.none.length && tilesShown ? h("div",{class:"shcell shun",style:{gridColumn:uw ? `${Math.max(0, Math.round((uw.a - sd) / 7)) + 1} / span ${Math.max(1, Math.min(uw.weeks, W - Math.max(0, Math.round((uw.a - sd) / 7))))}` : "1 / -1", gridRow:"2"}},
+    h("button",{type:"button",class:"shunb","aria-expanded":String(unOpen),"data-key":"shnone:" + lane.id,title:`Unscheduled: ${unWord}`,"aria-label":`Unscheduled: ${unWord}`,onclick:()=>{ unOpen ? shelfMore.delete("none:" + lane.id) : shelfMore.add("none:" + lane.id); render(); }},
+      `${sh.none.length.toLocaleString("en-US")} unscheduled ${sh.none.length === 1 ? "story" : "stories"}`, h("span",{class:"shunc","aria-hidden":"true"}, "›")),
+    unOpen ? shelfGroup(sh.none, `${lane.name}, unscheduled`, "un:" + lane.id) : null) : null;
+  // The label: two short lines at most, the whole summary in its hover text and for screen readers.
+  const pool = sh.tiles.concat(sh.none), all = shelfSum(pool), mine = UI.spot ? shelfSum(pool.filter(t=>t.who === UI.spot)) : null;
+  pool.forEach(t=>{ if (t.who) shelfPeople.set(t.who, (shelfPeople.get(t.who) || 0) + 1); });
+  const full = `Jira stories: ${shelfText(all)}` + (sh.none.length ? ` · ${unWord}` : "") + (mine ? `. ${personName(UI.spot)}: ${storiesWord(mine.n)}, ${fmtPts(mine.pts)} pts` + (mine.un ? `, ${mine.un} not estimated` : "") : "") + fl;
+  const flat = !tilesShown && !un;
+  const label = h("div",{class:"shlab" + (flat ? " flat" : "")}, h("div",{class:"shstick",title:full},
+    h("span",{class:"vh"}, full),
+    h("div",{class:"shl1"},
+      h("button",{type:"button",class:"shtgl","aria-pressed":String(open),"aria-label":`Show ${lane.name}'s stories as tiles`,"data-key":"shtog:" + lane.id,
+        title:open ? "Showing the stories as tiles. Click for summaries only" : "Show the stories as tiles",onclick:()=>toggle(!open)}, icon("tiles")),
+      h("span",{class:"shl1t","aria-hidden":"true"}, h("b",{}, "Jira"), ` · ${storiesWord(all.n)}`)),
+    h("div",{class:"shl2" + (mine ? " shme" : ""),"aria-hidden":"true"}, (mine ? [personName(UI.spot).split(/\s+/)[0], `${mine.n.toLocaleString("en-US")} here`, `${fmtPts(mine.pts)} pts`] : shelfShort(all).concat(sh.none.length ? `${sh.none.length} no sprint` : [])).map((x, i)=>h("span",{}, (i ? "· " : "") + x)))));
   const grid = `repeating-linear-gradient(to right, transparent 0, transparent calc(${100/W}% - 1px), var(--rule-2) calc(${100/W}% - 1px), var(--rule-2) ${100/W}%)`;
   return h("div",{class:"lane shelfrow" + (open ? " open" : "") + (UI.spot ? " spot" : ""),"data-shelf":lane.id,style:{"--lc":lane.color}}, label,
-    h("div",{class:"shelves",style:{gridTemplateColumns:`repeat(${W},1fr)`,backgroundImage:grid}}, cells));
+    h("div",{class:"shelves",style:{gridTemplateColumns:`repeat(${W},1fr)`,backgroundImage:grid}}, cells, un));
 }
 // A segmented control's pill slides from the option that was on to the one picked.
 let segFrom = null;
