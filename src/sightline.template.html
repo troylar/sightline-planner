@@ -4231,6 +4231,7 @@ function jiraSprintSpan(j){
   if (!j || !j.sprintStart || !j.sprintEnd || staleSprint(j)) return null;
   return {s: isoToDay(j.sprintStart), e: isoToDay(j.sprintEnd)};
 }
+const keyOrder = new Intl.Collator(undefined, {numeric:true}).compare;   // the same order as localeCompare with numeric, built once
 let storyMemo = null;               // a draw-time cache: dropped by dropJiraMemos (each render and commit), and when JIRA is replaced
 function storyIndex(){
   if (storyMemo && storyMemo.J === JIRA) return storyMemo;
@@ -4249,7 +4250,7 @@ function storyIndex(){
           s: inPlan ? nextWork(when.s, hs) : null, e: inPlan ? when.e : null, owner: personByJiraKey(j.assigneeKey)?.id || null};
         x.drawn = !x.off && !x.real && state !== "abandoned" && inPlan && x.s <= x.e;
         byKey.set(c, x); out.push(x); }); });
-    if (out.length) byBar.set(b.id, out.sort((a, z)=>(a.when ? a.when.s : 1e9) - (z.when ? z.when.s : 1e9) || rank[a.state] - rank[z.state] || a.key.localeCompare(z.key, undefined, {numeric:true}))); });
+    if (out.length) byBar.set(b.id, out.sort((a, z)=>(a.when ? a.when.s : 1e9) - (z.when ? z.when.s : 1e9) || rank[a.state] - rank[z.state] || keyOrder(a.key, z.key))); });
   return storyMemo;
 }
 const storiesOf = b => b ? storyIndex().byBar.get(b.id) || [] : [];
@@ -4260,7 +4261,7 @@ const storyByKey = k => storyIndex().byKey.get(k) || null;
 const SHELF_MIN = 118, SHELF_PX = 11, SHELF_CAP = 13, SHELF_PREVIEW = 24, SHELF_RANK = {prog:0, todo:1, done:2};
 const shelvesOn = () => UI.zoom !== "days" && UI.shelves !== false && UI.rows !== "people" && rowsMode() !== "epics" && !!JIRA && sprintList().some(x=>!x.gap);
 const shelfOpen = id => typeof (UI.shelfOpen || {})[id] === "boolean" ? UI.shelfOpen[id] : zoomN() >= 1 && zoomN() <= 2;   // your choice beats the zoom's
-const shelfAt = day => sprintList().findIndex(x=>day >= x.a && day < x.a + x.weeks * 7);
+const shelfAt = (day, L = sprintList()) => L.findIndex(x=>day >= x.a && day < x.a + x.weeks * 7);
 const tileWidth = pts => pts == null ? null : SHELF_MIN + Math.min(pts, SHELF_CAP) * SHELF_PX;
 // A Jira issue that's an initiative of its own: a leaf, not an epic, synced, in a sprint inside the plan.
 function storyLeaf(b){
@@ -4270,18 +4271,18 @@ function storyLeaf(b){
 }
 // What one workstream's shelves hold, from the bars the chart would draw there (so filters apply the same way).
 function laneShelf(lane, bars, FR){
-  const tiles = [], none = [], leaves = new Set(), ids = new Set(bars.map(b=>b.id));
+  const tiles = [], none = [], leaves = new Set(), ids = new Set(bars.map(b=>b.id)), SL = sprintList();
   const cat = s => s === "done" ? "done" : s === "inprogress" ? "prog" : "todo";
   bars.forEach(b=>{ const L = storyLeaf(b);
-    if (L){ const sp = shelfAt(L.when.s); if (sp < 0) return; leaves.add(b.id);
+    if (L){ const sp = shelfAt(L.when.s, SL); if (sp < 0) return; leaves.add(b.id);
       tiles.push({dk:"bar:" + b.id, pt:"bar", pid:b.id, key:upKey(b.jira), title:L.j.summary || chartLabel(b), pts:typeof L.j.points === "number" ? L.j.points : null, st:cat(L.st.state), label:L.st.label || L.j.status || "",
         who:personByJiraKey(L.j.assigneeKey)?.id || null, whoName:L.j.assignee || "", blk:isBlocked(b), grp:b.parent && ids.has(b.parent) ? barById(b.parent) : null, sp, open:()=>select("bar", b.id), sel:!!sel && sel.type === "bar" && sel.id === b.id}); return; }
     storiesOf(b).forEach(x=>{ if (x.off || x.real || x.state === "abandoned" || !storyVisible(x, UI.filter, FR)) return;
-      const sp = x.inPlan ? shelfAt(x.when.s) : -1;
+      const sp = x.inPlan ? shelfAt(x.when.s, SL) : -1;
       const t = {dk:"story:" + x.key, pt:"story", pid:x.key, key:x.key, title:x.j.summary || x.key, pts:typeof x.j.points === "number" ? x.j.points : null, st:cat(x.state), label:x.label || x.j.status || "",
         who:x.owner, whoName:x.j.assignee || "", blk:false, grp:b, sp, open:()=>select("story", x.key), sel:!!sel && sel.type === "story" && sel.id === x.key};
       (sp < 0 ? none : tiles).push(t); }); });
-  const ord = (a, z) => SHELF_RANK[a.st] - SHELF_RANK[z.st] || a.key.localeCompare(z.key, undefined, {numeric:true});
+  const ord = (a, z) => SHELF_RANK[a.st] - SHELF_RANK[z.st] || keyOrder(a.key, z.key);
   tiles.sort(ord); none.sort(ord);
   return {tiles, none, leaves, order:bars.map(b=>b.id), n:tiles.length + none.length};
 }

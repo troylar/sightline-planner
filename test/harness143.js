@@ -90,6 +90,14 @@ async function open(){
     row().querySelector('[data-key="shtog:chat"]').click();
     ok("Z3 and a workstream folded by hand stays folded there", ev("UI.shelfOpen.chat") === false && cells().every(c=>!c.querySelector(".shtile")));
     ok("Z3 …remembered in this browser", JSON.parse(w.localStorage.getItem("timeline-planner-ui")).shelfOpen.chat === false);
+    // Speed: one workstream's shelves read the sprint list once, not once per story, and tiles keep the numeric key order.
+    const P = JSON.parse(ev(`(() => { const real = sprintList; let n = 0; sprintList = () => (n++, real());
+      try { const lane = 'chat', sh = laneShelf(lane, S.bars.filter(b => b.lane === lane), fRangeDays());
+        return JSON.stringify({n, tiles:sh.tiles.length, keys:sh.tiles.map(t => t.st + "|" + t.key)}); } finally { sprintList = real; } })()`));
+    const want = [...P.keys].sort((a, z) => ({prog:0, todo:1, done:2})[a.split("|")[0]] - ({prog:0, todo:1, done:2})[z.split("|")[0]] || a.split("|")[1].localeCompare(z.split("|")[1], undefined, {numeric:true}));
+    ok("SP1 a workstream's shelves build the sprint list once, not once per story", P.tiles > 1 && P.n === 1, JSON.stringify({calls:P.n, tiles:P.tiles}));
+    ok("SP2 tiles keep their order: status, then key in number order", JSON.stringify(P.keys) === JSON.stringify(want), P.keys.join(" "));
+    ok("SP3 key order counts numbers as numbers: ABC-9, ABC-10, ABC-100", ev(`JSON.stringify(["ABC-100", "ABC-10", "ABC-9"].sort(keyOrder))`) === '["ABC-9","ABC-10","ABC-100"]');
     // Off switch, other views, filters.
     ev("UI.shelves = false; render()");
     ok("O1 Show → On sprint shelves off draws the bars again", !row() && !!d.querySelector('#gantt .bar[data-key="bar:lf1"]'));
