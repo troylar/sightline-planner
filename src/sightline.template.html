@@ -1079,7 +1079,7 @@ td input:disabled,td select:disabled{opacity:1;color:var(--ink);-webkit-appearan
 .suhead .cnt{margin-left:6px;font-weight:500;color:var(--ink-3);font-variant-numeric:tabular-nums}
 /* Roadmap: deliverables by workstream and time; a broad target is a wide card */
 .roadmap{padding:16px}.rmhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px 20px}.rmhead h2{margin:0;font-size:20px}.rmhead p.hint{margin:2px 0 0;max-width:70ch}
-.rmadd{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:flex-end}.rmf{display:flex;flex-direction:column;gap:3px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2)}
+.rmadd{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:flex-end}.rmaddwhy{flex-basis:100%;margin:0}.rmf{display:flex;flex-direction:column;gap:3px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2)}
 .rmf input{font-size:14px;text-transform:none;letter-spacing:0;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:7px 10px}.rmf input::placeholder{color:var(--ink-3)}
 .rmf-idea input{width:min(100vw - 64px, 360px)}.rmf #rmFrom{width:180px}
 .rmtools{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;font-size:12.5px;color:var(--ink-2);margin:10px 0}
@@ -1172,7 +1172,7 @@ body.navrail .snp{padding-left:10px}body.navrail .snsub{padding-left:10px}
 }
 .rmideas{border:1px solid var(--rule);border-radius:10px;background:var(--surface);padding:10px 14px;margin-bottom:14px}.rmideas h3{margin:0 0 2px;font-size:14px}
 .capgroup h4{margin:10px 0 0;font-size:12.5px;display:flex;align-items:center;gap:6px}.captype{font-size:11px;font-weight:600;padding:1px 7px;border-radius:9px;background:var(--surface-2,var(--rule));color:var(--ink-2)}
-.capage{font-size:11.5px;color:var(--ink-2)}.capage.old{color:var(--warn,#b45309);font-weight:600}.capage.unknown{font-style:italic}.capbox{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--rule);padding-top:8px;margin-top:4px}.caphand{display:flex;flex-direction:column;gap:6px}.caphand select{width:100%;max-width:100%;min-width:0}.caphand input{flex:1;min-width:0}.rmideas ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+dialog.capdlg{width:min(560px,92vw)}.capdlg form{display:flex;flex-direction:column;gap:10px}.capdlg h2{margin:0 0 2px}.capdlg .capbtns{gap:8px;align-items:center}.capage{font-size:11.5px;color:var(--ink-2)}.capage.old{color:var(--warn,#b45309);font-weight:600}.capage.unknown{font-style:italic}.capbox{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--rule);padding-top:8px;margin-top:4px}.caphand{display:flex;flex-direction:column;gap:6px}.caphand select{width:100%;max-width:100%;min-width:0}.caphand input{flex:1;min-width:0}.rmideas ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
 .rmideas li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.dvidea{font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none}.ideaacts{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto}.btn.sm{padding:2px 8px;font-size:12px}
 .rmgrid{display:flex;flex-direction:column;gap:2px;overflow-x:auto}.rmrow{display:grid;grid-template-columns:170px minmax(640px,1fr);gap:8px;align-items:stretch}
 .rmlane{display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 4px;border-top:1px solid var(--rule-2)}.rmlane small{color:var(--ink-3);margin-left:auto}.rmlane .ini{width:10px;height:10px;border-radius:3px}
@@ -7675,7 +7675,8 @@ defAction("outcome.add", {scope:"outcomes", risk:"routine", done:(p, a)=>!!a.id 
     if (a.jira && a.jira.some(k=>!JKEY.test(k))) return actInvalid("That isn't a Jira key (like ABC-123).");
     if (a.jira && a.jira.length > DV_MAX_KEYS) return `A deliverable links up to ${DV_MAX_KEYS} Jira issues. Link its epics or features instead of every story.`; },
   run:(p, a)=>{ const id = a.id || newId("dv"), src = String(a.source || "").trim().slice(0, 60);
-    const d = {id, name:a.name.trim().slice(0, 120), stage:"idea", source: src ? `${src}, ${fmtDay(todayDay())}` : `Added ${fmtDay(todayDay())}`,
+    const dated = a.capture && a.raised;   // a capture carries the meeting's own date, so its source isn't stamped with today's
+    const d = {id, name:a.name.trim().slice(0, 120), stage:"idea", ...(dated ? (src ? {source:src} : {}) : {source: src ? `${src}, ${fmtDay(todayDay())}` : `Added ${fmtDay(todayDay())}`}),
       ...(a.target ? {target:a.target} : {}), ...(a.release ? {release:a.release} : {}), ...(a.date ? {date:a.date} : {}), ...(a.jira ? {jira:[...new Set(a.jira)]} : {}),
       ...(a.capture ? {capture:a.capture} : {}), ...(a.askedBy ? {askedBy:{type:a.askedBy.type, id:a.askedBy.id}} : {}), ...(a.raised ? {raised:a.raised} : {}), ...(a.lane ? {lane:a.lane} : {})};
     if ((d.target || d.release || d.date) && !d.capture) d.stage = "planned";
@@ -10201,13 +10202,13 @@ function openAddMenu(rect, ctx){
   const day = ctx.day ?? (UI.zoom === "days" && DV ? leftDay() : Math.max(startDay(), todayDay()));
   const laneName = S.lanes.find(l=>l.id===lane)?.name || "";
   const items = ctx.chart ? [ctx.bar && selBar ? ["task",`Task in "${(selBar.label||"").slice(0,24)}"`,"T"] : null, ctx.bar && selBar ? ["subinitiative",`Sub-initiative in "${(selBar.label||"").slice(0,20)}"`,"S"] : null, ["initiative","Initiative","I"],["milestone","Milestone","M"],["gate","Gate","G"],["note","Note","N"],["meeting","Meeting","E"], ...(S.types||[]).map(t=>["block:" + t.id, t.name, ""])].filter(Boolean).filter(x=>!ctx.blocksOnly || x[0].startsWith("block:"))
-    : [["initiative","Initiative","I"],["milestone","Milestone","M"],["gate","Gate","G"],["note","Note","N"],["meeting","Meeting","E"], ...(S.types||[]).map(t=>["block:" + t.id, t.name, ""]), selBar ? ["task",`Task in "${(selBar.label||"").slice(0,24)}"`,"T"] : null, selBar ? ["subinitiative",`Sub-initiative in "${(selBar.label||"").slice(0,20)}"`,"S"] : null, ["lane","Workstream","W"], ["decision","Decision","D"], ["risk","Risk","R"]].filter(Boolean);
+    : [["initiative","Initiative","I"],["milestone","Milestone","M"],["gate","Gate","G"],["note","Note","N"],["meeting","Meeting","E"],["capture","Capture a request or idea","C"], ...(S.types||[]).map(t=>["block:" + t.id, t.name, ""]), selBar ? ["task",`Task in "${(selBar.label||"").slice(0,24)}"`,"T"] : null, selBar ? ["subinitiative",`Sub-initiative in "${(selBar.label||"").slice(0,20)}"`,"S"] : null, ["lane","Workstream","W"], ["decision","Decision","D"], ["risk","Risk","R"]].filter(Boolean);
   // What fits the page you're on comes first (Settings → Risks offers Risk, People offers Time off...). Timeline items say where they'll land.
   const PAGE = UI.ws === "plan" ? ({team:[["person","Person","P"],["group","Group","O"]], meetings:[["meeting","Meeting","E"]], milestones:[["milestone","Milestone","M"]], gates:[["gate","Gate","G"]], decisions:[["decision","Decision","D"]], risks:[["risk","Risk","R"]], calendar:[["holiday","Holiday","H"]]})[PLAN_TABS.some(x=>x[0]===UI.planTab) ? UI.planTab : "milestones"] || []
-    : UI.ws === "people" ? [["timeoff","Time off","T"],["person","Person","P"]] : [];
+    : UI.ws === "people" ? [["timeoff","Time off","T"],["person","Person","P"]] : UI.ws === "roadmap" ? [["capture","Capture a request or idea","C"]] : [];
   if (UI.ws === "plan" && UI.planTab === "types"){ PAGE.length = 0; PAGE.push(["ceremony","Ceremony","C"], ["type","Process block type","B"], ["sprint","Sprint","S"]); }
-  const pageName = UI.ws === "plan" ? (PLAN_TABS.find(x=>x[0]===UI.planTab)?.[1] || "Settings") : "People";
-  KIND_ICON.ceremony = "retro"; KIND_ICON.type = "flag"; KIND_ICON.sprint = "hourglass";
+  const pageName = UI.ws === "plan" ? (PLAN_TABS.find(x=>x[0]===UI.planTab)?.[1] || "Settings") : UI.ws === "roadmap" ? "the Roadmap" : "People";
+  KIND_ICON.capture = "note"; KIND_ICON.ceremony = "retro"; KIND_ICON.type = "flag"; KIND_ICON.sprint = "hourglass";
   const used = new Set(), keyed = list => list.map(([t,label,key])=>{ const k = key && !used.has(key) ? key : ""; if (k) used.add(k); return [t,label,k]; });
   const first = ctx.chart ? [] : keyed(PAGE), rest = keyed(items.filter(x=>!PAGE.some(p=>p[0]===x[0])));
   const run = t => { closeAddMenu(false);
@@ -10217,6 +10218,7 @@ function openAddMenu(rect, ctx){
     if (t === "type") return createAt("type");
     if (t === "ceremony") return $("#addCeremony").click();
     if (t === "sprint") return $("#addSprint").click();
+    if (t === "capture") return openCapture();
     createAt(t, t === "task" || t === "subinitiative" ? selBar.id : (t === "meeting" || t.startsWith("block:")) && !ctx.chart && !selBar ? null : ctx.blocksOnly ? ctx.lane : lane, day); };
   const lands = nearWeekday(Math.min(startDay() + S.meta.weeks*7 - 3, Math.max(startDay(), day)));   // the day createAt will really use
   const where = `${WD_SHORT[dow(lands)]} ${fmtDay(lands)}` + (laneName ? ` in ${laneName}` : "");
@@ -13999,6 +14001,46 @@ function ideaSource(){ const mine = UI.ideaFrom && typeof UI.ideaFrom === "objec
 function addIdea(name, extra){ name = String(name || "").trim().slice(0, 120); if (!name) return Promise.resolve(null);
   const id = newId("dv");
   return dvSave(`idea: ${name}`, s=>act("outcome.add", {id, name, source:String(ideaSource() || ""), ...(extra || {})}, s)).then(ok=>ok ? id : null); }
+// Capture in one step: only what was raised is needed. Who asked and the workstream stay unknown unless chosen (never
+// guessed from what's selected); where from and the meeting's date are kept for this session, for the next capture.
+function openCapture(){
+  if (present || tooNew()){ setStatus("Captures can't be added here right now."); return; }
+  $("#dlgCapture")?.remove();
+  let last = {}; try { last = JSON.parse(sessionStorage.getItem("tp-capture-last") || "{}") || {}; } catch(e){}
+  if (last.plan !== S.meta.planId) last = {};
+  const today = dayToIso(todayDay()), what = h("input",{id:"capWhat",maxlength:"120","aria-required":"true",autocomplete:"off",placeholder:"e.g. Tell support when the release process changes"});
+  const type = h("select",{id:"capType"}, ...CAPTURE_TYPES.map(([v, l])=>h("option",{value:v, selected:(last.type || "request") === v}, l)));
+  const who = h("select",{id:"capWho"}, h("option",{value:""}, "Not known"),
+    (S.groups || []).length ? h("optgroup",{label:"Groups"}, ...S.groups.map(g=>h("option",{value:"group:" + g.id}, g.name))) : null,
+    h("optgroup",{label:"People"}, ...S.people.filter(pp=>!pp.inactive).map(pp=>h("option",{value:"person:" + pp.id}, pp.name + (pp.external ? " (outside)" : "")))));
+  const lane = h("select",{id:"capLane"}, h("option",{value:""}, "Unassigned (sort it in triage)"), ...S.lanes.map(l=>h("option",{value:l.id}, l.name)));
+  const from = h("input",{id:"capFrom",maxlength:"60",list:"capFromList",value:last.from ?? ideaSource(),placeholder:"optional, e.g. Weekly sync"});
+  const raised = h("input",{id:"capRaised",type:"date",value:validIso(last.raised || "") ? last.raised : today});
+  const msg = h("p",{class:"hint",id:"capMsg","aria-live":"polite"}, "Only what was raised is needed. It waits in To triage until it's handed off or declined.");
+  const save = again => { const name = what.value.trim(); if (!name){ what.focus(); msg.textContent = "Say what was raised first."; return; }
+    const w = who.value, i = w.indexOf(":"), r0 = raised.value && validIso(raised.value) ? raised.value : "";
+    const extra = {capture:type.value, source:from.value.trim().slice(0, 60), ...(w ? {askedBy:{type:w.slice(0, i), id:w.slice(i + 1)}} : {}), ...(r0 ? {raised:r0} : {}), ...(lane.value ? {lane:lane.value} : {})};
+    try { sessionStorage.setItem("tp-capture-last", JSON.stringify({plan:S.meta.planId, from:extra.source, raised:r0, type:type.value})); } catch(e){}
+    addIdea(name, extra).then(id=>{ if (!id){ msg.textContent = "It wasn't saved. The status line says why."; return; }
+      setStatus(`Captured "${name}". It's in To triage.`);
+      if (again){ what.value = ""; who.value = ""; lane.value = ""; msg.textContent = `Captured "${name}". Next one?`; what.focus(); return; }
+      dialog.close(); }); };
+  const dialog = h("dialog",{id:"dlgCapture",class:"capdlg","aria-labelledby":"capTitle"},
+    h("form",{method:"dialog",onsubmit:e=>{ e.preventDefault(); save(false); }},
+      h("h2",{id:"capTitle"}, "Capture a request or idea"),
+      field("capWhat", "What was raised", what),
+      h("div",{class:"row2"}, field("capType", "It's a", type), field("capWho", "Asked by", who)),
+      field("capLane", "Workstream", lane),
+      h("div",{class:"row2"}, field("capFrom", "From", from), field("capRaised", "Raised on", raised)),
+      h("datalist",{id:"capFromList"}, ...[...new Set((S.meetings || []).map(m=>m.title).filter(Boolean))].map(t=>h("option",{value:t}))),
+      msg,
+      h("div",{class:"qrow capbtns"}, h("button",{type:"submit",class:"btn primary",id:"capGo"}, "Capture"),
+        h("button",{type:"button",class:"btn",id:"capAgain",onclick:()=>save(true)}, "Capture and add another"),
+        h("button",{type:"button",class:"linkish",id:"capCancel",onclick:()=>dialog.close()}, "Cancel"))));
+  const opener = document.activeElement && document.activeElement.id;   // a redraw replaces the button that opened it: focus its replacement
+  dialog.addEventListener("close", ()=>{ dialog.remove(); if (UI.ws === "roadmap") render(); const back = opener && document.getElementById(opener); if (back) back.focus(); });
+  document.body.append(dialog); dialog.showModal(); what.focus();
+}
 function setDvTarget(id, target){ const d = dvById(id); if (!d) return Promise.resolve(false); const p = target === "later" ? {label:"Later"} : periodRange(target);
   return dvSave(`${d.name}: ${p ? "targets " + p.label : "no target"}`, s=>act("outcome.setTarget", {id, ...(target ? {target} : {})}, s)); }
 function setDvRelease(id, rid){ const d = dvById(id), r = relById(rid); if (!d || !r) return Promise.resolve(false);
@@ -14068,6 +14110,7 @@ function triageList(can){
   const closed = (S.deliverables || []).filter(d=>d.capture && !capOpen(d)).length;
   return h("section",{class:"rmideas rmtriage",id:"rmTriage"}, h("h3",{}, `To triage (${open.length})`, closed ? h("span",{class:"hint",id:"rmTriageClosed"}, ` · ${closed} handed off or declined, findable with Find`) : null),
     h("p",{class:"hint"}, open.length ? "Requests, ideas, gaps and questions raised in meetings, oldest first. Open one to hand it off or decline it." : "Nothing captured is waiting. Captures from meetings show here until they're handed off or declined."),
+    can ? h("div",{class:"qrow"}, h("button",{type:"button",class:"btn",id:"rmCapture",onclick:openCapture}, "+ Capture a request or idea")) : null,
     ...groups.map(([id, name, color])=>h("div",{class:"capgroup","data-caplane":id || "none"}, h("h4",{}, color ? h("i",{class:"ini",style:{background:color}}, "") : null, `${name} (${by.get(id).length})`),
       h("ul",{}, ...by.get(id).sort(old).map(row)))));
 }
@@ -14082,8 +14125,9 @@ function renderRoadmap(){
   const inp = composerField("roadmap", "rmIdea", h("input",{id:"rmIdea","data-key":"roadmap:idea",placeholder:"e.g. Make onboarding effortless",maxlength:"120",autocomplete:"off"}));
   const from = h("input",{id:"rmFrom",placeholder:"optional, e.g. Planning topics",list:"rmFromList",value:ideaSource(),maxlength:"60",oninput:e=>{ UI.ideaFrom = {...(UI.ideaFrom && typeof UI.ideaFrom === "object" ? UI.ideaFrom : {}), [S.meta.planId]: e.target.value}; saveUI(); }});
   const add = h("form",{class:"rmadd",id:"rmAdd",onsubmit:e=>{ e.preventDefault(); const raw = inp.value, v = raw.trim(); if (!v){ inp.focus(); return; } addIdea(v).then(id=>{ if (id){ composerSubmitted("roadmap", [["rmIdea",raw]], draftPlan); if (S.meta.planId !== draftPlan) return; setStatus(`Added the idea "${v}". Sort it when you're ready.`); const f = $("#rmIdea"); if (f){ if (f.value === raw) f.value = ""; f.focus(); } } }); }},
-    h("label",{class:"rmf rmf-idea"}, h("span",{}, "New idea"), inp), h("label",{class:"rmf"}, h("span",{}, "From"), from),
-    h("datalist",{id:"rmFromList"}, ...[...new Set((S.meetings || []).map(m=>m.title))].map(t=>h("option",{value:t}))), h("button",{type:"submit",class:"btn primary",id:"rmAddGo"},"+ Add idea"));
+    h("label",{class:"rmf rmf-idea"}, h("span",{}, "New roadmap idea"), inp), h("label",{class:"rmf"}, h("span",{}, "From"), from),
+    h("datalist",{id:"rmFromList"}, ...[...new Set((S.meetings || []).map(m=>m.title))].map(t=>h("option",{value:t}))), h("button",{type:"submit",class:"btn primary",id:"rmAddGo"},"+ Add to the roadmap"),
+    h("p",{class:"hint rmaddwhy",id:"rmAddWhy"}, "Something we might ship. A request or question someone raised? ", h("button",{type:"button",class:"linkish",id:"rmAddCapture",onclick:openCapture},"Capture it"), " instead, so it waits in To triage with who asked."));
   const ghost = d => { const sp = dvSpan(d, cols); return h("button",{type:"button",class:"dvcard dvghost" + (d._status === "changed" ? " stale" : ""),"data-amghost":d._am,style: sp ? {gridColumn:`${sp.a + 1} / ${sp.b + 2}`} : {},
       title:"Proposed by your assistant: not in the plan yet. Click to review.",onclick:()=>{ sel = {type:"amend", id:"x"}; render(); }}, h("span",{class:"dvname"}, d.name), h("span",{class:"dvmeta"}, h("span",{class:"dvb dvb-jira"}, d._status === "changed" ? "Proposed · changed since" : "Proposed"))); };
   const card = d => { const sp = dvSpan(d, cols), P = dvProgress(d), b = dvBadges(d, cols, P), own = (d.owners || []).map(personById).filter(Boolean);

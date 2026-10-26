@@ -78,7 +78,7 @@ Do not connect both batches at once.
 Preserve any example edits you want first. Choose **File → Open a copy…** and select
 **examples/northstar/blank-plan.json**. This opens an empty, detached plan rather than linking writes to the
 example file. In Settings, set your plan title and calendar before scheduling work. On Roadmap, add an outcome
-in **New idea**, such as “New teams can create their first shared plan.” Keep unknown timing and owners unknown.
+in **New roadmap idea**, such as “New teams can create their first shared plan.” Keep unknown timing and owners unknown.
 
 Choose **File → Save as a new shared plan…** and save a separate JSON file. Confirm that the toolbar identifies
 it as a shared plan. Close and reopen the app, choose **File → Open shared plan…**, and select that file.

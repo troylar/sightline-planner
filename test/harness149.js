@@ -14,7 +14,7 @@ const HOSTILE = '<img src=x onerror="window.pwned=1"> Support desk';
   const dom = new JSDOM(html, {runScripts:"dangerously", pretendToBeVisual:true, url:"https://local.test/", virtualConsole:new VirtualConsole(), beforeParse(w){
     const RealDate = w.Date, now = new RealDate("2026-10-07T14:00:00").getTime();
     w.Date = class extends RealDate {constructor(...a){ a.length ? super(...a) : super(now); } static now(){ return now; }};
-    w.HTMLDialogElement.prototype.showModal = function(){ this.open = true; }; w.HTMLDialogElement.prototype.close = function(){ this.open = false; };
+    w.HTMLDialogElement.prototype.showModal = function(){ this.open = true; }; w.HTMLDialogElement.prototype.close = function(){ if (!this.open) return; this.open = false; this.dispatchEvent(new w.Event("close")); };
     w.indexedDB = undefined; w.confirm = ()=>true; w.alert = ()=>{}; w.prompt = ()=>"T"; w.Element.prototype.scrollIntoView = ()=>{};
     w.HTMLCanvasElement.prototype.getContext = ()=>null; w.CSS = w.CSS || {}; w.CSS.escape = s=>s; w.errs = []; w.addEventListener("error", e=>w.errs.push(e.message)); }});
   const w = dom.window, d = w.document, ev = s=>w.eval(s), J = s=>JSON.parse(ev(`JSON.stringify(${s})`));
@@ -117,6 +117,38 @@ const HOSTILE = '<img src=x onerror="window.pwned=1"> Support desk';
     ev("sel = {type:'deliverable', id:'dv-closed'}; render()"); await wait(10);
     ok("U9 once handed off, Kind is back for the release notes", !!d.querySelector("#f-dvkind"));
     ok("U7 a handed-off capture says where it went, that Jira keeps the issue, and offers Reopen", /Handed off to ABC-122/.test(d.querySelector("#f-dvcapstate").textContent) && /Jira owns the issue/.test(d.querySelector("#f-dvcapstate").textContent) && !!d.querySelector("#f-dvreopen"));
+
+    // Capture in one step, from the Add menu (A, then C) or To triage.
+    ev("sel = null; goWs('roadmap'); UI.rmTriage = true; render(); openAddMenu({left:0, top:0, bottom:0}, {})"); await wait(10);
+    const cm = [...d.querySelectorAll("#addMenu button")].find(b=>/Capture a request or idea/.test(b.textContent));
+    ok("C1 the Add menu offers Capture a request or idea, first on the Roadmap, with the letter C", cm && cm.dataset.key === "C" && d.querySelector("#addMenu button") === cm, cm ? cm.dataset.key : "missing");
+    ev("closeAddMenu(false); sel = {type:'lane', id:" + JSON.stringify(lane) + "}; render()"); await wait(10);
+    d.querySelector("#rmCapture").click(); await wait(10);
+    const dlg = () => d.querySelector("#dlgCapture"), n0 = J("S.deliverables.length");
+    ok("C2 To triage opens the capture form; with a workstream selected it still starts Unassigned and who asked Not known (never guessed)",
+      dlg() && dlg().open && d.querySelector("#capLane").value === "" && d.querySelector("#capWho").value === "" && d.querySelector("#capRaised").value === "2026-10-07" && d.activeElement === d.querySelector("#capWhat"));
+    d.querySelector("#capGo").click(); await wait(30);
+    ok("C3 nothing is captured without saying what was raised", J("S.deliverables.length") === n0 && /Say what was raised/.test(d.querySelector("#capMsg").textContent));
+    d.querySelector("#capWhat").value = "Shared test accounts for partner teams"; d.querySelector("#capType").value = "idea"; d.querySelector("#capWho").value = "group:grp-support";
+    d.querySelector("#capLane").value = lane; d.querySelector("#capFrom").value = "Weekly sync"; d.querySelector("#capRaised").value = "2026-10-05";
+    d.querySelector("#capAgain").click(); await wait(60);
+    const c1 = J("S.deliverables.find(x=>x.name === 'Shared test accounts for partner teams') || null");
+    ok("C4 Capture and add another saves it with type, who asked, workstream, where from and the date, and keeps the form open for the next",
+      c1 && c1.capture === "idea" && c1.stage === "idea" && c1.askedBy.id === "grp-support" && c1.lane === lane && c1.source === "Weekly sync" && c1.raised === "2026-10-05" && !!c1.added
+      && dlg() && dlg().open && d.querySelector("#capWhat").value === "" && d.querySelector("#capFrom").value === "Weekly sync" && d.querySelector("#capWho").value === "", JSON.stringify(c1));
+    d.querySelector("#capWhat").value = "Who signs off a weekend release?"; d.querySelector("#capType").value = "question"; d.querySelector("#capGo").click(); await wait(60);
+    const c2 = J("S.deliverables.find(x=>x.name === 'Who signs off a weekend release?') || null");
+    ok("C5 Capture saves and closes; with nothing else chosen it has no workstream and no requester, and waits under Unassigned",
+      c2 && c2.capture === "question" && !c2.lane && !c2.askedBy && c2.raised === "2026-10-05" && !dlg() && !!d.querySelector('#rmTriage [data-caplane="none"] [data-cap="' + c2.id + '"]'), JSON.stringify(c2));
+    d.querySelector("#rmCapture").click(); await wait(10);
+    ok("C6 the next capture this session starts with the same meeting and date", d.querySelector("#capFrom").value === "Weekly sync" && d.querySelector("#capRaised").value === "2026-10-05" && d.querySelector("#capType").value === "question");
+    d.querySelector("#capCancel").click(); await wait(10);
+    ok("C7 Cancel closes the form and adds nothing", !dlg() && J("S.deliverables.length") === n0 + 2);
+    const addWhy = d.querySelector("#rmAddWhy");
+    ok("C8 the roadmap's own add row says it's for things we might ship, and points meeting asks to Capture", /New roadmap idea/.test(d.querySelector("#rmAdd").textContent) && /Add to the roadmap/.test(d.querySelector("#rmAddGo").textContent)
+      && addWhy && /Capture it/.test(addWhy.textContent) && /To triage/.test(addWhy.textContent));
+    addWhy.querySelector("#rmAddCapture").click(); await wait(10);
+    ok("C9 its Capture it link opens the capture form", !!d.querySelector("#dlgCapture") && d.querySelector("#dlgCapture").open); d.querySelector("#capCancel").click(); await wait(10);
     ok("Z no page errors", !w.errs.length, w.errs.join(" | "));
   } catch(e){ ok("harness ran", false, e && e.stack ? e.stack.split("\n").slice(0, 3).join(" ") : e); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

@@ -56,7 +56,10 @@ have no way to send release notes to the teams that use them". Keep them in the 
   idea, process gap or question, with who asked (a person or a group already in the plan), the meeting and its date,
   and the workstream when it's clear. A team that isn't in the plan yet comes as a new group, which always waits for
   your review.
-- Or add one by hand on the Roadmap, then set **Captured as**, **Asked by** and **Raised on** on its card.
+- Or capture one by hand, live in the meeting: **Add** (or press A, then C) → **Capture a request or idea**, or
+  **+ Capture a request or idea** in To triage. Only what was raised is needed; who asked and the workstream stay
+  unknown unless you pick them, and the meeting and its date carry over to the next capture. **Capture and add
+  another** keeps the form open.
 - **To triage**, on the Roadmap, lists open captures by workstream, oldest first, with **Unassigned** last. Open one
   to **Hand off** (to an initiative or a Jira issue) or **Decline** with a reason; **Reopen** puts it back.
 

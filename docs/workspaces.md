@@ -88,7 +88,7 @@ selection while keeping your text. **Test reply** checks for a response, and **C
 instructions. Read the [first planning session](assistant-workflow.md#first-four-quarter-planning-session)
 for the in-app route. External tools use the [private-folder session](assistant-workflow.md#your-first-external-planning-session) and their own conversation.
 
-Unsubmitted **New idea** text stays with its plan during navigation and redraws in this tab's session. It is not
+Unsubmitted **New roadmap idea** text stays with its plan during navigation and redraws in this tab's session. It is not
 included in the saved plan or assistant context until added. Successful submission clears only the submitted text;
 an idea you start typing while the save finishes is retained. Copy or submit drafts before closing the app.
 
