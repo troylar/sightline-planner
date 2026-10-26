@@ -48,6 +48,13 @@ const issuesFile = JSON.stringify({kind:"sightline-jira-issues", generatedAt:"20
     ev("JIRA = parseJiraStatus(JS); JIRA_ISSUES = parseJiraIssues(JI); sortMemo = null; sprintMemo = null");
     ok("N3 …but not when every story has its epic", !notice() && J("sortPile().map(x=>x.epic)").every(Boolean));
     ok("N4 the page reads the flag strictly", ev("parseJiraStatus(JSON.stringify({...JSON.parse(JS), noParentLink:'yes'})).noParentLink") === false);
+    // The epic itself synced as an issue (the plan links it), with its own Parent Link to an initiative: still stop at the epic.
+    w.JS = status({issues:{"ABC-63":story("Points in the sprint", {...SPRINT, parent:"ABC-61"}), "ABC-60":{...ANCESTORS["ABC-60"], assignee:"", assigneeKey:"", labels:[]}},
+      ancestors:{"ABC-61":ANCESTORS["ABC-61"], "ABC-59":ANCESTORS["ABC-59"]}});
+    w.JI = issuesFile; ev("JIRA = parseJiraStatus(JS); JIRA_ISSUES = parseJiraIssues(JI); dropJiraMemos && dropJiraMemos(); sortMemo = null; sprintMemo = null");
+    const SW2 = J("(()=>{ const s = sprintWork(); return {epics:[...s.byEpic.keys()], loose:s.noEpic.map(x=>({key:x.key, missing:x.missing || ''}))}; })()");
+    ok("E1 an epic synced as an issue, with a parent above it: its sprint stories group under the epic, not the initiative", SW2.epics.includes("ABC-60") && !SW2.epics.includes("ABC-59") && !SW2.loose.some(x=>x.key === "ABC-63" || x.missing === "ABC-59"), JSON.stringify(SW2));
+    ok("E2 …and the sort pile files them under the epic too", J("sortPile().filter(x=>/^ABC-6[23]$/.test(x.key)).map(x=>x.epic)").every(e=>e === "ABC-60"), JSON.stringify(J("sortPile().map(x=>({key:x.key, epic:x.epic}))")));
     ok("Z no page errors", !w.errs.length, w.errs.join(" | "));
   } catch(e){ ok("harness ran without throwing", false, e.stack); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
