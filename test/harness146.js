@@ -1,4 +1,4 @@
-// Selecting without redrawing the chart. Choosing an initiative, task, Jira story or milestone, or closing its panel, keeps
+// Selecting without redrawing the chart, and Days drawing only the rows near the screen. Choosing an initiative, task, Jira story or milestone, or closing its panel, keeps
 // the chart on screen and moves the highlight; the result must be exactly what a full redraw draws, for every such item, in
 // Weeks at Fit, Weeks at one sprint (open shelves), rows by person, and Days. Anything else still draws in full. Fixed clock;
 // fixtures/sample-plan.json and fixtures/shelf-plan.js. Every name is invented.
@@ -71,6 +71,11 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("P1 clicking an initiative opens it without drawing the chart again, and looks like a full redraw", c1.editable && c1.sel === "bar:m2" && c1.draws === 0 && c1.same && fast1 === ev("__snap()"), JSON.stringify(c1));
     ev("sel = null; render()"); const plan0 = ev("JSON.stringify(planOfRecord(S))"), c2 = JSON.parse(press(2));
     ok("P2 a wiggle under the drag threshold still restores the plan and draws in full", c2.sel === "bar:m2" && c2.draws >= 1 && !c2.same && ev("JSON.stringify(planOfRecord(S))") === plan0, JSON.stringify(c2));
+    // Days: rows off screen skip layout and paint (content-visibility), but stay in the page; printing draws them all. jsdom has no
+    // layout, so this reads the rules; the browser checks are in the PR (scrolled screenshots, find, the printed text).
+    const css = [...d.querySelectorAll("style")].map(x => x.textContent).join("\n");
+    ok("D1 Days rows draw only near the screen, and print in full", /\.gantt\.days>\.lane\{content-visibility:auto;contain-intrinsic-size:auto \d+px\}/.test(css) && /@media print\{\.gantt\.days>\.lane\{content-visibility:visible\}\}/.test(css));
+    ok("D2 only Days rows: Weeks and the other pages are drawn as before", (css.match(/content-visibility/g) || []).length === 2);
     ok("Z no page errors", !w.errs.length, w.errs.join(" | "));
   } catch(e){ ok("harness ran without throwing", false, e.stack); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

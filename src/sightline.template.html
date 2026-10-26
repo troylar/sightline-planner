@@ -351,6 +351,9 @@ button.flag{border:0;background:transparent;font-family:inherit;cursor:pointer;c
 .glabel b{font-size:12.5px;font-weight:600}
 .glabel span{font-size:11px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gantt.days .glabel{position:sticky;left:0;z-index:4;background:var(--surface)}
+/* Days draws every row; the browser lays out and paints only the ones near the screen. They stay in the page, so find and screen readers see them all, and printing draws them all. */
+.gantt.days>.lane{content-visibility:auto;contain-intrinsic-size:auto 64px}
+@media print{.gantt.days>.lane{content-visibility:visible}}
 .lane.gaterow{background:color-mix(in srgb,var(--warn) 5%,transparent)}
 .lane.markrow .track{min-height:30px}
 #t-gates tr.flash td,#t-holidays tr.flash td{background:var(--warn-bg);transition:background .3s}
