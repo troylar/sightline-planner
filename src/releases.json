@@ -1,5 +1,27 @@
 [
   {
+    "version": "1.134.0",
+    "date": "2026-10-26",
+    "headline": "Who asked, and what happened since",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Roadmap",
+        "title": "See captures by who asked, and send them a note",
+        "before": "To triage grouped open captures by workstream only, so answering \"what happened to the things we raised?\" meant opening each one.",
+        "now": "By asker lists everything each person or group raised, open ones first, then what became of the rest. Copy a note for them copies a short note to send back, saying where each one stands. It names no one else.",
+        "where": "Roadmap, To triage, By asker"
+      },
+      {
+        "kind": "new",
+        "area": "Roadmap",
+        "title": "A meeting recap of what changed",
+        "now": "Meeting recap says what's new, raised again, closed and reopened since your last meeting, and how many are still open, ready to read out or paste. It leaves out who asked unless you tick Say who asked.",
+        "where": "Roadmap, To triage, Meeting recap"
+      }
+    ]
+  },
+  {
     "version": "1.133.0",
     "date": "2026-10-26",
     "headline": "Raised again, not captured twice",

@@ -1172,7 +1172,7 @@ body.navrail .snp{padding-left:10px}body.navrail .snsub{padding-left:10px}
 }
 .rmideas{border:1px solid var(--rule);border-radius:10px;background:var(--surface);padding:10px 14px;margin-bottom:14px}.rmideas h3{margin:0 0 2px;font-size:14px}
 .capgroup h4{margin:10px 0 0;font-size:12.5px;display:flex;align-items:center;gap:6px}.captype{font-size:11px;font-weight:600;padding:1px 7px;border-radius:9px;background:var(--surface-2,var(--rule));color:var(--ink-2)}
-dialog.capdlg{width:min(560px,92vw)}.capdlg form{display:flex;flex-direction:column;gap:10px}.capdlg h2{margin:0 0 2px}.capdlg .capbtns{gap:8px;align-items:center}.capage{font-size:11.5px;color:var(--ink-2)}.capage.old{color:var(--warn,#b45309);font-weight:600}.capage.unknown{font-style:italic}.captimes{font-size:11px;font-weight:600;padding:1px 7px;border-radius:9px;border:1px solid var(--rule);color:var(--ink-2)}.capagain h4{margin:10px 0 4px;font-size:12.5px}.capagain ul{margin:0 0 8px;padding:0;list-style:none}.capagain li{display:flex;gap:8px;align-items:baseline;justify-content:space-between;font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--rule)}.capagain .qrow{gap:6px}.capagain .qrow input{flex:1;min-width:0}#capSame:empty{display:none}#capSame{border:1px solid var(--rule);border-radius:8px;padding:8px 10px}#capSame p{margin:0 0 4px}#capSame ul{margin:0;padding-left:18px}#capSame li{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.capbox{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--rule);padding-top:8px;margin-top:4px}.caphand{display:flex;flex-direction:column;gap:6px}.caphand select{width:100%;max-width:100%;min-width:0}.caphand input{flex:1;min-width:0}.rmideas ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+dialog.capdlg{width:min(560px,92vw)}.capdlg form{display:flex;flex-direction:column;gap:10px}.capdlg h2{margin:0 0 2px}.capdlg .capbtns{gap:8px;align-items:center}.capage{font-size:11.5px;color:var(--ink-2)}.capage.old{color:var(--warn,#b45309);font-weight:600}.capage.unknown{font-style:italic}.captimes{font-size:11px;font-weight:600;padding:1px 7px;border-radius:9px;border:1px solid var(--rule);color:var(--ink-2)}.capagain h4{margin:10px 0 4px;font-size:12.5px}.capagain ul{margin:0 0 8px;padding:0;list-style:none}.capagain li{display:flex;gap:8px;align-items:baseline;justify-content:space-between;font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--rule)}.capagain .qrow{gap:6px}.capagain .qrow input{flex:1;min-width:0}.tritools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}.capgroup h4 .capnote{margin-left:auto;font-weight:400}dialog.recapdlg{width:min(620px,92vw)}.recapdlg form{display:flex;flex-direction:column;gap:10px}.recapdlg h2{margin:0}#recapText{white-space:pre-wrap;font:inherit;font-size:12.5px;max-height:46vh;overflow:auto;margin:0;padding:10px 12px;border:1px solid var(--rule);border-radius:8px}.recapdlg .qrow{gap:8px;align-items:center}#capSame:empty{display:none}#capSame{border:1px solid var(--rule);border-radius:8px;padding:8px 10px}#capSame p{margin:0 0 4px}#capSame ul{margin:0;padding-left:18px}#capSame li{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.capbox{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--rule);padding-top:8px;margin-top:4px}.caphand{display:flex;flex-direction:column;gap:6px}.caphand select{width:100%;max-width:100%;min-width:0}.caphand input{flex:1;min-width:0}.rmideas ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
 .rmideas li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.dvidea{font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none}.ideaacts{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto}.btn.sm{padding:2px 8px;font-size:12px}
 .rmgrid{display:flex;flex-direction:column;gap:2px;overflow-x:auto}.rmrow{display:grid;grid-template-columns:170px minmax(640px,1fr);gap:8px;align-items:stretch}
 .rmlane{display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 4px;border-top:1px solid var(--rule-2)}.rmlane small{color:var(--ink-3);margin-left:auto}.rmlane .ini{width:10px;height:10px;border-radius:3px}
@@ -14033,6 +14033,52 @@ function capSimilar(name, skip){ const A = capWords(name); if (A.size < 2) retur
       return {d, both, score:both / Math.max(1, new Set([...A, ...B]).size)}; })
     .filter(x=>x.both >= 2 && x.score >= 0.4).sort((a, b)=>b.score - a.score || (capOpen(b.d) ? 1 : 0) - (capOpen(a.d) ? 1 : 0)).slice(0, 3).map(x=>x.d); }
 const capTimes = d => 1 + (d.raisedAgain || []).length;
+// What became of a capture, in a few words, for notes and the asker view.
+const capShort = d => d.handoff && d.stage === "dropped" ? "closed two ways at once; reopen it" : d.handoff ? "handed off to " + capHandoffText(d.handoff)
+  : d.stage === "dropped" ? "declined" + (d.dropReason ? ": " + d.dropReason : "") : d.stage === "done" ? "done" : "waiting for triage";
+// Everyone who raised it (first ask and every later one), as "type:id"; "" when one ask's asker isn't known.
+const capAskers = d => [...new Set([d.askedBy ? d.askedBy.type + ":" + d.askedBy.id : "", ...(d.raisedAgain || []).map(x=>x.who ? x.who.type + ":" + x.who.id : "")])];
+const oneLine = t => String(t || "").replace(/[\r\n]+/g, " ");
+function capsByAsker(){ const by = new Map();
+  (S.deliverables || []).filter(d=>d.capture && d.stage !== "split").forEach(d=>capAskers(d).forEach(k=>{ if (!by.has(k)) by.set(k, []); by.get(k).push(d); }));
+  by.forEach(L=>L.sort((a, b)=>(capOpen(b) ? 1 : 0) - (capOpen(a) ? 1 : 0) || a.name.localeCompare(b.name))); return by; }
+const askerName = k => k ? capWho(whoOf(k)) : "Not known";
+// A note to send back to whoever asked: what they raised and where each one stands. Plain text; it names no one else.
+const askerNote = L => `Where the things you raised stand (${fullDate(todayDay())}):\n` + L.map(d=>`- ${oneLine(d.name)}: ${oneLine(capShort(d))}`).join("\n") + "\n";
+// What happened to captures since a day: new ones, asks again, and ones closed or reopened (from the plan's own change
+// log, which keeps 30 days). Who asked is left out unless asked for, since a recap is often pasted where others read it.
+function capRecap(since){ const iso = dayToIso(since), caps = (S.deliverables || []).filter(d=>d.capture && d.stage !== "split");
+  const after = at => { const t = at && stampDay(at); return t != null && t >= since; };
+  const added = caps.filter(d=>d.added && after(d.added.at)), touched = new Set();
+  (S.changes || []).filter(c=>after(c.at)).forEach(c=>(c.ops || []).forEach(o=>{ if (o && o.type === "deliverables" && o.op === "set" && (o.field === "handoff" || o.field === "stage")) touched.add(o.id); }));
+  return {added, again:caps.flatMap(d=>(d.raisedAgain || []).filter(x=>x.raised && x.raised >= iso).map(x=>({d, x}))),
+    closed:caps.filter(d=>touched.has(d.id) && !capOpen(d)), reopened:caps.filter(d=>touched.has(d.id) && capOpen(d) && !added.includes(d)), open:caps.filter(capOpen)}; }
+function recapText(since, names){ const R = capRecap(since), by = w => names && w ? ` (${capWho(w)})` : "";
+  const sec = (title, L) => L.length ? `\n${title} (${L.length})\n` + L.map(x=>"- " + x).join("\n") + "\n" : "";
+  const body = sec("New", R.added.map(d=>oneLine(d.name) + by(d.askedBy))) + sec("Raised again", R.again.map(({d, x})=>oneLine(d.name) + by(x.who)))
+    + sec("Closed", R.closed.map(d=>`${oneLine(d.name)}: ${oneLine(capShort(d))}`)) + sec("Reopened", R.reopened.map(d=>oneLine(d.name)));
+  const old = R.open.filter(d=>(capAge(d).days || 0) > 30).length;
+  return `Captures since ${fullDate(since)}\n` + (body || "\nNothing new, raised again, closed or reopened.\n")
+    + `\nStill open: ${R.open.length}${old ? `, ${old} of them for more than 30 days` : ""}.\n`
+    + (since < todayDay() - 30 ? `\n(Closed and reopened come from the plan's change log, which keeps 30 days, so they're counted from ${fmtDay(todayDay() - 30)}.)\n` : ""); }
+function openRecap(){
+  $("#dlgRecap")?.remove();
+  const today = todayDay(), past = (S.meetings || []).map(m=>validIso(m.date) ? isoToDay(m.date) : null).filter(x=>x != null && x < today);
+  const since = h("input",{id:"recapSince",type:"date",value:dayToIso(past.length ? Math.max(...past) : today - 7)});
+  const names = h("input",{id:"recapNames",type:"checkbox"}), out = h("pre",{id:"recapText",tabindex:"0","aria-live":"polite","aria-label":"The recap"});
+  const day = () => validIso(since.value) ? isoToDay(since.value) : today - 7, draw = () => { out.textContent = recapText(day(), names.checked); };
+  since.addEventListener("change", draw); names.addEventListener("change", draw); draw();
+  const dialog = h("dialog",{id:"dlgRecap",class:"recapdlg","aria-labelledby":"recapTitle"},
+    h("form",{method:"dialog",onsubmit:e=>{ e.preventDefault(); copyText(recapText(day(), names.checked), "the recap"); }},
+      h("h2",{id:"recapTitle"}, "Meeting recap"),
+      h("p",{class:"hint"}, "What happened to captures since a day, to read out or paste. It starts from your last meeting."),
+      h("div",{class:"qrow"}, field("recapSince", "Since", since), h("label",{class:"chk"}, names, " Say who asked")),
+      out,
+      h("div",{class:"qrow"}, h("button",{type:"submit",class:"btn primary",id:"recapCopy"}, "Copy the recap"), h("button",{type:"button",class:"linkish",id:"recapClose",onclick:()=>dialog.close()}, "Close"))));
+  const opener = document.activeElement && document.activeElement.id;
+  dialog.addEventListener("close", ()=>{ dialog.remove(); const back = opener && document.getElementById(opener); if (back) back.focus(); });
+  document.body.append(dialog); dialog.showModal(); since.focus();
+}
 function capAge(d){ const t = d.added && stampDay(d.added.at); if (t == null) return {days:null, text:"added: not recorded"}; const n = Math.max(0, todayDay() - t); return {days:n, text:n === 0 ? "added today" : `open ${n} day${n === 1 ? "" : "s"}`}; }
 // What became of a capture, in one line. Two people can close it differently at once (a merge keeps both); say so, never pick one.
 function capState(d){ const declined = `declined${d.dropReason ? ": " + d.dropReason : ""}`;
@@ -14190,10 +14236,21 @@ function triageList(can){
   const closed = (S.deliverables || []).filter(d=>d.capture && !capOpen(d)).length;
   return h("section",{class:"rmideas rmtriage",id:"rmTriage"}, h("h3",{}, `To triage (${open.length})`, closed ? h("span",{class:"hint",id:"rmTriageClosed"}, ` · ${closed} handed off or declined, findable with Find`) : null),
     h("p",{class:"hint"}, open.length ? "Requests, ideas, gaps and questions raised in meetings, oldest first. Open one to hand it off or decline it." : "Nothing captured is waiting. Captures from meetings show here until they're handed off or declined."),
-    can ? h("div",{class:"qrow"}, h("button",{type:"button",class:"btn",id:"rmCapture",onclick:openCapture}, "+ Capture a request or idea")) : null,
-    ...groups.map(([id, name, color])=>h("div",{class:"capgroup","data-caplane":id || "none"}, h("h4",{}, color ? h("i",{class:"ini",style:{background:color}}, "") : null, `${name} (${by.get(id).length})`),
-      h("ul",{}, ...by.get(id).sort(old).map(row)))));
+    h("div",{class:"tritools"}, can ? h("button",{type:"button",class:"btn",id:"rmCapture",onclick:openCapture}, "+ Capture a request or idea") : null,
+      h("div",{class:"seg",role:"group","aria-label":"Group captures"}, ...[["lane","By workstream"],["asker","By asker"]].map(([v, l])=>h("button",{type:"button",id:"triBy-" + v,"aria-pressed":String((UI.triBy === "asker" ? "asker" : "lane") === v),
+        onclick:()=>{ UI.triBy = v; saveUI(); render(); $("#triBy-" + v)?.focus(); }}, l))),
+      h("button",{type:"button",class:"btn",id:"rmRecap",onclick:openRecap}, "Meeting recap")),
+    ...(UI.triBy === "asker" ? askerGroups() : groups.map(([id, name, color])=>h("div",{class:"capgroup","data-caplane":id || "none"}, h("h4",{}, color ? h("i",{class:"ini",style:{background:color}}, "") : null, `${name} (${by.get(id).length})`),
+      h("ul",{}, ...by.get(id).sort(old).map(row))))));
 }
+// By asker: everything each person or group raised, open first, then what became of the rest, with a note to send them.
+function askerGroups(){ const by = capsByAsker(), keys = [...by.keys()].sort((a, b)=>!a ? 1 : !b ? -1 : askerName(a).localeCompare(askerName(b)));
+  if (!keys.length) return [h("p",{class:"hint"}, "Nothing captured yet.")];
+  return keys.map(k=>{ const L = by.get(k), open = L.filter(capOpen).length, nm = askerName(k);
+    return h("div",{class:"capgroup","data-asker":k || "none"}, h("h4",{}, `${nm} (${open} open, ${L.length - open} closed)`,
+        k ? h("button",{type:"button",class:"linkish capnote","aria-label":`Copy a note for ${nm}`,onclick:()=>copyText(askerNote(L), `a note for ${nm}`)}, "Copy a note for them") : null),
+      h("ul",{}, ...L.map(d=>h("li",{"data-cap":d.id}, h("span",{class:"captype cap-" + d.capture}, capType(d)),
+        h("button",{type:"button",class:"linkish dvidea",onclick:()=>{ sel = {type:"deliverable", id:d.id}; render(); }}, d.name), h("span",{class:"hint"}, capShort(d)))))); }); }
 function renderRoadmap(){
   const host = $("#roadmapWs"); if (!host) return; amRestore();
   const cols = roadmapCols(), N = cols.length, can = !present && !tooNew(), OV = amOverlay(), list = (S.deliverables || []).filter(d=>d.stage !== "split");
