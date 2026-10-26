@@ -10858,7 +10858,7 @@ function renderSide0(){
   const put = (...k) => side.append(...k.flat(Infinity).filter(x => x != null && x !== false));
   if (!sel) return;
   if (sel.type === "deliverable" && !dvById(sel.id)){ sel = null; return; }
-  const titles = {amend:"Planning assistant", deliverable:"Deliverable", release:"Jira release", help:"How it works", bar:"Initiative", task:"Task", story:"Jira story", ms:"Milestone", lane:"Workstream", gate:"Gate", person:"Person", note:"Note", meeting:"Meeting", group:"Group", type:"Process block type", block:(()=>{ const i = sel && sel.type === "block" ? instById(sel.id) : null; return i ? i.type.name : "Process block"; })()};
+  const titles = {amend:"Planning assistant", deliverable:(()=>{ const d = sel && sel.type === "deliverable" ? dvById(sel.id) : null; return d && d.capture ? "Captured " + capType(d).toLowerCase() : "Deliverable"; })(), release:"Jira release", help:"How it works", bar:"Initiative", task:"Task", story:"Jira story", ms:"Milestone", lane:"Workstream", gate:"Gate", person:"Person", note:"Note", meeting:"Meeting", group:"Group", type:"Process block type", block:(()=>{ const i = sel && sel.type === "block" ? instById(sel.id) : null; return i ? i.type.name : "Process block"; })()};
   put(h("div",{class:"sidehead"}, h("h3",{}, sideIcon(), titles[sel.type] || "Edit"), NAV_SEL.includes(sel.type) ? h("button",{type:"button",class:"linkish sidelink",id:"sideLink",title:"Copy a link that opens this, in this plan",onclick:linkHere},"Copy link") : null, h("button",{class:"x nav",type:"button","aria-label":"Close panel",title:"Close (Esc)",onclick:()=>{ sel=null; render(true); }},"×")));
   if (sel.type !== "help" && !present && !editable() && file.handle && !file.holdLock) put(h("div",{class:"viewonly"}, (sel.type === "bar" || sel.type === "task") ? "Quick updates below save right away. To change anything else, click " : "View only. Click ", h("b",{},"Start editing"), (sel.type === "bar" || sel.type === "task") ? "." : " in the toolbar to make changes."));
   { const hk = {meeting:"meeting", gate:"gate", block:"process", release:"release", ms:"milestone", deliverable:"deliverable"}[sel.type];
@@ -10891,7 +10891,7 @@ function renderSide0(){
       txt("f-dvname", "What we'll ship", "name", 120, "e.g. Make onboarding effortless"),
       txt("f-dvline", "For customers (release-note wording)", "line", 300, "One sentence a customer would understand", true),
       h("div",{class:"row2"},
-        field("f-dvkind","Kind", h("select",{id:"f-dvkind",disabled:!can,onchange:e=>{ const v = e.target.value; dvSave(`${d.name}: kind`, s=>act("outcome.set", {id:d.id, field:"kind", value:v}, s)); }}, h("option",{value:""},"Not set"), ...DV_KINDS.map(([v, l])=>h("option",{value:v, selected:d.kind === v}, l)))),
+        capOpen(d) ? null : field("f-dvkind","Kind", h("select",{id:"f-dvkind",disabled:!can,onchange:e=>{ const v = e.target.value; dvSave(`${d.name}: kind`, s=>act("outcome.set", {id:d.id, field:"kind", value:v}, s)); }}, h("option",{value:""},"Not set"), ...DV_KINDS.map(([v, l])=>h("option",{value:v, selected:d.kind === v}, l)))),
         field("f-dvstage","Stage", h("select",{id:"f-dvstage",disabled:!can,onchange:e=>{ const v = e.target.value; if (v === "dropped"){ e.target.value = d.stage; dropDv(d.id); return; }
           dvSave(`${d.name}: ${v}`, s=>act("outcome.set", {id:d.id, field:"stage", value:v}, s)); }},
           ...DV_STAGES.map(([v, l])=>h("option",{value:v, selected:d.stage === v}, l))))),
@@ -14018,7 +14018,7 @@ function capturePanel(d, can){
     (S.groups || []).length ? h("optgroup",{label:"Groups"}, ...S.groups.map(g=>h("option",{value:"group:" + g.id, selected:whoVal === "group:" + g.id}, g.name))) : null,
     h("optgroup",{label:"People"}, ...S.people.filter(pp=>!pp.inactive || whoVal === "person:" + pp.id).map(pp=>h("option",{value:"person:" + pp.id, selected:whoVal === "person:" + pp.id}, pp.name + (pp.external ? " (outside)" : "")))));
   const raised = h("input",{type:"date",id:"f-dvraised","aria-label":"Raised on",value:d.raised || "",disabled:!can,onchange:e=>{ const v = e.target.value; if (v && !validIso(v)) return; set("raised", v, "raised on"); }});
-  const age = capAge(d), state = d.handoff ? `Handed off to ${capHandoffText(d.handoff)}.` : d.stage === "dropped" ? `Declined${d.dropReason ? ": " + d.dropReason : "."}` : `Open: ${age.text}.`;
+  const age = capAge(d), state = d.handoff ? `Handed off to ${capHandoffText(d.handoff)}.` : d.stage === "dropped" ? `Declined${d.dropReason ? ": " + d.dropReason : "."}` : `${age.text[0].toUpperCase()}${age.text.slice(1)}.`;
   const bars = S.bars.filter(b=>!b.parked).slice().sort((a, b)=>chartLabel(a).localeCompare(chartLabel(b)));
   const toBar = h("select",{id:"f-dvhobar","aria-label":"Hand off to an initiative"}, h("option",{value:""}, "An initiative…"), ...bars.map(b=>h("option",{value:b.id}, chartLabel(b))));
   const toKey = h("input",{id:"f-dvhokey",placeholder:"or a Jira key, like ABC-123","aria-label":"Hand off to a Jira issue",maxlength:"40"});
@@ -14030,7 +14030,7 @@ function capturePanel(d, can){
     h("div",{class:"row2"}, field("f-dvasked", "Asked by", who), field("f-dvraised", "Raised on", raised)),
     h("p",{class:"hint",id:"f-dvcapstate"}, state, d.handoff && d.handoff.to === "jira" ? " Jira owns the issue; the plan keeps only its key." : ""),
     !can ? null : d.handoff || d.stage === "dropped" ? h("div",{class:"qrow"}, h("button",{type:"button",class:"btn",id:"f-dvreopen",onclick:()=>dvSave(`${d.name}: reopened`, s=>act("outcome.reopen", {id:d.id}, s))},"Reopen"))
-      : h("div",{class:"caphand",id:"f-dvhandoff"}, toBar, h("div",{class:"qrow"}, toKey, h("button",{type:"button",class:"btn",id:"f-dvhogo",onclick:handoff},"Hand off"),
+      : h("div",{class:"field caphand",id:"f-dvhandoff"}, h("label",{for:"f-dvhobar"}, "Hand off to"), toBar, h("div",{class:"qrow"}, toKey, h("button",{type:"button",class:"btn",id:"f-dvhogo",onclick:handoff},"Hand off"),
           h("button",{type:"button",class:"linkish",id:"f-dvdecline",onclick:()=>dropDv(d.id)},"Decline"))),
     h("p",{class:"hint"}, "Handing off or declining closes it as a capture; neither marks anything planned or done."));
 }
@@ -14042,7 +14042,7 @@ function triageList(can){
   const row = d => { const age = capAge(d);
     return h("li",{"data-cap":d.id}, h("span",{class:"captype cap-" + d.capture}, capType(d)),
       h("button",{type:"button",class:"linkish dvidea",onclick:()=>{ sel = {type:"deliverable", id:d.id}; render(); }}, d.name),
-      h("span",{class:"hint"}, [d.askedBy ? "asked by " + capWho(d.askedBy) : "who asked: not known", d.source || "", d.raised ? "raised " + fmtDay(isoToDay(d.raised)) : ""].filter(Boolean).join(" · ")),
+      h("span",{class:"hint"}, [d.askedBy ? "asked by " + capWho(d.askedBy) : "asked by: not known", d.source || "", d.raised ? "raised " + fmtDay(isoToDay(d.raised)) : ""].filter(Boolean).join(" · ")),
       h("span",{class:"capage" + (age.days == null ? " unknown" : age.days > 30 ? " old" : "")}, age.text)); };
   const groups = [...S.lanes.filter(l=>by.has(l.id)).map(l=>[l.id, l.name, l.color]), ...(by.has("") ? [["", "Unassigned", null]] : [])];
   const closed = (S.deliverables || []).filter(d=>d.capture && !capOpen(d)).length;

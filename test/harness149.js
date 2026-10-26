@@ -87,7 +87,7 @@ const HOSTILE = '<img src=x onerror="window.pwned=1"> Support desk';
     const lanes = [...(tri ? tri.querySelectorAll(".capgroup") : [])].map(x=>x.dataset.caplane);
     ok("U1 To triage lists open captures only: by workstream, oldest first, unknown dates last", tri && !ids.includes("dv-closed") && !ids.includes("dv-road") && ids.indexOf("dv-old") < ids.indexOf("dv-new") && ids.indexOf("dv-new") < ids.indexOf("dv-a"), ids.join());
     ok("U2 a capture without a workstream sits under Unassigned, last, never hidden", lanes[lanes.length - 1] === "none" && tri.querySelector('[data-caplane="none"] [data-cap="dv-loose"]'), lanes.join());
-    ok("U3 each row says who asked or that it isn't known, and how long it's been open", /asked by/.test(tri.querySelector('[data-cap="dv-new"]').textContent) && /who asked: not known/.test(tri.querySelector('[data-cap="dv-loose"]').textContent)
+    ok("U3 each row says who asked or that it isn't known, and how long it's been open", /asked by/.test(tri.querySelector('[data-cap="dv-new"]').textContent) && /asked by: not known/.test(tri.querySelector('[data-cap="dv-loose"]').textContent)
       && /open 1 day/.test(tri.querySelector('[data-cap="dv-new"]').textContent) && /not recorded/.test(tri.querySelector('[data-cap="dv-a"]').textContent));
     ok("U4 the button counts what's waiting, closed ones are counted as findable, and captures stay out of Ideas to sort", /To triage \(4\)/.test(d.querySelector("#rmTriageBtn").textContent) && /1 handed off or declined/.test(tri.textContent)
       && ![...d.querySelectorAll("#rmIdeas [data-idea]")].some(x=>x.dataset.idea.startsWith("dv-") && x.dataset.idea !== "dv-road"));
@@ -95,7 +95,12 @@ const HOSTILE = '<img src=x onerror="window.pwned=1"> Support desk';
     ev("sel = {type:'deliverable', id:'dv-new'}; render()"); await wait(10);
     const side = d.querySelector("#side");
     ok("U6 the card shows Captured as, Asked by, Raised on, and hand off or decline", side.querySelector("#f-dvcap").value === "gap" && side.querySelector("#f-dvasked").value === "group:grp-support" && !!side.querySelector("#f-dvhogo") && !!side.querySelector("#f-dvdecline"));
+    const hand = side.querySelector("#f-dvhandoff"), lab = hand && hand.querySelector("label[for='f-dvhobar']");
+    ok("U8 the open capture reads cleanly: titled by its type, Hand off to is labeled and styled like the panel, one 'open', no Kind until handed off",
+      /Captured process gap/.test(d.querySelector("#side .sidehead h3").textContent) && hand.classList.contains("field") && lab && /Hand off to/.test(lab.textContent)
+      && /^Open 1 day\./.test(side.querySelector("#f-dvcapstate").textContent) && !side.querySelector("#f-dvkind"), side.querySelector("#f-dvcapstate").textContent);
     ev("sel = {type:'deliverable', id:'dv-closed'}; render()"); await wait(10);
+    ok("U9 once handed off, Kind is back for the release notes", !!d.querySelector("#f-dvkind"));
     ok("U7 a handed-off capture says where it went, that Jira keeps the issue, and offers Reopen", /Handed off to ABC-122/.test(d.querySelector("#f-dvcapstate").textContent) && /Jira owns the issue/.test(d.querySelector("#f-dvcapstate").textContent) && !!d.querySelector("#f-dvreopen"));
     ok("Z no page errors", !w.errs.length, w.errs.join(" | "));
   } catch(e){ ok("harness ran", false, e && e.stack ? e.stack.split("\n").slice(0, 3).join(" ") : e); }
