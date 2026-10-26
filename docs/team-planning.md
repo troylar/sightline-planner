@@ -60,6 +60,11 @@ have no way to send release notes to the teams that use them". Keep them in the 
   **+ Capture a request or idea** in To triage. Only what was raised is needed; who asked and the workstream stay
   unknown unless you pick them, and the meeting and its date carry over to the next capture. **Capture and add
   another** keeps the form open.
+- Raised again? As you type what was raised, the form lists captures with a similar name. **Same thing: record it
+  there** adds this meeting, who asked and the date to that one instead of capturing it twice; **Capture** keeps it
+  separate. Nothing is ever merged on its own. A capture's card lists every time it was raised again, with
+  **Record it** to add one by hand and **Remove** to take one out, and its row in To triage says how many times it's
+  come up. Your assistant does the same with the meeting-to-plan skill (since 1.133.0).
 - **To triage**, on the Roadmap, lists open captures by workstream, oldest first, with **Unassigned** last. Open one
   to **Hand off** (to an initiative or a Jira issue) or **Decline** with a reason; **Reopen** puts it back.
 
