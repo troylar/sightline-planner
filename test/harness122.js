@@ -24,6 +24,9 @@ const w = dom.window, d = w.document, ev = s=>w.eval(s), wait = ms=>new Promise(
     ev("goWs('timeline')"); const c0 = lrCalls; ev("render()");
     ok("L0 List isn't drawn while another page is showing", lrCalls === c0);
     d.querySelector("#tab-list").click(); await wait(20);
+    ok("D1 List opens By workstream for anyone who hasn't chosen a layout", ev("listLayout()") === "lane" && d.querySelector('#listWs [data-layout="lane"]').getAttribute("aria-pressed") === "true" && !w.localStorage.getItem("sightline-list-layout"));
+    ok("D1 …the start-date layout is called By start date, with the longer wording on hover", d.querySelector('#listWs [data-layout="start"]').textContent === "By start date" && /by start date/.test(d.querySelector('#listWs [data-layout="start"]').title));
+    ev("setListLayout('initiative')"); await wait(10);   // the checks below read By initiative
     ok("L1 List is a tab under Delivery, next to Timeline", ev("UI.ws") === "list" && !d.querySelector("#ws-list").hidden && d.querySelector("#tab-list").previousElementSibling.id === "tab-timeline" && ev("workspaceGroup('list')") === "delivery");
     const head = rows().find(r=>r.dataset.lk === "list:bar:" + bar(0).id);
     ok("L2 an initiative with tasks is a group header with its own dates, owner and task count", head && head.classList.contains("lhead") && head.querySelector("th[scope=row]") && /3 items/.test(head.textContent) && head.cells[0].textContent !== "", head && head.textContent);
@@ -39,7 +42,7 @@ const w = dom.window, d = w.document, ev = s=>w.eval(s), wait = ms=>new Promise(
     const why = k => (rows().find(r=>r.dataset.lk === k) || {querySelector:()=>null}).querySelector(".lwhy")?.textContent;
     ok("L5 …each with the reason: parked, switched off, abandoned, undated", why("list:bar:" + bar(13).id) === "parked" && why("list:story:ABC-103") === "switched off here" && why("list:story:ABC-104") === "abandoned in Jira" && why("list:story:ABC-105") === "no sprint dates",
       [why("list:bar:" + bar(13).id), why("list:story:ABC-103"), why("list:story:ABC-104"), why("list:story:ABC-105")].join());
-    const cell = (k, i) => (rows().find(r=>r.dataset.lk === k) || {cells:[]}).cells[i]?.textContent || "";
+    const cell = (k, i) => (rows().find(r=>r.dataset.lk === k) || {cells:[]}).cells[i + (i >= 3)]?.textContent || "";   // the Workstream column sits before Owner
     ok("L6 Owner: plan owners, Unassigned when none, and people outside the team or inactive are marked", cell("list:task:t-0-1", 3) === "Avery, Blake" && cell("list:task:t-1-1", 3) === "Unassigned" && cell("list:task:t-4-0", 3) === "Riley (outside the team)" && cell("list:task:t-4-1", 3) === "Quinn (inactive)", [cell("list:task:t-0-1", 3), cell("list:task:t-1-1", 3), cell("list:task:t-4-0", 3)].join(" | "));
     ok("L6 …a Jira item shows its Jira assignee and, apart, the plan lead", /^Jira: Avery/.test(cell("list:task:t-0-0", 3)) && /Lead:/.test(cell("list:task:t-0-0", 3)) && cell("list:story:ABC-102", 3) === "Jira: Unassigned", cell("list:task:t-0-0", 3));
     ok("L7 Status: the effective status, and for Jira items Jira's own status and freshness", cell("list:task:t-0-1", 5) === "Not started" && /^In progressJira: In Progress, synced /.test(cell("list:task:t-0-0", 5)), cell("list:task:t-0-0", 5));
@@ -69,7 +72,7 @@ const w = dom.window, d = w.document, ev = s=>w.eval(s), wait = ms=>new Promise(
     // Layouts.
     ev("setListLayout('start')"); await wait(10);
     const flat = J(`listGroups(listModel(), 'start')[0].rows.map(r=>[r.s, r.ord])`);
-    ok("Y1 Everything by start date is one flat list in start order, ties in initiative and plan order", flat.length > 30 && flat.every((x, i)=>!i || flat[i - 1][0] < x[0] || flat[i - 1][0] === x[0] && flat[i - 1][1] < x[1]) && !d.querySelector("#listTable tr.lgroup:not(.loffg tr)") , flat.slice(0, 4).join(" | "));
+    ok("Y1 By start date is one flat list in start order, ties in initiative and plan order", flat.length > 30 && flat.every((x, i)=>!i || flat[i - 1][0] < x[0] || flat[i - 1][0] === x[0] && flat[i - 1][1] < x[1]) && !d.querySelector("#listTable tr.lgroup:not(.loffg tr)") , flat.slice(0, 4).join(" | "));
     ok("Y1 …and each task row says which initiative it's in", rows().filter(r=>/list:(task|story):/.test(r.dataset.lk) && !r.classList.contains("loff")).every(r=>/^in /.test(r.querySelector(".lin")?.textContent || "")));
     ev("setListLayout('person')"); await wait(10);
     const groups = J(`listGroups(listModel(), 'person').map(g=>({label:g.label, ids:g.rows.map(r=>r.type + ':' + r.id + (r.shared ? '*' : ''))}))`);
@@ -78,6 +81,36 @@ const w = dom.window, d = w.document, ev = s=>w.eval(s), wait = ms=>new Promise(
     ok("Y2 …each person's work is in start order, and Unassigned comes last", groups.at(-1).label === "Unassigned" && groups.every(g=>J(`listGroups(listModel(), 'person').find(x=>x.label === ${JSON.stringify(g.label)}).rows.map(r=>r.s)`).every((s, i, a)=>!i || a[i - 1] <= s)));
     ok("Y2 …and counts count unique items, not repeated rows", /^\d+ items/.test(d.querySelector("#listSummary").textContent) && +d.querySelector("#listSummary").textContent.split(" ")[0] === J("listModel().rows.filter(r=>!r.header).length"));
     ok("Y3 the layout is stored per plan in this browser, not in views or the plan", JSON.parse(w.localStorage.getItem("sightline-list-layout"))[ev("S.meta.planId")] === "person" && !/person/.test(JSON.stringify(ev("JSON.stringify(currentDef())"))) && ev("JSON.stringify(planOfRecord(S))") === before);
+    // By workstream, and the Workstream column.
+    const laneOf = k => J(`(()=>{ const m = listModel(), r = [...m.rows, ...m.off].find(r=>"list:" + r.type + ":" + r.id === ${JSON.stringify(k)}); return r ? r.b.lane : null; })()`);
+    ev("setListLayout('lane')"); await wait(10);
+    const lg = J(`listGroups(listModel(), 'lane').map(g=>({label:g.label, lane:g.lane, count:g.count, ids:g.rows.map(r=>'list:' + r.type + ':' + r.id), depth:g.rows.map(r=>r.depth)}))`), laneOrder = J("S.lanes.map(l=>l.id)");
+    ok("G1 By workstream: one group per workstream with work, in the workstreams' order, named as on Timeline", lg.length >= 3 && lg.every((g, i)=>!i || laneOrder.indexOf(lg[i - 1].lane) < laneOrder.indexOf(g.lane)) && lg.every(g=>g.label === J(`S.lanes.find(l=>l.id === ${JSON.stringify(g.lane)}).name`)) && [...d.querySelectorAll("#listTable tbody:not(.loffg) tr.lgroup th")].map(t=>t.textContent.split(" · ")[0]).join() === lg.map(g=>g.label).join(), lg.map(g=>g.label).join());
+    ok("G1 …each row is in its own initiative's workstream", lg.every(g=>g.ids.every(k=>laneOf(k) === g.lane)));
+    const gTop = lg.find(g=>g.ids.includes("list:bar:" + bar(10).id)), iT = gTop.ids.indexOf("list:bar:" + bar(10).id), iN = gTop.ids.indexOf("list:bar:" + bar(11).id);
+    ok("G2 …initiatives stay group headers with their tasks under them, sub-initiatives indented", iN > iT && gTop.depth[iN] > gTop.depth[iT] && rows().find(r=>r.dataset.lk === "list:bar:" + bar(0).id).classList.contains("lhead") && !d.querySelector("#listTable tbody:not(.loffg) .lin"));
+    ok("G3 …each workstream's count is its items, not its headers, and they add up to the total", lg.every(g=>g.count === g.ids.filter(k=>!rows().find(r=>r.dataset.lk === k)?.classList.contains("lhead")).length) && lg.reduce((n, g)=>n + g.count, 0) === +d.querySelector("#listSummary").textContent.split(" ")[0] && lg.every(g=>new RegExp(` ${g.count} items?$`).test([...d.querySelectorAll("#listTable tr.lgroup th")].find(t=>t.textContent.split(" · ")[0] === g.label).textContent)), lg.map(g=>g.label + ":" + g.count).join(", "));
+    const other = laneOrder.find(l=>l !== J(`S.bars[10].lane`)); ev(`S.bars[12].lane = ${JSON.stringify(other)}; dropJiraMemos(); render()`); await wait(10);
+    const moved = J(`listGroups(listModel(), 'lane').find(g=>g.lane === ${JSON.stringify(other)}).rows.find(r=>r.id === S.bars[12].id).depth`);
+    ok("G4 a sub-initiative in another workstream starts at that workstream's top level", moved === 0, String(moved));
+    ev(`S.bars[12].lane = S.bars[10].lane; dropJiraMemos(); render()`); await wait(10);
+    const lmd = ev("listMarkdown(listGroups(listModel(), 'lane'), 'lane')").trim().split("\n");
+    ok("G5 Copy as table keeps the workstream groups, with counts, and names the workstream once, in its group", lg.every(g=>lmd.includes(`|  |  | **${g.label}** (${g.count}) |  |  |  |`)) && lmd[0] === "| Start | End | Item | Owner | Waits on | Status |" && lmd.every(l=>l.split(/(?<!\\)\|/).length === 8), lmd.find(l=>/\*\*/.test(l)));
+    ok("G5 …and on screen there's no Workstream column in this layout", ![...d.querySelectorAll("#listTable [data-col=lane]")].length && d.querySelectorAll("#listTable thead th[scope=col]").length === 6 && [...d.querySelectorAll("#listTable tr.lgroup th")].every(t=>t.getAttribute("colspan") === "6"));
+    ok("G6 the layout is in the link; as the default it isn't stored", /ll=lane/.test(w.location.hash) && !(ev("S.meta.planId") in JSON.parse(w.localStorage.getItem("sightline-list-layout") || "{}")), w.location.hash);
+    w.localStorage.setItem("sightline-list-layout", JSON.stringify({[ev("S.meta.planId")]:"start"})); ev("listMemo = null");
+    ok("G6 …a layout someone chose before still wins over the default", ev("listLayout()") === "start");
+    ev("setListLayout('lane')"); await wait(10);
+    const chips = [...d.querySelectorAll("#listTable tbody:not(.loffg) tr.lgroup th")].map(t=>({chip:t.querySelector(".lsw"), name:t.textContent.split(" · ")[0]}));
+    ok("G8 each workstream group shows its color chip and its name in normal case, then the count", chips.length === lg.length && chips.every(c=>c.chip && c.chip.getAttribute("aria-hidden") === "true" && c.chip.style.getPropertyValue("--lc") === J(`S.lanes.find(l=>l.name === ${JSON.stringify(c.name)}).color`)) && /\.ltable tr\.lgroup th\{[^}]*text-transform:none/.test(html) && /\.ltable \.lsw\{[^}]*background:var\(--lc\);box-shadow:0 0 0 1px var\(--ink-3\)/.test(html), chips.map(c=>c.name).join());
+    ev("setListLayout('initiative')"); await wait(10);
+    const lc = [...d.querySelectorAll("#listTable tbody:not(.loffg) td[data-col=lane]")];
+    ok("G8 …and the Workstream column shows the same chip before the name", lc.length > 30 && lc.every(td=>td.querySelector(".lsw") && td.querySelector(".lsw").style.getPropertyValue("--lc") === J(`S.lanes.find(l=>l.name === ${JSON.stringify(td.textContent)}).color`)));
+    for (const L of ["initiative", "person", "start"]){ ev(`setListLayout('${L}')`); await wait(5);
+      const bad = rows().filter(r=>!r.classList.contains("loff")).filter(r=>r.querySelector('[data-col="lane"]').textContent !== J(`S.lanes.find(l=>l.id === ${JSON.stringify(laneOf(r.dataset.lk))})?.name || ""`));
+      ok(`G7 ${L}: every row's Workstream cell names its initiative's workstream`, rows().length > 30 && !bad.length, bad.slice(0, 2).map(r=>r.dataset.lk).join()); }
+    ok("G7 …and in Copy as table", ev("listMarkdown(listGroups(listModel(), 'start'), 'start')").split("\n").filter(l=>/Task 1\.1 /.test(l)).every(l=>l.split(" | ")[3] === J(`S.lanes.find(l=>l.id === S.bars[0].lane).name`)));
+    ev("setListLayout('person')"); await wait(10);
     // URL, Back and Forward.
     ev("render()"); await wait(10);
     ok("U1 List, its layout and the selection are in the URL", /ws=list/.test(w.location.hash) && /ll=person/.test(w.location.hash) && /sel=task%3At-1-0|sel=task:t-1-0/.test(w.location.hash), w.location.hash);
@@ -86,7 +119,7 @@ const w = dom.window, d = w.document, ev = s=>w.eval(s), wait = ms=>new Promise(
     ev("goWs('list')"); await wait(10);
     ok("U2 …and back", ev("sel && sel.id") === "t-1-0" && rows().find(r=>r.dataset.lk === "list:task:t-1-0").classList.contains("lsel"));
     ev(`applyNav({ws:'list', plan:S.meta.planId, ll:'nonsense', sel:'task:t-2-1'})`); await wait(10);
-    ok("U3 a link with a layout this page doesn't know falls back to the default", ev("listLayout()") === "initiative" && ev("sel && sel.id") === "t-2-1");
+    ok("U3 a link with a layout this page doesn't know falls back to the default", ev("listLayout()") === "lane" && ev("sel && sel.id") === "t-2-1");
     ev(`applyNav({ws:'list', plan:'p-someone-else', sel:'task:t-0-1'})`); await wait(10);
     ok("U4 a link from another plan says so instead of selecting", ev("sel && sel.id") === "t-2-1" && /another plan/.test(d.querySelector("#status")?.textContent || ev("lastStatus || ''")), d.querySelector("#status")?.textContent);
     ev(`applyNav({ws:'list', plan:S.meta.planId, ll:'start'})`); await wait(10); ev(`history.pushState(null, '', '#' + encodeNav({ws:'list', plan:S.meta.planId, ll:'person'})); applyNav(parseNav(location.hash))`); await wait(10);
@@ -115,8 +148,8 @@ const w = dom.window, d = w.document, ev = s=>w.eval(s), wait = ms=>new Promise(
     // Copy as table.
     const md = ev("listMarkdown(listGroups(listModel(), 'initiative'), 'initiative')");
     const lines = md.trim().split("\n");
-    ok("C1 Copy as table makes a markdown table with the six columns", lines[0] === "| Start | End | Item | Owner | Waits on | Status |" && lines[1] === "| --- | --- | --- | --- | --- | --- |" && lines.length > 30);
-    ok("C1 …pipes are escaped and line breaks inside a cell are flattened", md.includes("Pipes \\| and breaks") && lines.every(l=>l.startsWith("|") && l.endsWith("|")) && lines.every(l=>l.split(/(?<!\\)\|/).length === 8), lines.find(l=>/Pipes/.test(l)));
+    ok("C1 Copy as table makes a markdown table with the seven columns", lines[0] === "| Start | End | Item | Workstream | Owner | Waits on | Status |" && lines[1] === "| --- | --- | --- | --- | --- | --- | --- |" && lines.length > 30);
+    ok("C1 …pipes are escaped and line breaks inside a cell are flattened", md.includes("Pipes \\| and breaks") && lines.every(l=>l.startsWith("|") && l.endsWith("|")) && lines.every(l=>l.split(/(?<!\\)\|/).length === 9), lines.find(l=>/Pipes/.test(l)));
     let copied = null; w.navigator.clipboard = {writeText:t=>{ copied = t; return Promise.resolve(); }};
     d.querySelector("#listCopy").click(); await wait(20);
     ok("C2 the button copies the rows as shown", copied && copied.includes("| Start | End |") && /Copied the table/.test(d.querySelector("#status")?.textContent || ""), (d.querySelector("#status") || {}).textContent);
@@ -124,7 +157,7 @@ const w = dom.window, d = w.document, ev = s=>w.eval(s), wait = ms=>new Promise(
     d.querySelector("#listCopy").click(); await wait(20);
     ok("C3 when the browser refuses, the table is shown selected, to copy by hand", !d.querySelector("#listCopyBox").hidden && d.querySelector("#listCopyText").value.startsWith("| Start |"));
     ok("C4 printing: the print rules show only the list, repeat the header and don't clip", /@media print\{body\.on-list>:not\(#ws-list\)\{display:none!important\}/.test(html) && /body\.on-list \.lwrap\{overflow:visible\}/.test(html) && /thead\{display:table-header-group\}/.test(html) && d.body.classList.contains("on-list"));
-    ok("A1 a real table: six column headers, row headers for initiatives, named groups", d.querySelectorAll("#listTable thead th[scope=col]").length === 6 && d.querySelectorAll("#listTable tbody th[scope=row]").length > 0 && !!d.querySelector("#listTable[aria-label]"));
+    ok("A1 a real table: seven column headers, row headers for initiatives, named groups", d.querySelectorAll("#listTable thead th[scope=col]").length === 7 && d.querySelectorAll("#listTable tbody th[scope=row]").length > 0 && !!d.querySelector("#listTable[aria-label]"));
     ok("S1 using List never changes the plan file", ev("JSON.stringify(planOfRecord(S))") === before);
     // Profile: about 100 work items.
     ev(`loadExternal(${JSON.stringify(sample)}, "sample")`); await wait(40); ev("listPlan(100)"); ev("goWs('list')");

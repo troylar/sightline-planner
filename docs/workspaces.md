@@ -60,9 +60,9 @@ an older copy of Sightline.
 
 ## List
 
-**List** (Delivery, next to Timeline, or press L) reads the plan top to bottom, like a checklist. It shows the work Timeline draws for the same filters: initiatives with their tasks, and Jira stories placed on the plan or counted under an epic. Each row has Start, End, Item, Owner, Waits on and Status.
+**List** (Delivery, next to Timeline, or press L) reads the plan top to bottom, like a checklist. It shows the work Timeline draws for the same filters: initiatives with their tasks, and Jira stories placed on the plan or counted under an epic. Each row has Start, End, Item, Workstream, Owner, Waits on and Status.
 
-- **Layouts:** By initiative (initiatives are group headers with their own dates, owner and item count), By person (a task with two owners appears under each, marked shared), and Everything by start date. Ties keep initiative order, then plan order. The layout stays in your browser for each plan; it isn't part of a saved view.
+- **Layouts:** By workstream, the default (each workstream in its order, with its color, its initiatives and their tasks under it; the Workstream column is left out, since each group names it), By initiative (initiatives are group headers with their own dates, owner and item count), By person (a task with two owners appears under each, marked shared), and By start date (everything in one list). Ties keep initiative order, then plan order. The layout stays in your browser for each plan; it isn't part of a saved view.
 - **Dates** are Timeline's own: weekends, holidays and owners' time off are already skipped.
 - **Owner** shows the plan's owners; for a Jira item, its Jira assignee and, separately, any plan lead. People outside the team or inactive are marked.
 - **Waits on** lists what an item waits for: a task's links, and an initiative's waits on other initiatives, gates and process steps. In the flat layouts a task's row also shows its initiative's waits. Jira dependencies link to Jira, with a warning when one ends after the item starts. Click a name to open it.

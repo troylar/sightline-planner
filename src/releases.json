@@ -1,5 +1,27 @@
 [
   {
+    "version": "1.127.0",
+    "date": "2026-10-26",
+    "headline": "List shows workstreams",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "List",
+        "title": "A By workstream layout",
+        "before": "List could group work by initiative or by person, but not by workstream, so the rows you see on Timeline had no match in List.",
+        "now": "By workstream shows each workstream in its Timeline order, with its color, its initiatives and their tasks under it, and a count. List now opens this way unless you picked a different layout on this plan before; choose By initiative once and List remembers it. Copy as table keeps the groups. Everything by start date is now called By start date.",
+        "where": "List, the layout buttons at the top"
+      },
+      {
+        "kind": "new",
+        "area": "List",
+        "title": "A Workstream column",
+        "now": "Every row now says which workstream it's in, on screen and in Copy as table. By workstream leaves the column out, since each group already names it. Like the other columns, you can resize it or set it to wrap.",
+        "where": "List, between Item and Owner"
+      }
+    ]
+  },
+  {
     "version": "1.126.0",
     "date": "2026-10-26",
     "headline": "Names stay in view as you scroll the timeline",
