@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.124.3",
+    "date": "2026-10-26",
+    "headline": "The Timeline answers faster with sprint shelves on",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Performance",
+        "title": "Sprint shelves no longer slow every click",
+        "before": "With sprint shelves on, each redraw worked out every story's sprint from scratch, so in a large plan zooming, filtering, opening an item and Undo all took several seconds.",
+        "now": "The shelves work out the sprints once per workstream. In a large plan, Fit and zooming are about 40% faster, This + next about 25%, and opening an item, filtering, Undo and saving about 25 to 30%. The shelves look the same.",
+        "where": "Timeline, in Weeks with sprint shelves on"
+      }
+    ]
+  },
+  {
     "version": "1.124.2",
     "date": "2026-10-26",
     "headline": "Big plans draw faster, Days most of all",
