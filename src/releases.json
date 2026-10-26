@@ -1,5 +1,41 @@
 [
   {
+    "version": "1.133.0",
+    "date": "2026-10-26",
+    "headline": "Raised again, not captured twice",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Roadmap",
+        "title": "Record that a request came up again",
+        "before": "When a request came up in a second meeting, it was captured again or not at all, so nobody could see how often it was asked for.",
+        "now": "A capture's card lists every later time it was raised: who asked, which meeting and when. Record it adds one, and Remove takes one out. The first ask stays as it was. Plans with these records open read-only in older copies of Sightline, so everyone editing should update first.",
+        "where": "Roadmap, To triage, open a capture: Raised again"
+      },
+      {
+        "kind": "new",
+        "area": "Roadmap",
+        "title": "The capture form offers the one you may already have",
+        "now": "As you type what was raised, the form lists captures with a similar name. Same thing: record it there adds this meeting to that one; Capture keeps it separate. Nothing is merged on its own.",
+        "where": "Add (or A, then C), Capture a request or idea"
+      },
+      {
+        "kind": "improved",
+        "area": "Roadmap",
+        "title": "To triage shows how often something comes up",
+        "now": "A capture raised more than once says so in its row, like raised 3 times. Hover over it to see when and by whom.",
+        "where": "Roadmap, To triage"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Your assistant records repeats instead of capturing twice",
+        "now": "With the meeting-to-plan skill, a request that matches a capture already in the plan is proposed as raised again on that one. When it isn't sure, it captures it separately and says which one it may repeat.",
+        "where": "Your assistant, meeting-to-plan skill"
+      }
+    ]
+  },
+  {
     "version": "1.132.0",
     "date": "2026-10-26",
     "headline": "Capture in one step",

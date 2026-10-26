@@ -1826,6 +1826,8 @@ ACTIONS = {
     "outcome.drop": ({"id": "id", "reason": "str?"}, False),
     "outcome.handoff": ({"id": "id", "initiative": "id?", "jira": "str?"}, True),
     "outcome.reopen": ({"id": "id"}, False),
+    "outcome.raiseAgain": ({"id": "id", "ask": "id", "who": "who?", "raised": "iso?", "source": "str?"}, False),
+    "outcome.unraise": ({"id": "id", "ask": "id"}, False),
     "outcome.del": ({"id": "id"}, True),
     "link.add": ({"id": "id", "after": "id"}, False),
     "link.remove": ({"id": "id", "after": "id"}, False),

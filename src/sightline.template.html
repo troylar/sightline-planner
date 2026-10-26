@@ -1172,7 +1172,7 @@ body.navrail .snp{padding-left:10px}body.navrail .snsub{padding-left:10px}
 }
 .rmideas{border:1px solid var(--rule);border-radius:10px;background:var(--surface);padding:10px 14px;margin-bottom:14px}.rmideas h3{margin:0 0 2px;font-size:14px}
 .capgroup h4{margin:10px 0 0;font-size:12.5px;display:flex;align-items:center;gap:6px}.captype{font-size:11px;font-weight:600;padding:1px 7px;border-radius:9px;background:var(--surface-2,var(--rule));color:var(--ink-2)}
-dialog.capdlg{width:min(560px,92vw)}.capdlg form{display:flex;flex-direction:column;gap:10px}.capdlg h2{margin:0 0 2px}.capdlg .capbtns{gap:8px;align-items:center}.capage{font-size:11.5px;color:var(--ink-2)}.capage.old{color:var(--warn,#b45309);font-weight:600}.capage.unknown{font-style:italic}.capbox{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--rule);padding-top:8px;margin-top:4px}.caphand{display:flex;flex-direction:column;gap:6px}.caphand select{width:100%;max-width:100%;min-width:0}.caphand input{flex:1;min-width:0}.rmideas ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+dialog.capdlg{width:min(560px,92vw)}.capdlg form{display:flex;flex-direction:column;gap:10px}.capdlg h2{margin:0 0 2px}.capdlg .capbtns{gap:8px;align-items:center}.capage{font-size:11.5px;color:var(--ink-2)}.capage.old{color:var(--warn,#b45309);font-weight:600}.capage.unknown{font-style:italic}.captimes{font-size:11px;font-weight:600;padding:1px 7px;border-radius:9px;border:1px solid var(--rule);color:var(--ink-2)}.capagain h4{margin:10px 0 4px;font-size:12.5px}.capagain ul{margin:0 0 8px;padding:0;list-style:none}.capagain li{display:flex;gap:8px;align-items:baseline;justify-content:space-between;font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--rule)}.capagain .qrow{gap:6px}.capagain .qrow input{flex:1;min-width:0}#capSame:empty{display:none}#capSame{border:1px solid var(--rule);border-radius:8px;padding:8px 10px}#capSame p{margin:0 0 4px}#capSame ul{margin:0;padding-left:18px}#capSame li{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.capbox{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--rule);padding-top:8px;margin-top:4px}.caphand{display:flex;flex-direction:column;gap:6px}.caphand select{width:100%;max-width:100%;min-width:0}.caphand input{flex:1;min-width:0}.rmideas ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
 .rmideas li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.dvidea{font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none}.ideaacts{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto}.btn.sm{padding:2px 8px;font-size:12px}
 .rmgrid{display:flex;flex-direction:column;gap:2px;overflow-x:auto}.rmrow{display:grid;grid-template-columns:170px minmax(640px,1fr);gap:8px;align-items:stretch}
 .rmlane{display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 4px;border-top:1px solid var(--rule-2)}.rmlane small{color:var(--ink-3);margin-left:auto}.rmlane .ini{width:10px;height:10px;border-radius:3px}
@@ -1709,7 +1709,7 @@ const LEGACY_KEYS = ["timeline-planner-v2","timeline-planner-v1"];
 const MAX_BYTES = 2 * 1024 * 1024, MAX_READ_BYTES = 5 * 1024 * 1024, MAX_DEPTH = 24, MAX_NODES = 60000;   // write up to 2 MB (what copies before 1.19 can open); read up to 5 MB
 // Plan format. SCHEMA changes only for a change older copies can't read; new optional parts are named in meta.features,
 // and a copy that finds one it doesn't know opens the plan read-only instead of saving over what it can't see.
-const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1", "stories1", "skills1", "aiHint1", "msStory1", "descriptions1", "laneIds1", "cardLayout1", "hideWhy1", "captures1"];
+const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1", "stories1", "skills1", "aiHint1", "msStory1", "descriptions1", "laneIds1", "cardLayout1", "hideWhy1", "captures1", "captureAgain1"];
 // A deliverable's target: a year, a half or a quarter ("2027", "2027-H1", "2027-Q2"), or "later".
 const TARGET_RE = /^(\d{4})(?:-(Q[1-4]|H[12]))?$/;
 const PR_DRAFT_RE = /^\s*[\[(]?\s*(draft|wip)\s*[\])]?\s*[:\-]?\s/i;    // a draft pull request's title: "Draft: …", "[WIP] …"
@@ -1718,6 +1718,14 @@ const DV_MAX = 5000, DV_MAX_KEYS = 200;
 // in the plan), the meeting's date and what became of it. Kept apart from a deliverable's kind and stage.
 const CAPTURE_TYPES = [["idea","Idea"],["request","Request"],["gap","Process gap"],["question","Question"]];
 const validWho = v => !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length === 2 && (v.type === "person" || v.type === "group") && typeof v.id === "string" && /^[A-Za-z0-9._-]{1,60}$/.test(v.id);                      // deliverables per plan, Jira links per deliverable (the 2 MB file limit usually comes first)
+// Each later time a capture is raised again: who (or unknown), which meeting, when. The first ask stays in askedBy/raised/
+// source, so a copy that predates this still shows who asked first. Records merge by their id (REC_FIELDS).
+const AGAIN_MAX = 50;
+const cleanAgain = L => { const seen = new Set(), out = [];
+  (Array.isArray(L) ? L : []).forEach(x=>{ if (!x || typeof x !== "object" || out.length >= AGAIN_MAX) return; const id = String(x.id || ""); if (!/^[A-Za-z0-9._-]{1,60}$/.test(id) || seen.has(id)) return; seen.add(id);
+    const o = {id}, w = x.who && typeof x.who === "object" ? {type:x.who.type, id:x.who.id} : null; if (validWho(w)) o.who = w;
+    if (validIso(x.raised)) o.raised = x.raised; const src = String(x.source || "").trim().slice(0, 60); if (src) o.source = src; out.push(o); });
+  return out; };
 const FOLLOW_FIELDS = ["next","waitingOn","escalateBy","decider"];     // optional on decisions and risks: left out until filled in
 const COMMIT_MAX = 26, COMMIT_KEYS = 500;                    // recorded sprint commitments kept; issues each
 const REP_MAX = 26, REP_TEXT = 4000;                         // saved status updates per plan (about six months weekly); characters per section
@@ -1817,6 +1825,7 @@ const featuresIn = plan => { const f = [];
   if ((plan.deliverables || []).length) f.push("deliverables");
   if ((plan.deliverables || []).some(d=>d && d.approved)) f.push("approvals");
   if ((plan.deliverables || []).some(d=>d && (d.capture || d.askedBy || d.raised || d.handoff))) f.push("captures1");
+  if ((plan.deliverables || []).some(d=>d && Array.isArray(d.raisedAgain) && d.raisedAgain.length)) f.push("captureAgain1");
   if ((plan.snapshots || []).length) f.push("snapshots");
   if ((plan.reports || []).length) f.push("reports");
   if ((plan.commitments || []).length) f.push("commitments");
@@ -2278,6 +2287,7 @@ function normalize(input, strict){
       const jk = [...new Set((Array.isArray(x.jira) ? x.jira : []).map(k=>str(k).trim().toUpperCase()).filter(k=>/^[A-Z][A-Z0-9_]{0,19}-[1-9][0-9]{0,8}$/.test(k)))].slice(0, DV_MAX_KEYS); if (jk.length) o.jira = jk;
       put("capture", CAPTURE_TYPES.some(c=>c[0] === x.capture) ? x.capture : ""); put("raised", validIso(x.raised) ? x.raised : "");      // captured from a meeting
       const ab = x.askedBy && typeof x.askedBy === "object" ? {type:x.askedBy.type, id:x.askedBy.id} : null; if (validWho(ab)) o.askedBy = ab;
+      const ag = cleanAgain(x.raisedAgain); if (ag.length) o.raisedAgain = ag;
       const ho = x.handoff && typeof x.handoff === "object" ? x.handoff : null;
       if (ho && ho.to === "initiative" && ACT_ID.test(str(ho.id))) o.handoff = {to:"initiative", id:str(ho.id)}; else if (ho && ho.to === "jira" && JKEY.test(str(ho.key))) o.handoff = {to:"jira", key:str(ho.key)};
       put("note", str(x.note).slice(0,4000)); put("source", str(x.source).slice(0,100)); put("dropReason", str(x.dropReason).slice(0,300)); put("from", str(x.from).slice(0,60)); Object.assign(o, hintField(x.aiHint));
@@ -2588,6 +2598,13 @@ const objMerge = (b0, mv, tv) => { const B = b0 || {}, M = mv || {}, out = {...(
   new Set([...Object.keys(B), ...Object.keys(M)]).forEach(k=>{ if (B[k] === M[k]) return; if (k in M) out[k] = M[k]; else delete out[k]; }); return out; };
 const setMerge = (b0, mv, tv) => { const B = new Set(b0 || []), M = new Set(mv || []), rem = new Set([...B].filter(x=>!M.has(x)));
   return [...new Set([...(tv || []), ...[...M].filter(x=>!B.has(x))])].filter(x=>!rem.has(x)); };
+// Lists of records with their own ids (a capture's raised-again asks) merge record by record: both sides' additions are
+// kept, a record I removed stays removed, and my change to a record wins. setMerge can't: cloned objects never match.
+const REC_FIELDS = {deliverables:["raisedAgain"]};
+const recMerge = (b0, mv, tv) => { const B = new Map((b0 || []).map(x=>[x.id, x])), M = new Map((mv || []).map(x=>[x.id, x])), out = (tv || []).map(x=>clone(x));
+  B.forEach((x, id)=>{ if (!M.has(id)){ const i = out.findIndex(y=>y.id === id); if (i >= 0) out.splice(i, 1); } });
+  M.forEach((x, id)=>{ const i = out.findIndex(y=>y.id === id); if (!B.has(id) || !jeq(B.get(id), x)){ if (i >= 0) out[i] = clone(x); else out.push(clone(x)); } });
+  return out; };
 function applyOps(plan, ops){
   const p = clone(plan); p.bars = p.bars || []; p.bars.forEach(b=>{ b.tasks = b.tasks || []; });
   const skipped = [];
@@ -2622,9 +2639,11 @@ function applyOps(plan, ops){
     const arr = p[o.type] = p[o.type] || [], i = arr.findIndex(x=>x.id === o.id);
     if (o.op === "add"){ const v = clone(o.value); if (o.type === "bars") v.tasks = i >= 0 ? arr[i].tasks : (v.tasks || []); if (i >= 0){ const a = arr[i].added;
         (SET_FIELDS[o.type] || []).forEach(f=>{ if (Array.isArray(arr[i][f]) && arr[i][f].length) v[f] = [...new Set([...arr[i][f], ...(v[f] || [])])]; });   // two people adding the same key (a Jira item's tags) both win
+        (REC_FIELDS[o.type] || []).forEach(f=>{ if (Array.isArray(arr[i][f]) && arr[i][f].length) v[f] = recMerge([], v[f], arr[i][f]); });
         Object.assign(arr[i], v); if (a) arr[i].added = a; } else arr.push(v); }
     else if (o.op === "set"){ if (i >= 0 && o.field === "added" && arr[i].added){} else if (i >= 0 && o.field !== "tasks"){
         if ((SET_FIELDS[o.type] || []).includes(o.field) && "prev" in o){ const m = setMerge(o.prev, o.value, arr[i][o.field]); setField(arr[i], o.field, m.length || o.field === "epics" ? m : undefined); }
+        else if ((REC_FIELDS[o.type] || []).includes(o.field) && "prev" in o){ const m = recMerge(o.prev, o.value, arr[i][o.field]); setField(arr[i], o.field, m.length ? m : undefined); }
         else setField(arr[i], o.field, o.value); } else if (i < 0) skipped.push(o); }
     else if (o.op === "del"){ if (i >= 0) arr.splice(i, 1); }
     else if (o.op === "order" && Array.isArray(o.value)){ const pos = new Map(o.value.map((id,k)=>[id,k])); arr.sort((x,y)=>(pos.has(x.id) ? pos.get(x.id) : 1e9) - (pos.has(y.id) ? pos.get(y.id) : 1e9)); }
@@ -3741,6 +3760,7 @@ function mergePlans(base, S, theirs){
     if (o.op === "set" && o.field === "edited"){ const t = theirVal(o.type, o.id, "edited"); return !(t.has && t.v && o.value && t.v.at > o.value.at); }   // the later edit's stamp wins, never a clash
     if (o.op === "set" && o.type === "meta" && OBJF.includes(o.field)){ o.value = objMerge(o.prev, o.value, theirs.meta[o.field]); return true; }
     if (o.op === "set" && o.type === "meta" && o.field === "capRates"){ o.value = mergeRates(o.prev, o.value, theirs.meta.capRates); if (!o.value.length) o.value = undefined; return true; }
+    if (o.op === "set" && (REC_FIELDS[o.type] || []).includes(o.field)){ const t = theirVal(o.type, o.id, o.field); if (t.has) o.value = recMerge(o.prev, o.value, t.v); return true; }
     if (o.op === "set" && (SETF[o.type] || []).includes(o.field)){
       if (o.type === "meta"){ o.value = setMerge(o.prev, o.value, theirs.meta[o.field]); return true; }
       const t = theirVal(o.type, o.id, o.field); if (t.has) o.value = setMerge(o.prev, o.value, t.v); return true; }
@@ -7328,6 +7348,8 @@ const ACTION_DESC = {
   "group.add":"Add a group of people, such as a team that asks for things, with its members if known.",
   "outcome.handoff":"Close a captured item by handing it off to an initiative or a Jira issue.",
   "outcome.reopen":"Put a handed-off or declined captured item back on the list to triage.",
+  "outcome.raiseAgain":"Record that a captured item was raised again: who asked, at which meeting, and when.",
+  "outcome.unraise":"Remove one raised-again record from a captured item.",
   "person.set":"Change one field of a person.",
   "person.setAlloc":"Set how much of a person's time goes to this plan.",
   "person.setSplit":"Set how a person's time is split across workstreams.",
@@ -7742,6 +7764,22 @@ defAction("outcome.handoff", {scope:"outcomes", risk:"routine", args:{id:"id", i
 defAction("outcome.reopen", {scope:"outcomes", risk:"routine", args:{id:"id"},
   check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); if (!d.handoff && d.stage !== "dropped") return actInvalid("It's open already."); },
   run:(p, a)=>dvChange(p, a.id, x=>{ delete x.handoff; if (x.stage === "dropped"){ x.stage = "idea"; delete x.dropReason; } })});
+// Raised again: one more time someone asked for a capture, kept with who, which meeting and when. It doesn't reopen a
+// closed capture; it records that the ask came up again.
+const AGAIN_ID = /^[A-Za-z0-9._-]{1,60}$/;
+defAction("outcome.raiseAgain", {scope:"outcomes", risk:"routine", args:{id:"id", ask:"id", who:"who?", raised:"iso?", source:"str?"},
+  done:(p, a)=>{ const d = actDv(p, a.id); return !!d && (d.raisedAgain || []).some(x=>x.id === a.ask); },
+  check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); if (!d.capture) return actInvalid("Only a captured item is raised again. Give it a capture type first.");
+    if (!AGAIN_ID.test(a.ask)) return actInvalid("Give the ask an id of letters, digits, dot, dash or underscore (up to 60).");
+    if ((d.raisedAgain || []).some(x=>x.id === a.ask)) return actInvalid(`${a.ask} is already recorded on it.`);
+    if ((d.raisedAgain || []).length >= AGAIN_MAX) return actInvalid(`It's been raised again ${AGAIN_MAX} times already; that's the most a capture keeps.`);
+    if (a.who && !actWho(p, a.who)) return actMissing(a.who.type === "group" ? "group" : "person"); },
+  run:(p, a)=>{ const x = actDv(p, a.id), o = {id:a.ask}; if (a.who) o.who = {type:a.who.type, id:a.who.id}; if (a.raised) o.raised = a.raised;
+    const src = String(a.source || "").trim().slice(0, 60); if (src) o.source = src; (x.raisedAgain = x.raisedAgain || []).push(o); }});
+defAction("outcome.unraise", {scope:"outcomes", risk:"risky", args:{id:"id", ask:"id"},
+  done:(p, a)=>{ const d = actDv(p, a.id); return !!d && !(d.raisedAgain || []).some(x=>x.id === a.ask); },
+  check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); if (!(d.raisedAgain || []).some(x=>x.id === a.ask)) return actMissing("ask"); },
+  run:(p, a)=>{ const x = actDv(p, a.id); x.raisedAgain = x.raisedAgain.filter(y=>y.id !== a.ask); if (!x.raisedAgain.length) delete x.raisedAgain; }});
 const dvSeen = d => { const {edited, ...r} = d; return r; };
 defAction("outcome.del", {done:(p, a)=>!actDv(p, a.id), scope:"outcomes", risk:"risky", args:{id:"id"}, stale:"Someone changed it since you opened it, so it wasn't deleted. Look at their change, then delete again if you still want to.",
   cur:(p, a)=>{ const d = actDv(p, a.id); return d ? dvSeen(d) : undefined; },
@@ -12973,7 +13011,7 @@ function contextGaps(){
 }
 function assistantView(){
   const J = jiraAll(), linked = new Set((S.deliverables || []).flatMap(d=>d.jira || []));
-  const pick = d => Object.fromEntries(["id","name","line","kind","stage","target","date","release","lane","owners","jira","source","aiHint","capture","askedBy","raised","handoff","dropReason"].filter(k=>d[k] != null && d[k] !== "").map(k=>[k, d[k]]));     // no notes: they aren't needed to amend, and they're free text
+  const pick = d => Object.fromEntries(["id","name","line","kind","stage","target","date","release","lane","owners","jira","source","aiHint","capture","askedBy","raised","raisedAgain","handoff","dropReason"].filter(k=>d[k] != null && d[k] !== "").map(k=>[k, d[k]]));     // no notes: they aren't needed to amend, and they're free text
   const fields = (x,keys)=>Object.fromEntries(keys.filter(k=>x[k]!=null).map(k=>[k,clone(x[k])]));
   return assistantFitView({coverage:{context:contextGaps()}, kind:"sightline-assistant-view", version:1, appVersion:APP_VERSION, generatedAt:new Date().toISOString(), today:dayToIso(todayDay()),
     plan:{id:S.meta.planId, title:S.meta.title, revision:S.meta.revision || 0},
@@ -13014,7 +13052,7 @@ function assistantView(){
       "Workstreams: workstream.set {id, field:'note'|'color'|'from'|'until', value, prev}, workstream.move {id, index}, workstream.reid {lane, id, prev} and workstream.del {id}. workstream.reid changes a workstream's id (lane, its id now; id, the new one) and every reference with it; its old ids are in was, still accepted from files written before, and never used again. A person always reviews it. workstream.del is refused while anything still points at the workstream (it says what), and a person always reviews it; move its work first with initiative.setLane, and change person.setSplit.",
       "coverage.context counts what the plan doesn't say yet (workstreams without guidance, people without skills, open work without a story or needs, milestones in the next 12 weeks without a story). Mention the gaps that weaken a suggestion and offer to fill them; never guess to cover one.",
       "Items marked jiraLinked keep Jira's status and dates: propose those in Jira. Items marked datesFromTasks get their dates from their tasks. Moving dates can move linked items; Sightline shows that before applying.",
-      "Captured from meetings: outcome.add with capture (idea, request, gap or question), askedBy {type:'person'|'group', id} from planning.people or planning.groups, raised (the meeting's date), source (the meeting) and lane when the workstream is clear; leave lane out when it isn't. Never make someone the requester or owner because their name was mentioned. A new person or group (person.add, group.add) always waits for review: add it in the same change as the capture that needs it. A date never plans a capture. Close one with outcome.handoff {id, initiative or jira} or outcome.drop with a reason; outcome.reopen puts it back.",
+      "Captured from meetings: when an open or closed capture already covers the request (compare names and raisedAgain), record it with outcome.raiseAgain (a new ask id, who, raised, source) instead of adding a duplicate; when unsure, add it and say which capture it may match. Otherwise outcome.add with capture (idea, request, gap or question), askedBy {type:'person'|'group', id} from planning.people or planning.groups, raised (the meeting's date), source (the meeting) and lane when the workstream is clear; leave lane out when it isn't. Never make someone the requester or owner because their name was mentioned. A new person or group (person.add, group.add) always waits for review: add it in the same change as the capture that needs it. A date never plans a capture. Close one with outcome.handoff {id, initiative or jira} or outcome.drop with a reason; outcome.reopen puts it back.",
       "Jira is read-only: never set Jira facts; propose them. Use only ids that appear below, or new ids you create (dv-…). Targets: a year '2027', a half '2027-H1', a quarter '2027-Q2', or 'later'.",
       "Use projectGuide to interpret scope and suggest placement, subordinate to the ownership and operation rules above. Explain placements; keep suggested extra work separate. If required owners or dates are unknown, ask rather than fabricate a scheduled task.",
       "If a request is ambiguous (for example 'Q2' without a year), ask the person before writing. Write the whole file at once.",
@@ -13981,6 +14019,20 @@ const capOpen = d => !!d.capture && !d.handoff && !["dropped","done","split"].in
 const capType = d => (CAPTURE_TYPES.find(c=>c[0] === d.capture) || [, ""])[1];
 function capWho(w){ if (!w) return ""; if (w.type === "group"){ const g = (S.groups || []).find(x=>x.id === w.id); return g ? g.name : "a group no longer in the plan"; }
   const pp = personById(w.id); return pp ? pp.name : "someone no longer in the plan"; }
+// Who-asked choices for a select: unknown, then groups, then active people (a former one only when it's the current value).
+function whoOptions(cur){ const v = cur ? cur.type + ":" + cur.id : "";
+  return [h("option",{value:""}, "Not known"),
+    (S.groups || []).length ? h("optgroup",{label:"Groups"}, ...S.groups.map(g=>h("option",{value:"group:" + g.id, selected:v === "group:" + g.id}, g.name))) : null,
+    h("optgroup",{label:"People"}, ...S.people.filter(pp=>!pp.inactive || v === "person:" + pp.id).map(pp=>h("option",{value:"person:" + pp.id, selected:v === "person:" + pp.id}, pp.name + (pp.external ? " (outside)" : ""))))]; }
+const whoOf = v => { const i = String(v || "").indexOf(":"); return v && i > 0 ? {type:v.slice(0, i), id:v.slice(i + 1)} : null; };
+// Captures whose names share most of their words with this one: a suggestion to record it as raised again, never a merge.
+const CAP_STOP = new Set(["the","and","for","with","from","that","this","when","what","who","our","their","into","about","they","them","have","need","needs","want","wants","can","could","should","would","not","are","was","its"]);
+const capWords = t => new Set(String(t || "").toLowerCase().match(/[a-z0-9]{3,}/g)?.filter(w=>!CAP_STOP.has(w)) || []);
+function capSimilar(name, skip){ const A = capWords(name); if (A.size < 2) return [];
+  return (S.deliverables || []).filter(d=>d.capture && d.id !== skip && d.stage !== "split").map(d=>{ const B = capWords(d.name), both = [...A].filter(w=>B.has(w)).length;
+      return {d, both, score:both / Math.max(1, new Set([...A, ...B]).size)}; })
+    .filter(x=>x.both >= 2 && x.score >= 0.4).sort((a, b)=>b.score - a.score || (capOpen(b.d) ? 1 : 0) - (capOpen(a.d) ? 1 : 0)).slice(0, 3).map(x=>x.d); }
+const capTimes = d => 1 + (d.raisedAgain || []).length;
 function capAge(d){ const t = d.added && stampDay(d.added.at); if (t == null) return {days:null, text:"added: not recorded"}; const n = Math.max(0, todayDay() - t); return {days:n, text:n === 0 ? "added today" : `open ${n} day${n === 1 ? "" : "s"}`}; }
 // What became of a capture, in one line. Two people can close it differently at once (a merge keeps both); say so, never pick one.
 function capState(d){ const declined = `declined${d.dropReason ? ": " + d.dropReason : ""}`;
@@ -14010,25 +14062,32 @@ function openCapture(){
   if (last.plan !== S.meta.planId) last = {};
   const today = dayToIso(todayDay()), what = h("input",{id:"capWhat",maxlength:"120","aria-required":"true",autocomplete:"off",placeholder:"e.g. Tell support when the release process changes"});
   const type = h("select",{id:"capType"}, ...CAPTURE_TYPES.map(([v, l])=>h("option",{value:v, selected:(last.type || "request") === v}, l)));
-  const who = h("select",{id:"capWho"}, h("option",{value:""}, "Not known"),
-    (S.groups || []).length ? h("optgroup",{label:"Groups"}, ...S.groups.map(g=>h("option",{value:"group:" + g.id}, g.name))) : null,
-    h("optgroup",{label:"People"}, ...S.people.filter(pp=>!pp.inactive).map(pp=>h("option",{value:"person:" + pp.id}, pp.name + (pp.external ? " (outside)" : "")))));
+  const who = h("select",{id:"capWho"}, ...whoOptions(null));
   const lane = h("select",{id:"capLane"}, h("option",{value:""}, "Unassigned (sort it in triage)"), ...S.lanes.map(l=>h("option",{value:l.id}, l.name)));
   const from = h("input",{id:"capFrom",maxlength:"60",list:"capFromList",value:last.from ?? ideaSource(),placeholder:"optional, e.g. Weekly sync"});
   const raised = h("input",{id:"capRaised",type:"date",value:validIso(last.raised || "") ? last.raised : today});
   const msg = h("p",{class:"hint",id:"capMsg","aria-live":"polite"}, "Only what was raised is needed. It waits in To triage until it's handed off or declined.");
+  const remember = (src, r0) => { try { sessionStorage.setItem("tp-capture-last", JSON.stringify({plan:S.meta.planId, from:src, raised:r0, type:type.value})); } catch(e){} };
+  const done = (again, said) => { setStatus(said); if (again){ what.value = ""; who.value = ""; lane.value = ""; same.replaceChildren(); msg.textContent = `${said} Next one?`; what.focus(); return; } dialog.close(); };
   const save = again => { const name = what.value.trim(); if (!name){ what.focus(); msg.textContent = "Say what was raised first."; return; }
-    const w = who.value, i = w.indexOf(":"), r0 = raised.value && validIso(raised.value) ? raised.value : "";
-    const extra = {capture:type.value, source:from.value.trim().slice(0, 60), ...(w ? {askedBy:{type:w.slice(0, i), id:w.slice(i + 1)}} : {}), ...(r0 ? {raised:r0} : {}), ...(lane.value ? {lane:lane.value} : {})};
-    try { sessionStorage.setItem("tp-capture-last", JSON.stringify({plan:S.meta.planId, from:extra.source, raised:r0, type:type.value})); } catch(e){}
-    addIdea(name, extra).then(id=>{ if (!id){ msg.textContent = "It wasn't saved. The status line says why."; return; }
-      setStatus(`Captured "${name}". It's in To triage.`);
-      if (again){ what.value = ""; who.value = ""; lane.value = ""; msg.textContent = `Captured "${name}". Next one?`; what.focus(); return; }
-      dialog.close(); }); };
+    const w = whoOf(who.value), r0 = raised.value && validIso(raised.value) ? raised.value : "";
+    const extra = {capture:type.value, source:from.value.trim().slice(0, 60), ...(w ? {askedBy:w} : {}), ...(r0 ? {raised:r0} : {}), ...(lane.value ? {lane:lane.value} : {})};
+    remember(extra.source, r0);
+    addIdea(name, extra).then(id=>{ if (!id){ msg.textContent = "It wasn't saved. The status line says why."; return; } done(again, `Captured "${name}". It's in To triage.`); }); };
+  // Likely the same as one already captured? Offer it; only a click records it there, and Capture still keeps it separate.
+  const sameAs = d => { const name = what.value.trim(), w = whoOf(who.value), r0 = raised.value && validIso(raised.value) ? raised.value : "", src = from.value.trim().slice(0, 60);
+    remember(src, r0);
+    dvSave(`${d.name}: raised again`, s=>act("outcome.raiseAgain", {id:d.id, ask:newId("ask"), ...(w ? {who:w} : {}), ...(r0 ? {raised:r0} : {}), ...(src ? {source:src} : {})}, s))
+      .then(ok=>{ if (!ok){ msg.textContent = "It wasn't recorded. The status line says why."; return; } done(false, `Recorded "${name}" on "${d.name}", raised ${capTimes(dvById(d.id) || d)} times now. Undo takes it back.`); }); };
+  const same = h("div",{id:"capSame","aria-live":"polite"});
+  const offer = () => { const L = capSimilar(what.value); same.replaceChildren(...(L.length ? [h("p",{class:"hint"}, "Already captured? Record it on that one, or capture it separately."),
+      h("ul",{}, ...L.map(d=>h("li",{"data-same":d.id}, h("span",{}, d.name, h("span",{class:"hint"}, ` (${capOpen(d) ? "open" : d.handoff ? "handed off" : d.stage === "dropped" ? "declined" : "closed"}${capTimes(d) > 1 ? `, raised ${capTimes(d)} times` : ""})`)),
+        h("button",{type:"button",class:"linkish capsame",onclick:()=>sameAs(d)}, "Same thing: record it there"))))] : [])); };
+  what.addEventListener("input", offer);
   const dialog = h("dialog",{id:"dlgCapture",class:"capdlg","aria-labelledby":"capTitle"},
     h("form",{method:"dialog",onsubmit:e=>{ e.preventDefault(); save(false); }},
       h("h2",{id:"capTitle"}, "Capture a request or idea"),
-      field("capWhat", "What was raised", what),
+      field("capWhat", "What was raised", what), same,
       h("div",{class:"row2"}, field("capType", "It's a", type), field("capWho", "Asked by", who)),
       field("capLane", "Workstream", lane),
       h("div",{class:"row2"}, field("capFrom", "From", from), field("capRaised", "Raised on", raised)),
@@ -14091,10 +14150,30 @@ function capturePanel(d, can){
   return h("div",{id:"f-dvcapture",class:"capbox"}, type,
     h("div",{class:"row2"}, field("f-dvasked", "Asked by", who), field("f-dvraised", "Raised on", raised)),
     h("p",{class:"hint",id:"f-dvcapstate"}, state, d.handoff && d.handoff.to === "jira" ? " Jira owns the issue; the plan keeps only its key." : ""),
+    againPanel(d, can),
     !can ? null : d.handoff || d.stage === "dropped" ? h("div",{class:"qrow"}, h("button",{type:"button",class:"btn",id:"f-dvreopen",onclick:()=>dvSave(`${d.name}: reopened`, s=>act("outcome.reopen", {id:d.id}, s))},"Reopen"))
       : h("div",{class:"field caphand",id:"f-dvhandoff"}, h("label",{for:"f-dvhobar"}, "Hand off to"), toBar, h("div",{class:"qrow"}, toKey, h("button",{type:"button",class:"btn",id:"f-dvhogo",onclick:handoff},"Hand off"),
           h("button",{type:"button",class:"linkish",id:"f-dvdecline",onclick:()=>dropDv(d.id)},"Decline"))),
     h("p",{class:"hint"}, "Handing off or declining closes it as a capture; neither marks anything planned or done."));
+}
+// Each later time it was raised: who, where, when. Recorded by hand (or proposed by the assistant), never inferred.
+const askLine = x => [x.who ? "asked by " + capWho(x.who) : "asked by: not known", x.source || "", x.raised ? fmtDay(isoToDay(x.raised)) : ""].filter(Boolean).join(" · ");
+function againPanel(d, can){
+  const again = d.raisedAgain || [];
+  const who = h("select",{id:"f-dvagwho"}, ...whoOptions(null));
+  const from = h("input",{id:"f-dvagfrom",maxlength:"60",placeholder:"From, e.g. Weekly sync","aria-label":"Where it was raised again"});
+  const on = h("input",{id:"f-dvagon",type:"date",value:dayToIso(todayDay())});
+  const record = () => { const w = whoOf(who.value), r0 = validIso(on.value) ? on.value : "", src = from.value.trim().slice(0, 60);
+    dvSave(`${d.name}: raised again`, s=>act("outcome.raiseAgain", {id:d.id, ask:newId("ask"), ...(w ? {who:w} : {}), ...(r0 ? {raised:r0} : {}), ...(src ? {source:src} : {})}, s))
+      .then(ok=>{ if (!ok) return; setStatus(`Recorded "${d.name}" as raised again (${capTimes(dvById(d.id) || d)} times now). Undo takes it back.`); $("#f-dvaggo")?.focus(); }); };
+  const remove = x => dvSave(`${d.name}: a raised-again record removed`, s=>act("outcome.unraise", {id:d.id, ask:x.id}, s))
+    .then(ok=>{ if (!ok) return; setStatus(`Removed "${askLine(x)}" from "${d.name}". Undo puts it back.`); $("#f-dvaggo")?.focus(); });
+  return h("div",{class:"capagain",id:"f-dvagain"}, h("h4",{}, again.length ? `Raised again (${again.length})` : "Raised again"),
+    again.length ? h("ul",{}, ...again.map(x=>h("li",{"data-ask":x.id}, h("span",{}, askLine(x)),
+        can ? h("button",{type:"button",class:"linkish","aria-label":`Remove the record: ${askLine(x)}`,onclick:()=>remove(x)}, "Remove") : null)))
+      : h("p",{class:"hint"}, "Asked for again in another meeting? Record it here, so it shows how often it comes up."),
+    can && again.length < AGAIN_MAX ? h("div",{class:"capagadd"}, h("div",{class:"row2"}, field("f-dvagwho", "Who asked this time", who), field("f-dvagon", "On", on)),
+      h("div",{class:"field"}, h("div",{class:"qrow"}, from, h("button",{type:"button",class:"btn",id:"f-dvaggo",onclick:record}, "Record it")))) : null);
 }
 // Triage: open captures by workstream (Unassigned last, never hidden), oldest first, with who asked and where from.
 function triageList(can){
@@ -14105,6 +14184,7 @@ function triageList(can){
     return h("li",{"data-cap":d.id}, h("span",{class:"captype cap-" + d.capture}, capType(d)),
       h("button",{type:"button",class:"linkish dvidea",onclick:()=>{ sel = {type:"deliverable", id:d.id}; render(); }}, d.name),
       h("span",{class:"hint"}, [d.askedBy ? "asked by " + capWho(d.askedBy) : "asked by: not known", d.source || "", d.raised ? "raised " + fmtDay(isoToDay(d.raised)) : ""].filter(Boolean).join(" · ")),
+      capTimes(d) > 1 ? h("span",{class:"captimes",title:(d.raisedAgain || []).map(askLine).join("\n")}, `raised ${capTimes(d)} times`) : null,
       h("span",{class:"capage" + (age.days == null ? " unknown" : age.days > 30 ? " old" : "")}, age.text)); };
   const groups = [...S.lanes.filter(l=>by.has(l.id)).map(l=>[l.id, l.name, l.color]), ...(by.has("") ? [["", "Unassigned", null]] : [])];
   const closed = (S.deliverables || []).filter(d=>d.capture && !capOpen(d)).length;
