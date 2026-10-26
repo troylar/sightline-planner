@@ -100,6 +100,10 @@ prevention is the only real control.
   to aim someone else's token. Issues from the search are
   only offered in the page; nothing joins the plan until someone editing clicks Add. Skips are shared in
   `meta.jiraSkip`.
+- **The plan picks fields, never issues.** A shared field mapping in the plan (`meta.jiraFields`) may add fields to
+  what the sync requests for the issues it already fetches. Ids are checked against `^customfield_[0-9]{1,9}$` (or a
+  short built-in list) and capped; each person can deny ids in their local config; the sync prints any id it is asked
+  for the first time. Nothing in the plan changes which issues are searched.
 - **Epics are counted, not copied.** `bar.epics` lists epic keys; the script counts their children (by Epic Link,
   Parent Link, and `parent`, whichever the server has) into `rollups` in `jira-status.json`. An initiative linked
   to epics is compared with its stories, never the epic's own status, which sits at In Progress for months.
