@@ -1,8 +1,8 @@
 {
  "meta": {
-  "version": "1.124.1",
+  "version": "1.124.6",
   "html": "sightline.html",
-  "date": "2026-10-26T01:32:30.886Z",
+  "date": "2026-10-26T08:37:40.427Z",
   "seed": 1,
   "runs": 5,
   "chromium": "143.0.7499.4",
@@ -17,8 +17,8 @@
      "weeks": 26
     },
     "weeks": 26,
-    "planBytes": 31555,
-    "statusBytes": 96695,
+    "planBytes": 31560,
+    "statusBytes": 96587,
     "issues": 320
    },
    "M": {
@@ -30,8 +30,8 @@
      "weeks": 52
     },
     "weeks": 52,
-    "planBytes": 142555,
-    "statusBytes": 622446,
+    "planBytes": 142604,
+    "statusBytes": 621179,
     "issues": 2072
    },
    "L": {
@@ -43,8 +43,8 @@
      "weeks": 104
     },
     "weeks": 104,
-    "planBytes": 514536,
-    "statusBytes": 2486599,
+    "planBytes": 514496,
+    "statusBytes": 2480219,
     "issues": 8244
    }
   }
@@ -57,14 +57,14 @@
    "group": "Load",
    "what": "Open the plan file and the Jira folder, to the first drawn Timeline",
    "skip": "",
-   "median": 280.3,
-   "p95": 285.5,
+   "median": 275.9,
+   "p95": 286.8,
    "samples": [
-    283,
-    245.8,
-    241.3,
-    280.3,
-    285.5
+    266.5,
+    286.8,
+    278.7,
+    275.9,
+    274.1
    ],
    "fps": null,
    "dropped": null,
@@ -74,9 +74,9 @@
     "maxMs": 0
    },
    "layouts": 27,
-   "recalcs": 49,
-   "heapMB": 6,
-   "nodes": 3438,
+   "recalcs": 48,
+   "heapMB": 6.6,
+   "nodes": 3439,
    "notes": ""
   },
   {
@@ -86,14 +86,14 @@
    "group": "Jira",
    "what": "A new Jira sync arrives and is drawn",
    "skip": "",
-   "median": 35.6,
-   "p95": 36.4,
+   "median": 29.5,
+   "p95": 30.5,
    "samples": [
-    35.6,
-    34.1,
-    35.6,
-    35.9,
-    36.4
+    27.5,
+    29.5,
+    29.5,
+    28.6,
+    30.5
    ],
    "fps": null,
    "dropped": null,
@@ -103,9 +103,9 @@
     "maxMs": 0
    },
    "layouts": 11,
-   "recalcs": 18,
+   "recalcs": 21,
    "heapMB": 4.8,
-   "nodes": 3480,
+   "nodes": 3481,
    "notes": ""
   },
   {
@@ -115,14 +115,14 @@
    "group": "Timeline",
    "what": "Weeks: switch to Fit",
    "skip": "",
-   "median": 38.5,
-   "p95": 40.5,
+   "median": 17.3,
+   "p95": 17.6,
    "samples": [
-    38.5,
-    37.6,
-    40.5,
-    37.9,
-    39.5
+    16.3,
+    16.6,
+    17.3,
+    17.4,
+    17.6
    ],
    "fps": null,
    "dropped": null,
@@ -131,10 +131,10 @@
     "count": 0,
     "maxMs": 0
    },
-   "layouts": 37,
-   "recalcs": 58,
-   "heapMB": 5,
-   "nodes": 1290,
+   "layouts": 21,
+   "recalcs": 43,
+   "heapMB": 7.9,
+   "nodes": 1291,
    "notes": ""
   },
   {
@@ -144,26 +144,26 @@
    "group": "Timeline",
    "what": "Weeks: switch to This sprint",
    "skip": "",
-   "median": 58.2,
-   "p95": 61.7,
+   "median": 31.5,
+   "p95": 32.1,
    "samples": [
-    58.2,
-    56.9,
-    61.7,
-    60.7,
-    57.9
+    30.3,
+    31.5,
+    31.7,
+    32.1,
+    31.4
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 1,
-    "maxMs": 55
+    "count": 0,
+    "maxMs": 0
    },
-   "layouts": 32,
-   "recalcs": 42,
-   "heapMB": 6.2,
-   "nodes": 3480,
+   "layouts": 25,
+   "recalcs": 34,
+   "heapMB": 5.3,
+   "nodes": 3481,
    "notes": ""
   },
   {
@@ -173,26 +173,26 @@
    "group": "Timeline",
    "what": "Weeks: switch to This + next",
    "skip": "",
-   "median": 61.1,
-   "p95": 61.7,
+   "median": 30.2,
+   "p95": 30.7,
    "samples": [
-    61.7,
-    61.7,
-    61.1,
-    60.5,
-    59.9
+    29.8,
+    30.3,
+    30.2,
+    30.7,
+    28.9
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 0.8,
-    "maxMs": 55
+    "count": 0,
+    "maxMs": 0
    },
-   "layouts": 38,
-   "recalcs": 56,
-   "heapMB": 9.3,
-   "nodes": 3480,
+   "layouts": 22,
+   "recalcs": 43,
+   "heapMB": 7.7,
+   "nodes": 3481,
    "notes": ""
   },
   {
@@ -202,14 +202,14 @@
    "group": "Timeline",
    "what": "Weeks: switch to Next 3",
    "skip": "",
-   "median": 34.5,
-   "p95": 35.6,
+   "median": 19.3,
+   "p95": 20,
    "samples": [
-    34.9,
-    33.1,
-    33.6,
-    35.6,
-    34.5
+    16.6,
+    19.3,
+    19.4,
+    20,
+    17.1
    ],
    "fps": null,
    "dropped": null,
@@ -218,10 +218,10 @@
     "count": 0,
     "maxMs": 0
    },
-   "layouts": 38,
-   "recalcs": 60,
-   "heapMB": 15,
-   "nodes": 1289,
+   "layouts": 22,
+   "recalcs": 44,
+   "heapMB": 8,
+   "nodes": 1290,
    "notes": ""
   },
   {
@@ -231,14 +231,14 @@
    "group": "Timeline",
    "what": "Weeks at Fit: zoom in one step",
    "skip": "",
-   "median": 18.2,
-   "p95": 19.4,
+   "median": 13.2,
+   "p95": 13.4,
    "samples": [
-    19.4,
-    17.4,
-    18.2,
-    17.6,
-    18.5
+    13.2,
+    13.2,
+    13.2,
+    13.4,
+    13.4
    ],
    "fps": null,
    "dropped": null,
@@ -247,10 +247,10 @@
     "count": 0,
     "maxMs": 0
    },
-   "layouts": 33,
-   "recalcs": 56,
-   "heapMB": 10.6,
-   "nodes": 1290,
+   "layouts": 24,
+   "recalcs": 45,
+   "heapMB": 11.2,
+   "nodes": 1291,
    "notes": ""
   },
   {
@@ -260,14 +260,14 @@
    "group": "Timeline",
    "what": "Weeks at Fit: zoom out one step",
    "skip": "",
-   "median": 17.9,
-   "p95": 23.2,
+   "median": 12.4,
+   "p95": 13.1,
    "samples": [
-    17.9,
-    17.9,
-    16.7,
-    22,
-    23.2
+    11.8,
+    12.4,
+    12.5,
+    13.1,
+    12.2
    ],
    "fps": null,
    "dropped": null,
@@ -276,10 +276,10 @@
     "count": 0,
     "maxMs": 0
    },
-   "layouts": 46,
-   "recalcs": 71,
-   "heapMB": 6.2,
-   "nodes": 1290,
+   "layouts": 37,
+   "recalcs": 61,
+   "heapMB": 12.7,
+   "nodes": 1291,
    "notes": ""
   },
   {
@@ -292,17 +292,17 @@
    "median": null,
    "p95": null,
    "samples": [],
-   "fps": 120.9,
+   "fps": 121,
    "dropped": 0,
-   "worstFrame": 9.4,
+   "worstFrame": 10.4,
    "longTasks": {
     "count": 0,
     "maxMs": 0
    },
-   "layouts": 114,
-   "recalcs": 136,
-   "heapMB": 11.6,
-   "nodes": 3480,
+   "layouts": 107,
+   "recalcs": 128,
+   "heapMB": 11.9,
+   "nodes": 3481,
    "notes": ""
   },
   {
@@ -315,17 +315,17 @@
    "median": null,
    "p95": null,
    "samples": [],
-   "fps": 120.7,
+   "fps": 120.8,
    "dropped": 0,
-   "worstFrame": 9.4,
+   "worstFrame": 10.4,
    "longTasks": {
     "count": 0,
     "maxMs": 0
    },
-   "layouts": 23,
-   "recalcs": 46,
-   "heapMB": 7.2,
-   "nodes": 1290,
+   "layouts": 14,
+   "recalcs": 36,
+   "heapMB": 10.4,
+   "nodes": 1291,
    "notes": ""
   },
   {
@@ -335,95 +335,14 @@
    "group": "Timeline",
    "what": "Weeks at This + next: turn sprint shelves off and on",
    "skip": "",
-   "median": 27.6,
-   "p95": 29.4,
+   "median": 24.3,
+   "p95": 27.6,
    "samples": [
-    28.2,
+    22.7,
     27.6,
-    27.5,
-    27.4,
-    29.4
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": 37,
-   "recalcs": 47,
-   "heapMB": 11.4,
-   "nodes": 3480,
-   "notes": ""
-  },
-  {
-   "size": "S",
-   "cpu": 1,
-   "id": "days.open",
-   "group": "Days",
-   "what": "Switch the Timeline to Days",
-   "skip": "",
-   "median": 64.1,
-   "p95": 66,
-   "samples": [
-    66,
-    61.9,
-    64.1,
-    62.5,
-    64.6
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 0.8,
-    "maxMs": 59
-   },
-   "layouts": 18,
-   "recalcs": 33,
-   "heapMB": 5.2,
-   "nodes": 4581,
-   "notes": ""
-  },
-  {
-   "size": "S",
-   "cpu": 1,
-   "id": "days.scroll",
-   "group": "Days",
-   "what": "Days: scroll sideways across a quarter",
-   "skip": "",
-   "median": null,
-   "p95": null,
-   "samples": [],
-   "fps": 121.4,
-   "dropped": 0,
-   "worstFrame": 11.4,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": 113,
-   "recalcs": 144,
-   "heapMB": 9.4,
-   "nodes": 3480,
-   "notes": ""
-  },
-  {
-   "size": "S",
-   "cpu": 1,
-   "id": "ui.panelOpen",
-   "group": "Interactions",
-   "what": "Click an initiative to open its panel",
-   "skip": "",
-   "median": 77.6,
-   "p95": 78.1,
-   "samples": [
-    77.8,
-    70.8,
-    77.6,
-    75.4,
-    78.1
+    24.3,
+    23.2,
+    24.5
    ],
    "fps": null,
    "dropped": null,
@@ -433,113 +352,26 @@
     "maxMs": 0
    },
    "layouts": 30,
-   "recalcs": 46,
-   "heapMB": 16.9,
-   "nodes": 3783,
+   "recalcs": 38,
+   "heapMB": 10.5,
+   "nodes": 3481,
    "notes": ""
   },
   {
    "size": "S",
    "cpu": 1,
-   "id": "ui.panelClose",
-   "group": "Interactions",
-   "what": "Press Escape to close the panel",
+   "id": "days.open",
+   "group": "Days",
+   "what": "Switch the Timeline to Days",
    "skip": "",
-   "median": 38.8,
-   "p95": 39.9,
+   "median": 43.7,
+   "p95": 45.1,
    "samples": [
-    37.1,
-    39.8,
-    38.8,
-    37.6,
-    39.9
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": 43,
-   "recalcs": 63,
-   "heapMB": 10.6,
-   "nodes": 3509,
-   "notes": ""
-  },
-  {
-   "size": "S",
-   "cpu": 1,
-   "id": "ui.drag",
-   "group": "Interactions",
-   "what": "Drag an initiative a week later and drop it",
-   "skip": "",
-   "median": 44.9,
-   "p95": 46.4,
-   "samples": [
-    45.3,
-    46.4,
-    44.5,
-    44.2,
-    44.9
-   ],
-   "fps": null,
-   "dropped": 1,
-   "worstFrame": 41.1,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": 93,
-   "recalcs": 146,
-   "heapMB": 11.8,
-   "nodes": 3511,
-   "notes": ""
-  },
-  {
-   "size": "S",
-   "cpu": 1,
-   "id": "ui.find",
-   "group": "Interactions",
-   "what": "Type a word in Find (the slowest key)",
-   "skip": "",
-   "median": 7.9,
-   "p95": 9,
-   "samples": [
-    7.4,
-    8.7,
-    7.9,
-    7.6,
-    9
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": 21,
-   "recalcs": 22,
-   "heapMB": 9.2,
-   "nodes": 3512,
-   "notes": ""
-  },
-  {
-   "size": "S",
-   "cpu": 1,
-   "id": "ui.filter",
-   "group": "Interactions",
-   "what": "Filter to one person, then clear the filter",
-   "skip": "",
-   "median": 31.4,
-   "p95": 33.4,
-   "samples": [
-    31.4,
-    31.1,
-    30.4,
-    32.3,
-    33.4
+    45.1,
+    43.1,
+    42.7,
+    44.3,
+    43.7
    ],
    "fps": null,
    "dropped": null,
@@ -550,8 +382,176 @@
    },
    "layouts": 19,
    "recalcs": 35,
-   "heapMB": 12.1,
-   "nodes": 3632,
+   "heapMB": 5.4,
+   "nodes": 4616,
+   "notes": ""
+  },
+  {
+   "size": "S",
+   "cpu": 1,
+   "id": "days.scroll",
+   "group": "Days",
+   "what": "Days: scroll sideways across a quarter",
+   "skip": "",
+   "median": null,
+   "p95": null,
+   "samples": [],
+   "fps": 120.7,
+   "dropped": 0,
+   "worstFrame": 10.4,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 138,
+   "recalcs": 154,
+   "heapMB": 5.2,
+   "nodes": 3481,
+   "notes": ""
+  },
+  {
+   "size": "S",
+   "cpu": 1,
+   "id": "ui.panelOpen",
+   "group": "Interactions",
+   "what": "Click an initiative to open its panel",
+   "skip": "",
+   "median": 39,
+   "p95": 40.4,
+   "samples": [
+    39.8,
+    35.7,
+    35.2,
+    39,
+    40.4
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 17,
+   "recalcs": 31,
+   "heapMB": 15.2,
+   "nodes": 3755,
+   "notes": ""
+  },
+  {
+   "size": "S",
+   "cpu": 1,
+   "id": "ui.panelClose",
+   "group": "Interactions",
+   "what": "Press Escape to close the panel",
+   "skip": "",
+   "median": 13.8,
+   "p95": 17.5,
+   "samples": [
+    17.5,
+    14.3,
+    13.8,
+    9.7,
+    10.5
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 26,
+   "recalcs": 41,
+   "heapMB": 11.5,
+   "nodes": 3481,
+   "notes": ""
+  },
+  {
+   "size": "S",
+   "cpu": 1,
+   "id": "ui.drag",
+   "group": "Interactions",
+   "what": "Drag an initiative a week later and drop it",
+   "skip": "",
+   "median": 37.8,
+   "p95": 38.5,
+   "samples": [
+    38.5,
+    36.3,
+    38,
+    37.1,
+    37.8
+   ],
+   "fps": null,
+   "dropped": 1,
+   "worstFrame": 34,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 87,
+   "recalcs": 138,
+   "heapMB": 6.5,
+   "nodes": 3483,
+   "notes": ""
+  },
+  {
+   "size": "S",
+   "cpu": 1,
+   "id": "ui.find",
+   "group": "Interactions",
+   "what": "Type a word in Find (the slowest key)",
+   "skip": "",
+   "median": 7.9,
+   "p95": 8.2,
+   "samples": [
+    7.2,
+    7.9,
+    8.2,
+    7.6,
+    8
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 21,
+   "recalcs": 22,
+   "heapMB": 9.3,
+   "nodes": 3484,
+   "notes": ""
+  },
+  {
+   "size": "S",
+   "cpu": 1,
+   "id": "ui.filter",
+   "group": "Interactions",
+   "what": "Filter to one person, then clear the filter",
+   "skip": "",
+   "median": 24.3,
+   "p95": 26.6,
+   "samples": [
+    26.6,
+    24.2,
+    23.7,
+    24.3,
+    26.2
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 19,
+   "recalcs": 35,
+   "heapMB": 6.5,
+   "nodes": 3604,
    "notes": ""
   },
   {
@@ -561,14 +561,14 @@
    "group": "Interactions",
    "what": "Switch Timeline to List and back",
    "skip": "",
-   "median": 44.8,
-   "p95": 46.2,
+   "median": 37.9,
+   "p95": 40,
    "samples": [
-    46.2,
-    44.8,
-    44.1,
-    44.9,
-    44.6
+    36.7,
+    37.9,
+    39.1,
+    40,
+    36.2
    ],
    "fps": null,
    "dropped": null,
@@ -578,9 +578,9 @@
     "maxMs": 0
    },
    "layouts": 15,
-   "recalcs": 17,
-   "heapMB": 18.7,
-   "nodes": 8721,
+   "recalcs": 18,
+   "heapMB": 6.9,
+   "nodes": 8705,
    "notes": ""
   },
   {
@@ -590,14 +590,14 @@
    "group": "Interactions",
    "what": "Undo an edit (Ctrl+Z)",
    "skip": "",
-   "median": 39.5,
-   "p95": 42.5,
+   "median": 31.2,
+   "p95": 32.9,
    "samples": [
-    39.5,
-    42.5,
-    39,
-    41.7,
-    37.3
+    32.9,
+    31.2,
+    31.5,
+    31.1,
+    30.9
    ],
    "fps": null,
    "dropped": null,
@@ -607,9 +607,9 @@
     "maxMs": 0
    },
    "layouts": 18,
-   "recalcs": 37,
-   "heapMB": 11.6,
-   "nodes": 8721,
+   "recalcs": 38,
+   "heapMB": 8.8,
+   "nodes": 8705,
    "notes": ""
   },
   {
@@ -619,14 +619,14 @@
    "group": "Interactions",
    "what": "Save an edit to the plan file",
    "skip": "",
-   "median": 43.9,
-   "p95": 52.3,
+   "median": 41.7,
+   "p95": 44.7,
    "samples": [
-    43.9,
-    46.5,
-    43.1,
-    43.7,
-    52.3
+    41.7,
+    44.7,
+    43,
+    35.4,
+    38.4
    ],
    "fps": null,
    "dropped": null,
@@ -636,9 +636,9 @@
     "maxMs": 0
    },
    "layouts": 18,
-   "recalcs": 39,
-   "heapMB": 10.7,
-   "nodes": 8733,
+   "recalcs": 40,
+   "heapMB": 17.6,
+   "nodes": 8717,
    "notes": ""
   },
   {
@@ -648,14 +648,14 @@
    "group": "Pages",
    "what": "Open Today from the Timeline",
    "skip": "",
-   "median": 10.5,
-   "p95": 11.4,
+   "median": 9.1,
+   "p95": 9.7,
    "samples": [
-    9.9,
-    11.4,
-    9.8,
-    10.5,
-    11
+    8.6,
+    9.1,
+    9.7,
+    8.8,
+    9.2
    ],
    "fps": null,
    "dropped": null,
@@ -665,9 +665,9 @@
     "maxMs": 0
    },
    "layouts": 23,
-   "recalcs": 36,
-   "heapMB": 7,
-   "nodes": 8882,
+   "recalcs": 38,
+   "heapMB": 18.5,
+   "nodes": 8866,
    "notes": ""
   },
   {
@@ -677,14 +677,14 @@
    "group": "Pages",
    "what": "Open Sprint from the Timeline",
    "skip": "",
-   "median": 16.5,
-   "p95": 17.4,
+   "median": 15,
+   "p95": 17.7,
    "samples": [
-    16.2,
-    16.5,
-    16.6,
-    17.4,
-    16.5
+    17.7,
+    14.6,
+    15.1,
+    15,
+    14.7
    ],
    "fps": null,
    "dropped": null,
@@ -695,8 +695,8 @@
    },
    "layouts": 22,
    "recalcs": 25,
-   "heapMB": 7.1,
-   "nodes": 9227,
+   "heapMB": 18.9,
+   "nodes": 9241,
    "notes": ""
   },
   {
@@ -729,14 +729,14 @@
    "group": "Pages",
    "what": "Open List from the Timeline",
    "skip": "",
-   "median": 49.4,
-   "p95": 55.8,
+   "median": 51.4,
+   "p95": 53.2,
    "samples": [
-    55.8,
-    47.8,
-    47.7,
-    49.4,
-    51.1
+    53.2,
+    51.4,
+    48.7,
+    52.8,
+    49.2
    ],
    "fps": null,
    "dropped": null,
@@ -747,8 +747,8 @@
    },
    "layouts": 22,
    "recalcs": 25,
-   "heapMB": 16.8,
-   "nodes": 9227,
+   "heapMB": 15.7,
+   "nodes": 9241,
    "notes": ""
   },
   {
@@ -758,14 +758,14 @@
    "group": "Pages",
    "what": "Open Roadmap from the Timeline",
    "skip": "",
-   "median": 8.3,
-   "p95": 11.5,
+   "median": 7.5,
+   "p95": 7.9,
    "samples": [
-    8.6,
-    8.2,
-    8.3,
-    8.3,
-    11.5
+    7.7,
+    7.9,
+    7.5,
+    7.5,
+    7
    ],
    "fps": null,
    "dropped": null,
@@ -776,8 +776,8 @@
    },
    "layouts": 22,
    "recalcs": 25,
-   "heapMB": 27.6,
-   "nodes": 9317,
+   "heapMB": 14.7,
+   "nodes": 9331,
    "notes": ""
   },
   {
@@ -787,14 +787,14 @@
    "group": "Pages",
    "what": "Open Capacity from the Timeline",
    "skip": "",
-   "median": 14.8,
+   "median": 13.3,
    "p95": 15.1,
    "samples": [
+    12.6,
+    14.2,
     15.1,
-    14.4,
-    14.3,
-    14.8,
-    14.8
+    13.3,
+    12.8
    ],
    "fps": null,
    "dropped": null,
@@ -805,8 +805,8 @@
    },
    "layouts": 22,
    "recalcs": 25,
-   "heapMB": 8.2,
-   "nodes": 10068,
+   "heapMB": 9.6,
+   "nodes": 10082,
    "notes": ""
   },
   {
@@ -816,26 +816,26 @@
    "group": "Load",
    "what": "Open the plan file and the Jira folder, to the first drawn Timeline",
    "skip": "",
-   "median": 560.2,
-   "p95": 582.1,
+   "median": 490.5,
+   "p95": 500.1,
    "samples": [
-    555.8,
-    581.2,
-    582.1,
-    560.2,
-    520.8
+    481.6,
+    500.1,
+    490.5,
+    495.3,
+    481.1
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 3.6,
-    "maxMs": 180
+    "count": 3,
+    "maxMs": 132
    },
    "layouts": 29,
    "recalcs": 52,
-   "heapMB": 6.9,
-   "nodes": 3471,
+   "heapMB": 5.5,
+   "nodes": 3472,
    "notes": ""
   },
   {
@@ -845,26 +845,26 @@
    "group": "Jira",
    "what": "A new Jira sync arrives and is drawn",
    "skip": "",
-   "median": 163.4,
-   "p95": 173.2,
+   "median": 127.4,
+   "p95": 133.4,
    "samples": [
-    166.6,
-    159.6,
-    173.2,
-    163.4,
-    154
+    125,
+    130.2,
+    127.4,
+    133.4,
+    116.5
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 139
+    "maxMs": 105
    },
    "layouts": 11,
    "recalcs": 13,
    "heapMB": 4.8,
-   "nodes": 3513,
+   "nodes": 3514,
    "notes": ""
   },
   {
@@ -874,26 +874,26 @@
    "group": "Timeline",
    "what": "Weeks: switch to Fit",
    "skip": "",
-   "median": 185.2,
-   "p95": 211.8,
+   "median": 78.1,
+   "p95": 81.5,
    "samples": [
-    211.8,
-    179.1,
-    191.7,
-    177.5,
-    185.2
+    78.1,
+    78.6,
+    81.5,
+    76,
+    69.8
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 0.6,
-    "maxMs": 164
+    "count": 0.8,
+    "maxMs": 65
    },
-   "layouts": 37,
-   "recalcs": 43,
-   "heapMB": 5,
-   "nodes": 1323,
+   "layouts": 21,
+   "recalcs": 37,
+   "heapMB": 7.9,
+   "nodes": 1324,
    "notes": ""
   },
   {
@@ -903,26 +903,26 @@
    "group": "Timeline",
    "what": "Weeks: switch to This sprint",
    "skip": "",
-   "median": 287.8,
-   "p95": 311.2,
+   "median": 147.7,
+   "p95": 153.3,
    "samples": [
-    311.2,
-    287.8,
-    307.2,
-    281.1,
-    265.6
+    147.7,
+    153.3,
+    150.8,
+    142.5,
+    136
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 0.4,
-    "maxMs": 279
+    "count": 0.6,
+    "maxMs": 126
    },
-   "layouts": 32,
-   "recalcs": 42,
-   "heapMB": 6.4,
-   "nodes": 3513,
+   "layouts": 25,
+   "recalcs": 34,
+   "heapMB": 6,
+   "nodes": 3514,
    "notes": ""
   },
   {
@@ -932,26 +932,26 @@
    "group": "Timeline",
    "what": "Weeks: switch to This + next",
    "skip": "",
-   "median": 282.8,
-   "p95": 303,
+   "median": 129.7,
+   "p95": 134.2,
    "samples": [
-    294,
-    282.8,
-    303,
-    276.1,
-    270.8
+    122.9,
+    134.2,
+    131.9,
+    129.7,
+    116.9
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 0.6,
-    "maxMs": 249
+    "count": 0.8,
+    "maxMs": 106
    },
-   "layouts": 38,
-   "recalcs": 44,
-   "heapMB": 9.7,
-   "nodes": 3513,
+   "layouts": 23,
+   "recalcs": 32,
+   "heapMB": 8.6,
+   "nodes": 3514,
    "notes": ""
   },
   {
@@ -961,26 +961,26 @@
    "group": "Timeline",
    "what": "Weeks: switch to Next 3",
    "skip": "",
-   "median": 169.5,
-   "p95": 171.5,
+   "median": 70.6,
+   "p95": 78.3,
    "samples": [
-    169.5,
-    162,
-    171.5,
-    159.3,
-    170.8
+    70.6,
+    74.2,
+    78.3,
+    68.5,
+    65
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 0.6,
-    "maxMs": 151
+    "maxMs": 54
    },
-   "layouts": 39,
-   "recalcs": 45,
-   "heapMB": 10.1,
-   "nodes": 1322,
+   "layouts": 22,
+   "recalcs": 38,
+   "heapMB": 11.5,
+   "nodes": 1323,
    "notes": ""
   },
   {
@@ -990,26 +990,26 @@
    "group": "Timeline",
    "what": "Weeks at Fit: zoom in one step",
    "skip": "",
-   "median": 92,
-   "p95": 95.8,
+   "median": 60.3,
+   "p95": 65.9,
    "samples": [
-    92,
-    95.8,
-    89.6,
-    92.3,
-    90.7
+    60.8,
+    60.3,
+    65.9,
+    57.1,
+    55.2
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 1,
-    "maxMs": 79
+    "count": 0.6,
+    "maxMs": 54
    },
-   "layouts": 33,
-   "recalcs": 48,
-   "heapMB": 6.6,
-   "nodes": 1323,
+   "layouts": 25,
+   "recalcs": 42,
+   "heapMB": 7,
+   "nodes": 1324,
    "notes": ""
   },
   {
@@ -1019,26 +1019,26 @@
    "group": "Timeline",
    "what": "Weeks at Fit: zoom out one step",
    "skip": "",
-   "median": 84.9,
-   "p95": 101.6,
+   "median": 57.3,
+   "p95": 60.8,
    "samples": [
-    94,
-    84.9,
-    101.6,
-    83.3,
-    84.9
+    58.9,
+    56.8,
+    60.8,
+    57.3,
+    52.8
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 0.6,
-    "maxMs": 82
+    "count": 0,
+    "maxMs": 0
    },
-   "layouts": 47,
-   "recalcs": 60,
-   "heapMB": 6.2,
-   "nodes": 1323,
+   "layouts": 37,
+   "recalcs": 56,
+   "heapMB": 8.7,
+   "nodes": 1324,
    "notes": ""
   },
   {
@@ -1051,17 +1051,17 @@
    "median": null,
    "p95": null,
    "samples": [],
-   "fps": 121.9,
+   "fps": 121.5,
    "dropped": 0,
-   "worstFrame": 11.8,
+   "worstFrame": 12.8,
    "longTasks": {
     "count": 0,
     "maxMs": 0
    },
-   "layouts": 114,
-   "recalcs": 136,
-   "heapMB": 6.5,
-   "nodes": 3513,
+   "layouts": 108,
+   "recalcs": 129,
+   "heapMB": 7,
+   "nodes": 3514,
    "notes": ""
   },
   {
@@ -1074,17 +1074,17 @@
    "median": null,
    "p95": null,
    "samples": [],
-   "fps": 122.1,
+   "fps": 120.6,
    "dropped": 0,
-   "worstFrame": 10.7,
+   "worstFrame": 11,
    "longTasks": {
     "count": 0,
     "maxMs": 0
    },
-   "layouts": 23,
-   "recalcs": 46,
-   "heapMB": 7,
-   "nodes": 1323,
+   "layouts": 15,
+   "recalcs": 37,
+   "heapMB": 5.8,
+   "nodes": 1324,
    "notes": ""
   },
   {
@@ -1094,26 +1094,26 @@
    "group": "Timeline",
    "what": "Weeks at This + next: turn sprint shelves off and on",
    "skip": "",
-   "median": 143.2,
-   "p95": 146.6,
+   "median": 107.3,
+   "p95": 112.4,
    "samples": [
-    146.4,
-    143.2,
-    146.6,
-    139,
-    132.9
+    107.3,
+    107.2,
+    112.4,
+    107.5,
+    102
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 1.4,
-    "maxMs": 115
+    "count": 1,
+    "maxMs": 87
    },
-   "layouts": 36,
-   "recalcs": 42,
-   "heapMB": 11.2,
-   "nodes": 3513,
+   "layouts": 30,
+   "recalcs": 36,
+   "heapMB": 5.2,
+   "nodes": 3514,
    "notes": ""
   },
   {
@@ -1123,26 +1123,26 @@
    "group": "Days",
    "what": "Switch the Timeline to Days",
    "skip": "",
-   "median": 313.7,
-   "p95": 341.5,
+   "median": 187.1,
+   "p95": 202.6,
    "samples": [
-    341.5,
-    313.7,
-    341.5,
-    308.3,
-    302.7
+    187.1,
+    188.7,
+    202.6,
+    173.3,
+    180.6
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 0.4,
-    "maxMs": 276
+    "count": 1.8,
+    "maxMs": 107
    },
    "layouts": 19,
    "recalcs": 22,
-   "heapMB": 5.2,
-   "nodes": 4614,
+   "heapMB": 6,
+   "nodes": 4649,
    "notes": ""
   },
   {
@@ -1155,17 +1155,17 @@
    "median": null,
    "p95": null,
    "samples": [],
-   "fps": 121.8,
+   "fps": 121.9,
    "dropped": 0,
-   "worstFrame": 10.5,
+   "worstFrame": 11.1,
    "longTasks": {
     "count": 0,
     "maxMs": 0
    },
-   "layouts": 114,
-   "recalcs": 118,
-   "heapMB": 8.9,
-   "nodes": 3513,
+   "layouts": 139,
+   "recalcs": 133,
+   "heapMB": 11.7,
+   "nodes": 3514,
    "notes": ""
   },
   {
@@ -1175,26 +1175,26 @@
    "group": "Interactions",
    "what": "Click an initiative to open its panel",
    "skip": "",
-   "median": 265.9,
-   "p95": 281,
+   "median": 96.8,
+   "p95": 111.6,
    "samples": [
-    266.5,
-    281,
-    240,
-    253.5,
-    265.9
+    111.6,
+    96.8,
+    100,
+    91.6,
+    94.1
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 2,
-    "maxMs": 206
+    "count": 1,
+    "maxMs": 62
    },
-   "layouts": 30,
-   "recalcs": 47,
-   "heapMB": 15.6,
-   "nodes": 3816,
+   "layouts": 19,
+   "recalcs": 32,
+   "heapMB": 9.1,
+   "nodes": 3817,
    "notes": ""
   },
   {
@@ -1204,26 +1204,26 @@
    "group": "Interactions",
    "what": "Press Escape to close the panel",
    "skip": "",
-   "median": 160.5,
-   "p95": 162,
+   "median": 25.1,
+   "p95": 26.5,
    "samples": [
-    162,
-    160.5,
-    161.9,
-    153.7,
-    157.1
+    25.1,
+    24.9,
+    25.8,
+    26.5,
+    24.2
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 1,
-    "maxMs": 123
+    "count": 0,
+    "maxMs": 0
    },
-   "layouts": 45,
-   "recalcs": 70,
-   "heapMB": 6.2,
-   "nodes": 3542,
+   "layouts": 26,
+   "recalcs": 42,
+   "heapMB": 7.9,
+   "nodes": 3543,
    "notes": ""
   },
   {
@@ -1233,26 +1233,26 @@
    "group": "Interactions",
    "what": "Drag an initiative a week later and drop it",
    "skip": "",
-   "median": 216.6,
-   "p95": 222.2,
+   "median": 175.1,
+   "p95": 192.8,
    "samples": [
-    216.6,
-    222.2,
-    219.2,
-    208.7,
-    212.6
+    176,
+    175.1,
+    192.8,
+    160.6,
+    155.4
    ],
    "fps": null,
-   "dropped": 2,
-   "worstFrame": 190.6,
+   "dropped": 1,
+   "worstFrame": 165.9,
    "longTasks": {
     "count": 3,
-    "maxMs": 188
+    "maxMs": 161
    },
-   "layouts": 93,
-   "recalcs": 159,
-   "heapMB": 18.8,
-   "nodes": 3544,
+   "layouts": 86,
+   "recalcs": 138,
+   "heapMB": 7.3,
+   "nodes": 3545,
    "notes": ""
   },
   {
@@ -1262,14 +1262,14 @@
    "group": "Interactions",
    "what": "Type a word in Find (the slowest key)",
    "skip": "",
-   "median": 20.9,
-   "p95": 22,
+   "median": 17.9,
+   "p95": 18.2,
    "samples": [
-    22,
-    21.5,
-    20.9,
-    20.5,
-    19.8
+    18,
+    17.9,
+    18.2,
+    17.4,
+    16.6
    ],
    "fps": null,
    "dropped": null,
@@ -1280,8 +1280,8 @@
    },
    "layouts": 21,
    "recalcs": 22,
-   "heapMB": 10.3,
-   "nodes": 3545,
+   "heapMB": 10.4,
+   "nodes": 3546,
    "notes": ""
   },
   {
@@ -1291,26 +1291,26 @@
    "group": "Interactions",
    "what": "Filter to one person, then clear the filter",
    "skip": "",
-   "median": 154,
-   "p95": 157.4,
+   "median": 114.7,
+   "p95": 126.8,
    "samples": [
-    155.5,
-    157.4,
-    154,
-    142.3,
-    145.7
+    126.8,
+    114.7,
+    125.2,
+    113.7,
+    112.7
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 122
+    "maxMs": 92
    },
    "layouts": 19,
    "recalcs": 44,
-   "heapMB": 13.1,
-   "nodes": 3665,
+   "heapMB": 6.4,
+   "nodes": 3666,
    "notes": ""
   },
   {
@@ -1320,26 +1320,26 @@
    "group": "Interactions",
    "what": "Switch Timeline to List and back",
    "skip": "",
-   "median": 222.4,
-   "p95": 246.2,
+   "median": 167.9,
+   "p95": 171,
    "samples": [
-    222.4,
-    246.2,
-    235,
-    213.5,
-    220.6
+    161.8,
+    168.3,
+    171,
+    167.9,
+    155.2
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 201
+    "maxMs": 141
    },
    "layouts": 15,
-   "recalcs": 19,
-   "heapMB": 16.9,
-   "nodes": 8754,
+   "recalcs": 20,
+   "heapMB": 6.9,
+   "nodes": 8767,
    "notes": ""
   },
   {
@@ -1349,26 +1349,26 @@
    "group": "Interactions",
    "what": "Undo an edit (Ctrl+Z)",
    "skip": "",
-   "median": 163.9,
-   "p95": 177.9,
+   "median": 121.8,
+   "p95": 130.9,
    "samples": [
-    163.9,
-    177.3,
-    177.9,
-    156.9,
-    156.9
+    130.9,
+    121.8,
+    124.2,
+    13.4,
+    120.2
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 1,
-    "maxMs": 127
+    "count": 0.8,
+    "maxMs": 94
    },
-   "layouts": 18,
-   "recalcs": 23,
-   "heapMB": 11.4,
-   "nodes": 8754,
+   "layouts": 19,
+   "recalcs": 28,
+   "heapMB": 8.8,
+   "nodes": 8767,
    "notes": ""
   },
   {
@@ -1378,26 +1378,26 @@
    "group": "Interactions",
    "what": "Save an edit to the plan file",
    "skip": "",
-   "median": 230.6,
-   "p95": 241.1,
+   "median": 176,
+   "p95": 182.6,
    "samples": [
-    241.1,
-    214.3,
-    215.5,
-    234.3,
-    230.6
+    180.3,
+    176,
+    182.6,
+    175.1,
+    159.2
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 130
+    "maxMs": 104
    },
    "layouts": 19,
-   "recalcs": 46,
-   "heapMB": 12.3,
-   "nodes": 8766,
+   "recalcs": 40,
+   "heapMB": 7.3,
+   "nodes": 8779,
    "notes": ""
   },
   {
@@ -1407,26 +1407,26 @@
    "group": "Pages",
    "what": "Open Today from the Timeline",
    "skip": "",
-   "median": 46.8,
-   "p95": 60.9,
+   "median": 37.5,
+   "p95": 40.8,
    "samples": [
-    44.2,
-    60.9,
-    52.4,
-    46.8,
-    44.9
+    40.8,
+    36.1,
+    39,
+    35.2,
+    37.5
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 182
+    "maxMs": 132
    },
    "layouts": 22,
    "recalcs": 27,
-   "heapMB": 8.1,
-   "nodes": 8915,
+   "heapMB": 6.9,
+   "nodes": 8928,
    "notes": ""
   },
   {
@@ -1436,26 +1436,26 @@
    "group": "Pages",
    "what": "Open Sprint from the Timeline",
    "skip": "",
-   "median": 75,
-   "p95": 80.4,
+   "median": 66.4,
+   "p95": 73.3,
    "samples": [
-    74.2,
-    75.3,
-    75,
+    66.4,
+    65.3,
+    73.3,
     72.3,
-    80.4
+    60.8
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 1.6,
-    "maxMs": 196
+    "count": 1.4,
+    "maxMs": 132
    },
    "layouts": 22,
    "recalcs": 25,
-   "heapMB": 8,
-   "nodes": 9260,
+   "heapMB": 9.8,
+   "nodes": 9303,
    "notes": ""
   },
   {
@@ -1488,26 +1488,26 @@
    "group": "Pages",
    "what": "Open List from the Timeline",
    "skip": "",
-   "median": 225.1,
-   "p95": 252.4,
+   "median": 195.6,
+   "p95": 214.5,
    "samples": [
-    225.1,
-    243.1,
-    252.4,
-    221.7,
-    219.9
+    195.6,
+    190.8,
+    201.6,
+    214.5,
+    192.6
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1.6,
-    "maxMs": 214
+    "maxMs": 166
    },
    "layouts": 22,
    "recalcs": 25,
-   "heapMB": 16.8,
-   "nodes": 9260,
+   "heapMB": 14.5,
+   "nodes": 9303,
    "notes": ""
   },
   {
@@ -1517,26 +1517,26 @@
    "group": "Pages",
    "what": "Open Roadmap from the Timeline",
    "skip": "",
-   "median": 38.8,
-   "p95": 43.3,
+   "median": 33.8,
+   "p95": 37.4,
    "samples": [
-    43.3,
-    41.3,
-    38.8,
-    36.2,
-    38.3
+    33.8,
+    36.3,
+    37.4,
+    32.3,
+    29.9
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 171
+    "maxMs": 139
    },
    "layouts": 22,
    "recalcs": 25,
-   "heapMB": 12.2,
-   "nodes": 9350,
+   "heapMB": 15.1,
+   "nodes": 9393,
    "notes": ""
   },
   {
@@ -1546,26 +1546,26 @@
    "group": "Pages",
    "what": "Open Capacity from the Timeline",
    "skip": "",
-   "median": 69.8,
-   "p95": 77.5,
+   "median": 73.2,
+   "p95": 76.7,
    "samples": [
-    77.5,
-    68.6,
-    69.8,
-    72.6,
-    69.8
+    73.2,
+    75,
+    63.1,
+    60.8,
+    76.7
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 1,
-    "maxMs": 198
+    "count": 1.2,
+    "maxMs": 165
    },
    "layouts": 22,
    "recalcs": 25,
-   "heapMB": 16.2,
-   "nodes": 10101,
+   "heapMB": 14.8,
+   "nodes": 10144,
    "notes": ""
   },
   {
@@ -1575,26 +1575,26 @@
    "group": "Load",
    "what": "Open the plan file and the Jira folder, to the first drawn Timeline",
    "skip": "",
-   "median": 454.4,
-   "p95": 463.8,
+   "median": 400.8,
+   "p95": 406.1,
    "samples": [
-    453.9,
-    463.8,
-    454.4,
-    460.9,
-    421.7
+    400.8,
+    397.1,
+    406.1,
+    367.7,
+    406
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 3,
-    "maxMs": 167
+    "count": 2,
+    "maxMs": 121
    },
    "layouts": 29,
    "recalcs": 51,
-   "heapMB": 14.8,
-   "nodes": 16167,
+   "heapMB": 14.4,
+   "nodes": 16123,
    "notes": ""
   },
   {
@@ -1604,26 +1604,26 @@
    "group": "Jira",
    "what": "A new Jira sync arrives and is drawn",
    "skip": "",
-   "median": 174.1,
-   "p95": 180.2,
+   "median": 125.6,
+   "p95": 129.6,
    "samples": [
-    170.4,
-    180.2,
-    168.9,
-    174.1,
-    175.1
+    121.4,
+    120.8,
+    125.6,
+    129.6,
+    126
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 157
+    "maxMs": 113
    },
    "layouts": 10,
    "recalcs": 12,
-   "heapMB": 15.1,
-   "nodes": 16293,
+   "heapMB": 8.8,
+   "nodes": 16249,
    "notes": ""
   },
   {
@@ -1633,26 +1633,26 @@
    "group": "Timeline",
    "what": "Weeks: switch to Fit",
    "skip": "",
-   "median": 173.2,
-   "p95": 180.5,
+   "median": 58.9,
+   "p95": 64.8,
    "samples": [
-    165.4,
-    173.2,
-    180.5,
-    178.3,
-    170.2
+    64.8,
+    56,
+    58.2,
+    58.9,
+    60
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 0.4,
-    "maxMs": 166
+    "count": 0.8,
+    "maxMs": 56
    },
-   "layouts": 42,
-   "recalcs": 48,
-   "heapMB": 12.2,
-   "nodes": 3234,
+   "layouts": 23,
+   "recalcs": 40,
+   "heapMB": 12.7,
+   "nodes": 3224,
    "notes": ""
   },
   {
@@ -1662,26 +1662,26 @@
    "group": "Timeline",
    "what": "Weeks: switch to This sprint",
    "skip": "",
-   "median": 317,
-   "p95": 333.4,
+   "median": 122.2,
+   "p95": 125,
    "samples": [
-    321.7,
-    333.4,
-    313,
-    313.3,
-    317
+    115.9,
+    122.2,
+    121.4,
+    122.5,
+    125
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 319
+    "maxMs": 110
    },
-   "layouts": 39,
-   "recalcs": 49,
-   "heapMB": 10.9,
-   "nodes": 16293,
+   "layouts": 32,
+   "recalcs": 41,
+   "heapMB": 19.1,
+   "nodes": 16249,
    "notes": ""
   },
   {
@@ -1691,26 +1691,26 @@
    "group": "Timeline",
    "what": "Weeks: switch to This + next",
    "skip": "",
-   "median": 313.1,
-   "p95": 315.6,
+   "median": 126.3,
+   "p95": 128.4,
    "samples": [
-    313.2,
-    315.6,
-    296.8,
-    313.1,
-    303.2
+    126.3,
+    117.2,
+    127.9,
+    125,
+    128.4
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 0.6,
-    "maxMs": 295
+    "count": 1,
+    "maxMs": 113
    },
-   "layouts": 44,
-   "recalcs": 50,
-   "heapMB": 6.7,
-   "nodes": 16293,
+   "layouts": 25,
+   "recalcs": 34,
+   "heapMB": 13.5,
+   "nodes": 16249,
    "notes": ""
   },
   {
@@ -1720,26 +1720,26 @@
    "group": "Timeline",
    "what": "Weeks: switch to Next 3",
    "skip": "",
-   "median": 162.4,
-   "p95": 171.8,
+   "median": 50.5,
+   "p95": 77.8,
    "samples": [
-    153.3,
-    171.8,
-    158,
-    168,
-    162.4
+    50.1,
+    47,
+    50.5,
+    51.5,
+    77.8
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 1,
-    "maxMs": 162
+    "count": 0.2,
+    "maxMs": 68
    },
-   "layouts": 44,
-   "recalcs": 50,
+   "layouts": 25,
+   "recalcs": 43,
    "heapMB": 6.6,
-   "nodes": 3230,
+   "nodes": 3220,
    "notes": ""
   },
   {
@@ -1749,26 +1749,26 @@
    "group": "Timeline",
    "what": "Weeks at Fit: zoom in one step",
    "skip": "",
-   "median": 83.4,
-   "p95": 87.5,
+   "median": 46.7,
+   "p95": 63.1,
    "samples": [
-    82.1,
-    87.5,
-    78,
-    84.7,
-    83.4
+    45,
+    42.7,
+    48.2,
+    46.7,
+    63.1
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 0.8,
-    "maxMs": 78
+    "count": 0.2,
+    "maxMs": 56
    },
-   "layouts": 41,
-   "recalcs": 57,
-   "heapMB": 32.5,
-   "nodes": 3234,
+   "layouts": 29,
+   "recalcs": 48,
+   "heapMB": 9.1,
+   "nodes": 3224,
    "notes": ""
   },
   {
@@ -1778,26 +1778,26 @@
    "group": "Timeline",
    "what": "Weeks at Fit: zoom out one step",
    "skip": "",
-   "median": 82.3,
-   "p95": 86.3,
+   "median": 44.8,
+   "p95": 51.6,
    "samples": [
-    77.5,
-    86.3,
-    84.2,
-    82.3,
-    80.5
+    44.8,
+    41.5,
+    43.8,
+    45.3,
+    51.6
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 0.8,
-    "maxMs": 75
+    "count": 0,
+    "maxMs": 0
    },
-   "layouts": 62,
-   "recalcs": 75,
-   "heapMB": 7.6,
-   "nodes": 3234,
+   "layouts": 49,
+   "recalcs": 70,
+   "heapMB": 6.7,
+   "nodes": 3224,
    "notes": ""
   },
   {
@@ -1806,29 +1806,6 @@
    "id": "tl.scrollX",
    "group": "Timeline",
    "what": "Weeks at This + next: scroll sideways for 90 frames",
-   "skip": "",
-   "median": null,
-   "p95": null,
-   "samples": [],
-   "fps": 121.2,
-   "dropped": 0,
-   "worstFrame": 10.4,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": 119,
-   "recalcs": 141,
-   "heapMB": 14.6,
-   "nodes": 16293,
-   "notes": ""
-  },
-  {
-   "size": "M",
-   "cpu": 1,
-   "id": "tl.scrollY",
-   "group": "Timeline",
-   "what": "Weeks at Fit: scroll down the workstreams for 90 frames",
    "skip": "",
    "median": null,
    "p95": null,
@@ -1840,10 +1817,33 @@
     "count": 0,
     "maxMs": 0
    },
-   "layouts": 28,
-   "recalcs": 51,
-   "heapMB": 26.3,
-   "nodes": 3234,
+   "layouts": 112,
+   "recalcs": 133,
+   "heapMB": 9.6,
+   "nodes": 16249,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 1,
+   "id": "tl.scrollY",
+   "group": "Timeline",
+   "what": "Weeks at Fit: scroll down the workstreams for 90 frames",
+   "skip": "",
+   "median": null,
+   "p95": null,
+   "samples": [],
+   "fps": 121,
+   "dropped": 0,
+   "worstFrame": 10.4,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 16,
+   "recalcs": 38,
+   "heapMB": 21.2,
+   "nodes": 3224,
    "notes": ""
   },
   {
@@ -1853,26 +1853,26 @@
    "group": "Timeline",
    "what": "Weeks at This + next: turn sprint shelves off and on",
    "skip": "",
-   "median": 136.8,
-   "p95": 139.6,
+   "median": 103.3,
+   "p95": 106.9,
    "samples": [
-    136.8,
-    139.6,
-    135.9,
-    137.2,
-    135.4
+    103.3,
+    103.6,
+    103.3,
+    106.9,
+    102.4
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 123
+    "maxMs": 89
    },
-   "layouts": 41,
-   "recalcs": 47,
-   "heapMB": 8.9,
-   "nodes": 16293,
+   "layouts": 35,
+   "recalcs": 44,
+   "heapMB": 14.8,
+   "nodes": 16249,
    "notes": ""
   },
   {
@@ -1882,26 +1882,26 @@
    "group": "Days",
    "what": "Switch the Timeline to Days",
    "skip": "",
-   "median": 316.4,
-   "p95": 327.7,
+   "median": 110.5,
+   "p95": 116.2,
    "samples": [
-    306.5,
-    313.8,
-    327.7,
-    316.4,
-    326.1
+    95.1,
+    99.7,
+    116.2,
+    111.3,
+    110.5
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 0.6,
-    "maxMs": 298
+    "count": 0.8,
+    "maxMs": 74
    },
-   "layouts": 18,
-   "recalcs": 21,
-   "heapMB": 15.1,
-   "nodes": 22541,
+   "layouts": 19,
+   "recalcs": 28,
+   "heapMB": 7.7,
+   "nodes": 22571,
    "notes": ""
   },
   {
@@ -1914,17 +1914,17 @@
    "median": null,
    "p95": null,
    "samples": [],
-   "fps": 121.6,
+   "fps": 121.3,
    "dropped": 0,
-   "worstFrame": 12.5,
+   "worstFrame": 10.4,
    "longTasks": {
     "count": 0,
     "maxMs": 0
    },
-   "layouts": 113,
-   "recalcs": 117,
-   "heapMB": 13.7,
-   "nodes": 16293,
+   "layouts": 221,
+   "recalcs": 218,
+   "heapMB": 11.5,
+   "nodes": 16249,
    "notes": ""
   },
   {
@@ -1934,26 +1934,26 @@
    "group": "Interactions",
    "what": "Click an initiative to open its panel",
    "skip": "",
-   "median": 213.3,
-   "p95": 244.2,
+   "median": 61.6,
+   "p95": 65.7,
    "samples": [
-    207.6,
-    215.5,
-    213.3,
-    244.2,
-    212.5
+    61.6,
+    54.9,
+    61.6,
+    56.4,
+    65.7
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 1,
-    "maxMs": 193
+    "count": 0,
+    "maxMs": 0
    },
-   "layouts": 29,
-   "recalcs": 57,
-   "heapMB": 13.5,
-   "nodes": 16909,
+   "layouts": 16,
+   "recalcs": 42,
+   "heapMB": 10.4,
+   "nodes": 16831,
    "notes": ""
   },
   {
@@ -1963,26 +1963,26 @@
    "group": "Interactions",
    "what": "Press Escape to close the panel",
    "skip": "",
-   "median": 153.4,
-   "p95": 163.5,
+   "median": 18.9,
+   "p95": 19.9,
    "samples": [
-    153.4,
-    150.8,
-    163.5,
-    150.8,
-    154.7
+    17.9,
+    19.1,
+    18.9,
+    18.9,
+    19.9
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 1,
-    "maxMs": 142
+    "count": 0,
+    "maxMs": 0
    },
-   "layouts": 39,
-   "recalcs": 84,
-   "heapMB": 8.3,
-   "nodes": 16326,
+   "layouts": 21,
+   "recalcs": 50,
+   "heapMB": 21,
+   "nodes": 16282,
    "notes": ""
   },
   {
@@ -1992,26 +1992,26 @@
    "group": "Interactions",
    "what": "Drag an initiative a week later and drop it",
    "skip": "",
-   "median": 181.7,
-   "p95": 190.8,
+   "median": 139.8,
+   "p95": 146.8,
    "samples": [
-    175,
-    180.8,
-    190.8,
-    181.7,
-    182.5
+    136.4,
+    146.8,
+    139.8,
+    143.6,
+    131.4
    ],
    "fps": null,
    "dropped": 1,
-   "worstFrame": 185.2,
+   "worstFrame": 142.4,
    "longTasks": {
     "count": 3,
-    "maxMs": 182
+    "maxMs": 140
    },
-   "layouts": 85,
-   "recalcs": 143,
-   "heapMB": 21,
-   "nodes": 16328,
+   "layouts": 78,
+   "recalcs": 135,
+   "heapMB": 10.4,
+   "nodes": 16284,
    "notes": ""
   },
   {
@@ -2021,14 +2021,14 @@
    "group": "Interactions",
    "what": "Type a word in Find (the slowest key)",
    "skip": "",
-   "median": 15.4,
-   "p95": 17.6,
+   "median": 15,
+   "p95": 16.7,
    "samples": [
-    14.2,
-    12.7,
-    15.4,
-    16.3,
-    17.6
+    15.3,
+    12.4,
+    11.2,
+    15,
+    16.7
    ],
    "fps": null,
    "dropped": null,
@@ -2038,9 +2038,9 @@
     "maxMs": 0
    },
    "layouts": 23,
-   "recalcs": 54,
-   "heapMB": 21.6,
-   "nodes": 16336,
+   "recalcs": 52,
+   "heapMB": 32.8,
+   "nodes": 16292,
    "notes": ""
   },
   {
@@ -2050,26 +2050,26 @@
    "group": "Interactions",
    "what": "Filter to one person, then clear the filter",
    "skip": "",
-   "median": 150.5,
-   "p95": 157.7,
+   "median": 106.4,
+   "p95": 110.2,
    "samples": [
-    151,
-    157.7,
-    150.5,
-    139.9,
-    143.6
+    109,
+    110.2,
+    103.3,
+    106.4,
+    103.1
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 132
+    "maxMs": 90
    },
-   "layouts": 16,
-   "recalcs": 39,
-   "heapMB": 19.7,
-   "nodes": 16513,
+   "layouts": 18,
+   "recalcs": 52,
+   "heapMB": 10.4,
+   "nodes": 16469,
    "notes": ""
   },
   {
@@ -2079,26 +2079,26 @@
    "group": "Interactions",
    "what": "Switch Timeline to List and back",
    "skip": "",
-   "median": 220.9,
-   "p95": 233.1,
+   "median": 179.7,
+   "p95": 186.8,
    "samples": [
-    225,
-    233.1,
-    215.4,
-    220.9,
-    218.1
+    178.9,
+    184.5,
+    179.7,
+    173.5,
+    186.8
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 1.2,
-    "maxMs": 208
+    "count": 1,
+    "maxMs": 164
    },
    "layouts": 14,
-   "recalcs": 17,
-   "heapMB": 10.8,
-   "nodes": 46349,
+   "recalcs": 18,
+   "heapMB": 15.8,
+   "nodes": 46208,
    "notes": ""
   },
   {
@@ -2108,26 +2108,26 @@
    "group": "Interactions",
    "what": "Undo an edit (Ctrl+Z)",
    "skip": "",
-   "median": 176.2,
-   "p95": 188.2,
+   "median": 139.1,
+   "p95": 140.5,
    "samples": [
-    177,
-    188.2,
-    175.6,
-    169.2,
-    176.2
+    117.1,
+    139.9,
+    124.7,
+    139.1,
+    140.5
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 160
+    "maxMs": 120
    },
-   "layouts": 18,
-   "recalcs": 23,
-   "heapMB": 22,
-   "nodes": 46349,
+   "layouts": 20,
+   "recalcs": 28,
+   "heapMB": 28.2,
+   "nodes": 46208,
    "notes": ""
   },
   {
@@ -2137,26 +2137,26 @@
    "group": "Interactions",
    "what": "Save an edit to the plan file",
    "skip": "",
-   "median": 206.3,
-   "p95": 207.9,
+   "median": 147.1,
+   "p95": 149.1,
    "samples": [
-    206.3,
-    207.9,
-    206.5,
-    198.4,
-    204.8
+    142.4,
+    149.1,
+    147.1,
+    147.5,
+    143.3
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 156
+    "maxMs": 106
    },
    "layouts": 19,
-   "recalcs": 44,
-   "heapMB": 14.5,
-   "nodes": 46348,
+   "recalcs": 45,
+   "heapMB": 9.8,
+   "nodes": 46207,
    "notes": ""
   },
   {
@@ -2166,26 +2166,26 @@
    "group": "Pages",
    "what": "Open Today from the Timeline",
    "skip": "",
-   "median": 24.7,
-   "p95": 26.4,
+   "median": 21.3,
+   "p95": 21.6,
    "samples": [
-    22.9,
-    26.4,
-    24.7,
-    25.8,
-    24.4
+    20.3,
+    21.6,
+    21.3,
+    20.4,
+    21.4
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 206
+    "maxMs": 151
    },
    "layouts": 21,
    "recalcs": 26,
-   "heapMB": 31.8,
-   "nodes": 46581,
+   "heapMB": 20.1,
+   "nodes": 46440,
    "notes": ""
   },
   {
@@ -2195,26 +2195,26 @@
    "group": "Pages",
    "what": "Open Sprint from the Timeline",
    "skip": "",
-   "median": 41.1,
-   "p95": 46.4,
+   "median": 38.5,
+   "p95": 42.6,
    "samples": [
     41.1,
-    46.4,
-    40.9,
-    43.4,
-    40.9
+    37.4,
+    38.5,
+    36.2,
+    42.6
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 201
+    "maxMs": 155
    },
    "layouts": 21,
    "recalcs": 24,
-   "heapMB": 16,
-   "nodes": 47459,
+   "heapMB": 29.7,
+   "nodes": 47526,
    "notes": ""
   },
   {
@@ -2247,26 +2247,26 @@
    "group": "Pages",
    "what": "Open List from the Timeline",
    "skip": "",
-   "median": 292,
-   "p95": 299.5,
+   "median": 269.1,
+   "p95": 275.4,
    "samples": [
-    286.7,
-    292,
-    299.5,
-    294.7,
-    281.2
+    259.6,
+    270.5,
+    263.6,
+    275.4,
+    269.1
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 1.6,
-    "maxMs": 250
+    "count": 1.8,
+    "maxMs": 231
    },
    "layouts": 21,
    "recalcs": 24,
-   "heapMB": 12.3,
-   "nodes": 47459,
+   "heapMB": 19,
+   "nodes": 47526,
    "notes": ""
   },
   {
@@ -2276,26 +2276,26 @@
    "group": "Pages",
    "what": "Open Roadmap from the Timeline",
    "skip": "",
-   "median": 24.8,
-   "p95": 27,
+   "median": 20.4,
+   "p95": 23.6,
    "samples": [
-    25.6,
-    27,
-    24.6,
-    24.5,
-    24.8
+    17.7,
+    23.6,
+    23.6,
+    20.4,
+    19.3
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 205
+    "maxMs": 150
    },
    "layouts": 21,
    "recalcs": 24,
-   "heapMB": 13,
-   "nodes": 47591,
+   "heapMB": 17.3,
+   "nodes": 47658,
    "notes": ""
   },
   {
@@ -2305,26 +2305,26 @@
    "group": "Pages",
    "what": "Open Capacity from the Timeline",
    "skip": "",
-   "median": 51.9,
-   "p95": 55,
+   "median": 46.9,
+   "p95": 48.5,
    "samples": [
-    52.1,
-    55,
-    51.9,
-    50.6,
-    51.8
+    46.5,
+    45.6,
+    48.5,
+    48.2,
+    46.9
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1,
-    "maxMs": 195
+    "maxMs": 154
    },
    "layouts": 21,
    "recalcs": 24,
-   "heapMB": 23.2,
-   "nodes": 50788,
+   "heapMB": 14.4,
+   "nodes": 50855,
    "notes": ""
   },
   {
@@ -2334,26 +2334,26 @@
    "group": "Load",
    "what": "Open the plan file and the Jira folder, to the first drawn Timeline",
    "skip": "",
-   "median": 1331.9,
-   "p95": 1407,
+   "median": 1074.7,
+   "p95": 1116.4,
    "samples": [
-    1311.7,
-    1331.9,
-    1291.1,
-    1407,
-    1361.5
+    1074.7,
+    1086.9,
+    1073.5,
+    999.5,
+    1116.4
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 5,
-    "maxMs": 765
+    "maxMs": 554
    },
    "layouts": 28,
-   "recalcs": 47,
-   "heapMB": 14.1,
-   "nodes": 16167,
+   "recalcs": 48,
+   "heapMB": 9.6,
+   "nodes": 16123,
    "notes": ""
   },
   {
@@ -2363,26 +2363,26 @@
    "group": "Jira",
    "what": "A new Jira sync arrives and is drawn",
    "skip": "",
-   "median": 763,
-   "p95": 791.1,
+   "median": 556,
+   "p95": 566.7,
    "samples": [
-    791.1,
-    763,
-    746.8,
-    778.2,
-    744.2
+    556,
+    539.5,
+    566.7,
+    528.4,
+    556.5
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 2,
-    "maxMs": 699
+    "maxMs": 473
    },
-   "layouts": 12,
+   "layouts": 11,
    "recalcs": 14,
-   "heapMB": 15.3,
-   "nodes": 16293,
+   "heapMB": 9.2,
+   "nodes": 16249,
    "notes": ""
   },
   {
@@ -2392,26 +2392,26 @@
    "group": "Timeline",
    "what": "Weeks: switch to Fit",
    "skip": "",
-   "median": 794.9,
-   "p95": 819,
+   "median": 263.3,
+   "p95": 279.2,
    "samples": [
-    819,
-    795,
-    751.6,
-    794.9,
-    773.7
+    266.5,
+    279.2,
+    263.3,
+    248.1,
+    261.6
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 1,
-    "maxMs": 756
+    "count": 0.8,
+    "maxMs": 238
    },
-   "layouts": 43,
-   "recalcs": 49,
-   "heapMB": 12.2,
-   "nodes": 3234,
+   "layouts": 24,
+   "recalcs": 28,
+   "heapMB": 12.8,
+   "nodes": 3224,
    "notes": ""
   },
   {
@@ -2421,26 +2421,26 @@
    "group": "Timeline",
    "what": "Weeks: switch to This sprint",
    "skip": "",
-   "median": 1411,
-   "p95": 1614.5,
+   "median": 531.5,
+   "p95": 569.7,
    "samples": [
-    1393.1,
-    1411,
-    1399.3,
-    1614.5,
-    1415.6
+    550.7,
+    569.7,
+    531.5,
+    507.4,
+    529.9
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 1.4,
-    "maxMs": 1344
+    "count": 1.6,
+    "maxMs": 505
    },
-   "layouts": 40,
-   "recalcs": 49,
-   "heapMB": 10.8,
-   "nodes": 16293,
+   "layouts": 32,
+   "recalcs": 41,
+   "heapMB": 19.3,
+   "nodes": 16249,
    "notes": ""
   },
   {
@@ -2450,26 +2450,26 @@
    "group": "Timeline",
    "what": "Weeks: switch to This + next",
    "skip": "",
-   "median": 1376.3,
-   "p95": 1441.7,
+   "median": 563.3,
+   "p95": 581.8,
    "samples": [
-    1357.8,
-    1385.2,
-    1375.4,
-    1441.7,
-    1376.3
+    563.7,
+    581.8,
+    563.3,
+    522.2,
+    559.4
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 1.6,
-    "maxMs": 1355
+    "count": 1.8,
+    "maxMs": 520
    },
-   "layouts": 45,
-   "recalcs": 51,
-   "heapMB": 6.7,
-   "nodes": 16293,
+   "layouts": 26,
+   "recalcs": 30,
+   "heapMB": 10.5,
+   "nodes": 16249,
    "notes": ""
   },
   {
@@ -2479,26 +2479,26 @@
    "group": "Timeline",
    "what": "Weeks: switch to Next 3",
    "skip": "",
-   "median": 701,
-   "p95": 842.9,
+   "median": 225.9,
+   "p95": 232.6,
    "samples": [
-    701,
-    690.9,
-    682.6,
-    842.9,
-    724.6
+    227.9,
+    216.4,
+    232.6,
+    209.5,
+    225.9
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 0.6,
-    "maxMs": 674
+    "maxMs": 198
    },
-   "layouts": 47,
-   "recalcs": 49,
-   "heapMB": 6.3,
-   "nodes": 3104,
+   "layouts": 26,
+   "recalcs": 30,
+   "heapMB": 6.6,
+   "nodes": 3220,
    "notes": ""
   },
   {
@@ -2508,26 +2508,26 @@
    "group": "Timeline",
    "what": "Weeks at Fit: zoom in one step",
    "skip": "",
-   "median": 365,
-   "p95": 390.9,
+   "median": 204.3,
+   "p95": 217.3,
    "samples": [
-    365,
-    390.9,
-    364.3,
-    353.1,
-    383.1
+    217.3,
+    204.3,
+    203.3,
+    189.4,
+    205.4
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 0.6,
-    "maxMs": 325
+    "count": 0.4,
+    "maxMs": 186
    },
-   "layouts": 42,
-   "recalcs": 47,
-   "heapMB": 32.3,
-   "nodes": 3234,
+   "layouts": 29,
+   "recalcs": 33,
+   "heapMB": 9.1,
+   "nodes": 3224,
    "notes": ""
   },
   {
@@ -2537,26 +2537,26 @@
    "group": "Timeline",
    "what": "Weeks at Fit: zoom out one step",
    "skip": "",
-   "median": 366.1,
-   "p95": 390.5,
+   "median": 194.9,
+   "p95": 196.5,
    "samples": [
-    356,
-    390.5,
-    366.1,
-    359.6,
-    374.9
+    194.9,
+    196.5,
+    194.3,
+    191.4,
+    196.1
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 0.2,
-    "maxMs": 321
+    "count": 0.6,
+    "maxMs": 163
    },
-   "layouts": 62,
-   "recalcs": 75,
-   "heapMB": 7.3,
-   "nodes": 3234,
+   "layouts": 50,
+   "recalcs": 62,
+   "heapMB": 6.7,
+   "nodes": 3224,
    "notes": ""
   },
   {
@@ -2569,17 +2569,17 @@
    "median": null,
    "p95": null,
    "samples": [],
-   "fps": 121.2,
+   "fps": 121.5,
    "dropped": 0,
-   "worstFrame": 16.4,
+   "worstFrame": 19.3,
    "longTasks": {
     "count": 0,
     "maxMs": 0
    },
-   "layouts": 120,
-   "recalcs": 139,
-   "heapMB": 14.3,
-   "nodes": 16293,
+   "layouts": 112,
+   "recalcs": 133,
+   "heapMB": 9.6,
+   "nodes": 16249,
    "notes": ""
   },
   {
@@ -2588,6 +2588,1539 @@
    "id": "tl.scrollY",
    "group": "Timeline",
    "what": "Weeks at Fit: scroll down the workstreams for 90 frames",
+   "skip": "",
+   "median": null,
+   "p95": null,
+   "samples": [],
+   "fps": 120.9,
+   "dropped": 0,
+   "worstFrame": 11.7,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 19,
+   "recalcs": 40,
+   "heapMB": 21.1,
+   "nodes": 3099,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "tl.shelves",
+   "group": "Timeline",
+   "what": "Weeks at This + next: turn sprint shelves off and on",
+   "skip": "",
+   "median": 427.9,
+   "p95": 459.7,
+   "samples": [
+    459.7,
+    427.9,
+    438.4,
+    418.8,
+    422.5
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 2.4,
+    "maxMs": 393
+   },
+   "layouts": 34,
+   "recalcs": 39,
+   "heapMB": 14.4,
+   "nodes": 16249,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "days.open",
+   "group": "Days",
+   "what": "Switch the Timeline to Days",
+   "skip": "",
+   "median": 437.4,
+   "p95": 468,
+   "samples": [
+    444.2,
+    437.4,
+    468,
+    423.4,
+    424.6
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1.6,
+    "maxMs": 315
+   },
+   "layouts": 20,
+   "recalcs": 23,
+   "heapMB": 7.6,
+   "nodes": 22571,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "days.scroll",
+   "group": "Days",
+   "what": "Days: scroll sideways across a quarter",
+   "skip": "",
+   "median": null,
+   "p95": null,
+   "samples": [],
+   "fps": 122.1,
+   "dropped": 0,
+   "worstFrame": 12.2,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 222,
+   "recalcs": 211,
+   "heapMB": 7.1,
+   "nodes": 16249,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "ui.panelOpen",
+   "group": "Interactions",
+   "what": "Click an initiative to open its panel",
+   "skip": "",
+   "median": 199.9,
+   "p95": 209.8,
+   "samples": [
+    209.8,
+    200.6,
+    178.6,
+    196.6,
+    199.9
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1,
+    "maxMs": 155
+   },
+   "layouts": 19,
+   "recalcs": 45,
+   "heapMB": 10.1,
+   "nodes": 16864,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "ui.panelClose",
+   "group": "Interactions",
+   "what": "Press Escape to close the panel",
+   "skip": "",
+   "median": 82.4,
+   "p95": 83.9,
+   "samples": [
+    82.4,
+    81.9,
+    81.4,
+    83.5,
+    83.9
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1,
+    "maxMs": 65
+   },
+   "layouts": 21,
+   "recalcs": 44,
+   "heapMB": 20.6,
+   "nodes": 16282,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "ui.drag",
+   "group": "Interactions",
+   "what": "Drag an initiative a week later and drop it",
+   "skip": "",
+   "median": 651,
+   "p95": 692.5,
+   "samples": [
+    651,
+    692.5,
+    601.8,
+    634.7,
+    658.7
+   ],
+   "fps": null,
+   "dropped": 4,
+   "worstFrame": 612.6,
+   "longTasks": {
+    "count": 4.6,
+    "maxMs": 611
+   },
+   "layouts": 81,
+   "recalcs": 154,
+   "heapMB": 12.5,
+   "nodes": 16284,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "ui.find",
+   "group": "Interactions",
+   "what": "Type a word in Find (the slowest key)",
+   "skip": "",
+   "median": 30.3,
+   "p95": 35.9,
+   "samples": [
+    28.5,
+    35.9,
+    26.6,
+    33.1,
+    30.3
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 23,
+   "recalcs": 46,
+   "heapMB": 30.2,
+   "nodes": 16292,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "ui.filter",
+   "group": "Interactions",
+   "what": "Filter to one person, then clear the filter",
+   "skip": "",
+   "median": 469,
+   "p95": 488.3,
+   "samples": [
+    463.3,
+    461.6,
+    469,
+    488.3,
+    473.2
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 2.2,
+    "maxMs": 413
+   },
+   "layouts": 18,
+   "recalcs": 53,
+   "heapMB": 10.4,
+   "nodes": 16469,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "ui.view",
+   "group": "Interactions",
+   "what": "Switch Timeline to List and back",
+   "skip": "",
+   "median": 798.5,
+   "p95": 810.7,
+   "samples": [
+    759.1,
+    798.5,
+    810.7,
+    804.9,
+    769.1
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 3,
+    "maxMs": 722
+   },
+   "layouts": 14,
+   "recalcs": 17,
+   "heapMB": 20.3,
+   "nodes": 46208,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "ui.undo",
+   "group": "Interactions",
+   "what": "Undo an edit (Ctrl+Z)",
+   "skip": "",
+   "median": 567,
+   "p95": 628,
+   "samples": [
+    604.5,
+    499.9,
+    567,
+    628,
+    483.9
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 2,
+    "maxMs": 528
+   },
+   "layouts": 18,
+   "recalcs": 24,
+   "heapMB": 16,
+   "nodes": 46208,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "ui.save",
+   "group": "Interactions",
+   "what": "Save an edit to the plan file",
+   "skip": "",
+   "median": 622.2,
+   "p95": 687.5,
+   "samples": [
+    616.4,
+    635,
+    622.2,
+    687.5,
+    599.2
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 2,
+    "maxMs": 487
+   },
+   "layouts": 19,
+   "recalcs": 44,
+   "heapMB": 17,
+   "nodes": 46207,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "page.today",
+   "group": "Pages",
+   "what": "Open Today from the Timeline",
+   "skip": "",
+   "median": 90.9,
+   "p95": 95.4,
+   "samples": [
+    84.5,
+    90.9,
+    95.4,
+    94.5,
+    88.4
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 2.6,
+    "maxMs": 666
+   },
+   "layouts": 21,
+   "recalcs": 26,
+   "heapMB": 28.3,
+   "nodes": 46440,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "page.sprint",
+   "group": "Pages",
+   "what": "Open Sprint from the Timeline",
+   "skip": "",
+   "median": 174.9,
+   "p95": 194.1,
+   "samples": [
+    161.7,
+    174.9,
+    187.7,
+    194.1,
+    174.2
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 2.6,
+    "maxMs": 673
+   },
+   "layouts": 22,
+   "recalcs": 45,
+   "heapMB": 13,
+   "nodes": 47525,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "page.cards",
+   "group": "Pages",
+   "what": "Open Cards from the Timeline",
+   "skip": "not in this version",
+   "median": null,
+   "p95": null,
+   "samples": [],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": null,
+   "recalcs": null,
+   "heapMB": null,
+   "nodes": null,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "page.list",
+   "group": "Pages",
+   "what": "Open List from the Timeline",
+   "skip": "",
+   "median": 1114.3,
+   "p95": 1182.5,
+   "samples": [
+    1114.3,
+    1107.2,
+    1182.5,
+    1160.1,
+    1087.8
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 3.6,
+    "maxMs": 1012
+   },
+   "layouts": 21,
+   "recalcs": 24,
+   "heapMB": 11.8,
+   "nodes": 47525,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "page.roadmap",
+   "group": "Pages",
+   "what": "Open Roadmap from the Timeline",
+   "skip": "",
+   "median": 88,
+   "p95": 95.5,
+   "samples": [
+    84.3,
+    87.2,
+    95.5,
+    90.6,
+    88
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 3,
+    "maxMs": 680
+   },
+   "layouts": 21,
+   "recalcs": 24,
+   "heapMB": 31.4,
+   "nodes": 47657,
+   "notes": ""
+  },
+  {
+   "size": "M",
+   "cpu": 4,
+   "id": "page.capacity",
+   "group": "Pages",
+   "what": "Open Capacity from the Timeline",
+   "skip": "",
+   "median": 191.8,
+   "p95": 196.2,
+   "samples": [
+    188,
+    185.6,
+    196.2,
+    191.8,
+    192.2
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 3.4,
+    "maxMs": 756
+   },
+   "layouts": 21,
+   "recalcs": 24,
+   "heapMB": 15,
+   "nodes": 50854,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "load.open",
+   "group": "Load",
+   "what": "Open the plan file and the Jira folder, to the first drawn Timeline",
+   "skip": "",
+   "median": 856.9,
+   "p95": 857.2,
+   "samples": [
+    856.9,
+    844.2,
+    857.2
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 4,
+    "maxMs": 447
+   },
+   "layouts": 35,
+   "recalcs": 56,
+   "heapMB": 23.1,
+   "nodes": 59909,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "jira.apply",
+   "group": "Jira",
+   "what": "A new Jira sync arrives and is drawn",
+   "skip": "",
+   "median": 474.5,
+   "p95": 488.7,
+   "samples": [
+    454.5,
+    474.5,
+    488.7
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1,
+    "maxMs": 444
+   },
+   "layouts": 13,
+   "recalcs": 15,
+   "heapMB": 45.6,
+   "nodes": 60307,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "tl.fit",
+   "group": "Timeline",
+   "what": "Weeks: switch to Fit",
+   "skip": "",
+   "median": 217.6,
+   "p95": 225.7,
+   "samples": [
+    217.6,
+    217.1,
+    225.7
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1,
+    "maxMs": 196
+   },
+   "layouts": 95,
+   "recalcs": 99,
+   "heapMB": 24.9,
+   "nodes": 9561,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "tl.this",
+   "group": "Timeline",
+   "what": "Weeks: switch to This sprint",
+   "skip": "",
+   "median": 463.9,
+   "p95": 497.6,
+   "samples": [
+    497.6,
+    463,
+    463.9
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1,
+    "maxMs": 443
+   },
+   "layouts": 239,
+   "recalcs": 247,
+   "heapMB": 15.9,
+   "nodes": 60307,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "tl.two",
+   "group": "Timeline",
+   "what": "Weeks: switch to This + next",
+   "skip": "",
+   "median": 500.2,
+   "p95": 505,
+   "samples": [
+    500.2,
+    491.3,
+    505
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1,
+    "maxMs": 461
+   },
+   "layouts": 96,
+   "recalcs": 100,
+   "heapMB": 28.3,
+   "nodes": 60307,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "tl.three",
+   "group": "Timeline",
+   "what": "Weeks: switch to Next 3",
+   "skip": "",
+   "median": 194.7,
+   "p95": 194.9,
+   "samples": [
+    189,
+    194.7,
+    194.9
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 0.3,
+    "maxMs": 181
+   },
+   "layouts": 101,
+   "recalcs": 105,
+   "heapMB": 28,
+   "nodes": 9504,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "tl.zoomIn",
+   "group": "Timeline",
+   "what": "Weeks at Fit: zoom in one step",
+   "skip": "",
+   "median": 177,
+   "p95": 182.8,
+   "samples": [
+    182.8,
+    177,
+    175.2
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1,
+    "maxMs": 163
+   },
+   "layouts": 174,
+   "recalcs": 178,
+   "heapMB": 24.3,
+   "nodes": 9563,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "tl.zoomOut",
+   "group": "Timeline",
+   "what": "Weeks at Fit: zoom out one step",
+   "skip": "",
+   "median": 178.4,
+   "p95": 178.6,
+   "samples": [
+    178.6,
+    178.4,
+    177.1
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1,
+    "maxMs": 155
+   },
+   "layouts": 403,
+   "recalcs": 415,
+   "heapMB": 21.1,
+   "nodes": 9561,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "tl.scrollX",
+   "group": "Timeline",
+   "what": "Weeks at This + next: scroll sideways for 90 frames",
+   "skip": "",
+   "median": null,
+   "p95": null,
+   "samples": [],
+   "fps": 122.8,
+   "dropped": 0,
+   "worstFrame": 10.3,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 251,
+   "recalcs": 272,
+   "heapMB": 33.9,
+   "nodes": 60307,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "tl.scrollY",
+   "group": "Timeline",
+   "what": "Weeks at Fit: scroll down the workstreams for 90 frames",
+   "skip": "",
+   "median": null,
+   "p95": null,
+   "samples": [],
+   "fps": 121,
+   "dropped": 0,
+   "worstFrame": 10.4,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 87,
+   "recalcs": 109,
+   "heapMB": 37.5,
+   "nodes": 9561,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "tl.shelves",
+   "group": "Timeline",
+   "what": "Weeks at This + next: turn sprint shelves off and on",
+   "skip": "",
+   "median": 414.8,
+   "p95": 415.4,
+   "samples": [
+    414.8,
+    415.4,
+    408.4
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1.7,
+    "maxMs": 369
+   },
+   "layouts": 176,
+   "recalcs": 179,
+   "heapMB": 27.5,
+   "nodes": 59909,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "days.open",
+   "group": "Days",
+   "what": "Switch the Timeline to Days",
+   "skip": "",
+   "median": 305.9,
+   "p95": 310.3,
+   "samples": [
+    310.3,
+    305.9,
+    303.1
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1,
+    "maxMs": 277
+   },
+   "layouts": 22,
+   "recalcs": 25,
+   "heapMB": 31.6,
+   "nodes": 92475,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "days.scroll",
+   "group": "Days",
+   "what": "Days: scroll sideways across a quarter",
+   "skip": "",
+   "median": null,
+   "p95": null,
+   "samples": [],
+   "fps": 121.1,
+   "dropped": 0,
+   "worstFrame": 10.3,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 495,
+   "recalcs": 483,
+   "heapMB": 28.6,
+   "nodes": 60307,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "ui.panelOpen",
+   "group": "Interactions",
+   "what": "Click an initiative to open its panel",
+   "skip": "",
+   "median": 125.2,
+   "p95": 129.2,
+   "samples": [
+    115.5,
+    129.2,
+    125.2
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1,
+    "maxMs": 88
+   },
+   "layouts": 27,
+   "recalcs": 40,
+   "heapMB": 16.4,
+   "nodes": 61793,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "ui.panelClose",
+   "group": "Interactions",
+   "what": "Press Escape to close the panel",
+   "skip": "",
+   "median": 66,
+   "p95": 67.5,
+   "samples": [
+    59.2,
+    67.5,
+    66
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 0.7,
+    "maxMs": 57
+   },
+   "layouts": 50,
+   "recalcs": 73,
+   "heapMB": 37.1,
+   "nodes": 60338,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "ui.drag",
+   "group": "Interactions",
+   "what": "Drag an initiative a week later and drop it",
+   "skip": "",
+   "median": 579.2,
+   "p95": 583,
+   "samples": [
+    543.1,
+    583,
+    579.2
+   ],
+   "fps": null,
+   "dropped": 1,
+   "worstFrame": 558.4,
+   "longTasks": {
+    "count": 3.7,
+    "maxMs": 555
+   },
+   "layouts": 97,
+   "recalcs": 153,
+   "heapMB": 41.7,
+   "nodes": 60340,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "ui.find",
+   "group": "Interactions",
+   "what": "Type a word in Find (the slowest key)",
+   "skip": "",
+   "median": 15.9,
+   "p95": 16.8,
+   "samples": [
+    15.4,
+    16.8,
+    15.9
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 26,
+   "recalcs": 40,
+   "heapMB": 31.9,
+   "nodes": 60341,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "ui.filter",
+   "group": "Interactions",
+   "what": "Filter to one person, then clear the filter",
+   "skip": "",
+   "median": 406,
+   "p95": 408.4,
+   "samples": [
+    406,
+    388.2,
+    408.4
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1.3,
+    "maxMs": 363
+   },
+   "layouts": 19,
+   "recalcs": 27,
+   "heapMB": 31,
+   "nodes": 60622,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "ui.view",
+   "group": "Interactions",
+   "what": "Switch Timeline to List and back",
+   "skip": "",
+   "median": 695.6,
+   "p95": 712.4,
+   "samples": [
+    695.6,
+    712.4,
+    675
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 3,
+    "maxMs": 652
+   },
+   "layouts": 17,
+   "recalcs": 19,
+   "heapMB": 24,
+   "nodes": 175716,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "ui.undo",
+   "group": "Interactions",
+   "what": "Undo an edit (Ctrl+Z)",
+   "skip": "",
+   "median": 443.8,
+   "p95": 450.1,
+   "samples": [
+    427.8,
+    443.8,
+    450.1
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1,
+    "maxMs": 388
+   },
+   "layouts": 21,
+   "recalcs": 27,
+   "heapMB": 17.8,
+   "nodes": 175716,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "ui.save",
+   "group": "Interactions",
+   "what": "Save an edit to the plan file",
+   "skip": "",
+   "median": 534.7,
+   "p95": 541.5,
+   "samples": [
+    519.4,
+    541.5,
+    534.7
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1.3,
+    "maxMs": 402
+   },
+   "layouts": 22,
+   "recalcs": 47,
+   "heapMB": 39.9,
+   "nodes": 175438,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "page.today",
+   "group": "Pages",
+   "what": "Open Today from the Timeline",
+   "skip": "",
+   "median": 66,
+   "p95": 69,
+   "samples": [
+    66,
+    65.8,
+    69
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 3,
+    "maxMs": 528
+   },
+   "layouts": 25,
+   "recalcs": 30,
+   "heapMB": 39.6,
+   "nodes": 176021,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "page.sprint",
+   "group": "Pages",
+   "what": "Open Sprint from the Timeline",
+   "skip": "",
+   "median": 108.4,
+   "p95": 111.5,
+   "samples": [
+    111.5,
+    108.1,
+    108.4
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1.7,
+    "maxMs": 565
+   },
+   "layouts": 25,
+   "recalcs": 28,
+   "heapMB": 41.6,
+   "nodes": 177459,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "page.cards",
+   "group": "Pages",
+   "what": "Open Cards from the Timeline",
+   "skip": "not in this version",
+   "median": null,
+   "p95": null,
+   "samples": [],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": null,
+   "recalcs": null,
+   "heapMB": null,
+   "nodes": null,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "page.list",
+   "group": "Pages",
+   "what": "Open List from the Timeline",
+   "skip": "",
+   "median": 1034.9,
+   "p95": 1043.5,
+   "samples": [
+    1015.8,
+    1034.9,
+    1043.5
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 3,
+    "maxMs": 880
+   },
+   "layouts": 27,
+   "recalcs": 44,
+   "heapMB": 45.6,
+   "nodes": 177061,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "page.roadmap",
+   "group": "Pages",
+   "what": "Open Roadmap from the Timeline",
+   "skip": "",
+   "median": 65.3,
+   "p95": 77.5,
+   "samples": [
+    63.7,
+    77.5,
+    65.3
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1.7,
+    "maxMs": 589
+   },
+   "layouts": 25,
+   "recalcs": 30,
+   "heapMB": 16.9,
+   "nodes": 177669,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 1,
+   "id": "page.capacity",
+   "group": "Pages",
+   "what": "Open Capacity from the Timeline",
+   "skip": "",
+   "median": 158.8,
+   "p95": 171,
+   "samples": [
+    171,
+    158.8,
+    156.9
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1,
+    "maxMs": 542
+   },
+   "layouts": 25,
+   "recalcs": 28,
+   "heapMB": 33.4,
+   "nodes": 187868,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 4,
+   "id": "load.open",
+   "group": "Load",
+   "what": "Open the plan file and the Jira folder, to the first drawn Timeline",
+   "skip": "",
+   "median": 3183.2,
+   "p95": 3183.4,
+   "samples": [
+    2985.1,
+    3183.2,
+    3183.4
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 6,
+    "maxMs": 2000
+   },
+   "layouts": 34,
+   "recalcs": 44,
+   "heapMB": 22,
+   "nodes": 59909,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 4,
+   "id": "jira.apply",
+   "group": "Jira",
+   "what": "A new Jira sync arrives and is drawn",
+   "skip": "",
+   "median": 2049,
+   "p95": 2115,
+   "samples": [
+    1906.8,
+    2115,
+    2049
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 2,
+    "maxMs": 1850
+   },
+   "layouts": 13,
+   "recalcs": 16,
+   "heapMB": 20.6,
+   "nodes": 60307,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 4,
+   "id": "tl.fit",
+   "group": "Timeline",
+   "what": "Weeks: switch to Fit",
+   "skip": "",
+   "median": 939.5,
+   "p95": 1006.1,
+   "samples": [
+    1006.1,
+    931.2,
+    939.5
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 2,
+    "maxMs": 892
+   },
+   "layouts": 99,
+   "recalcs": 114,
+   "heapMB": 27.4,
+   "nodes": 9165,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 4,
+   "id": "tl.this",
+   "group": "Timeline",
+   "what": "Weeks: switch to This sprint",
+   "skip": "",
+   "median": 2015.4,
+   "p95": 2137.9,
+   "samples": [
+    2012.7,
+    2015.4,
+    2137.9
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 2,
+    "maxMs": 1941
+   },
+   "layouts": 239,
+   "recalcs": 247,
+   "heapMB": 27.2,
+   "nodes": 60307,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 4,
+   "id": "tl.two",
+   "group": "Timeline",
+   "what": "Weeks: switch to This + next",
+   "skip": "",
+   "median": 2057.7,
+   "p95": 2070.4,
+   "samples": [
+    1931.9,
+    2070.4,
+    2057.7
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1.7,
+    "maxMs": 1903
+   },
+   "layouts": 96,
+   "recalcs": 100,
+   "heapMB": 11.7,
+   "nodes": 60307,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 4,
+   "id": "tl.three",
+   "group": "Timeline",
+   "what": "Weeks: switch to Next 3",
+   "skip": "",
+   "median": 842.3,
+   "p95": 882.7,
+   "samples": [
+    762.6,
+    842.3,
+    882.7
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 2,
+    "maxMs": 793
+   },
+   "layouts": 103,
+   "recalcs": 105,
+   "heapMB": 35.5,
+   "nodes": 9106,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 4,
+   "id": "tl.zoomIn",
+   "group": "Timeline",
+   "what": "Weeks at Fit: zoom in one step",
+   "skip": "",
+   "median": 775,
+   "p95": 780.4,
+   "samples": [
+    775,
+    780.4,
+    757.3
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 2,
+    "maxMs": 699
+   },
+   "layouts": 175,
+   "recalcs": 179,
+   "heapMB": 11.2,
+   "nodes": 9563,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 4,
+   "id": "tl.zoomOut",
+   "group": "Timeline",
+   "what": "Weeks at Fit: zoom out one step",
+   "skip": "",
+   "median": 766.9,
+   "p95": 770.1,
+   "samples": [
+    766.9,
+    770.1,
+    735.8
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 2,
+    "maxMs": 670
+   },
+   "layouts": 404,
+   "recalcs": 415,
+   "heapMB": 11.2,
+   "nodes": 9561,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 4,
+   "id": "tl.scrollX",
+   "group": "Timeline",
+   "what": "Weeks at This + next: scroll sideways for 90 frames",
+   "skip": "",
+   "median": null,
+   "p95": null,
+   "samples": [],
+   "fps": 89.1,
+   "dropped": 6,
+   "worstFrame": 44.3,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 253,
+   "recalcs": 260,
+   "heapMB": 32.3,
+   "nodes": 60307,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 4,
+   "id": "tl.scrollY",
+   "group": "Timeline",
+   "what": "Weeks at Fit: scroll down the workstreams for 90 frames",
+   "skip": "",
+   "median": null,
+   "p95": null,
+   "samples": [],
+   "fps": 121.1,
+   "dropped": 0,
+   "worstFrame": 38.8,
+   "longTasks": {
+    "count": 0,
+    "maxMs": 0
+   },
+   "layouts": 87,
+   "recalcs": 109,
+   "heapMB": 35.4,
+   "nodes": 9561,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 4,
+   "id": "tl.shelves",
+   "group": "Timeline",
+   "what": "Weeks at This + next: turn sprint shelves off and on",
+   "skip": "",
+   "median": 1744.2,
+   "p95": 1789.1,
+   "samples": [
+    1693.7,
+    1789.1,
+    1744.2
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 3,
+    "maxMs": 1596
+   },
+   "layouts": 175,
+   "recalcs": 180,
+   "heapMB": 27.3,
+   "nodes": 60307,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 4,
+   "id": "days.open",
+   "group": "Days",
+   "what": "Switch the Timeline to Days",
+   "skip": "",
+   "median": 1287.9,
+   "p95": 1355.8,
+   "samples": [
+    1355.8,
+    1246.7,
+    1287.9
+   ],
+   "fps": null,
+   "dropped": null,
+   "worstFrame": null,
+   "longTasks": {
+    "count": 1.7,
+    "maxMs": 1230
+   },
+   "layouts": 25,
+   "recalcs": 41,
+   "heapMB": 24,
+   "nodes": 89136,
+   "notes": ""
+  },
+  {
+   "size": "L",
+   "cpu": 4,
+   "id": "days.scroll",
+   "group": "Days",
+   "what": "Days: scroll sideways across a quarter",
    "skip": "",
    "median": null,
    "p95": null,
@@ -2599,1624 +4132,91 @@
     "count": 0,
     "maxMs": 0
    },
-   "layouts": 29,
-   "recalcs": 52,
-   "heapMB": 25.9,
-   "nodes": 3234,
+   "layouts": 498,
+   "recalcs": 491,
+   "heapMB": 28.9,
+   "nodes": 60307,
    "notes": ""
   },
   {
-   "size": "M",
-   "cpu": 4,
-   "id": "tl.shelves",
-   "group": "Timeline",
-   "what": "Weeks at This + next: turn sprint shelves off and on",
-   "skip": "",
-   "median": 697.9,
-   "p95": 722.9,
-   "samples": [
-    697.9,
-    612.6,
-    625.5,
-    707.3,
-    722.9
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 3.2,
-    "maxMs": 655
-   },
-   "layouts": 44,
-   "recalcs": 52,
-   "heapMB": 11,
-   "nodes": 16167,
-   "notes": ""
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "days.open",
-   "group": "Days",
-   "what": "Switch the Timeline to Days",
-   "skip": "",
-   "median": 1503.7,
-   "p95": 1722,
-   "samples": [
-    1503.7,
-    1492.4,
-    1491.3,
-    1722,
-    1536
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 1.8,
-    "maxMs": 1566
-   },
-   "layouts": 19,
-   "recalcs": 22,
-   "heapMB": 7.3,
-   "nodes": 22541,
-   "notes": ""
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "days.scroll",
-   "group": "Days",
-   "what": "Days: scroll sideways across a quarter",
-   "skip": "",
-   "median": null,
-   "p95": null,
-   "samples": [],
-   "fps": 82.2,
-   "dropped": 2,
-   "worstFrame": 57.7,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": 114,
-   "recalcs": 118,
-   "heapMB": 8,
-   "nodes": 16293,
-   "notes": ""
-  },
-  {
-   "size": "M",
+   "size": "L",
    "cpu": 4,
    "id": "ui.panelOpen",
    "group": "Interactions",
    "what": "Click an initiative to open its panel",
    "skip": "",
-   "median": 878.4,
-   "p95": 900.5,
+   "median": 486.2,
+   "p95": 487.9,
    "samples": [
-    893.9,
-    852.9,
-    849.3,
-    900.5,
-    878.4
+    484.8,
+    486.2,
+    487.9
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 2,
-    "maxMs": 801
+    "maxMs": 395
    },
-   "layouts": 31,
-   "recalcs": 58,
-   "heapMB": 13.6,
-   "nodes": 16909,
+   "layouts": 28,
+   "recalcs": 46,
+   "heapMB": 16,
+   "nodes": 61793,
    "notes": ""
   },
   {
-   "size": "M",
+   "size": "L",
    "cpu": 4,
    "id": "ui.panelClose",
    "group": "Interactions",
    "what": "Press Escape to close the panel",
    "skip": "",
-   "median": 700.6,
-   "p95": 776.3,
+   "median": 385.6,
+   "p95": 1758.3,
    "samples": [
-    742,
-    700.6,
-    776.3,
-    681.6,
-    678.5
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 2,
-    "maxMs": 676
-   },
-   "layouts": 41,
-   "recalcs": 81,
-   "heapMB": 11.7,
-   "nodes": 16326,
-   "notes": ""
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "ui.drag",
-   "group": "Interactions",
-   "what": "Drag an initiative a week later and drop it",
-   "skip": "",
-   "median": 839.3,
-   "p95": 891.3,
-   "samples": [
-    818.2,
-    843.3,
-    839.3,
-    830.5,
-    891.3
-   ],
-   "fps": null,
-   "dropped": 4,
-   "worstFrame": 832.9,
-   "longTasks": {
-    "count": 4.6,
-    "maxMs": 829
-   },
-   "layouts": 85,
-   "recalcs": 163,
-   "heapMB": 7.8,
-   "nodes": 16328,
-   "notes": ""
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "ui.find",
-   "group": "Interactions",
-   "what": "Type a word in Find (the slowest key)",
-   "skip": "",
-   "median": 39.1,
-   "p95": 40.1,
-   "samples": [
-    36.5,
-    35.3,
-    39.1,
-    39.8,
-    40.1
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": 23,
-   "recalcs": 44,
-   "heapMB": 20.9,
-   "nodes": 16336,
-   "notes": ""
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "ui.filter",
-   "group": "Interactions",
-   "what": "Filter to one person, then clear the filter",
-   "skip": "",
-   "median": 656.4,
-   "p95": 683.8,
-   "samples": [
-    645.3,
-    656.4,
-    683.8,
-    657.6,
-    654.8
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 2,
-    "maxMs": 572
-   },
-   "layouts": 16,
-   "recalcs": 38,
-   "heapMB": 8.6,
-   "nodes": 16513,
-   "notes": ""
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "ui.view",
-   "group": "Interactions",
-   "what": "Switch Timeline to List and back",
-   "skip": "",
-   "median": 1000.1,
-   "p95": 1070.4,
-   "samples": [
-    1070.4,
-    977.3,
-    1058.8,
-    1000.1,
-    982.4
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 3.2,
-    "maxMs": 976
-   },
-   "layouts": 16,
-   "recalcs": 27,
-   "heapMB": 10.9,
-   "nodes": 46342,
-   "notes": ""
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "ui.undo",
-   "group": "Interactions",
-   "what": "Undo an edit (Ctrl+Z)",
-   "skip": "",
-   "median": 767.2,
-   "p95": 818.3,
-   "samples": [
-    729.4,
-    818.3,
-    803.7,
-    748.3,
-    767.2
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 2,
-    "maxMs": 705
-   },
-   "layouts": 18,
-   "recalcs": 25,
-   "heapMB": 29.1,
-   "nodes": 46349,
-   "notes": ""
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "ui.save",
-   "group": "Interactions",
-   "what": "Save an edit to the plan file",
-   "skip": "",
-   "median": 939.9,
-   "p95": 971.4,
-   "samples": [
-    942.4,
-    902.1,
-    971.4,
-    891.1,
-    939.9
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 2,
-    "maxMs": 686
-   },
-   "layouts": 20,
-   "recalcs": 46,
-   "heapMB": 26.8,
-   "nodes": 46348,
-   "notes": ""
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "page.today",
-   "group": "Pages",
-   "what": "Open Today from the Timeline",
-   "skip": "",
-   "median": 111.1,
-   "p95": 127.3,
-   "samples": [
-    109.8,
-    104,
-    127.3,
-    111.1,
-    113.3
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 2.8,
-    "maxMs": 946
-   },
-   "layouts": 21,
-   "recalcs": 26,
-   "heapMB": 12.5,
-   "nodes": 46581,
-   "notes": ""
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "page.sprint",
-   "group": "Pages",
-   "what": "Open Sprint from the Timeline",
-   "skip": "",
-   "median": 199.9,
-   "p95": 221.2,
-   "samples": [
-    179.8,
-    221.2,
-    199.9,
-    194.6,
-    203.7
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 3,
-    "maxMs": 1018
-   },
-   "layouts": 22,
-   "recalcs": 33,
-   "heapMB": 16.3,
-   "nodes": 47458,
-   "notes": ""
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "page.cards",
-   "group": "Pages",
-   "what": "Open Cards from the Timeline",
-   "skip": "not in this version",
-   "median": null,
-   "p95": null,
-   "samples": [],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": null,
-   "recalcs": null,
-   "heapMB": null,
-   "nodes": null,
-   "notes": ""
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "page.list",
-   "group": "Pages",
-   "what": "Open List from the Timeline",
-   "skip": "",
-   "median": 1237.5,
-   "p95": 1408.1,
-   "samples": [
-    1178.7,
-    1237.5,
-    1408.1,
-    1251.8,
-    1192.1
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 3.4,
-    "maxMs": 1052
-   },
-   "layouts": 21,
-   "recalcs": 24,
-   "heapMB": 12.1,
-   "nodes": 47458,
-   "notes": ""
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "page.roadmap",
-   "group": "Pages",
-   "what": "Open Roadmap from the Timeline",
-   "skip": "",
-   "median": 97.9,
-   "p95": 120.2,
-   "samples": [
-    97.9,
-    90.4,
-    120.2,
-    104.6,
-    95.2
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 2.6,
-    "maxMs": 988
-   },
-   "layouts": 21,
-   "recalcs": 24,
-   "heapMB": 12.9,
-   "nodes": 47590,
-   "notes": ""
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "page.capacity",
-   "group": "Pages",
-   "what": "Open Capacity from the Timeline",
-   "skip": "",
-   "median": 220,
-   "p95": 229.6,
-   "samples": [
-    206.8,
-    203.8,
-    220,
-    229.6,
-    220.5
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 3.6,
-    "maxMs": 881
-   },
-   "layouts": 23,
-   "recalcs": 30,
-   "heapMB": 22.8,
-   "nodes": 50787,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "load.open",
-   "group": "Load",
-   "what": "Open the plan file and the Jira folder, to the first drawn Timeline",
-   "skip": "",
-   "median": 1155.6,
-   "p95": 1204.4,
-   "samples": [
-    1155.6,
-    1204.4,
-    1150.2
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 4,
-    "maxMs": 703
-   },
-   "layouts": 34,
-   "recalcs": 54,
-   "heapMB": 23.1,
-   "nodes": 60209,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "jira.apply",
-   "group": "Jira",
-   "what": "A new Jira sync arrives and is drawn",
-   "skip": "",
-   "median": 758.9,
-   "p95": 765.2,
-   "samples": [
-    758.9,
-    765.2,
-    708.6
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 1,
-    "maxMs": 715
-   },
-   "layouts": 13,
-   "recalcs": 15,
-   "heapMB": 45.3,
-   "nodes": 60607,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "tl.fit",
-   "group": "Timeline",
-   "what": "Weeks: switch to Fit",
-   "skip": "",
-   "median": 861.5,
-   "p95": 876.8,
-   "samples": [
-    861.5,
-    876.8,
-    858.4
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 0.7,
-    "maxMs": 841
-   },
-   "layouts": 179,
-   "recalcs": 185,
-   "heapMB": 32.8,
-   "nodes": 9516,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "tl.this",
-   "group": "Timeline",
-   "what": "Weeks: switch to This sprint",
-   "skip": "",
-   "median": 1382.5,
-   "p95": 1920.9,
-   "samples": [
-    1920.9,
-    1351.4,
-    1382.5
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 1,
-    "maxMs": 1869
-   },
-   "layouts": 240,
-   "recalcs": 249,
-   "heapMB": 19.8,
-   "nodes": 60607,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "tl.two",
-   "group": "Timeline",
-   "what": "Weeks: switch to This + next",
-   "skip": "",
-   "median": 1342.1,
-   "p95": 1477,
-   "samples": [
-    1477,
-    1313,
-    1342.1
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 0.3,
-    "maxMs": 1420
-   },
-   "layouts": 180,
-   "recalcs": 186,
-   "heapMB": 12.5,
-   "nodes": 60607,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "tl.three",
-   "group": "Timeline",
-   "what": "Weeks: switch to Next 3",
-   "skip": "",
-   "median": 831.1,
-   "p95": 886.5,
-   "samples": [
-    886.5,
-    830.6,
-    831.1
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 1,
-    "maxMs": 862
-   },
-   "layouts": 189,
-   "recalcs": 191,
-   "heapMB": 28.6,
-   "nodes": 9063,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "tl.zoomIn",
-   "group": "Timeline",
-   "what": "Weeks at Fit: zoom in one step",
-   "skip": "",
-   "median": 433.4,
-   "p95": 455.5,
-   "samples": [
-    455.5,
-    433.4,
-    405.6
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 1,
-    "maxMs": 427
-   },
-   "layouts": 249,
-   "recalcs": 254,
-   "heapMB": 26.8,
-   "nodes": 9518,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "tl.zoomOut",
-   "group": "Timeline",
-   "what": "Weeks at Fit: zoom out one step",
-   "skip": "",
-   "median": 403,
-   "p95": 448.1,
-   "samples": [
-    448.1,
-    403,
-    399.8
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 0.3,
-    "maxMs": 418
-   },
-   "layouts": 474,
-   "recalcs": 487,
-   "heapMB": 20.8,
-   "nodes": 9516,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "tl.scrollX",
-   "group": "Timeline",
-   "what": "Weeks at This + next: scroll sideways for 90 frames",
-   "skip": "",
-   "median": null,
-   "p95": null,
-   "samples": [],
-   "fps": 121.6,
-   "dropped": 0,
-   "worstFrame": 10.3,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": 254,
-   "recalcs": 275,
-   "heapMB": 20.2,
-   "nodes": 60607,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "tl.scrollY",
-   "group": "Timeline",
-   "what": "Weeks at Fit: scroll down the workstreams for 90 frames",
-   "skip": "",
-   "median": null,
-   "p95": null,
-   "samples": [],
-   "fps": 121.5,
-   "dropped": 0,
-   "worstFrame": 10.5,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": 164,
-   "recalcs": 187,
-   "heapMB": 26.2,
-   "nodes": 9516,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "tl.shelves",
-   "group": "Timeline",
-   "what": "Weeks at This + next: turn sprint shelves off and on",
-   "skip": "",
-   "median": 626.8,
-   "p95": 642.1,
-   "samples": [
-    642.1,
-    626.8,
-    602.8
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 1.3,
-    "maxMs": 592
-   },
-   "layouts": 179,
-   "recalcs": 184,
-   "heapMB": 11.7,
-   "nodes": 60209,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "days.open",
-   "group": "Days",
-   "what": "Switch the Timeline to Days",
-   "skip": "",
-   "median": 2691.8,
-   "p95": 2899.2,
-   "samples": [
-    2899.2,
-    2691.8,
-    2573
+    1758.3,
+    385.6,
+    306.9
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 1.7,
-    "maxMs": 2610
+    "maxMs": 1529
    },
-   "layouts": 21,
-   "recalcs": 24,
-   "heapMB": 32.9,
-   "nodes": 92513,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "days.scroll",
-   "group": "Days",
-   "what": "Days: scroll sideways across a quarter",
-   "skip": "",
-   "median": null,
-   "p95": null,
-   "samples": [],
-   "fps": 121.3,
-   "dropped": 0,
-   "worstFrame": 70.5,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": 116,
-   "recalcs": 120,
-   "heapMB": 21.1,
-   "nodes": 60607,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "ui.panelOpen",
-   "group": "Interactions",
-   "what": "Click an initiative to open its panel",
-   "skip": "",
-   "median": 772.3,
-   "p95": 802.1,
-   "samples": [
-    802.1,
-    772.3,
-    748.6
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 1,
-    "maxMs": 741
-   },
-   "layouts": 39,
-   "recalcs": 53,
-   "heapMB": 20.5,
-   "nodes": 62062,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "ui.panelClose",
-   "group": "Interactions",
-   "what": "Press Escape to close the panel",
-   "skip": "",
-   "median": 652.2,
-   "p95": 716.6,
-   "samples": [
-    716.6,
-    652.2,
-    615.9
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 1,
-    "maxMs": 669
-   },
-   "layouts": 75,
-   "recalcs": 102,
-   "heapMB": 17.6,
-   "nodes": 60607,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "ui.drag",
-   "group": "Interactions",
-   "what": "Drag an initiative a week later and drop it",
-   "skip": "",
-   "median": 815.2,
-   "p95": 891.8,
-   "samples": [
-    891.8,
-    815.2,
-    810
-   ],
-   "fps": null,
-   "dropped": 1,
-   "worstFrame": 838.1,
-   "longTasks": {
-    "count": 4,
-    "maxMs": 829
-   },
-   "layouts": 105,
-   "recalcs": 163,
-   "heapMB": 22.1,
-   "nodes": 60609,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "ui.find",
-   "group": "Interactions",
-   "what": "Type a word in Find (the slowest key)",
-   "skip": "",
-   "median": 15.4,
-   "p95": 20.5,
-   "samples": [
-    20.5,
-    15.1,
-    15.4
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": 23,
-   "recalcs": 37,
-   "heapMB": 34.5,
-   "nodes": 60610,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "ui.filter",
-   "group": "Interactions",
-   "what": "Filter to one person, then clear the filter",
-   "skip": "",
-   "median": 646.3,
-   "p95": 691.2,
-   "samples": [
-    691.2,
-    646.3,
-    626.6
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 1.3,
-    "maxMs": 634
-   },
-   "layouts": 19,
-   "recalcs": 30,
-   "heapMB": 32,
-   "nodes": 60891,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "ui.view",
-   "group": "Interactions",
-   "what": "Switch Timeline to List and back",
-   "skip": "",
-   "median": 966.8,
-   "p95": 1051.8,
-   "samples": [
-    1051.8,
-    966.8,
-    928.3
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 3,
-    "maxMs": 990
-   },
-   "layouts": 17,
-   "recalcs": 19,
-   "heapMB": 24.1,
-   "nodes": 176825,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "ui.undo",
-   "group": "Interactions",
-   "what": "Undo an edit (Ctrl+Z)",
-   "skip": "",
-   "median": 717.8,
-   "p95": 751.9,
-   "samples": [
-    717.8,
-    751.9,
-    692.9
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 2,
-    "maxMs": 673
-   },
-   "layouts": 20,
-   "recalcs": 27,
-   "heapMB": 42.4,
-   "nodes": 176825,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "ui.save",
-   "group": "Interactions",
-   "what": "Save an edit to the plan file",
-   "skip": "",
-   "median": 827.5,
-   "p95": 853.7,
-   "samples": [
-    853.7,
-    827.5,
-    813.1
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 2,
-    "maxMs": 659
-   },
-   "layouts": 22,
-   "recalcs": 50,
-   "heapMB": 17.8,
-   "nodes": 176547,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "page.today",
-   "group": "Pages",
-   "what": "Open Today from the Timeline",
-   "skip": "",
-   "median": 72.8,
-   "p95": 73.9,
-   "samples": [
-    73.9,
-    67.8,
-    72.8
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 3,
-    "maxMs": 842
-   },
-   "layouts": 25,
-   "recalcs": 30,
-   "heapMB": 21.8,
-   "nodes": 177143,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "page.sprint",
-   "group": "Pages",
-   "what": "Open Sprint from the Timeline",
-   "skip": "",
-   "median": 126.5,
-   "p95": 141.8,
-   "samples": [
-    118.2,
-    126.5,
-    141.8
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 2.7,
-    "maxMs": 852
-   },
-   "layouts": 25,
-   "recalcs": 28,
-   "heapMB": 32,
-   "nodes": 178523,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "page.cards",
-   "group": "Pages",
-   "what": "Open Cards from the Timeline",
-   "skip": "not in this version",
-   "median": null,
-   "p95": null,
-   "samples": [],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": null,
-   "recalcs": null,
-   "heapMB": null,
-   "nodes": null,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "page.list",
-   "group": "Pages",
-   "what": "Open List from the Timeline",
-   "skip": "",
-   "median": 1046.3,
-   "p95": 1061.8,
-   "samples": [
-    1061.8,
-    1046.3,
-    1020.4
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 3.7,
-    "maxMs": 925
-   },
-   "layouts": 25,
-   "recalcs": 28,
-   "heapMB": 37.3,
-   "nodes": 178523,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "page.roadmap",
-   "group": "Pages",
-   "what": "Open Roadmap from the Timeline",
-   "skip": "",
-   "median": 66.3,
-   "p95": 77.5,
-   "samples": [
-    77.5,
-    65.1,
-    66.3
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 3,
-    "maxMs": 858
-   },
-   "layouts": 25,
-   "recalcs": 28,
-   "heapMB": 33.4,
-   "nodes": 178732,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 1,
-   "id": "page.capacity",
-   "group": "Pages",
-   "what": "Open Capacity from the Timeline",
-   "skip": "",
-   "median": 159.4,
-   "p95": 169.2,
-   "samples": [
-    169.2,
-    159.4,
-    154.6
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 2.7,
-    "maxMs": 834
-   },
-   "layouts": 25,
-   "recalcs": 30,
-   "heapMB": 44,
-   "nodes": 188931,
+   "layouts": 54,
+   "recalcs": 80,
+   "heapMB": 28.8,
+   "nodes": 60338,
    "notes": ""
   },
   {
    "size": "L",
    "cpu": 4,
-   "id": "load.open",
-   "group": "Load",
-   "what": "Open the plan file and the Jira folder, to the first drawn Timeline",
+   "id": "ui.drag",
+   "group": "Interactions",
+   "what": "Drag an initiative a week later and drop it",
    "skip": "",
-   "median": 4421.2,
-   "p95": 4441.4,
+   "median": 2509.3,
+   "p95": 2616.1,
    "samples": [
-    4441.4,
-    4421.2,
-    4280.5
+    2509.3,
+    2427.1,
+    2616.1
    ],
    "fps": null,
-   "dropped": null,
-   "worstFrame": null,
+   "dropped": 5,
+   "worstFrame": 2484.5,
    "longTasks": {
     "count": 6,
-    "maxMs": 3005
+    "maxMs": 2482
    },
-   "layouts": 34,
-   "recalcs": 44,
-   "heapMB": 22.5,
-   "nodes": 60209,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "jira.apply",
-   "group": "Jira",
-   "what": "A new Jira sync arrives and is drawn",
-   "skip": "",
-   "median": 3024.4,
-   "p95": 3045.2,
-   "samples": [
-    3024.4,
-    3045.2,
-    3011.4
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 2,
-    "maxMs": 2842
-   },
-   "layouts": 15,
-   "recalcs": 23,
-   "heapMB": 40.5,
-   "nodes": 60607,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.fit",
-   "group": "Timeline",
-   "what": "Weeks: switch to Fit",
-   "skip": "",
-   "median": 3684.6,
-   "p95": 3805.9,
-   "samples": [
-    3684.6,
-    3805.9,
-    3661.1
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 1.7,
-    "maxMs": 3651
-   },
-   "layouts": 182,
-   "recalcs": 188,
-   "heapMB": 14.4,
-   "nodes": 9516,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.this",
-   "group": "Timeline",
-   "what": "Weeks: switch to This sprint",
-   "skip": "",
-   "median": 5776.3,
-   "p95": 5792.7,
-   "samples": [
-    5792.7,
-    5776.3,
-    5717.4
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 1.7,
-    "maxMs": 5580
-   },
-   "layouts": 240,
-   "recalcs": 250,
-   "heapMB": 14.6,
-   "nodes": 60607,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.two",
-   "group": "Timeline",
-   "what": "Weeks: switch to This + next",
-   "skip": "",
-   "median": 5802,
-   "p95": 5838.8,
-   "samples": [
-    5802,
-    5838.8,
-    5505.8
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 3,
-    "maxMs": 5627
-   },
-   "layouts": 183,
-   "recalcs": 187,
-   "heapMB": 14.9,
-   "nodes": 60209,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.three",
-   "group": "Timeline",
-   "what": "Weeks: switch to Next 3",
-   "skip": "",
-   "median": 3456.8,
-   "p95": 3614.4,
-   "samples": [
-    3456.8,
-    3614.4,
-    3396.3
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 1.7,
-    "maxMs": 3540
-   },
-   "layouts": 188,
-   "recalcs": 202,
-   "heapMB": 11,
-   "nodes": 9063,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.zoomIn",
-   "group": "Timeline",
-   "what": "Weeks at Fit: zoom in one step",
-   "skip": "",
-   "median": 1772.6,
-   "p95": 1863.9,
-   "samples": [
-    1772.6,
-    1863.9,
-    1771.6
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 1.3,
-    "maxMs": 1774
-   },
-   "layouts": 252,
-   "recalcs": 263,
-   "heapMB": 11.1,
-   "nodes": 9518,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.zoomOut",
-   "group": "Timeline",
-   "what": "Weeks at Fit: zoom out one step",
-   "skip": "",
-   "median": 1812.8,
-   "p95": 1909.2,
-   "samples": [
-    1755.6,
-    1909.2,
-    1812.8
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 2,
-    "maxMs": 1774
-   },
-   "layouts": 475,
-   "recalcs": 488,
-   "heapMB": 11.2,
-   "nodes": 9516,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.scrollX",
-   "group": "Timeline",
-   "what": "Weeks at This + next: scroll sideways for 90 frames",
-   "skip": "",
-   "median": null,
-   "p95": null,
-   "samples": [],
-   "fps": 82.3,
-   "dropped": 6,
-   "worstFrame": 105.8,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": 255,
-   "recalcs": 258,
-   "heapMB": 17.5,
-   "nodes": 60209,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.scrollY",
-   "group": "Timeline",
-   "what": "Weeks at Fit: scroll down the workstreams for 90 frames",
-   "skip": "",
-   "median": null,
-   "p95": null,
-   "samples": [],
-   "fps": 116.6,
-   "dropped": 1,
-   "worstFrame": 36.3,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": 167,
-   "recalcs": 181,
-   "heapMB": 11.3,
-   "nodes": 9516,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.shelves",
-   "group": "Timeline",
-   "what": "Weeks at This + next: turn sprint shelves off and on",
-   "skip": "",
-   "median": 2658.6,
-   "p95": 2713.9,
-   "samples": [
-    2644.4,
-    2658.6,
-    2713.9
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 4,
-    "maxMs": 2487
-   },
-   "layouts": 181,
-   "recalcs": 190,
-   "heapMB": 26.7,
-   "nodes": 60607,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "days.open",
-   "group": "Days",
-   "what": "Switch the Timeline to Days",
-   "skip": "",
-   "median": 11513.3,
-   "p95": 11523,
-   "samples": [
-    11513.3,
-    11492.5,
-    11523
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 4,
-    "maxMs": 11170
-   },
-   "layouts": 23,
-   "recalcs": 26,
-   "heapMB": 30.7,
-   "nodes": 92513,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "days.scroll",
-   "group": "Days",
-   "what": "Days: scroll sideways across a quarter",
-   "skip": "",
-   "median": null,
-   "p95": null,
-   "samples": [],
-   "fps": 29,
-   "dropped": 85,
-   "worstFrame": 205,
-   "longTasks": {
-    "count": 0,
-    "maxMs": 0
-   },
-   "layouts": 118,
-   "recalcs": 122,
-   "heapMB": 19.6,
-   "nodes": 60607,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "ui.panelOpen",
-   "group": "Interactions",
-   "what": "Click an initiative to open its panel",
-   "skip": "",
-   "median": 3058.2,
-   "p95": 3161.9,
-   "samples": [
-    3058.2,
-    3008.9,
-    3161.9
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 2,
-    "maxMs": 3042
-   },
-   "layouts": 39,
-   "recalcs": 47,
-   "heapMB": 12.6,
-   "nodes": 62062,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "ui.panelClose",
-   "group": "Interactions",
-   "what": "Press Escape to close the panel",
-   "skip": "",
-   "median": 2789.8,
-   "p95": 2874.1,
-   "samples": [
-    2736.9,
-    2874.1,
-    2789.8
-   ],
-   "fps": null,
-   "dropped": null,
-   "worstFrame": null,
-   "longTasks": {
-    "count": 2,
-    "maxMs": 2663
-   },
-   "layouts": 77,
-   "recalcs": 114,
-   "heapMB": 17.9,
-   "nodes": 60607,
-   "notes": ""
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "ui.drag",
-   "group": "Interactions",
-   "what": "Drag an initiative a week later and drop it",
-   "skip": "",
-   "median": 3308.5,
-   "p95": 3423.8,
-   "samples": [
-    3308.5,
-    3423.8,
-    3305.4
-   ],
-   "fps": null,
-   "dropped": 6,
-   "worstFrame": 3232.2,
-   "longTasks": {
-    "count": 5.7,
-    "maxMs": 3210
-   },
-   "layouts": 108,
+   "layouts": 100,
    "recalcs": 167,
-   "heapMB": 31.2,
-   "nodes": 60609,
+   "heapMB": 38.9,
+   "nodes": 60340,
    "notes": ""
   },
   {
@@ -4227,11 +4227,11 @@
    "what": "Type a word in Find (the slowest key)",
    "skip": "",
    "median": 50.9,
-   "p95": 58.9,
+   "p95": 54.4,
    "samples": [
-    58.9,
+    45.5,
     50.9,
-    44.6
+    54.4
    ],
    "fps": null,
    "dropped": null,
@@ -4240,10 +4240,10 @@
     "count": 0,
     "maxMs": 0
    },
-   "layouts": 23,
-   "recalcs": 30,
-   "heapMB": 33.5,
-   "nodes": 60610,
+   "layouts": 25,
+   "recalcs": 36,
+   "heapMB": 31.8,
+   "nodes": 60341,
    "notes": ""
   },
   {
@@ -4253,24 +4253,24 @@
    "group": "Interactions",
    "what": "Filter to one person, then clear the filter",
    "skip": "",
-   "median": 2743.9,
-   "p95": 2842.4,
+   "median": 1805.7,
+   "p95": 1855.5,
    "samples": [
-    2842.4,
-    2743.9,
-    2700.6
+    1855.5,
+    1787.4,
+    1805.7
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 2.7,
-    "maxMs": 2638
+    "count": 2,
+    "maxMs": 1638
    },
-   "layouts": 22,
-   "recalcs": 25,
-   "heapMB": 30.7,
-   "nodes": 60891,
+   "layouts": 19,
+   "recalcs": 23,
+   "heapMB": 31.5,
+   "nodes": 60622,
    "notes": ""
   },
   {
@@ -4280,24 +4280,24 @@
    "group": "Interactions",
    "what": "Switch Timeline to List and back",
    "skip": "",
-   "median": 3970.8,
-   "p95": 4069.5,
+   "median": 2867.7,
+   "p95": 2902.2,
    "samples": [
-    3970.8,
-    4069.5,
-    3775.6
+    2859.6,
+    2867.7,
+    2902.2
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 4.7,
-    "maxMs": 3819
+    "count": 4.3,
+    "maxMs": 2568
    },
-   "layouts": 19,
-   "recalcs": 22,
-   "heapMB": 32.7,
-   "nodes": 176825,
+   "layouts": 20,
+   "recalcs": 31,
+   "heapMB": 43.2,
+   "nodes": 175716,
    "notes": ""
   },
   {
@@ -4307,24 +4307,24 @@
    "group": "Interactions",
    "what": "Undo an edit (Ctrl+Z)",
    "skip": "",
-   "median": 2934.7,
-   "p95": 3143.6,
+   "median": 1942.1,
+   "p95": 2241.4,
    "samples": [
-    2934.7,
-    64.4,
-    3143.6
+    1942.1,
+    1922,
+    2241.4
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 2.3,
-    "maxMs": 2861
+    "count": 2,
+    "maxMs": 1957
    },
-   "layouts": 16,
-   "recalcs": 30,
-   "heapMB": 24.1,
-   "nodes": 176825,
+   "layouts": 21,
+   "recalcs": 28,
+   "heapMB": 49.6,
+   "nodes": 175716,
    "notes": ""
   },
   {
@@ -4334,24 +4334,24 @@
    "group": "Interactions",
    "what": "Save an edit to the plan file",
    "skip": "",
-   "median": 3563.6,
-   "p95": 3573.4,
+   "median": 2460.3,
+   "p95": 2596.2,
    "samples": [
-    3563.6,
-    3558,
-    3573.4
+    2596.2,
+    2423.9,
+    2460.3
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 4,
-    "maxMs": 2919
+    "count": 3.3,
+    "maxMs": 2047
    },
-   "layouts": 24,
-   "recalcs": 39,
-   "heapMB": 35,
-   "nodes": 176547,
+   "layouts": 16,
+   "recalcs": 32,
+   "heapMB": 40.1,
+   "nodes": 175318,
    "notes": ""
   },
   {
@@ -4361,24 +4361,24 @@
    "group": "Pages",
    "what": "Open Today from the Timeline",
    "skip": "",
-   "median": 308,
-   "p95": 350.3,
+   "median": 279.4,
+   "p95": 280,
    "samples": [
-    350.3,
-    308,
-    296
+    276.8,
+    279.4,
+    280
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 3.3,
-    "maxMs": 3695
+    "count": 3,
+    "maxMs": 2467
    },
-   "layouts": 26,
-   "recalcs": 40,
-   "heapMB": 32.3,
-   "nodes": 177143,
+   "layouts": 25,
+   "recalcs": 30,
+   "heapMB": 38.3,
+   "nodes": 175901,
    "notes": ""
   },
   {
@@ -4388,24 +4388,24 @@
    "group": "Pages",
    "what": "Open Sprint from the Timeline",
    "skip": "",
-   "median": 551.4,
-   "p95": 573.6,
+   "median": 469,
+   "p95": 535.4,
    "samples": [
-    573.6,
-    551.4,
-    508.6
+    535.4,
+    444.4,
+    469
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 3.7,
-    "maxMs": 3555
+    "maxMs": 2415
    },
-   "layouts": 26,
-   "recalcs": 40,
-   "heapMB": 30.8,
-   "nodes": 178522,
+   "layouts": 27,
+   "recalcs": 30,
+   "heapMB": 22.5,
+   "nodes": 176940,
    "notes": ""
   },
   {
@@ -4438,24 +4438,24 @@
    "group": "Pages",
    "what": "Open List from the Timeline",
    "skip": "",
-   "median": 4550.4,
-   "p95": 4579.5,
+   "median": 4195.9,
+   "p95": 4397.3,
    "samples": [
-    4550.4,
-    4290.6,
-    4579.5
+    4195.9,
+    4178.2,
+    4397.3
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 6,
-    "maxMs": 3927
+    "count": 5.3,
+    "maxMs": 3753
    },
-   "layouts": 28,
-   "recalcs": 39,
-   "heapMB": 33.4,
-   "nodes": 178522,
+   "layouts": 26,
+   "recalcs": 29,
+   "heapMB": 29.7,
+   "nodes": 176940,
    "notes": ""
   },
   {
@@ -4465,24 +4465,24 @@
    "group": "Pages",
    "what": "Open Roadmap from the Timeline",
    "skip": "",
-   "median": 280.9,
-   "p95": 318.3,
+   "median": 336.1,
+   "p95": 339.2,
    "samples": [
-    280.9,
-    318.3,
-    265.8
+    336.1,
+    243.9,
+    339.2
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
     "count": 4.3,
-    "maxMs": 3734
+    "maxMs": 2421
    },
    "layouts": 27,
-   "recalcs": 32,
-   "heapMB": 33,
-   "nodes": 178335,
+   "recalcs": 33,
+   "heapMB": 16.8,
+   "nodes": 177150,
    "notes": ""
   },
   {
@@ -4492,300 +4492,26 @@
    "group": "Pages",
    "what": "Open Capacity from the Timeline",
    "skip": "",
-   "median": 658.2,
-   "p95": 673,
+   "median": 598.9,
+   "p95": 656.2,
    "samples": [
-    673,
-    639.1,
-    658.2
+    598.9,
+    656.2,
+    592.3
    ],
    "fps": null,
    "dropped": null,
    "worstFrame": null,
    "longTasks": {
-    "count": 5,
-    "maxMs": 3547
+    "count": 4,
+    "maxMs": 2416
    },
-   "layouts": 27,
-   "recalcs": 39,
-   "heapMB": 24.9,
-   "nodes": 188931,
+   "layouts": 25,
+   "recalcs": 30,
+   "heapMB": 37.3,
+   "nodes": 186075,
    "notes": ""
   }
  ],
- "flags": [
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "jira.apply",
-   "fail": true,
-   "text": "M 4x jira.apply: 763ms, budget 500ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "tl.fit",
-   "fail": true,
-   "text": "M 4x tl.fit: 794.9ms, budget 200ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "tl.this",
-   "fail": true,
-   "text": "M 4x tl.this: 1411ms, budget 200ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "tl.two",
-   "fail": true,
-   "text": "M 4x tl.two: 1376.3ms, budget 200ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "tl.three",
-   "fail": true,
-   "text": "M 4x tl.three: 701ms, budget 200ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "tl.zoomIn",
-   "fail": true,
-   "text": "M 4x tl.zoomIn: 365ms, budget 200ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "tl.zoomOut",
-   "fail": true,
-   "text": "M 4x tl.zoomOut: 366.1ms, budget 200ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "tl.shelves",
-   "fail": true,
-   "text": "M 4x tl.shelves: 697.9ms, budget 200ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "days.open",
-   "fail": true,
-   "text": "M 4x days.open: 1503.7ms, budget 500ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "ui.panelOpen",
-   "fail": true,
-   "text": "M 4x ui.panelOpen: 878.4ms, budget 100ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "ui.panelClose",
-   "fail": true,
-   "text": "M 4x ui.panelClose: 700.6ms, budget 100ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "ui.drag",
-   "fail": true,
-   "text": "M 4x ui.drag: 839.3ms, budget 100ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "ui.filter",
-   "fail": true,
-   "text": "M 4x ui.filter: 656.4ms, budget 100ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "ui.view",
-   "fail": true,
-   "text": "M 4x ui.view: 1000.1ms, budget 300ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "ui.undo",
-   "fail": true,
-   "text": "M 4x ui.undo: 767.2ms, budget 100ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "ui.save",
-   "fail": true,
-   "text": "M 4x ui.save: 939.9ms, budget 300ms"
-  },
-  {
-   "size": "M",
-   "cpu": 4,
-   "id": "page.list",
-   "fail": true,
-   "text": "M 4x page.list: 1237.5ms, budget 300ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "load.open",
-   "fail": true,
-   "text": "L 4x load.open: 4421.2ms, budget 1500ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "jira.apply",
-   "fail": true,
-   "text": "L 4x jira.apply: 3024.4ms, budget 500ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.fit",
-   "fail": true,
-   "text": "L 4x tl.fit: 3684.6ms, budget 200ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.this",
-   "fail": true,
-   "text": "L 4x tl.this: 5776.3ms, budget 200ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.two",
-   "fail": true,
-   "text": "L 4x tl.two: 5802ms, budget 200ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.three",
-   "fail": true,
-   "text": "L 4x tl.three: 3456.8ms, budget 200ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.zoomIn",
-   "fail": true,
-   "text": "L 4x tl.zoomIn: 1772.6ms, budget 200ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.zoomOut",
-   "fail": true,
-   "text": "L 4x tl.zoomOut: 1812.8ms, budget 200ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "tl.shelves",
-   "fail": true,
-   "text": "L 4x tl.shelves: 2658.6ms, budget 200ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "days.open",
-   "fail": true,
-   "text": "L 4x days.open: 11513.3ms, budget 500ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "days.scroll",
-   "fail": true,
-   "text": "L 4x days.scroll: 29fps, budget 50fps"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "ui.panelOpen",
-   "fail": true,
-   "text": "L 4x ui.panelOpen: 3058.2ms, budget 100ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "ui.panelClose",
-   "fail": true,
-   "text": "L 4x ui.panelClose: 2789.8ms, budget 100ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "ui.drag",
-   "fail": true,
-   "text": "L 4x ui.drag: 3308.5ms, budget 100ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "ui.filter",
-   "fail": true,
-   "text": "L 4x ui.filter: 2743.9ms, budget 100ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "ui.view",
-   "fail": true,
-   "text": "L 4x ui.view: 3970.8ms, budget 300ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "ui.undo",
-   "fail": true,
-   "text": "L 4x ui.undo: 2934.7ms, budget 100ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "ui.save",
-   "fail": true,
-   "text": "L 4x ui.save: 3563.6ms, budget 300ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "page.today",
-   "fail": true,
-   "text": "L 4x page.today: 308ms, budget 300ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "page.sprint",
-   "fail": true,
-   "text": "L 4x page.sprint: 551.4ms, budget 300ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "page.list",
-   "fail": true,
-   "text": "L 4x page.list: 4550.4ms, budget 300ms"
-  },
-  {
-   "size": "L",
-   "cpu": 4,
-   "id": "page.capacity",
-   "fail": true,
-   "text": "L 4x page.capacity: 658.2ms, budget 300ms"
-  }
- ]
+ "flags": []
 }
