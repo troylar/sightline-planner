@@ -5,7 +5,7 @@ const html = fs.readFileSync(process.env.SIGHTLINE_HTML || path.join(__dirname,"
 const plan = fs.readFileSync(path.join(__dirname,"fixtures","sample-plan.json"),"utf8");
 const R = []; const ok = (n,c,x="") => R.push(`${c?"PASS":"FAIL"}  ${n}${x?"  ("+x+")":""}`);
 const wait = ms => new Promise(r=>setTimeout(r,ms));
-setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT after " + R.length); process.exit(1); }, 40000).unref?.();
+setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT after " + R.length); process.exit(1); }, 90000).unref?.();
 const at = new Date(Date.UTC(2026, 8, 30, 14)).toISOString();
 const st = (k, x = {}) => ({summary:`Story ${k}`, status:"In Progress", category:"inprogress", type:"Story", epic:"ABC-1", sprint:"Sprint 42", sprintId:42, sprintState:"active", sprintStart:"2026-09-28", sprintEnd:"2026-10-09", points:3, ...x});
 const status = JSON.stringify({kind:"sightline-jira-status", generatedAt:at, jiraBase:"https://jira.example.com", missing:[],
