@@ -9,6 +9,24 @@ or use Sightline's Send button for this route.
 The optional [company endpoint companion](#talk-to-your-company-endpoint) is an advanced alternative below.
 Check [build availability](availability.md) before using version-specific instructions.
 
+## Analyze with any assistant
+
+To ask questions about the plan, without changing it, any assistant will do: GitHub Copilot, ChatGPT, Claude,
+Gemini or your company's own. Open **Connect assistant**, then **Analyze with any assistant** (since 1.130.0):
+
+- **Copy analysis instructions** copies read-only instructions that name each Sightline file, what it holds, who owns
+  which facts (Jira owns its issues, the team owns what it added) and how to read dates, estimates and coverage.
+  Paste them, then ask your question. Use this when the assistant can read your files.
+- **Copy instructions with data** adds the plan's data to the same paste: the file **Export for your assistant**
+  writes, with notes left out. Use this when the assistant can't read files, such as a chat window. It puts team
+  information on your clipboard, so paste it only into an assistant your team is allowed to use.
+- **Download AGENTS.md** saves the same instructions as a file. Put it in the folder with your plan and exported
+  files. Copilot in VS Code, Codex and other coding assistants read `AGENTS.md` from the folder you open, so you can
+  just ask. The file holds the plan's title and the rules, never the plan itself, so it's safe in a shared folder.
+
+For example: *"What's late or at risk, and why? Cite the ids."* or *"Who has the most work in the next sprint?"*
+The instructions are read-only. To have an assistant propose changes, use the private folder below.
+
 ## Use an external assistant
 
 Choose **Connect assistant** in the toolbar (or **Changes** when proposals are waiting), then choose **Connect your assistant**. In Edge or Chrome, select a private folder that your local assistant can read and write. Keep the team plan in OneDrive if needed. Use a separate private assistant folder for each person, device and plan, with one active Sightline tab writing to it. Sightline remembers the connection in this browser; a later visit may require **Reconnect**.
