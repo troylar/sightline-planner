@@ -5847,7 +5847,30 @@ function dayCols(){
 function remember(){ const a = document.activeElement; if (!a || !a.dataset) return null; return a.dataset.key || (a.id && a.closest("#side") ? "#" + a.id : null); }
 function restore(key){ if (!key) return; const el = key[0] === "#" ? document.getElementById(key.slice(1)) : document.querySelector(`[data-key="${CSS.escape(key)}"]`); if (el && !el.disabled) el.focus({preventScroll:true}); }
 const dropJiraMemos = () => { noteMemo = null; fitMemo = null; storyMemo = null; countMemo = new Map(); epicListMemo = null; layerMemo = null; hideMemo = null; kindsMemo = null; tagMemo = null; seenMemo = null; };   // after any change to the plan, Jira data or the day
-function render(){
+// Selecting an item, or closing its panel, keeps the chart on screen when nothing it shows has changed since it was drawn:
+// the highlight moves to the elements tagged data-sel and the rest of the page draws as usual. Anything else draws in full:
+// another page or zoom, an edit, Jira, a new day or width, a kind of item not listed here, an item that isn't drawn yet, or
+// a shelf tile whose shelf is open only because its tile was selected.
+const KEEP_SEL = ["bar", "task", "story", "ms"];
+let chartAt = null, chartSel = null, chartW = 0;   // what the chart on screen was drawn from, the selection it shows, its width
+const chartState = () => ({ui:JSON.stringify(UI), S, JIRA, past:past.length, future:future.length, today:todayDay(), ed:editable(), present, locked,
+  vw:window.innerWidth, g:$("#gantt")?.firstChild || null});      // no layout reads: this runs after every draw
+const selEls = s => s ? [...$("#gantt").querySelectorAll(`[data-sel="${CSS.escape(s.type + ":" + s.id)}"]`)] : [];
+function chartKeeps(){
+  if (!chartAt || UI.ws !== "timeline" || ![chartSel, sel].every(x=>!x || KEEP_SEL.includes(x.type))) return false;
+  const now = chartState(); if (Object.keys(now).some(k=>now[k] !== chartAt[k]) || ($("#gscroll")?.clientWidth || 1100) !== chartW) return false;
+  if (sel && !selEls(sel).length) return false;
+  return ![...selEls(chartSel), ...selEls(sel)].some(el=>el.classList.contains("shtile") && !shelfOpen(el.closest(".shelfrow")?.dataset.shelf));
+}
+function reselect(){
+  const was = selEls(chartSel), now = selEls(sel);
+  was.forEach(el=>el.classList.remove("selected")); now.forEach(el=>el.classList.add("selected"));
+  $("#gantt").querySelectorAll(".linked").forEach(el=>el.classList.remove("linked"));     // decorateLinks marks the new item's links
+  new Set([...was, ...now].map(el=>el.closest(".shelf")).filter(Boolean)).forEach(g=>{      // a shelf's one tab stop, as shelfGroup sets it
+    const tl = g.querySelectorAll(".shtile"); tl.forEach(t=>t.setAttribute("tabindex", "-1")); (g.querySelector(".shtile.selected") || tl[0])?.setAttribute("tabindex", "0"); });
+}
+function render(keepChart){
+  const kept = keepChart === true && chartKeeps();
   cancelDerived();
   closePeek(); dropJiraMemos(); surfMemo = null;
   markVisit(); recordJiraSeen();
@@ -5862,10 +5885,11 @@ function render(){
   $("#zWeeks").setAttribute("aria-pressed", UI.zoom !== "days"); $("#zDays").setAttribute("aria-pressed", UI.zoom === "days");
   if (UI.ws === "timeline"){
     // a redraw keeps where you'd scrolled to: the chart empties while it's drawn, and the browser moves a short page to the top
-    const gsc = $("#gscroll"), keep = gsc ? {x:gsc.scrollLeft, y:gsc.scrollTop, z:UI.zoom, n:zoomN()} : null, pageY = window.scrollY;
-    UI.zoom === "days" ? (renderDays(), fadeDayLanes()) : renderGantt();
-    if (keep && keep.z === UI.zoom && keep.n === zoomN()){ if (keep.x) gsc.scrollLeft = keep.x; if (gsc.scrollTop !== keep.y) gsc.scrollTop = keep.y; }
-    if (window.scrollY !== pageY) window.scrollTo(window.scrollX, pageY);
+    if (kept) reselect(); else {
+      const gsc = $("#gscroll"), keep = gsc ? {x:gsc.scrollLeft, y:gsc.scrollTop, z:UI.zoom, n:zoomN()} : null, pageY = window.scrollY;
+      UI.zoom === "days" ? (renderDays(), fadeDayLanes()) : renderGantt();
+      if (keep && keep.z === UI.zoom && keep.n === zoomN()){ if (keep.x) gsc.scrollLeft = keep.x; if (gsc.scrollTop !== keep.y) gsc.scrollTop = keep.y; }
+      if (window.scrollY !== pageY) window.scrollTo(window.scrollX, pageY); }
     snapFit(); snapSprint(); watchPager(); applyLaneScreen(); setTimeout(()=>{ if (UI.ws === "timeline") updatePager(); }, 0);
   }
   setTimeout(fitSide, 0);
@@ -5879,6 +5903,7 @@ function render(){
   applyReadonly(); if (UI.ws === "timeline") decorateLinks(); restore(key);
   syncNav();
   assistantScheduleExport();
+  chartAt = UI.ws === "timeline" ? chartState() : null; chartSel = sel && {type:sel.type, id:sel.id};
 }
 // The parked note can be turned off per plan, until the number parked changes (so a newly parked one is still said).
 const PARKED_NOTE = "sightline-parked-note";
@@ -6392,7 +6417,7 @@ function weekItemEl(it, style, id, canDrag){
   const b = it.b, lane = S.lanes.find(l=>l.id===b.lane) || {color:"#5c6878"}, fg = textOn(lane.color);
   if (it.type === "bar"){
     const st = effStatus(b), selected = sel && sel.type==="bar" && sel.id===b.id, shared = own(b).length > 1;
-    const el = h("div",{class:["bar", b.kind, "st-"+st, isLate(b)?"late":"", selected?"selected":"", sideOf(b, "bar")].join(" "), role:"button", tabindex:"0", "data-key":"bar:"+b.id+":"+(id ?? "none"), "aria-label":describeBar(b).replace(/\n/g,". "), "data-peek-type":"bar", "data-peek-id":b.id, "data-person":id ?? "none",
+    const el = h("div",{"data-sel":"bar:"+b.id,class:["bar", b.kind, "st-"+st, isLate(b)?"late":"", selected?"selected":"", sideOf(b, "bar")].join(" "), role:"button", tabindex:"0", "data-key":"bar:"+b.id+":"+(id ?? "none"), "aria-label":describeBar(b).replace(/\n/g,". "), "data-peek-type":"bar", "data-peek-id":b.id, "data-person":id ?? "none",
       style:Object.assign(style, barPaint(b, lane, fg))},
       canDrag ? h("span",{class:"h l","data-edge":"l","aria-hidden":"true"}) : null, keyChip(b, "bar"), h("span",{class:"nm"}, (st==="done" ? "✓ " : "") + chartLabel(b)),
       h("span",{class:"tags"}, shared ? h("span",{class:"tag soft",title:ownerNames(b).join(", ")}, `+${own(b).length-1}`) : null, isLate(b) ? h("span",{class:"tag bad"},"late") : null),
@@ -6404,7 +6429,7 @@ function weekItemEl(it, style, id, canDrag){
     return el;
   } else if (it.type === "story"){
     const x = it.x, late = x.e < todayDay() && x.status !== "done";
-    const el = h("div",{class:["bar","taskbar","story","jlock","jira","st-" + x.status, late ? "late" : "", sel && sel.type === "story" && sel.id === x.key ? "selected" : ""].join(" "), role:"button", tabindex:"0", "data-key":"story:"+x.key+":"+(id ?? "none"),
+    const el = h("div",{"data-sel":"story:"+x.key,class:["bar","taskbar","story","jlock","jira","st-" + x.status, late ? "late" : "", sel && sel.type === "story" && sel.id === x.key ? "selected" : ""].join(" "), role:"button", tabindex:"0", "data-key":"story:"+x.key+":"+(id ?? "none"),
       "aria-label":`${x.key}: ${x.j.summary || x.key}. In ${chartLabel(b)}. ${fmtDay(it.s)} to ${fmtDay(it.e)}. From Jira`, "data-peek-type":"story", "data-peek-id":x.key, style:Object.assign(style, jiraPaint(lane))},
       h("span",{class:"jkey"}, x.key), h("span",{class:"nm"}, (x.status==="done" ? "✓ " : "") + (x.j.summary || x.key)), canDrag ? h("span",{class:"tags"}, h("span",{class:"tag soft"}, chartLabel(b).slice(0,22))) : null);
     el.addEventListener("click", ()=>select("story", x.key));
@@ -6413,7 +6438,7 @@ function weekItemEl(it, style, id, canDrag){
   } else {
     const t = it.t, selected = sel && sel.type==="task" && sel.id===t.id, late = taskLate(t, HS());
     const tj = sideOf(t, "task") === "jira";
-    const el = h("div",{class:["bar","taskbar","st-"+t.status, late?"late":"", selected?"selected":"", tj ? "jira" : "plan"].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id+":"+(id ?? "none"),
+    const el = h("div",{"data-sel":"task:"+t.id,class:["bar","taskbar","st-"+t.status, late?"late":"", selected?"selected":"", tj ? "jira" : "plan"].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id+":"+(id ?? "none"),
       "aria-label":`${taskTitle(t)}. In ${chartLabel(b)}. ${fmtDay(it.s)} to ${fmtDay(it.e)}`, "data-peek-type":"task", "data-peek-id":t.id, style:Object.assign(style, tj ? jiraPaint(lane) : {backgroundColor:lane.color, color:fg})},
       keyChip(t, "task"), h("span",{class:"nm"}, (t.status==="done" ? "✓ " : "") + taskTitle(t)), noteBadge(noteKeysOf(t, "task")), canDrag ? h("span",{class:"tags"}, h("span",{class:"tag soft"}, chartLabel(b).slice(0,22))) : null);
     el.addEventListener("click", ()=>select("task", t.id));
@@ -6481,7 +6506,7 @@ function dayItemEl(it, style, id, canDrag){
   if (it.type === "task"){
     const t = it.t, late = taskLate(t, HS()), selected = sel && sel.type==="task" && sel.id===t.id;
     const title = [taskTitle(t), `In: ${chartLabel(b)}`, `${fmtDay(it.s)} → ${fmtDay(it.e)} · ${t.days} working day${t.days===1?"":"s"}`, canDrag ? "Drag sideways to move, or onto another person to reassign" : "From the plan; open it to change it"].join("\n");
-    const el = h("div",{class:["tbar","st-"+t.status, late?"late":"", selected?"selected":""].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id+":"+(id ?? "none"), "aria-label":title.replace(/\n/g,". "), "data-peek-type":"task", "data-peek-id":t.id, style},
+    const el = h("div",{"data-sel":"task:"+t.id,class:["tbar","st-"+t.status, late?"late":"", selected?"selected":""].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id+":"+(id ?? "none"), "aria-label":title.replace(/\n/g,". "), "data-peek-type":"task", "data-peek-id":t.id, style},
       canDrag ? h("span",{class:"h l","data-edge":"l","aria-hidden":"true"}) : keyChip(t, "task"), h("span",{class:"nm"}, (t.status==="done" ? "✓ " : "") + taskTitle(t)),
       h("span",{class:"tags"}, late ? h("span",{class:"tag bad"},"late") : null, canDrag ? h("span",{class:"tag"}, chartLabel(b).slice(0,18)) : null),
       canDrag ? h("span",{class:"h r","data-edge":"r","aria-hidden":"true"}) : null);
@@ -6492,7 +6517,7 @@ function dayItemEl(it, style, id, canDrag){
   } else if (it.type === "story"){
     const x = it.x, late = x.e < todayDay() && x.status !== "done", selected = sel && sel.type === "story" && sel.id === x.key;
     const title = [`${x.key}: ${x.j.summary || x.key}`, `In: ${chartLabel(b)}`, `${x.j.sprint || "Sprint"} (${fmtDay(it.s)} → ${fmtDay(it.e)})`, "Status: " + x.label + (late ? " (late)" : ""), "From Jira; change it there"].join("\n");
-    const el = h("div",{class:["tbar story jlock jira","st-" + x.status, late ? "late" : "", selected ? "selected" : ""].join(" "), role:"button", tabindex:"0", "data-key":"story:"+x.key+":"+(id ?? "none"), "aria-label":title.replace(/\n/g,". "), "data-peek-type":"story", "data-peek-id":x.key,
+    const el = h("div",{"data-sel":"story:"+x.key,class:["tbar story jlock jira","st-" + x.status, late ? "late" : "", selected ? "selected" : ""].join(" "), role:"button", tabindex:"0", "data-key":"story:"+x.key+":"+(id ?? "none"), "aria-label":title.replace(/\n/g,". "), "data-peek-type":"story", "data-peek-id":x.key,
       style:Object.assign(style, jiraPaint(lane))},
       h("span",{class:"jkey"}, x.key), h("span",{class:"nm"}, (x.status === "done" ? "✓ " : "") + (x.j.summary || x.key)),
       h("span",{class:"tags"}, late ? h("span",{class:"tag bad"},"late") : null, canDrag ? h("span",{class:"tag"}, chartLabel(b).slice(0,18)) : null));
@@ -6500,7 +6525,7 @@ function dayItemEl(it, style, id, canDrag){
     el.addEventListener("keydown", e=>{ if (e.key==="Enter" || e.key===" "){ e.preventDefault(); select("story", x.key); } });
     return el;
   } else {
-    const el = h("div",{class:"tbar init" + (sel && sel.type==="bar" && sel.id===b.id ? " selected" : ""), role:"button", tabindex:"0", "aria-label":describeBar(b).replace(/\n/g,". "), "data-peek-type":"bar", "data-peek-id":b.id, style},
+    const el = h("div",{"data-sel":"bar:"+b.id,class:"tbar init" + (sel && sel.type==="bar" && sel.id===b.id ? " selected" : ""), role:"button", tabindex:"0", "aria-label":describeBar(b).replace(/\n/g,". "), "data-peek-type":"bar", "data-peek-id":b.id, style},
       h("span",{class:"nm"}, chartLabel(b)));
     el.addEventListener("click", ()=>select("bar", b.id));
     el.addEventListener("keydown", e=>{ if (e.key==="Enter" || e.key===" "){ e.preventDefault(); select("bar", b.id); } });
@@ -8259,7 +8284,7 @@ function glide(g, was){ glideLast = 0; if (!was || calmMotion()) return; const o
   glideLast = moved.length; }
 let WPX = 40;                                                    // pixels per week on the Weeks chart as last drawn
 function renderGantt(){
-  const W = S.meta.weeks, g = $("#gantt"), gw = $("#gscroll")?.clientWidth || 1100;   // measure before emptying the chart
+  const W = S.meta.weeks, g = $("#gantt"), gw = chartW = $("#gscroll")?.clientWidth || 1100;   // measure before emptying the chart
   const was = glideSnap(g);
   g.replaceChildren(); g.style.minWidth = ""; g.style.setProperty("--lw", UI.labelW.weeks + "px");
   { const zw = zoomWeeks(), avail = Math.max(300, gw - UI.labelW.weeks - 2), on = zw > 0 && zw < W;
@@ -8447,7 +8472,7 @@ function renderGantt(){
     bars.forEach(b=>{
       const probs = depProblems(b), tight = probs.length ? [] : depTight(b), late = isLate(b), s = slipBar(b), st = effStatus(b), r = rollupOf(b), out = tasksOutside(b), nk = kidsOf(b.id).length, open = !UI.collapsed[b.id];
       const selected = sel && sel.type==="bar" && sel.id===b.id;
-      const el = h("div",{class:["bar", b.kind, "st-"+st, late?"late":"", selected?"selected":"", sideOf(b, "bar")].join(" "),
+      const el = h("div",{"data-sel":"bar:"+b.id,class:["bar", b.kind, "st-"+st, late?"late":"", selected?"selected":"", sideOf(b, "bar")].join(" "),
         role:"button", tabindex:"0", "data-key":"bar:"+b.id, "aria-label":describeBar(b).replace(/\n/g,". "), "data-peek-type":"bar", "data-peek-id":b.id,
         style:Object.assign({left:`calc(${b.start/W*100}% + 2px)`,width:`calc(${(Math.min(W, visEndW(b)) - b.start)/W*100}% - 4px)`,top:(8+bp.pos.get(b.id)*30)+"px"}, barPaint(b, lane, fg))},
         derived(b) ? null : h("span",{class:"h l","data-edge":"l","aria-hidden":"true"}),
@@ -8482,7 +8507,7 @@ function renderGantt(){
     flags.forEach(f=>{
       const m = S.milestones.find(x=>x.id===f.mid);
       const s = f.stretch ? null : slipMs(m);
-      const el = h("div",{class:`flag ${f.kind}${sel&&sel.type==="ms"&&sel.id===f.mid?" selected":""}${fp.clip.has(f.id)?" clip":""}`, role:"button", tabindex:"0", "data-key":"ms:"+f.id,
+      const el = h("div",{"data-sel":"ms:"+f.mid,class:`flag ${f.kind}${sel&&sel.type==="ms"&&sel.id===f.mid?" selected":""}${fp.clip.has(f.id)?" clip":""}`, role:"button", tabindex:"0", "data-key":"ms:"+f.id,
         "aria-label": `Milestone: ${f.label}, ${fmtDay(atToDay(f.at))}` + (s?`, moved ${fmtW(s)} from baseline`:""), "data-peek-type":"ms", "data-peek-id":f.mid,
         style:{left:`${f.at/W*100}%`,top:(8+barRows*30+fp.pos.get(f.id)*22)+"px","--c":lane.color,color:f.stretch?"":labelOn(lane.color),
           ...(fp.clip.has(f.id) ? {maxWidth:Math.max(f.minPx, (fp.clip.get(f.id) - f.at) * WPX - 4) + "px"} : {})}},
@@ -8523,7 +8548,7 @@ function shelfBar(s){
 }
 function shelfTile(t){
   const pp = t.who ? personById(t.who) : null, nm = pp ? pp.name : t.whoName, w = tileWidth(t.pts), spot = UI.spot && t.who === UI.spot;
-  return h("div",{class:`shtile ${t.st}${t.blk ? " shblk" : ""}${t.pts > SHELF_CAP ? " shbig" : ""}${spot ? " me" : ""}${t.sel ? " selected" : ""}`, role:"button", tabindex:"-1", "data-key":t.dk, "data-peek-type":t.pt, "data-peek-id":t.pid,
+  return h("div",{"data-sel":t.pt+":"+t.pid,class:`shtile ${t.st}${t.blk ? " shblk" : ""}${t.pts > SHELF_CAP ? " shbig" : ""}${spot ? " me" : ""}${t.sel ? " selected" : ""}`, role:"button", tabindex:"-1", "data-key":t.dk, "data-peek-type":t.pt, "data-peek-id":t.pid,
     style:w ? {width:w + "px"} : {}, "aria-label":`${t.key}: ${t.title}. ${t.label || SHELF_ST[t.st]}${t.label && t.label !== SHELF_ST[t.st] ? ` (${SHELF_ST[t.st].toLowerCase()})` : ""}${t.blk ? ", blocked in the plan" : ""}. ${t.pts == null ? "Not estimated" : fmtPts(t.pts) + (t.pts === 1 ? " point" : " points")}. ${nm || "Unassigned"}.` + (t.grp ? ` In ${chartLabel(t.grp)}.` : ""),
     onclick:t.open, onkeydown:e=>{ if (e.key === "Enter" || e.key === " "){ e.preventDefault(); t.open(); } }},
     h("span",{class:"tt"}, t.title),
@@ -9162,7 +9187,7 @@ function renderLoad(){
 let DV = null;   // current day-view geometry
 const initials = who => people(who).map(p=>{ const w = p.split(/\s+/).filter(Boolean); return w.length > 1 ? (w[0][0] + w[w.length-1][0]).toUpperCase() : p.slice(0,2); }).join(" ");
 function renderDays(){
-  const g = $("#gantt"), gw = $("#gscroll")?.clientWidth || 1100;   // measure before emptying the chart
+  const g = $("#gantt"), gw = chartW = $("#gscroll")?.clientWidth || 1100;   // measure before emptying the chart
   g.replaceChildren();
   const hs = HS(), cols = dayCols(), N = cols.length, idx = new Map(cols.map((d,i)=>[d,i])), today = todayDay();
   const colOf = d => { if (d <= cols[0]) return 0; if (d >= cols[N-1]) return N-1; let k = 0; while (!idx.has(d) && k++ < 7) d++; return idx.get(d) ?? N-1; };
@@ -9225,7 +9250,7 @@ function renderDays(){
       ondblclick: addKey ? e=>{ if (e.target.closest(".flag,.insbtn")) return; ak === "gates" ? createAt("gate", null, dayFromEvent(e)) : ak === "meetings" ? createAt("meeting", aid || null, dayFromEvent(e)) : ak === "note" ? createAt("note", aid, dayFromEvent(e)) : createAt("milestone", aid, dayFromEvent(e)); } : null});
     shades.forEach(([k,i])=>track.append(h("div",{class:"colshade "+k,style:{left:`${i/N*100}%`,width:`${100/N}%`}})));
     sprintStarts.forEach(i=>track.append(h("div",{class:"sprintline",style:{left:`${i/N*100}%`}})));
-    vis1.forEach(x=>track.append(h("button",{class:"flag " + x.cls,type:"button","aria-label":x.title.replace(/\n/g,". "),"data-peek-type":x.peek?.[0] || null,"data-peek-id":x.peek?.[1] || null,style:{left:`calc(${(colOf(x.day)+0.5)/N*100}% + 5px)`,top:(5+mp.pos.get(x.key)*22)+"px","--c":x.color,color:/stretch|gate|meet/.test(x.cls)?"":labelOn(x.color)},onpointerdown:x.drop ? e=>markerDrag(e, x.drop, x.quick) : null,onclick:e=>{ if (dragJustEnded) return; x.click(e); }}, x.text, x.peek && x.peek[0] !== "note" && !/stretch/.test(x.cls) ? noteBadge(({ms:"ms",gate:"gate",meeting:"meeting"})[x.peek[0]] + ":" + x.peek[1]) : null)));
+    vis1.forEach(x=>track.append(h("button",{class:"flag " + x.cls,type:"button","aria-label":x.title.replace(/\n/g,". "),"data-sel":x.sel || null,"data-peek-type":x.peek?.[0] || null,"data-peek-id":x.peek?.[1] || null,style:{left:`calc(${(colOf(x.day)+0.5)/N*100}% + 5px)`,top:(5+mp.pos.get(x.key)*22)+"px","--c":x.color,color:/stretch|gate|meet/.test(x.cls)?"":labelOn(x.color)},onpointerdown:x.drop ? e=>markerDrag(e, x.drop, x.quick) : null,onclick:e=>{ if (dragJustEnded) return; x.click(e); }}, x.text, x.peek && x.peek[0] !== "note" && !/stretch/.test(x.cls) ? noteBadge(({ms:"ms",gate:"gate",meeting:"meeting"})[x.peek[0]] + ":" + x.peek[1]) : null)));
     g.append(h("div",{class:"lane markrow" + (onRow ? " "+onRow : "")}, labelCell, track));
     return true;
   };
@@ -9337,7 +9362,7 @@ function renderDays(){
     { const ms = [];
       S.milestones.filter(m=>m.lane===lane.id && msVisible(m) && (!UI.filter.people.length || bars.length)).forEach(m=>{
         const t = [m.what || "Milestone", m.dep ? "Depends on: " + m.dep : "", labelMismatch(m,false) ? "⚠ " + labelMismatch(m,false) : ""].filter(Boolean);
-        if (m.at != null) ms.push({peek:["ms", m.id], key:m.id, day:atToDay(m.at), text:msDateText(m,false) + " " + m.what, cls:m.status + (sel&&sel.type==="ms"&&sel.id===m.id?" selected":""), color:lane.color, title:[`${fmtDay(atToDay(m.at))}`, ...t].join("\n"), click:()=>select("ms", m.id), drop:day=>moveMilestone(m.id, day, false)});
+        if (m.at != null) ms.push({peek:["ms", m.id], sel:"ms:" + m.id, key:m.id, day:atToDay(m.at), text:msDateText(m,false) + " " + m.what, cls:m.status + (sel&&sel.type==="ms"&&sel.id===m.id?" selected":""), color:lane.color, title:[`${fmtDay(atToDay(m.at))}`, ...t].join("\n"), click:()=>select("ms", m.id), drop:day=>moveMilestone(m.id, day, false)});
         if (m.stretchAt != null) ms.push({peek:["ms", m.id], key:m.id+"~s", day:atToDay(m.stretchAt), text:"stretch " + msDateText(m,true), cls:"stretch", color:lane.color, title:`Stretch: ${fmtDay(atToDay(m.stretchAt))}\n${m.what}`, click:()=>select("ms", m.id), drop:day=>moveMilestone(m.id, day, true)});
       });
       { const dn = S.notes.filter(n=>n.lane===lane.id && !noteOn(n) && noteShown(n)).map(n=>({key:"n:"+n.id, day:isoToDay(n.date), text:noteSnippet(n), cls:"notechip" + (sel&&sel.type==="note"&&sel.id===n.id ? " selected" : ""), color:noteColor(n), title:`Note by ${n.author ? personName(n.author) : "someone"}: ${n.text}`, peek:["note", n.id], click:()=>select("note", n.id), drop:day=>moveNote(n.id, day), quick:true}));
@@ -9377,7 +9402,7 @@ function renderDays(){
         const t = x.t, late = taskLate(t,hs), sl = slipTask(t), selected = sel && sel.type==="task" && sel.id===t.id;
         const title = [taskTitle(t), `${fmtDay(x.s)} → ${fmtDay(x.e)} · ${t.days} working day${t.days===1?"":"s"}`, own(t).length ? "Owner: " + ownerNames(t).join(", ") : "", t.jira ? "Jira: "+t.jira : "", "Status: " + STATUSES.find(z=>z[0]===t.status)[1] + (late?" (late)":""), sl ? `Baseline: end moved ${fmtD(sl)}` : ""].filter(Boolean).join("\n");
         const tj = sideOf(t, "task") === "jira";
-        const el = h("div",{class:["tbar","st-"+t.status, late?"late":"", selected?"selected":"", tj ? "jira" : "plan"].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id, "aria-label":title.replace(/\n/g,". "), "data-peek-type":"task", "data-peek-id":t.id,
+        const el = h("div",{"data-sel":"task:"+t.id,class:["tbar","st-"+t.status, late?"late":"", selected?"selected":"", tj ? "jira" : "plan"].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id, "aria-label":title.replace(/\n/g,". "), "data-peek-type":"task", "data-peek-id":t.id,
           style:Object.assign(pos(x.s, x.e), {top:(22 + tp.pos.get(t.id)*28)+"px"}, tj ? jiraPaint(lane) : {backgroundColor:lane.color, color:fg})},
           h("span",{class:"h l","data-edge":"l","aria-hidden":"true"}),
           keyChip(t, "task"),
@@ -9390,7 +9415,7 @@ function renderDays(){
         el.addEventListener("click", ()=>{ if (!dragJustEnded) select("task", t.id); });
         if (x.out){ el.classList.add("narrow"); el.querySelector(".nm").textContent = t.status==="done" ? "✓" : ""; }
         track.append(el);
-        if (x.out) track.append(h("button",{class:"tlabel" + (selected ? " selected" : ""),type:"button",tabindex:"-1","data-peek-type":"task","data-peek-id":t.id,
+        if (x.out) track.append(h("button",{"data-sel":"task:"+t.id,class:"tlabel" + (selected ? " selected" : ""),type:"button",tabindex:"-1","data-peek-type":"task","data-peek-id":t.id,
           style:{left:`calc(${(colOf(x.e)+1)/N*100}% + 4px)`, top:(22 + tp.pos.get(t.id)*28)+"px"},
           onclick:()=>select("task", t.id)}, keyChip(t, "task"), taskTitle(t), late ? h("span",{class:"tl-late"}," · late") : null));
       });
@@ -9400,7 +9425,7 @@ function renderDays(){
         const x = y.x, selected = sel && sel.type === "story" && sel.id === x.key, late = x.e < todayDay() && x.status !== "done", top = (22 + tp.pos.get(y.id)*28) + "px";
         const title = [`${x.key}: ${y.nm}`, `${x.j.sprint} (${fmtDay(x.when.s)} → ${fmtDay(x.when.e)})`, "Status: " + x.label + (late ? " (late)" : ""), x.j.assignee ? "Assignee: " + x.j.assignee : "", "From Jira; change it there"].filter(Boolean).join("\n");
         const who = x.owner && personById(x.owner);
-        const el = h("div",{class:["tbar story jlock jira","st-" + x.status, late ? "late" : "", selected ? "selected" : ""].join(" "), role:"button", tabindex:"0", "data-key":"story:" + x.key, "aria-label":title.replace(/\n/g, ". "), "data-peek-type":"story", "data-peek-id":x.key,
+        const el = h("div",{"data-sel":"story:"+x.key,class:["tbar story jlock jira","st-" + x.status, late ? "late" : "", selected ? "selected" : ""].join(" "), role:"button", tabindex:"0", "data-key":"story:" + x.key, "aria-label":title.replace(/\n/g, ". "), "data-peek-type":"story", "data-peek-id":x.key,
           style:Object.assign(pos(y.s, y.e), {top}, jiraPaint(lane))},
           h("span",{class:"jkey",title:"From Jira: " + x.key}, x.key), noteBadge("jira:" + x.key), propChip([x.key]),
           h("span",{class:"nm"}, (x.status === "done" ? "✓ " : "") + y.nm),
@@ -9410,7 +9435,7 @@ function renderDays(){
         el.addEventListener("keydown", e=>{ if (e.key === "Enter" || e.key === " "){ e.preventDefault(); select("story", x.key); } });
         if (y.out){ el.classList.add("narrow"); el.querySelector(".nm").textContent = x.status === "done" ? "✓" : ""; el.querySelector(".tags").remove(); }
         track.append(el);
-        if (y.out) track.append(h("button",{class:"tlabel" + (selected ? " selected" : ""),type:"button",tabindex:"-1","data-peek-type":"story","data-peek-id":x.key,
+        if (y.out) track.append(h("button",{"data-sel":"story:"+x.key,class:"tlabel" + (selected ? " selected" : ""),type:"button",tabindex:"-1","data-peek-type":"story","data-peek-id":x.key,
           style:{left:`calc(${(colOf(y.e)+1)/N*100}% + 4px)`, top}, onclick:()=>select("story", x.key)}, h("span",{class:"jkey"}, x.key), y.nm, late ? h("span",{class:"tl-late"}," · late") : null));
       });
       { const last = [...spans, ...sspans].reduce((m,x)=>Math.max(m, x.e), wkDay(b.start)-1);
@@ -9421,7 +9446,7 @@ function renderDays(){
         editable() && !focus ? h("span",{class:"grip-o",title:"Drag to reorder, or onto another initiative to put it inside",onpointerdown:e=>startOutlineDrag(e, b.id)}, "⋮⋮") : null,
         focus || compact ? h("span",{class:"caret","aria-hidden":"true"}) : h("button",{class:"caret",type:"button","aria-label":collapsed?"Expand":"Collapse","aria-expanded":String(!collapsed),onclick:()=>{ UI.collapsed[b.id] = !collapsed; saveUI(); render(); }}, collapsed ? "▸" : "▾"),
         h("div",{style:{minWidth:0}},
-          h("div",{class:"nmrow"}, h("button",{class:"nm"+(sel&&sel.type==="bar"&&sel.id===b.id?" selected":""),type:"button","data-key":"dbar:"+b.id,"data-peek-type":"bar","data-peek-id":b.id,onclick:()=>select("bar",b.id), ondblclick:()=>openInitiative(b.id)}, chartLabel(b)), noteBadge("bar:" + b.id)),
+          h("div",{class:"nmrow"}, h("button",{"data-sel":"bar:"+b.id,class:"nm"+(sel&&sel.type==="bar"&&sel.id===b.id?" selected":""),type:"button","data-key":"dbar:"+b.id,"data-peek-type":"bar","data-peek-id":b.id,onclick:()=>select("bar",b.id), ondblclick:()=>openInitiative(b.id)}, chartLabel(b)), noteBadge("bar:" + b.id)),
           compact ? null : h("small",{}, (r ? `${r.done}/${r.n} ${nk ? "items" : "tasks"} done` + (nk ? ` · ${nk} inside` : derived(b) ? " · dates from tasks" : "") : `${wkDate(b.start)} → ${endDate(b)}`) + (vs.length ? ` · ${vs.length} from Jira` : ""))));
       g.append(h("div",{class:"lane" + (compact ? " compact" : "") + (nk ? " holder" : ""),"data-orow":b.id}, label, track));
     });
@@ -9622,6 +9647,7 @@ function cancelGestures(){ if (drag) onCancel(); if (tdrag) onTaskCancel(); }
 function onDrag(e){
   if (!drag) return;
   if (!editable()){ onCancel(); return; }
+  drag.touched = true;                    // from here the item and its element may have moved, even under the threshold
   if (drag.type === "bar" && drag.p0 == null) drag.p0 = depProblems(barById(drag.id)).length;
   const W = S.meta.weeks, dw = (e.clientX - drag.x0) / drag.w * W;
   if (Math.abs(e.clientX - drag.x0) > 3) drag.moved = true;
@@ -9674,7 +9700,7 @@ function nestHover(e, b){
 }
 function detach(d){ clearTimeout(d.nestTimer); ["pointermove","pointerup","pointercancel","lostpointercapture"].forEach(ev=>d.el.removeEventListener(ev, ev==="pointermove"?onDrag:ev==="pointerup"?onUp:onCancel)); document.querySelectorAll(".lane.dragover").forEach(n=>n.classList.remove("dragover")); }
 function onUp(e){
-  const d = drag; if (!d) return; drag = null; detach(d); hideTip();
+  const d = drag; if (!d) return; drag = null; detach(d); hideTip(); let still = false;
   try {
     const over = document.elementFromPoint(e.clientX, e.clientY)?.closest(".lane[data-lane]");
     const item = d.type==="bar" ? barById(d.id) : S.milestones.find(m=>m.id===d.id);
@@ -9686,13 +9712,15 @@ function onUp(e){
       if (d.type === "bar"){ [item, ...descendantsOf(item.id)].forEach(x=>{ x.lane = to; }); item.parent = ""; } else item.lane = to; d.moved = true; }
     const overP = d.fromPerson !== undefined && d.mode==="move" ? document.elementFromPoint(e.clientX, e.clientY)?.closest(".lane[data-person]") : null;
     if (overP && overP.dataset.person !== d.fromPerson){ reassign(item, d.fromPerson, overP.dataset.person); d.moved = true; }
-    if (!d.moved){ S = JSON.parse(d.snapshot); sel = {type:d.type,id:d.id}; return; }   // a click or sub-threshold wiggle changes nothing
+    if (!d.moved){ sel = {type:d.type,id:d.id};      // a click or sub-threshold wiggle changes nothing
+      if (d.touched || !jeq(item, d.orig)){ S = JSON.parse(d.snapshot); return; }
+      still = true; dragJustEnded = true; setTimeout(()=>dragJustEnded=false,0); return; }   // a click that never moved keeps the chart, and its click event doesn't select again (a redraw here used to swallow it)
     if (d.moved && d.type==="ms"){ const st = d.mode==="stretch"; relabel(item, st, st ? d.orig.stretchAt : d.orig.at); }
     if (d.moved && d.type==="bar" && derived(item)){ const days = Math.round((item.start - d.orig.start)*7); item.start = d.orig.start; shiftBar(item, days); fitHorizonTasks(S); }
     if (d.moved){ const done = commitDragged(d.snapshot); dragJustEnded = true; setTimeout(()=>dragJustEnded=false,0);
       if (done && d.type === "bar" && fActive() && barById(d.id) && !barVisible(barById(d.id))) showToast("Moved outside this view", "Undo", ()=>undo()); }
     sel = {type:d.type,id:d.id};
-  } finally { render(); }
+  } finally { render(still); }
 }
 function onCancel(){
   const d = drag; if (!d) return; drag = null; detach(d); hideTip();
@@ -9924,7 +9952,7 @@ function addBarAt0(e,laneId){
 }
 
 // ================= side panel =================
-function select(type,id){ sel = {type,id}; if (["bar","task","ms","lane","gate","story"].includes(type) && UI.ws !== "standup" && !(UI.ws === "list" && ["bar","task","story","gate"].includes(type))) UI.ws = "timeline"; render(); }   // Standup opens the card beside the board
+function select(type,id){ sel = {type,id}; if (["bar","task","ms","lane","gate","story"].includes(type) && UI.ws !== "standup" && !(UI.ws === "list" && ["bar","task","story","gate"].includes(type))) UI.ws = "timeline"; render(true); }   // Standup opens the card beside the board
 function del(type,id){
   if (type==="lane"){ const c = laneContents(id); if (!laneEmpty(c)){ setStatus("This workstream still has work in it. End it, or move its work to another workstream, first."); return; }
     if (!commit(()=>act("workstream.del", {id}))) return; }
@@ -10492,7 +10520,7 @@ function renderSide0(){
   if (!sel) return;
   if (sel.type === "deliverable" && !dvById(sel.id)){ sel = null; return; }
   const titles = {amend:"Planning assistant", deliverable:"Deliverable", release:"Jira release", help:"How it works", bar:"Initiative", task:"Task", story:"Jira story", ms:"Milestone", lane:"Workstream", gate:"Gate", person:"Person", note:"Note", meeting:"Meeting", group:"Group", type:"Process block type", block:(()=>{ const i = sel && sel.type === "block" ? instById(sel.id) : null; return i ? i.type.name : "Process block"; })()};
-  put(h("div",{class:"sidehead"}, h("h3",{}, sideIcon(), titles[sel.type] || "Edit"), NAV_SEL.includes(sel.type) ? h("button",{type:"button",class:"linkish sidelink",id:"sideLink",title:"Copy a link that opens this, in this plan",onclick:linkHere},"Copy link") : null, h("button",{class:"x nav",type:"button","aria-label":"Close panel",title:"Close (Esc)",onclick:()=>{ sel=null; render(); }},"×")));
+  put(h("div",{class:"sidehead"}, h("h3",{}, sideIcon(), titles[sel.type] || "Edit"), NAV_SEL.includes(sel.type) ? h("button",{type:"button",class:"linkish sidelink",id:"sideLink",title:"Copy a link that opens this, in this plan",onclick:linkHere},"Copy link") : null, h("button",{class:"x nav",type:"button","aria-label":"Close panel",title:"Close (Esc)",onclick:()=>{ sel=null; render(true); }},"×")));
   if (sel.type !== "help" && !present && !editable() && file.handle && !file.holdLock) put(h("div",{class:"viewonly"}, (sel.type === "bar" || sel.type === "task") ? "Quick updates below save right away. To change anything else, click " : "View only. Click ", h("b",{},"Start editing"), (sel.type === "bar" || sel.type === "task") ? "." : " in the toolbar to make changes."));
   { const hk = {meeting:"meeting", gate:"gate", block:"process", release:"release", ms:"milestone", deliverable:"deliverable"}[sel.type];
     if (hk && ["timeline","people","list"].includes(UI.ws)) put(h("div",{class:"sidehide"}, h("button",{type:"button",class:"linkish",id:"sideHideKind",title:"Just for you, in this plan. Show everything (Shift+H) brings them back",
@@ -10694,7 +10722,7 @@ function sideBody(put){
         h("button",{class:"btn",onclick:()=>{ const id=newId("bar"); if (commit(s=>{ fitAfter(s, b.start+b.span+b.span); s.bars.push({...clone(b),id,dependsOn:[b.id],start:b.start+b.span,status:"notstarted",jira:"",tasks:[],datesFrom:"manual",chartName:""}); })) select("bar",id); }},"Add next step"),
         h("button",{class:"btn",onclick:()=>{ const id=newId("ms"); if (commit(s=>s.milestones.push({id,date:"",owners:[],stretch:"",what:"Milestone",dep:"",status:"commit",lane:b.lane,at:snap(b.start+b.span-.3),stretchAt:null}))) select("ms",id); }},"+ Milestone")),
       h("button",{class:"btn",onclick:()=>del("bar",b.id)},"Delete item"),
-      h("button",{class:"btn",onclick:()=>{sel=null;render();}},"Done"));
+      h("button",{class:"btn",onclick:()=>{sel=null;render(true);}},"Done"));
   } else if (sel.type==="story"){
     const x = storyByKey(sel.id); if (!x){ sel=null; return; }
     const j = x.j, late = x.e != null && x.e < todayDay() && x.status !== "done";
@@ -10934,7 +10962,7 @@ function sideBody(put){
       field("f-mown","Owner(s)", ownerPicker("f-mown", ()=>own(m), v=>{ m.owners = v; }, {outside:true})),
       field("f-mdep","Depends on", textIn("f-mdep", ()=>m.dep, v=>m.dep=v)),
       h("button",{class:"btn",onclick:()=>del("ms",m.id)},"Delete milestone"),
-      h("button",{class:"btn",onclick:()=>{sel=null;render();}},"Done"));
+      h("button",{class:"btn",onclick:()=>{sel=null;render(true);}},"Done"));
   } else if (sel.type==="lane"){
     const l = S.lanes.find(x=>x.id===sel.id); if (!l){ sel=null; return; }
     const idx = S.lanes.indexOf(l);
@@ -10971,7 +10999,7 @@ function sideBody(put){
             h("div",{class:"qrow"}, to, h("button",{type:"button",class:"btn",id:"f-lmove",onclick:()=>moveLaneWork(l.id, to.value)},"Move it there and remove this one"))) : null,
           empty ? h("div",{class:"lrm-opt"}, h("button",{type:"button",class:"btn",id:"f-ldel","data-armed":pendingDelete===l.id ? "1" : null,"aria-live":"polite",onclick:()=>{ if (armDelete(l.id)) del("lane",l.id); else renderSide(); }}, pendingDelete===l.id ? "Click again to delete it" : "Delete this empty workstream"))
             : h("p",{class:"hint"}, "A workstream with work in it can't be deleted yet: end it, or move its work.")); })(),
-      h("button",{class:"btn",onclick:()=>{sel=null;render();}},"Done"));
+      h("button",{class:"btn",onclick:()=>{sel=null;render(true);}},"Done"));
   }
 }
 // A workstream's id, changeable so it says what the workstream is now. One update, with one Undo; the old id is kept so
@@ -14483,7 +14511,7 @@ document.addEventListener("keydown", e=>{
   else if (e.key==="Escape" && !$("#peek").hidden){ closePeek(); }
   else if (e.key==="Escape" && !$("#notesMenu").hidden){ closeNotesMenu(true); }
   else if (e.key==="Escape" && !$("#showMenu").hidden){ closeShowMenu(true); }
-  else if (e.key==="Escape"){ if (!$("#filterPop").hidden) closeFilterPop(true); else if (!$("#viewMenu").hidden) closeViewMenu(true); else if (!addMenu.hidden) closeAddMenu(true); else if (!menu.hidden) closeMenu(true); else if (sel){ sel=null; render(); } else if (present) setPresent(false); }
+  else if (e.key==="Escape"){ if (!$("#filterPop").hidden) closeFilterPop(true); else if (!$("#viewMenu").hidden) closeViewMenu(true); else if (!addMenu.hidden) closeAddMenu(true); else if (!menu.hidden) closeMenu(true); else if (sel){ sel=null; render(true); } else if (present) setPresent(false); }
 });
 document.addEventListener("visibilitychange", ()=>{ if (document.hidden) flushPersist(); else checkSharedWhenReady(); });
 window.addEventListener("focus", checkSharedWhenReady);
