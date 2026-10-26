@@ -168,6 +168,11 @@ button.lchip{padding:2px 9px;cursor:pointer}
 .linkchips select{font-size:12px;border:1px dashed var(--rule);border-radius:999px;background:transparent;padding:1px 6px}
 .spill{position:absolute;height:26px;line-height:26px;font-size:11.5px;color:var(--ink-2);white-space:nowrap;cursor:pointer;z-index:2;font-weight:500}
 .spill:hover{color:var(--ink);text-decoration:underline}
+/* A label whose bar or marker starts left of the screen rides along the chart's left edge (pinLabels moves it). */
+.bin{display:flex;align-items:center;gap:inherit;flex:0 1 auto;min-width:0;max-width:100%}.pingone{visibility:hidden}
+.gantt .track>.flag.pinl{overflow:clip}
+.gantt .track>.flag.pinl::before{content:"‹";transform:none;width:auto;height:auto;background:none;border:0;box-shadow:none;margin:0 1px 0 0;color:var(--ink-3);font-weight:700;font-style:normal}
+@media print{.bin,.gantt .track>.flag.pinl{transform:none!important;max-width:none!important}.gantt .track>.flag.pinl::before{display:none}.pingone{visibility:visible}}
 .bar.spilled .nm,.bar.spilled .tags{display:none}
 .peek .pk-t{font-weight:600;font-size:13.5px;margin-bottom:1px}
 .peek .pk-k{display:flex;align-items:center;gap:6px;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3);font-weight:600;margin-bottom:3px}
@@ -8441,7 +8446,7 @@ function renderGantt(){
       const track = h("div",{class:"track",style:{height:(10 + Math.max(1,gp.count)*22)+"px",minHeight:"34px"},"data-add":"gates",ondblclick:e=>{ if (!e.target.closest(".flag,.insbtn")) createAt("gate", null, dayFromEvent(e)); }});
       track.append(h("div",{class:"grid",style:{backgroundImage:`repeating-linear-gradient(to right, transparent 0, transparent calc(${100/W}% - 1px), var(--rule-2) calc(${100/W}% - 1px), var(--rule-2) ${100/W}%)`}}));
       grps.forEach(x=>track.append(h("button",{type:"button","data-peek-type":x.gates.length === 1 ? "gate" : null,"data-peek-id":x.gates.length === 1 ? x.gates[0].id : null,title:x.gates.length > 1 ? x.title : null,"aria-haspopup":x.gates.length > 1 ? "menu" : null,
-        "aria-label":(x.gates.length > 1 ? `${x.gates.length} gates needed ${fmtDay(x.day)}. ` : "") + x.title.replace(/\n+/g,". "),style:{left:`${x.at/W*100}%`,top:(6+gp.pos.get(x.key)*22)+"px"},onpointerdown:x.gates.length === 1 ? e=>markerDrag(e, day=>moveGate(x.gates[0].id, day)) : null,onclick:e=>{ if (dragJustEnded) return; openGroup(x, e.currentTarget); },class:"flag gate" + (x.selected ? " selected" : "")}, x.text)));
+        "aria-label":(x.gates.length > 1 ? `${x.gates.length} gates needed ${fmtDay(x.day)}. ` : "") + x.title.replace(/\n+/g,". "),style:{left:`${x.at/W*100}%`,top:(6+gp.pos.get(x.key)*22)+"px"},onpointerdown:x.gates.length === 1 ? e=>markerDrag(e, day=>moveGate(x.gates[0].id, day)) : null,onclick:e=>{ if (dragJustEnded) return; openGroup(x, e.currentTarget); },class:"flag gate" + (x.selected ? " selected" : "")}, h("span",{class:"fl-t"}, x.text))));
       g.append(h("div",{class:"lane gaterow"}, gateLabelCell(all, gs.length, false), track));
     } }
   { const rels = (hidKind("release") ? [] : releasesInPlan()).map(r=>({r, at: dayToAt(isoToDay(r.date)), text:`${fmtDay(isoToDay(r.date))} ${r.name}`})).filter(x=>x.at >= 0 && x.at <= W);
@@ -8660,6 +8665,7 @@ function renderGantt(){
     if (NS && NS.now) g.prepend(h("div",{class:"nowband","aria-hidden":"true",style:{left:`calc(var(--lw) + (100% - var(--lw)) * ${NS.w0/W})`, width:`calc((100% - var(--lw)) * ${NS.weeks/W})`, top}}));
     if (frac >= 0 && frac <= 1) g.append(h("div",{class:"today",title:"Today",style:{left:`calc(var(--lw) + (100% - var(--lw)) * ${frac})`, top}})); }
   stickLanes(g);
+  pinBarLabels(g); pins = null; watchPins(); requestAnimationFrame(pinLabels);
   glide(g, was);
 }
 // One workstream's shelf row: a cell per sprint (borders at the sprint's own dates), its stories grouped by initiative.
@@ -9254,6 +9260,31 @@ function wirePeekOn(g){
   g.addEventListener("focusout", ()=>{ clearTimeout(peekCloseT); peekCloseT = setTimeout(()=>{ if (!peekTarget(document.activeElement)) closePeek(); }, PEEK_CLOSE_MS); });
 }
 // After layout: a truncated bar name is drawn to its right when the whole name fits before the next item.
+// A Weeks bar's contents in one box (.bin), once per draw, so pinLabels can keep the name in view without the handles.
+function pinBarLabels(g){
+  if (UI.zoom === "days") return;
+  g.querySelectorAll(".track > .bar").forEach(el=>{ if (el.querySelector(":scope > .bin")) return;
+    const kids = [...el.childNodes].filter(k=>!(k.classList && k.classList.contains("h"))); if (!kids.length) return;
+    const bin = document.createElement("span"); bin.className = "bin"; bin.append(...kids);
+    const l = el.querySelector(":scope > .h.l"); l ? l.after(bin) : el.prepend(bin); });
+}
+// A bar or a milestone, gate or stretch marker whose start is scrolled off to the left keeps its label at the chart's
+// left edge for as long as any of it is on screen, shrinking (with an ellipsis) to the part still showing, so it never
+// covers a neighbor; a marker's label shows ‹ for the marker off to the left. Positions are measured once per draw;
+// a scroll moves only transforms and widths, in one frame. Print shows labels where they start.
+let pins = null, pinRaf = 0;
+function pinLabels(){
+  const sc = $("#gscroll"), g = $("#gantt"); if (!sc || !g || UI.ws !== "timeline") return;
+  if (!pins){ const gr = g.getBoundingClientRect(), at = (el, box) => { const r = el.getBoundingClientRect(); return {el, box, x:r.left - gr.left, w:r.width, mw:el.style.maxWidth, on:false}; };
+    pins = [...g.querySelectorAll(".track > .flag")].map(el=>{ const t = el.querySelector(":scope > .fl-t"); return {...at(el, el), need:t ? el.getBoundingClientRect().width - t.getBoundingClientRect().width + 30 : 28}; }).concat([...g.querySelectorAll(".track > .bar")].map(el=>{ const b = el.querySelector(":scope > .bin"); return b ? {...at(el, b), mw:b.style.maxWidth, bar:true} : null; }).filter(Boolean)).filter(p=>p.w); }
+  const edge = sc.scrollLeft + (parseFloat(g.style.getPropertyValue("--lw")) || 0);
+  pins.forEach(p=>{ const over = edge - p.x, room = p.w - over - (p.bar ? 22 : 0), on = over > 1 && room >= (p.bar ? 16 : p.need), gone = over > 1 && !on && over < p.w;
+    if (on){ p.box.style.transform = `translateX(${over}px)`; p.box.style.maxWidth = room + "px"; if (!p.on) p.el.classList.add("pinl"); p.on = true; }
+    else if (p.on){ p.box.style.transform = ""; p.box.style.maxWidth = p.mw; p.el.classList.remove("pinl"); p.on = false; }
+    if (gone !== !!p.gone){ p.box.classList.toggle("pingone", gone); p.gone = gone; } });   // too little left to read: nothing, never a fragment
+}
+function watchPins(){ const sc = $("#gscroll"); if (!sc || sc.dataset.pins) return; sc.dataset.pins = "1";
+  sc.addEventListener("scroll", ()=>{ cancelAnimationFrame(pinRaf); pinRaf = requestAnimationFrame(pinLabels); }, {passive:true}); }
 function spillLabels(){
   const g = $("#gantt");
   g.querySelectorAll(".spill").forEach(x=>x.remove()); g.querySelectorAll(".bar.spilled").forEach(x=>x.classList.remove("spilled"));   // idempotent: several redraws may queue this
@@ -9390,7 +9421,7 @@ function renderDays(){
       ondblclick: addKey ? e=>{ if (e.target.closest(".flag,.insbtn")) return; ak === "gates" ? createAt("gate", null, dayFromEvent(e)) : ak === "meetings" ? createAt("meeting", aid || null, dayFromEvent(e)) : ak === "note" ? createAt("note", aid, dayFromEvent(e)) : createAt("milestone", aid, dayFromEvent(e)); } : null});
     shades.forEach(([k,i])=>track.append(h("div",{class:"colshade "+k,style:{left:`${i/N*100}%`,width:`${100/N}%`}})));
     sprintStarts.forEach(i=>track.append(h("div",{class:"sprintline",style:{left:`${i/N*100}%`}})));
-    vis1.forEach(x=>track.append(h("button",{class:"flag " + x.cls,type:"button","aria-label":x.title.replace(/\n/g,". "),"data-sel":x.sel || null,"data-peek-type":x.peek?.[0] || null,"data-peek-id":x.peek?.[1] || null,style:{left:`calc(${(colOf(x.day)+0.5)/N*100}% + 5px)`,top:(5+mp.pos.get(x.key)*22)+"px","--c":x.color,color:/stretch|gate|meet/.test(x.cls)?"":labelOn(x.color)},onpointerdown:x.drop ? e=>markerDrag(e, x.drop, x.quick) : null,onclick:e=>{ if (dragJustEnded) return; x.click(e); }}, x.text, x.peek && x.peek[0] !== "note" && !/stretch/.test(x.cls) ? noteBadge(({ms:"ms",gate:"gate",meeting:"meeting"})[x.peek[0]] + ":" + x.peek[1]) : null)));
+    vis1.forEach(x=>track.append(h("button",{class:"flag " + x.cls,type:"button","aria-label":x.title.replace(/\n/g,". "),"data-sel":x.sel || null,"data-peek-type":x.peek?.[0] || null,"data-peek-id":x.peek?.[1] || null,style:{left:`calc(${(colOf(x.day)+0.5)/N*100}% + 5px)`,top:(5+mp.pos.get(x.key)*22)+"px","--c":x.color,color:/stretch|gate|meet/.test(x.cls)?"":labelOn(x.color)},onpointerdown:x.drop ? e=>markerDrag(e, x.drop, x.quick) : null,onclick:e=>{ if (dragJustEnded) return; x.click(e); }}, h("span",{class:"fl-t"}, x.text), x.peek && x.peek[0] !== "note" && !/stretch/.test(x.cls) ? noteBadge(({ms:"ms",gate:"gate",meeting:"meeting"})[x.peek[0]] + ":" + x.peek[1]) : null)));
     g.append(h("div",{class:"lane markrow" + (onRow ? " "+onRow : "")}, labelCell, track));
     return true;
   };
@@ -9599,6 +9630,7 @@ function renderDays(){
       g.prepend(h("div",{class:"nowband","aria-hidden":"true",style:{left:`calc(var(--lw) + (100% - var(--lw)) * ${a/N})`, width:`calc((100% - var(--lw)) * ${(z - a + 1)/N})`, top}})); }
     if (tfrac >= 0 && tfrac <= 1) g.append(h("div",{class:"today",title:"Today",style:{left:`calc(var(--lw) + (100% - var(--lw)) * ${tfrac})`, top}})); }
   stickLanes(g);
+  pinBarLabels(g); pins = null; watchPins(); requestAnimationFrame(pinLabels);
 }
 // Drag an initiative's grip in the Days name column: above/below another row reorders, onto its middle nests, onto a lane heading makes it top level there.
 function startOutlineDrag(e, id){

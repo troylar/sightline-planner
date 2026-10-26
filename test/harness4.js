@@ -890,6 +890,8 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   }
   ev(`setZoom("weeks"); delete $("#gscroll").scrollTop; delete $("#gscroll").clientWidth; delete window.scrollY`);
   ev("sel=null; render()");
+  { const r = JSON.parse(ev(`JSON.stringify([...document.querySelectorAll("#gantt .track > .bar")].map(b=>({bin:b.querySelectorAll(":scope > .bin").length, nm:!!b.querySelector(":scope > .bin .nm"), h:[...b.querySelectorAll(".h")].every(x=>x.parentElement === b)})))`));
+    ok("PL1: every Weeks bar keeps its name in one box that can ride along the left edge, its drag handles outside it", r.length >= 1 && r.every(x=>x.bin === 1 && x.nm && x.h), r.length + " bars " + JSON.stringify(r.find(x=>!(x.bin === 1 && x.nm && x.h)))); }
   ok("no runtime errors", w.errs.length===0, w.errs.join(" | "));
   console.log(R.join("\n")); const f=R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length-f}/${R.length} passed`); process.exit(f ? 1 : 0);
 })();
