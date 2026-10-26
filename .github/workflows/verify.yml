@@ -15,5 +15,8 @@ jobs:
       - run: npm ci
       # Chromium for the layout checks in test/run.sh; the version comes from the playwright pinned in package.json.
       - run: npx playwright install --with-deps chromium
+      # Two test files at a time: the runner's CPUs are small, and four at once pushed some past their own time limits.
       - run: npm run check
+        env:
+          SIGHTLINE_JOBS: '2'
       - run: npm pack --dry-run --ignore-scripts

@@ -12,7 +12,7 @@ const dom = new JSDOM(html,{runScripts:"dangerously",pretendToBeVisual:true,url:
   w.Element.prototype.scrollIntoView=function(){}; w.CSS=w.CSS||{}; w.CSS.escape=s=>s; w.errs=[]; w.addEventListener("error",e=>w.errs.push(e.message)); }});
 const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeout(r,ms));
 const T = new Date(); const iso = n => { const x = new Date(T.getFullYear(), T.getMonth(), T.getDate() + n); return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`; };
-setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT after " + R.length); process.exit(1); }, 30000).unref?.();
+setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT after " + R.length); process.exit(1); }, 40000).unref?.();
 (async()=>{
   await wait(150);
   ev("askWhoOnStart = ()=>{}");
