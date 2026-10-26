@@ -1170,7 +1170,9 @@ body.navrail .snp{padding-left:10px}body.navrail .snsub{padding-left:10px}
 @media (prefers-reduced-motion:no-preference){
   .chatmsg.arrive{animation:chat-in var(--glide) var(--ease)}@keyframes chat-in{from{opacity:0;transform:translateY(6px)}}
 }
-.rmideas{border:1px solid var(--rule);border-radius:10px;background:var(--surface);padding:10px 14px;margin-bottom:14px}.rmideas h3{margin:0 0 2px;font-size:14px}.rmideas ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.rmideas{border:1px solid var(--rule);border-radius:10px;background:var(--surface);padding:10px 14px;margin-bottom:14px}.rmideas h3{margin:0 0 2px;font-size:14px}
+.capgroup h4{margin:10px 0 0;font-size:12.5px;display:flex;align-items:center;gap:6px}.captype{font-size:11px;font-weight:600;padding:1px 7px;border-radius:9px;background:var(--surface-2,var(--rule));color:var(--ink-2)}
+.capage{font-size:11.5px;color:var(--ink-2)}.capage.old{color:var(--warn,#b45309);font-weight:600}.capage.unknown{font-style:italic}.capbox{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--rule);padding-top:8px;margin-top:4px}.caphand{display:flex;flex-direction:column;gap:6px}.caphand select{width:100%;max-width:100%;min-width:0}.caphand input{flex:1;min-width:0}.rmideas ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
 .rmideas li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.dvidea{font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none}.ideaacts{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto}.btn.sm{padding:2px 8px;font-size:12px}
 .rmgrid{display:flex;flex-direction:column;gap:2px;overflow-x:auto}.rmrow{display:grid;grid-template-columns:170px minmax(640px,1fr);gap:8px;align-items:stretch}
 .rmlane{display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 4px;border-top:1px solid var(--rule-2)}.rmlane small{color:var(--ink-3);margin-left:auto}.rmlane .ini{width:10px;height:10px;border-radius:3px}
@@ -1707,11 +1709,15 @@ const LEGACY_KEYS = ["timeline-planner-v2","timeline-planner-v1"];
 const MAX_BYTES = 2 * 1024 * 1024, MAX_READ_BYTES = 5 * 1024 * 1024, MAX_DEPTH = 24, MAX_NODES = 60000;   // write up to 2 MB (what copies before 1.19 can open); read up to 5 MB
 // Plan format. SCHEMA changes only for a change older copies can't read; new optional parts are named in meta.features,
 // and a copy that finds one it doesn't know opens the plan read-only instead of saving over what it can't see.
-const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1", "stories1", "skills1", "aiHint1", "msStory1", "descriptions1", "laneIds1", "cardLayout1", "hideWhy1"];
+const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1", "stories1", "skills1", "aiHint1", "msStory1", "descriptions1", "laneIds1", "cardLayout1", "hideWhy1", "captures1"];
 // A deliverable's target: a year, a half or a quarter ("2027", "2027-H1", "2027-Q2"), or "later".
 const TARGET_RE = /^(\d{4})(?:-(Q[1-4]|H[12]))?$/;
 const PR_DRAFT_RE = /^\s*[\[(]?\s*(draft|wip)\s*[\])]?\s*[:\-]?\s/i;    // a draft pull request's title: "Draft: …", "[WIP] …"
-const DV_MAX = 5000, DV_MAX_KEYS = 200;                      // deliverables per plan, Jira links per deliverable (the 2 MB file limit usually comes first)
+const DV_MAX = 5000, DV_MAX_KEYS = 200;
+// Captured from meetings (vision.md, Captured requests and ideas): a capture type, who asked (a person or group already
+// in the plan), the meeting's date and what became of it. Kept apart from a deliverable's kind and stage.
+const CAPTURE_TYPES = [["idea","Idea"],["request","Request"],["gap","Process gap"],["question","Question"]];
+const validWho = v => !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length === 2 && (v.type === "person" || v.type === "group") && typeof v.id === "string" && /^[A-Za-z0-9._-]{1,60}$/.test(v.id);                      // deliverables per plan, Jira links per deliverable (the 2 MB file limit usually comes first)
 const FOLLOW_FIELDS = ["next","waitingOn","escalateBy","decider"];     // optional on decisions and risks: left out until filled in
 const COMMIT_MAX = 26, COMMIT_KEYS = 500;                    // recorded sprint commitments kept; issues each
 const REP_MAX = 26, REP_TEXT = 4000;                         // saved status updates per plan (about six months weekly); characters per section
@@ -1810,6 +1816,7 @@ const featuresIn = plan => { const f = [];
   if (((plan.meta || {}).capRates || []).length || (plan.people || []).some(p=>p && p.alloc != null)) f.push("teamCapacity");
   if ((plan.deliverables || []).length) f.push("deliverables");
   if ((plan.deliverables || []).some(d=>d && d.approved)) f.push("approvals");
+  if ((plan.deliverables || []).some(d=>d && (d.capture || d.askedBy || d.raised || d.handoff))) f.push("captures1");
   if ((plan.snapshots || []).length) f.push("snapshots");
   if ((plan.reports || []).length) f.push("reports");
   if ((plan.commitments || []).length) f.push("commitments");
@@ -2269,6 +2276,10 @@ function normalize(input, strict){
       put("release", /^[0-9]{1,18}$/.test(str(x.release)) ? str(x.release) : ""); put("lane", str(x.lane).slice(0,60));
       const ow = ppl(x.owners); if (ow.length) o.owners = ow;
       const jk = [...new Set((Array.isArray(x.jira) ? x.jira : []).map(k=>str(k).trim().toUpperCase()).filter(k=>/^[A-Z][A-Z0-9_]{0,19}-[1-9][0-9]{0,8}$/.test(k)))].slice(0, DV_MAX_KEYS); if (jk.length) o.jira = jk;
+      put("capture", CAPTURE_TYPES.some(c=>c[0] === x.capture) ? x.capture : ""); put("raised", validIso(x.raised) ? x.raised : "");      // captured from a meeting
+      const ab = x.askedBy && typeof x.askedBy === "object" ? {type:x.askedBy.type, id:x.askedBy.id} : null; if (validWho(ab)) o.askedBy = ab;
+      const ho = x.handoff && typeof x.handoff === "object" ? x.handoff : null;
+      if (ho && ho.to === "initiative" && ACT_ID.test(str(ho.id))) o.handoff = {to:"initiative", id:str(ho.id)}; else if (ho && ho.to === "jira" && JKEY.test(str(ho.key))) o.handoff = {to:"jira", key:str(ho.key)};
       put("note", str(x.note).slice(0,4000)); put("source", str(x.source).slice(0,100)); put("dropReason", str(x.dropReason).slice(0,300)); put("from", str(x.from).slice(0,60)); Object.assign(o, hintField(x.aiHint));
       if (x.approved && typeof x.approved === "object" && validStamp(x.approved.at) && /^[A-Za-z0-9_-]{0,48}$/.test(str(x.approved.by))) o.approved = {by:str(x.approved.by), at:str(x.approved.at)};
       return o; }); }
@@ -7314,6 +7325,9 @@ const ACTION_DESC = {
   "skill.remove":"Remove a skill from the team's list.",
   "meeting.set":"Change one field of a meeting.",
   "person.add":"Add a person to the team, or an outside owner such as another team.",
+  "group.add":"Add a group of people, such as a team that asks for things, with its members if known.",
+  "outcome.handoff":"Close a captured item by handing it off to an initiative or a Jira issue.",
+  "outcome.reopen":"Put a handed-off or declined captured item back on the list to triage.",
   "person.set":"Change one field of a person.",
   "person.setAlloc":"Set how much of a person's time goes to this plan.",
   "person.setSplit":"Set how a person's time is split across workstreams.",
@@ -7362,7 +7376,8 @@ const ACT_ARG = {
   iso: v => validIso(v),
   isoOrNull: v => v === null || validIso(v),
   keys: v => Array.isArray(v) && v.length <= 500 && v.every(k=>typeof k === "string" && k.length <= 40),
-  any: v => v === null || typeof v === "boolean" || ACT_ARG.num(v) || ACT_ARG.str(v) || ACT_ARG.ids(v),
+  any: v => v === null || typeof v === "boolean" || ACT_ARG.num(v) || ACT_ARG.str(v) || ACT_ARG.ids(v) || ACT_ARG.who(v),
+  who: v => v === null || validWho(v),
   weights: v => v === null || (!!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length <= 20 && Object.entries(v).every(([k, x])=>ACT_ARG.id(k) && Number.isInteger(x))),
 };
 // args: {name: "type"} or "type?" when it can be left out. prev, when an action knows its current value, is always allowed.
@@ -7643,19 +7658,27 @@ defAction("task.del", {done:(p, a)=>!actTask(p, a.id), scope:"tasks", risk:"risk
     p.bars.forEach(b=>(b.tasks||[]).forEach(t=>{ t.dependsOn = (t.dependsOn||[]).filter(x=>x !== a.id); })); if (!f.b.tasks.length) f.b.datesFrom = "manual"; return f.b.id; }});
 
 // Outcomes (deliverables). Every change settles the stage and approval the way the card does (dvSettle).
-const DV_SET = {name:120, line:300, note:4000, kind:0, lane:0, owners:0, stage:0, aiHint:HINT_MAX};
+const DV_SET = {name:120, line:300, note:4000, kind:0, lane:0, owners:0, stage:0, aiHint:HINT_MAX, capture:0, raised:0, askedBy:0};
+// Who asked is a person or a group already in the plan: an assistant adds a new one first, and that always waits for review.
+const actWho = (p, w) => w.type === "person" ? p.people.some(x=>x.id === w.id) : (p.groups || []).some(g=>g.id === w.id);
+function captureProblem(p, a){
+  if (a.capture && !CAPTURE_TYPES.some(c=>c[0] === a.capture)) return actInvalid(`Capture type is one of ${CAPTURE_TYPES.map(c=>c[0]).join(", ")}.`);
+  if (a.askedBy && !actWho(p, a.askedBy)) return actMissing(a.askedBy.type === "group" ? "group" : "person");
+  if (a.lane && !p.lanes.some(l=>l.id === a.lane)) return actMissing("workstream"); }
 const dvChange = (p, id, fn) => { const x = actDv(p, id), before = dvWords(x); if (fn(x) === NOCHANGE) return NOCHANGE; dvSettle(x, before); };
 const dvTargetOk = t => t === "later" || !!periodRange(t);
-defAction("outcome.add", {scope:"outcomes", risk:"routine", done:(p, a)=>!!a.id && (actDv(p, a.id) || {}).name === a.name.trim().slice(0, 120), args:{id:"id?", name:"str", source:"str?", target:"str?", release:"id?", date:"iso?", jira:"keys?"},
+defAction("outcome.add", {scope:"outcomes", risk:"routine", done:(p, a)=>!!a.id && (actDv(p, a.id) || {}).name === a.name.trim().slice(0, 120), args:{id:"id?", name:"str", source:"str?", target:"str?", release:"id?", date:"iso?", jira:"keys?", capture:"str?", askedBy:"who?", raised:"iso?", lane:"id?"},
   check:(p, a)=>{ if (!actFreeId(p, a.id)) return actInvalid(`${a.id} is already used.`); if (!a.name.trim()) return actInvalid("Give it a name.");
+    const cp = captureProblem(p, a); if (cp) return cp;
     if ((p.deliverables || []).length >= DV_MAX) return `A plan holds up to ${DV_MAX} deliverables. Drop or delete some first.`;
     if (a.target && !dvTargetOk(a.target)) return actInvalid("Target is a year, half or quarter (2027, 2027-H1, 2027-Q2) or later.");
     if (a.jira && a.jira.some(k=>!JKEY.test(k))) return actInvalid("That isn't a Jira key (like ABC-123).");
     if (a.jira && a.jira.length > DV_MAX_KEYS) return `A deliverable links up to ${DV_MAX_KEYS} Jira issues. Link its epics or features instead of every story.`; },
   run:(p, a)=>{ const id = a.id || newId("dv"), src = String(a.source || "").trim().slice(0, 60);
     const d = {id, name:a.name.trim().slice(0, 120), stage:"idea", source: src ? `${src}, ${fmtDay(todayDay())}` : `Added ${fmtDay(todayDay())}`,
-      ...(a.target ? {target:a.target} : {}), ...(a.release ? {release:a.release} : {}), ...(a.date ? {date:a.date} : {}), ...(a.jira ? {jira:[...new Set(a.jira)]} : {})};
-    if (d.target || d.release || d.date) d.stage = "planned";
+      ...(a.target ? {target:a.target} : {}), ...(a.release ? {release:a.release} : {}), ...(a.date ? {date:a.date} : {}), ...(a.jira ? {jira:[...new Set(a.jira)]} : {}),
+      ...(a.capture ? {capture:a.capture} : {}), ...(a.askedBy ? {askedBy:{type:a.askedBy.type, id:a.askedBy.id}} : {}), ...(a.raised ? {raised:a.raised} : {}), ...(a.lane ? {lane:a.lane} : {})};
+    if ((d.target || d.release || d.date) && !d.capture) d.stage = "planned";
     (p.deliverables = p.deliverables || []).push(d); return id; }});
 defAction("outcome.set", {scope:"outcomes", risk:"routine", args:{id:"id", field:"str", value:"any"},
   cur:(p, a)=>{ const d = actDv(p, a.id); return d && a.field in DV_SET ? clone(d[a.field] ?? "") : undefined; },
@@ -7666,14 +7689,18 @@ defAction("outcome.set", {scope:"outcomes", risk:"routine", args:{id:"id", field
     if (!(a.field in DV_SET)) return actInvalid(`A deliverable's ${a.field} can't be set this way.`);
     const v = a.value;
     if (a.field === "owners"){ if (!ACT_ARG.ids(v)) return actInvalid("Owners is a list of people."); if (!actPeople(p, v)) return actMissing("person"); return; }
+    if (a.field === "askedBy"){ if (v !== null && v !== "" && !validWho(v)) return actInvalid("Asked by is {type:'person'|'group', id}, or null."); if (v && !actWho(p, v)) return actMissing(v.type === "group" ? "group" : "person"); return; }
     if (typeof v !== "string") return actInvalid(`That isn't a valid ${a.field}.`);
+    if (a.field === "capture" && v && !CAPTURE_TYPES.some(c=>c[0] === v)) return actInvalid(`Capture type is one of ${CAPTURE_TYPES.map(c=>c[0]).join(", ")}.`);
+    if (a.field === "raised" && v && !validIso(v)) return actInvalid("Raised is a date (YYYY-MM-DD).");
     if (DV_SET[a.field] && v.length > DV_SET[a.field]) return actInvalid(`Its ${a.field} is up to ${DV_SET[a.field]} characters.`);
     if (a.field === "name" && !v.trim()) return actInvalid("It needs a name.");
     if (a.field === "kind" && v && !DV_KINDS.some(k=>k[0] === v)) return actInvalid(`Kind is one of ${DV_KINDS.map(k=>k[0]).join(", ")}.`);
     if (a.field === "lane" && v && !p.lanes.some(l=>l.id === v)) return actMissing("workstream");
     if (a.field === "stage"){ if (!["idea","planned","done"].includes(v)) return actInvalid(v === "dropped" ? "Use outcome.drop to drop it." : "Stage is idea, planned or done.");
       if (v === "planned" && !d.target && !d.release && !d.date) return "Pick a target to plan it."; } },
-  run:(p, a)=>{ const v = a.field === "owners" ? [...a.value] : a.value.trim();
+  run:(p, a)=>{ if (a.field === "askedBy"){ const x = actDv(p, a.id), v = a.value ? {type:a.value.type, id:a.value.id} : null; if (jeq(x.askedBy || null, v)) return NOCHANGE; if (v) x.askedBy = v; else delete x.askedBy; return; }
+    const v = a.field === "owners" ? [...a.value] : a.value.trim();
     if (a.field === "owners"){ const x = actDv(p, a.id); if (jeq(x.owners || [], v)) return NOCHANGE; if (v.length) x.owners = v; else delete x.owners; return; }
     return dvChange(p, a.id, x=>{ if (a.field === "stage"){ if (x.stage === v) return NOCHANGE; x.stage = v; delete x.dropReason; return; }
       if ((x[a.field] || "") === v) return NOCHANGE; if (v) x[a.field] = v; else delete x[a.field]; }); }});
@@ -7697,8 +7724,21 @@ defAction("outcome.unlinkJira", {scope:"outcomes", risk:"routine", args:{id:"id"
   check:(p, a)=>{ if (!actDv(p, a.id)) return actMissing("deliverable"); },
   run:(p, a)=>dvChange(p, a.id, x=>{ if (!(x.jira || []).includes(a.key)) return NOCHANGE; x.jira = x.jira.filter(y=>y !== a.key); if (!x.jira.length) delete x.jira; })});
 defAction("outcome.drop", {scope:"outcomes", risk:"routine", args:{id:"id", reason:"str?"},
-  check:(p, a)=>{ if (!actDv(p, a.id)) return actMissing("deliverable"); },
+  check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); if (d.capture && !String(a.reason || "").trim()) return actInvalid("Say why it's declined: whoever asked will want to know."); },
   run:(p, a)=>dvChange(p, a.id, x=>{ if (x.stage === "dropped") return NOCHANGE; x.stage = "dropped"; const why = String(a.reason || "").trim(); if (why) x.dropReason = why.slice(0, 300); })});
+// A capture handed off to an initiative or a Jira issue is closed as a capture; nothing is marked done or planned, and
+// the Jira issue stays Jira's (only its key is kept). Reopen puts it back on the triage list.
+defAction("outcome.handoff", {scope:"outcomes", risk:"routine", args:{id:"id", initiative:"id?", jira:"str?"},
+  cur:(p, a)=>{ const d = actDv(p, a.id); return d ? clone(d.handoff || null) : undefined; },
+  check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); if (!d.capture) return actInvalid("Only a captured item is handed off. Give it a capture type first.");
+    if (!!a.initiative === !!a.jira) return actInvalid("Hand it off to one initiative or one Jira issue.");
+    if (a.initiative && !actBar(p, a.initiative)) return actMissing("initiative");
+    if (a.jira && !JKEY.test(String(a.jira).trim().toUpperCase())) return actInvalid("That isn't a Jira key (like ABC-123)."); },
+  run:(p, a)=>{ const x = actDv(p, a.id), v = a.initiative ? {to:"initiative", id:a.initiative} : {to:"jira", key:String(a.jira).trim().toUpperCase()};
+    if (jeq(x.handoff || null, v)) return NOCHANGE; x.handoff = v; }});
+defAction("outcome.reopen", {scope:"outcomes", risk:"routine", args:{id:"id"},
+  check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); if (!d.handoff && d.stage !== "dropped") return actInvalid("It's open already."); },
+  run:(p, a)=>dvChange(p, a.id, x=>{ delete x.handoff; if (x.stage === "dropped"){ x.stage = "idea"; delete x.dropReason; } })});
 const dvSeen = d => { const {edited, ...r} = d; return r; };
 defAction("outcome.del", {done:(p, a)=>!actDv(p, a.id), scope:"outcomes", risk:"risky", args:{id:"id"}, stale:"Someone changed it since you opened it, so it wasn't deleted. Look at their change, then delete again if you still want to.",
   cur:(p, a)=>{ const d = actDv(p, a.id); return d ? dvSeen(d) : undefined; },
@@ -7710,7 +7750,7 @@ const actPerson = (p, id) => p.people.find(x=>x.id === id);
 const actMs = (p, id) => p.milestones.find(m=>m.id === id);
 const actGate = (p, id) => p.gates.find(g=>g.id === id);
 const actOf = (p, key, id) => (p[key] || []).find(x=>x.id === id);
-const actTaken = (p, id) => !!id && [...p.lanes, ...p.people, ...p.milestones, ...p.gates, ...(p.risks || []), ...(p.decisions || [])].some(x=>x.id === id);
+const actTaken = (p, id) => !!id && [...p.lanes, ...p.people, ...p.milestones, ...p.gates, ...(p.risks || []), ...(p.decisions || []), ...(p.groups || [])].some(x=>x.id === id);
 const actNewId = (p, a, pre) => a.id || newId(pre);
 const idCheck = (p, a) => a.id && (!actFreeId(p, a.id) || actTaken(p, a.id)) ? actInvalid(`${a.id} is already used.`) : null;
 const linkCheck = (p, a) => { const b = actBar(p, a.id), x = actBar(p, a.after); if (!b) return actMissing("initiative"); if (!x) return actMissing("initiative it starts after");
@@ -7856,7 +7896,7 @@ const skillUseText = u => [u.people.length ? `${u.people.length === 1 ? u.people
   u.tasks.length ? `${u.tasks.length} task${u.tasks.length === 1 ? "" : "s"}` : ""].filter(Boolean).join(", ");
 const skillLabelProblem = (p, label, id) => { const t = label.trim(); if (!t || t.length > SKILL_LABEL) return actInvalid(`A skill is 1 to ${SKILL_LABEL} characters.`);
   const c = skillClash(p, t, id); return c ? actInvalid(`There's already a skill called ${c.label}.`) : null; };
-defAction("skill.add", {scope:"people", risk:"routine", done:(p, a)=>!!actSkill(p, a.id) && skillKey(actSkill(p, a.id).label) === skillKey(a.label), args:{id:"id", label:"str"},
+defAction("skill.add", {scope:"people", risk:"floor", done:(p, a)=>!!actSkill(p, a.id) && skillKey(actSkill(p, a.id).label) === skillKey(a.label), args:{id:"id", label:"str"},
   check:(p, a)=>{ if (actSkill(p, a.id)) return actInvalid(`${a.id} is already used.`); if ((p.skills || []).length >= SKILL_MAX) return `A plan holds up to ${SKILL_MAX} skills.`; return skillLabelProblem(p, a.label, a.id); },
   run:(p, a)=>{ (p.skills = p.skills || []).push({id:a.id, label:a.label.trim()}); return a.id; }});
 defAction("skill.rename", {scope:"people", risk:"routine", args:{id:"id", label:"str"},
@@ -7874,12 +7914,17 @@ defAction("meeting.set", {scope:"schedule", risk:"routine", args:{id:"id", field
   run:(p, a)=>{ const m = actMeet(p, a.id), v = a.value.trim() ? a.value : ""; if ((m.note || "") === v) return NOCHANGE; m.note = v; }});
 // People
 const PERSON_SET = {name:60, role:60, initials:3, days:0, color:0}, PERSON_DATES = {from:"The day they join", leaves:"The day they leave"}, PERSON_OPT = ["skills","aiHint"];
-defAction("person.add", {scope:"people", risk:"routine", done:(p, a)=>!!a.id && (actPerson(p, a.id) || {}).name === a.name.trim(), args:{id:"id?", name:"str", role:"str?", days:"int?", outside:"any?"},
+defAction("person.add", {scope:"people", risk:"floor", done:(p, a)=>!!a.id && (actPerson(p, a.id) || {}).name === a.name.trim(), args:{id:"id?", name:"str", role:"str?", days:"int?", outside:"any?"},
   check:(p, a)=>{ const e = idCheck(p, a); if (e) return e; if (!a.name.trim() || a.name.length > 60) return actInvalid("A name is 1 to 60 characters.");
     if (p.people.length >= 200) return "A plan holds up to 200 people."; if (a.role && a.role.length > 60) return actInvalid("A role is up to 60 characters.");
     if (a.days !== undefined && (a.days < 1 || a.days > 5)) return actInvalid("Days per week are from 1 to 5."); },
   run:(p, a)=>{ const id = actNewId(p, a, "person"), pp = mkPerson(id, a.name.trim(), p.people.length, a.outside === true);
     if (a.role) pp.role = a.role.trim(); if (a.days) pp.days = a.days; p.people.push(pp); return id; }});
+// A group: a named set of people, such as a team that asks for things. Members may be none (a team outside the plan).
+defAction("group.add", {scope:"people", risk:"floor", done:(p, a)=>!!a.id && ((p.groups || []).find(g=>g.id === a.id) || {}).name === a.name.trim(), args:{id:"id?", name:"str", members:"ids?"},
+  check:(p, a)=>{ const e = idCheck(p, a); if (e) return e; if (!a.name.trim() || a.name.length > 60) return actInvalid("A name is 1 to 60 characters.");
+    if ((p.groups || []).length >= 200) return "A plan holds up to 200 groups."; if (a.members && !actPeople(p, a.members)) return actMissing("person"); },
+  run:(p, a)=>{ const id = actNewId(p, a, "group"); (p.groups = p.groups || []).push({id, name:a.name.trim(), members:[...new Set(a.members || [])]}); return id; }});
 defAction("person.set", {scope:"people", risk:"routine", args:{id:"id", field:"str", value:"any"},
   cur:(p, a)=>{ const x = actPerson(p, a.id); return x && PERSON_OPT.includes(a.field) ? optCur(x, a.field) : x && (a.field in PERSON_SET || a.field in PERSON_DATES) ? x[a.field] ?? "" : undefined; },
   check:(p, a)=>{ const x = actPerson(p, a.id); if (!x) return actMissing("person");
@@ -10821,7 +10866,7 @@ function renderSide0(){
   const put = (...k) => side.append(...k.flat(Infinity).filter(x => x != null && x !== false));
   if (!sel) return;
   if (sel.type === "deliverable" && !dvById(sel.id)){ sel = null; return; }
-  const titles = {amend:"Planning assistant", deliverable:"Deliverable", release:"Jira release", help:"How it works", bar:"Initiative", task:"Task", story:"Jira story", ms:"Milestone", lane:"Workstream", gate:"Gate", person:"Person", note:"Note", meeting:"Meeting", group:"Group", type:"Process block type", block:(()=>{ const i = sel && sel.type === "block" ? instById(sel.id) : null; return i ? i.type.name : "Process block"; })()};
+  const titles = {amend:"Planning assistant", deliverable:(()=>{ const d = sel && sel.type === "deliverable" ? dvById(sel.id) : null; return d && d.capture ? "Captured " + capType(d).toLowerCase() : "Deliverable"; })(), release:"Jira release", help:"How it works", bar:"Initiative", task:"Task", story:"Jira story", ms:"Milestone", lane:"Workstream", gate:"Gate", person:"Person", note:"Note", meeting:"Meeting", group:"Group", type:"Process block type", block:(()=>{ const i = sel && sel.type === "block" ? instById(sel.id) : null; return i ? i.type.name : "Process block"; })()};
   put(h("div",{class:"sidehead"}, h("h3",{}, sideIcon(), titles[sel.type] || "Edit"), NAV_SEL.includes(sel.type) ? h("button",{type:"button",class:"linkish sidelink",id:"sideLink",title:"Copy a link that opens this, in this plan",onclick:linkHere},"Copy link") : null, h("button",{class:"x nav",type:"button","aria-label":"Close panel",title:"Close (Esc)",onclick:()=>{ sel=null; render(true); }},"×")));
   if (sel.type !== "help" && !present && !editable() && file.handle && !file.holdLock) put(h("div",{class:"viewonly"}, (sel.type === "bar" || sel.type === "task") ? "Quick updates below save right away. To change anything else, click " : "View only. Click ", h("b",{},"Start editing"), (sel.type === "bar" || sel.type === "task") ? "." : " in the toolbar to make changes."));
   { const hk = {meeting:"meeting", gate:"gate", block:"process", release:"release", ms:"milestone", deliverable:"deliverable"}[sel.type];
@@ -10854,12 +10899,12 @@ function renderSide0(){
       txt("f-dvname", "What we'll ship", "name", 120, "e.g. Make onboarding effortless"),
       txt("f-dvline", "For customers (release-note wording)", "line", 300, "One sentence a customer would understand", true),
       h("div",{class:"row2"},
-        field("f-dvkind","Kind", h("select",{id:"f-dvkind",disabled:!can,onchange:e=>{ const v = e.target.value; dvSave(`${d.name}: kind`, s=>act("outcome.set", {id:d.id, field:"kind", value:v}, s)); }}, h("option",{value:""},"Not set"), ...DV_KINDS.map(([v, l])=>h("option",{value:v, selected:d.kind === v}, l)))),
+        capOpen(d) ? null : field("f-dvkind","Kind", h("select",{id:"f-dvkind",disabled:!can,onchange:e=>{ const v = e.target.value; dvSave(`${d.name}: kind`, s=>act("outcome.set", {id:d.id, field:"kind", value:v}, s)); }}, h("option",{value:""},"Not set"), ...DV_KINDS.map(([v, l])=>h("option",{value:v, selected:d.kind === v}, l)))),
         field("f-dvstage","Stage", h("select",{id:"f-dvstage",disabled:!can,onchange:e=>{ const v = e.target.value; if (v === "dropped"){ e.target.value = d.stage; dropDv(d.id); return; }
           dvSave(`${d.name}: ${v}`, s=>act("outcome.set", {id:d.id, field:"stage", value:v}, s)); }},
           ...DV_STAGES.map(([v, l])=>h("option",{value:v, selected:d.stage === v}, l))))),
       d.stage === "dropped" && d.dropReason ? h("p",{class:"hint"}, `Dropped: ${d.dropReason}`) : null,
-      field("f-dvtarget", "Target timing", h("div",{class:"qrow"}, tsel, fdate)), h("p",{class:"hint",id:"dvTimingMeaning"}, w ? `${w.prec === "release" ? "Jira release date" : w.prec === "date" ? "Planned date" : "Target window"}: ${w.label}. ` + (w.prec === "year" || w.prec === "half" ? "Broad for now; sharpen it as delivery gets closer. " : "") + "Timing describes the current plan, not a delivery guarantee." : "No target yet: it waits in Ideas to sort."),
+      field("f-dvtarget", "Target timing", h("div",{class:"qrow"}, tsel, fdate)), h("p",{class:"hint",id:"dvTimingMeaning"}, w ? `${w.prec === "release" ? "Jira release date" : w.prec === "date" ? "Planned date" : "Target window"}: ${w.label}. ` + (w.prec === "year" || w.prec === "half" ? "Broad for now; sharpen it as delivery gets closer. " : "") + "Timing describes the current plan, not a delivery guarantee." : (d.capture ? (capOpen(d) ? "No target yet: it waits in To triage." : "No target yet.") : "No target yet: it waits in Ideas to sort.")),
       field("f-dvrel", "Ships in (Jira release)", rsel), d.release && !relById(d.release) ? h("p",{class:"msg warn"}, "That release isn't in the last sync. Its date can't be shown until it's back.") : null,
       d.stage === "done" && d.release ? h("div",{class:"field",id:"f-dvapprove"}, h("span",{class:"flabel"}, "Release notes"),
         d.approved ? h("p",{class:"hint"}, `Approved by ${personOrFormer(d.approved.by)} on ${fmtDay(stampDay(d.approved.at))}: in ${(relById(d.release) || {}).name || "its release"}'s notes. Changing the name, wording or kind clears this.`, can ? [" ", h("button",{type:"button",class:"linkish",id:"f-dvunapprove",onclick:()=>approveDv(d.id, false)},"Clear")] : null)
@@ -10867,6 +10912,7 @@ function renderSide0(){
               can && d.line ? h("button",{type:"button",class:"btn",id:"f-dvapprovego",onclick:()=>approveDv(d.id, true)},"Approve for release notes") : null),
         d.release && relById(d.release) ? h("button",{type:"button",class:"linkish",onclick:()=>{ sel = {type:"release", id:d.release}; render(); }},"See the release notes") : null) : null,
       field("f-dvlane", "Workstream", h("select",{id:"f-dvlane",disabled:!can,onchange:e=>{ const v = e.target.value; dvSave(`${d.name}: workstream`, s=>act("outcome.set", {id:d.id, field:"lane", value:v}, s)); }}, h("option",{value:""},"No workstream"), ...S.lanes.map(l=>h("option",{value:l.id, selected:d.lane === l.id}, l.name)))),
+      capturePanel(d, can),
       field("f-dvown","Owner(s)", ownerPicker("f-dvown", ()=>d.owners || [], v=>{ if (v.length) d.owners = v; else delete d.owners; }, {outside:true,
         save:(next, np)=>dvSave(`${d.name}: owners`, s=>{ if (np) s.people.push(mkPerson(np.id, np.name, s.people.length, np.ext)); return act("outcome.set", {id:d.id, field:"owners", value:next}, s); })})),
       tagField(d, "deliverable"),
@@ -12923,7 +12969,7 @@ function contextGaps(){
 }
 function assistantView(){
   const J = jiraAll(), linked = new Set((S.deliverables || []).flatMap(d=>d.jira || []));
-  const pick = d => Object.fromEntries(["id","name","line","kind","stage","target","date","release","lane","owners","jira","source","aiHint"].filter(k=>d[k] != null && d[k] !== "").map(k=>[k, d[k]]));     // no notes: they aren't needed to amend, and they're free text
+  const pick = d => Object.fromEntries(["id","name","line","kind","stage","target","date","release","lane","owners","jira","source","aiHint","capture","askedBy","raised","handoff","dropReason"].filter(k=>d[k] != null && d[k] !== "").map(k=>[k, d[k]]));     // no notes: they aren't needed to amend, and they're free text
   const fields = (x,keys)=>Object.fromEntries(keys.filter(k=>x[k]!=null).map(k=>[k,clone(x[k])]));
   return assistantFitView({coverage:{context:contextGaps()}, kind:"sightline-assistant-view", version:1, appVersion:APP_VERSION, generatedAt:new Date().toISOString(), today:dayToIso(todayDay()),
     plan:{id:S.meta.planId, title:S.meta.title, revision:S.meta.revision || 0},
@@ -12964,6 +13010,7 @@ function assistantView(){
       "Workstreams: workstream.set {id, field:'note'|'color'|'from'|'until', value, prev}, workstream.move {id, index}, workstream.reid {lane, id, prev} and workstream.del {id}. workstream.reid changes a workstream's id (lane, its id now; id, the new one) and every reference with it; its old ids are in was, still accepted from files written before, and never used again. A person always reviews it. workstream.del is refused while anything still points at the workstream (it says what), and a person always reviews it; move its work first with initiative.setLane, and change person.setSplit.",
       "coverage.context counts what the plan doesn't say yet (workstreams without guidance, people without skills, open work without a story or needs, milestones in the next 12 weeks without a story). Mention the gaps that weaken a suggestion and offer to fill them; never guess to cover one.",
       "Items marked jiraLinked keep Jira's status and dates: propose those in Jira. Items marked datesFromTasks get their dates from their tasks. Moving dates can move linked items; Sightline shows that before applying.",
+      "Captured from meetings: outcome.add with capture (idea, request, gap or question), askedBy {type:'person'|'group', id} from planning.people or planning.groups, raised (the meeting's date), source (the meeting) and lane when the workstream is clear; leave lane out when it isn't. Never make someone the requester or owner because their name was mentioned. A new person or group (person.add, group.add) always waits for review: add it in the same change as the capture that needs it. A date never plans a capture. Close one with outcome.handoff {id, initiative or jira} or outcome.drop with a reason; outcome.reopen puts it back.",
       "Jira is read-only: never set Jira facts; propose them. Use only ids that appear below, or new ids you create (dv-…). Targets: a year '2027', a half '2027-H1', a quarter '2027-Q2', or 'later'.",
       "Use projectGuide to interpret scope and suggest placement, subordinate to the ownership and operation rules above. Explain placements; keep suggested extra work separate. If required owners or dates are unknown, ask rather than fabricate a scheduled task.",
       "If a request is ambiguous (for example 'Q2' without a year), ask the person before writing. Write the whole file at once.",
@@ -13921,12 +13968,19 @@ function dvSave(what, fn){ return quickSave(what, s=>{ const candidate = {...s, 
   return r; }); }
 function dvEdit(id, what, fn){ return dvSave(what, s=>{ const d = s.deliverables.find(x=>x.id === id); if (!d) return NOCHANGE; const before = dvWords(d); if (fn(d, s) === NOCHANGE) return NOCHANGE; dvSettle(d, before); }); }
 const dvById = id => (S.deliverables || []).find(d=>d.id === id);
+// Captured items: open until handed off or declined. Who asked is a person or a group; one that's gone says so.
+const capOpen = d => !!d.capture && !d.handoff && !["dropped","done","split"].includes(d.stage);
+const capType = d => (CAPTURE_TYPES.find(c=>c[0] === d.capture) || [, ""])[1];
+function capWho(w){ if (!w) return ""; if (w.type === "group"){ const g = (S.groups || []).find(x=>x.id === w.id); return g ? g.name : "a group no longer in the plan"; }
+  const pp = personById(w.id); return pp ? pp.name : "someone no longer in the plan"; }
+function capAge(d){ const t = d.added && stampDay(d.added.at); if (t == null) return {days:null, text:"added: not recorded"}; const n = Math.max(0, todayDay() - t); return {days:n, text:n === 0 ? "added today" : `open ${n} day${n === 1 ? "" : "s"}`}; }
+function capHandoffText(ho){ if (!ho) return ""; if (ho.to === "jira") return ho.key; const b = barById(ho.id); return b ? chartLabel(b) : "an initiative no longer in the plan"; }
 // After any change to a deliverable: a release's date sets its quarter; a target makes an idea Planned and no timing makes
 // a Planned one an idea again; new wording (or no longer Done) needs approving again. Card edits and amendments both use it.
 function dvSettle(x, before){
   if (x.release && !x.target){ const r = relById(x.release); if (r && r.date) x.target = quarterOf(isoToDay(r.date)); }
   const timed = !!(x.target || x.release || x.date);
-  if (x.stage === "idea" && timed) x.stage = "planned"; else if (x.stage === "planned" && !timed) x.stage = "idea";
+  if (x.stage === "idea" && timed && !x.capture) x.stage = "planned"; else if (x.stage === "planned" && !timed) x.stage = "idea";   // a capture stays an idea until someone plans it
   if (x.approved && (!before || JSON.stringify([x.name, x.line, x.kind, x.stage]) !== JSON.stringify(before))) delete x.approved; }
 const dvWords = x => [x.name, x.line, x.kind, x.stage];
 function ideaSource(){ const mine = UI.ideaFrom && typeof UI.ideaFrom === "object" ? UI.ideaFrom[S.meta.planId] : undefined; return mine || ""; }   // the last one you used, per plan: never guessed
@@ -13960,11 +14014,56 @@ function targetChoices(){ const t = dayToIso(todayDay()), y = +t.slice(0, 4), q 
   for (let yy = y; yy <= y + 3; yy++) out.push([String(yy), String(yy)]);
   out.push(["later", "Later"]); return out; }
 function dvChip(k, label, why){ return h("span",{class:"dvb dvb-" + k, title:why || label}, label); }
+// The deliverable card's capture fields: what kind of thing was raised, who asked, when, and what became of it.
+function capturePanel(d, can){
+  const set = (field, value, what) => dvSave(`${d.name}: ${what}`, s=>act("outcome.set", {id:d.id, field, value}, s));
+  const type = field("f-dvcap", "Captured as", h("select",{id:"f-dvcap",disabled:!can,onchange:e=>set("capture", e.target.value, "captured as " + (e.target.value || "nothing"))},
+    h("option",{value:""}, "Not a capture (a roadmap item)"), ...CAPTURE_TYPES.map(([v, l])=>h("option",{value:v, selected:d.capture === v}, l))));
+  if (!d.capture) return h("div",{id:"f-dvcapture"}, type);
+  const whoVal = d.askedBy ? d.askedBy.type + ":" + d.askedBy.id : "", gone = d.askedBy && capWho(d.askedBy).includes("no longer");
+  const who = h("select",{id:"f-dvasked",disabled:!can,onchange:e=>{ const v = e.target.value, i = v.indexOf(":"); set("askedBy", v ? {type:v.slice(0, i), id:v.slice(i + 1)} : null, "asked by"); }},
+    h("option",{value:""}, "Not known"), gone ? h("option",{value:whoVal, selected:true}, capWho(d.askedBy)) : null,
+    (S.groups || []).length ? h("optgroup",{label:"Groups"}, ...S.groups.map(g=>h("option",{value:"group:" + g.id, selected:whoVal === "group:" + g.id}, g.name))) : null,
+    h("optgroup",{label:"People"}, ...S.people.filter(pp=>!pp.inactive || whoVal === "person:" + pp.id).map(pp=>h("option",{value:"person:" + pp.id, selected:whoVal === "person:" + pp.id}, pp.name + (pp.external ? " (outside)" : "")))));
+  const raised = h("input",{type:"date",id:"f-dvraised","aria-label":"Raised on",value:d.raised || "",disabled:!can,onchange:e=>{ const v = e.target.value; if (v && !validIso(v)) return; set("raised", v, "raised on"); }});
+  const age = capAge(d), state = d.handoff ? `Handed off to ${capHandoffText(d.handoff)}.` : d.stage === "dropped" ? `Declined${d.dropReason ? ": " + d.dropReason : "."}` : `${age.text[0].toUpperCase()}${age.text.slice(1)}.`;
+  const bars = S.bars.filter(b=>!b.parked).slice().sort((a, b)=>chartLabel(a).localeCompare(chartLabel(b)));
+  const toBar = h("select",{id:"f-dvhobar","aria-label":"Hand off to an initiative"}, h("option",{value:""}, "An initiative…"), ...bars.map(b=>h("option",{value:b.id}, chartLabel(b))));
+  const toKey = h("input",{id:"f-dvhokey",placeholder:"or a Jira key, like ABC-123","aria-label":"Hand off to a Jira issue",maxlength:"40"});
+  const handoff = () => { const bar = toBar.value, key = toKey.value.trim().toUpperCase(); if (!bar && !key){ setStatus("Pick an initiative or type a Jira key."); return; }
+    if (bar && key){ setStatus("Pick an initiative or a Jira key, not both."); return; }
+    if (key && !JKEY.test(key)){ setStatus("That isn't a Jira key (like ABC-123)."); return; }
+    dvSave(`${d.name}: handed off`, s=>act("outcome.handoff", {id:d.id, ...(bar ? {initiative:bar} : {jira:key})}, s)); };
+  return h("div",{id:"f-dvcapture",class:"capbox"}, type,
+    h("div",{class:"row2"}, field("f-dvasked", "Asked by", who), field("f-dvraised", "Raised on", raised)),
+    h("p",{class:"hint",id:"f-dvcapstate"}, state, d.handoff && d.handoff.to === "jira" ? " Jira owns the issue; the plan keeps only its key." : ""),
+    !can ? null : d.handoff || d.stage === "dropped" ? h("div",{class:"qrow"}, h("button",{type:"button",class:"btn",id:"f-dvreopen",onclick:()=>dvSave(`${d.name}: reopened`, s=>act("outcome.reopen", {id:d.id}, s))},"Reopen"))
+      : h("div",{class:"field caphand",id:"f-dvhandoff"}, h("label",{for:"f-dvhobar"}, "Hand off to"), toBar, h("div",{class:"qrow"}, toKey, h("button",{type:"button",class:"btn",id:"f-dvhogo",onclick:handoff},"Hand off"),
+          h("button",{type:"button",class:"linkish",id:"f-dvdecline",onclick:()=>dropDv(d.id)},"Decline"))),
+    h("p",{class:"hint"}, "Handing off or declining closes it as a capture; neither marks anything planned or done."));
+}
+// Triage: open captures by workstream (Unassigned last, never hidden), oldest first, with who asked and where from.
+function triageList(can){
+  const open = (S.deliverables || []).filter(capOpen), by = new Map();
+  open.forEach(d=>{ const k = d.lane && S.lanes.some(l=>l.id === d.lane) ? d.lane : ""; if (!by.has(k)) by.set(k, []); by.get(k).push(d); });
+  const old = (a, b) => { const x = capAge(a).days, y = capAge(b).days; return x == null && y == null ? a.name.localeCompare(b.name) : x == null ? 1 : y == null ? -1 : y - x || a.name.localeCompare(b.name); };
+  const row = d => { const age = capAge(d);
+    return h("li",{"data-cap":d.id}, h("span",{class:"captype cap-" + d.capture}, capType(d)),
+      h("button",{type:"button",class:"linkish dvidea",onclick:()=>{ sel = {type:"deliverable", id:d.id}; render(); }}, d.name),
+      h("span",{class:"hint"}, [d.askedBy ? "asked by " + capWho(d.askedBy) : "asked by: not known", d.source || "", d.raised ? "raised " + fmtDay(isoToDay(d.raised)) : ""].filter(Boolean).join(" · ")),
+      h("span",{class:"capage" + (age.days == null ? " unknown" : age.days > 30 ? " old" : "")}, age.text)); };
+  const groups = [...S.lanes.filter(l=>by.has(l.id)).map(l=>[l.id, l.name, l.color]), ...(by.has("") ? [["", "Unassigned", null]] : [])];
+  const closed = (S.deliverables || []).filter(d=>d.capture && !capOpen(d)).length;
+  return h("section",{class:"rmideas rmtriage",id:"rmTriage"}, h("h3",{}, `To triage (${open.length})`, closed ? h("span",{class:"hint",id:"rmTriageClosed"}, ` · ${closed} handed off or declined, findable with Find`) : null),
+    h("p",{class:"hint"}, open.length ? "Requests, ideas, gaps and questions raised in meetings, oldest first. Open one to hand it off or decline it." : "Nothing captured is waiting. Captures from meetings show here until they're handed off or declined."),
+    ...groups.map(([id, name, color])=>h("div",{class:"capgroup","data-caplane":id || "none"}, h("h4",{}, color ? h("i",{class:"ini",style:{background:color}}, "") : null, `${name} (${by.get(id).length})`),
+      h("ul",{}, ...by.get(id).sort(old).map(row)))));
+}
 function renderRoadmap(){
   const host = $("#roadmapWs"); if (!host) return; amRestore();
   const cols = roadmapCols(), N = cols.length, can = !present && !tooNew(), OV = amOverlay(), list = (S.deliverables || []).filter(d=>d.stage !== "split");
   const show = d => (d.stage !== "done" || UI.rmDone) && (d.stage !== "dropped" || UI.rmDropped);
-  const ideas = list.filter(d=>d.stage === "idea" && !dvWhen(d)), timed = list.filter(d=>show(d) && (d.stage !== "idea" || dvWhen(d))), placed = timed.filter(d=>dvSpan(d, cols));
+  const ideas = list.filter(d=>d.stage === "idea" && !dvWhen(d) && !d.capture), timed = list.filter(d=>show(d) && (d.stage !== "idea" || dvWhen(d))), placed = timed.filter(d=>dvSpan(d, cols));
   const outside = timed.length - placed.length, outsideProposals = OV.adds.filter(d=>dvWhen(d) && !dvSpan(d, cols)).length;
   const counts = {done:list.filter(d=>d.stage === "done").length, dropped:list.filter(d=>d.stage === "dropped").length};
   const draftPlan = S.meta.planId;
@@ -14019,8 +14118,10 @@ function renderRoadmap(){
       UI.rmHorizon !== "long" ? h("label",{}, "Starting ", h("select",{id:"rmStart","aria-label":"Starting quarter (calendar year)",onchange:e=>roadmapView({rmStart:e.target.value}, "rmStart")},
         ...[...new Set([roadmapStart(), ...targetChoices().map(x=>x[0]).filter(x=>/^\d{4}-Q[1-4]$/.test(x))])].sort().map(v=>h("option",{value:v,selected:v === roadmapStart()}, periodRange(v).label)))) : null,
       can ? h("button",{type:"button",class:"btn",id:"rmAsk",onclick:()=>openPlanningAssistant(roadmapPlanningSelection())},"Plan with AI") : null,
+      h("button",{type:"button",class:"btn",id:"rmTriageBtn","aria-pressed":String(!!UI.rmTriage),onclick:()=>roadmapView({rmTriage:!UI.rmTriage}, "rmTriageBtn")}, `To triage (${(S.deliverables || []).filter(capOpen).length})`),
       h("label",{}, h("input",{type:"checkbox",id:"rmShowDone",checked:!!UI.rmDone,onchange:e=>{ UI.rmDone = e.target.checked; saveUI(); renderRoadmap(); }}), ` Show done (${counts.done})`),
       h("label",{}, h("input",{type:"checkbox",id:"rmShowDropped",checked:!!UI.rmDropped,onchange:e=>{ UI.rmDropped = e.target.checked; saveUI(); renderRoadmap(); }}), ` Show dropped (${counts.dropped})`)),
+    UI.rmTriage ? triageList(can) : null,
     outside || outsideProposals ? h("p",{class:"rmoutside",id:"rmOutside"}, [outside ? `${outside} deliverable${outside === 1 ? "" : "s"}` : "", outsideProposals ? `${outsideProposals} proposed addition${outsideProposals === 1 ? "" : "s"}` : ""].filter(Boolean).join(" and ") + " outside these quarters, including work without dated timing.",
       h("button",{type:"button",class:"linkish",id:"rmOutsideShow",onclick:()=>roadmapView({rmHorizon:"long"}, "rmLong")},"Show in long range")) : null,
     ideas.length || OV.adds.some(g=>!dvWhen(g)) ? h("section",{class:"rmideas",id:"rmIdeas"}, h("h3",{}, `Ideas to sort (${ideas.length})`), h("p",{class:"hint"}, can ? "Pick when each might ship, or drop it. Details can wait." : "Not sorted yet."),

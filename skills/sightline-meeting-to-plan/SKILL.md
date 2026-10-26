@@ -20,10 +20,11 @@ Use the notes supplied by the person; do not claim to record or transcribe a mee
 - Separate agreed changes, ideas, open questions and informational updates. Use explicit wording from the notes to distinguish a decision from a suggestion.
 - Match named work to existing stable IDs. Ask when two items plausibly match. Keep duplicate mentions as one item.
 - Draft amendments for agreed plan changes only. Capture requested vague ideas as unscheduled idea-stage outcomes. Do not turn an idea into a scheduled initiative or task with invented dates or owners.
+- Capture each request, idea, process gap or open question raised in the meeting with `outcome.add` and its `capture` type, `raised` (the meeting's date), `source` (the meeting) and `askedBy` (a person or group from `planning.people` or `planning.groups`, by ID). Set `lane` only when the workstream is clear; otherwise leave it out so it lands under Unassigned. A team that isn't in the plan yet needs `group.add` in the same change, and that change always waits for review. Keep a capture to the request in one line; never paste the transcript.
 - Preserve uncertainty and explain suggested workstream placement using projectGuide. A person being mentioned in the meeting does not establish ownership.
 - Record agreed decisions, risks, starts-after links, owners and milestones with the guide's action ops (`{op:"action", action, args}`, listed under `actions`): `decision.add`/`decision.set`, `risk.add`/`risk.set`, `link.add`/`link.remove`, `milestone.add`, `person.setAlloc`, and days off agreed in the meeting with `holiday.add`/`holiday.addRange` (everyone) or `person.timeOff.add` (one person). Give each new item your own unique id. Planning-guide edits have no operation: give a concise copy-ready draft with the UI destination, separate from the amendments.
 
-Report: agreed changes proposed; ideas captured; open decisions; unsupported items for manual entry. Keep the output brief enough to review during the meeting.
+Report: agreed changes proposed; requests, ideas, gaps and questions captured, with who asked; open decisions; unsupported items for manual entry. Keep the output brief enough to review during the meeting.
 
 ## Write proposals only when requested
 
