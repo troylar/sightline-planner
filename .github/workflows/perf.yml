@@ -1,0 +1,21 @@
+name: Performance
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  perf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: bash ./build.sh
+      # S and M on every change; L and XL run by hand (npm run perf -- --sizes L,XL). Budgets for this runner are in budgets-ci.json.
+      - run: node test/perf/run.js --sizes S,M --cpu 1 --runs 3 --budgets test/perf/budgets-ci.json --out perf-results.json --report perf-report.html
+      - if: always()
+        run: node test/perf/summary.js perf-results.json >> "$GITHUB_STEP_SUMMARY"

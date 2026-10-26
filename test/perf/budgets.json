@@ -1,0 +1,263 @@
+{
+ "about": "Proposed budgets, for review: at M and L with 4x CPU throttling, as a stand-in for a slower work machine. Responses: a direct change (open, close, drop, undo, filter, a key in Find) 100 ms; a change of view or zoom 200 ms; a page or save 300 ms; Days 500 ms; a Jira sync 500 ms; opening a plan 1.5 s. Motion: 50 frames a second. 'known' holds today's measured value for a scenario already over its budget.",
+ "budgets": {
+  "load.open": {
+   "ms": 1500,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "jira.apply": {
+   "ms": 500,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "tl.fit": {
+   "ms": 200,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "tl.this": {
+   "ms": 200,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "tl.two": {
+   "ms": 200,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "tl.three": {
+   "ms": 200,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "tl.zoomIn": {
+   "ms": 200,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "tl.zoomOut": {
+   "ms": 200,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "tl.shelves": {
+   "ms": 200,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "tl.scrollX": {
+   "fps": 50,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "tl.scrollY": {
+   "fps": 50,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "days.scroll": {
+   "fps": 50,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "days.open": {
+   "ms": 500,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "ui.panelOpen": {
+   "ms": 100,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "ui.panelClose": {
+   "ms": 100,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "ui.drag": {
+   "ms": 100,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "ui.find": {
+   "ms": 100,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "ui.filter": {
+   "ms": 100,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "ui.undo": {
+   "ms": 100,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "ui.view": {
+   "ms": 300,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "ui.save": {
+   "ms": 300,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "page.today": {
+   "ms": 300,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "page.sprint": {
+   "ms": 300,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "page.cards": {
+   "ms": 300,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "page.list": {
+   "ms": 300,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "page.roadmap": {
+   "ms": 300,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  },
+  "page.capacity": {
+   "ms": 300,
+   "sizes": [
+    "M",
+    "L"
+   ],
+   "cpu": 4
+  }
+ },
+ "known": {
+  "L/4/days.open": 11513.3,
+  "L/4/days.scroll": 29,
+  "L/4/jira.apply": 3024.4,
+  "L/4/load.open": 4421.2,
+  "L/4/page.capacity": 658.2,
+  "L/4/page.list": 4550.4,
+  "L/4/page.sprint": 551.4,
+  "L/4/page.today": 308,
+  "L/4/tl.fit": 3684.6,
+  "L/4/tl.shelves": 2658.6,
+  "L/4/tl.this": 5776.3,
+  "L/4/tl.three": 3456.8,
+  "L/4/tl.two": 5802,
+  "L/4/tl.zoomIn": 1772.6,
+  "L/4/tl.zoomOut": 1812.8,
+  "L/4/ui.drag": 3308.5,
+  "L/4/ui.filter": 2743.9,
+  "L/4/ui.panelClose": 2789.8,
+  "L/4/ui.panelOpen": 3058.2,
+  "L/4/ui.save": 3563.6,
+  "L/4/ui.undo": 2934.7,
+  "L/4/ui.view": 3970.8,
+  "M/4/days.open": 1503.7,
+  "M/4/jira.apply": 763,
+  "M/4/page.list": 1237.5,
+  "M/4/tl.fit": 794.9,
+  "M/4/tl.shelves": 697.9,
+  "M/4/tl.this": 1411,
+  "M/4/tl.three": 701,
+  "M/4/tl.two": 1376.3,
+  "M/4/tl.zoomIn": 365,
+  "M/4/tl.zoomOut": 366.1,
+  "M/4/ui.drag": 839.3,
+  "M/4/ui.filter": 656.4,
+  "M/4/ui.panelClose": 700.6,
+  "M/4/ui.panelOpen": 878.4,
+  "M/4/ui.save": 939.9,
+  "M/4/ui.undo": 767.2,
+  "M/4/ui.view": 1000.1
+ },
+ "knownFrom": "1.124.1, 2026-10-26, darwin arm64, Apple M5 Pro x18, 64 GB"
+}
