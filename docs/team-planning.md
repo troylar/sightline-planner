@@ -47,6 +47,23 @@ For leadership, ask:
 Use **Delivery → Status update** for the shared delivery conversation and **Product updates → Customer release notes**
 for customer wording. A proposed or planned outcome is not something that shipped.
 
+## Capture what comes up
+
+Meetings raise things that aren't work yet: "the support team wants to hear when the release process changes", "we
+have no way to send release notes to the teams that use them". Keep them in the plan as captures (since 1.131.0):
+
+- Paste your notes into your assistant with the meeting-to-plan skill. It proposes one capture per item: a request,
+  idea, process gap or question, with who asked (a person or a group already in the plan), the meeting and its date,
+  and the workstream when it's clear. A team that isn't in the plan yet comes as a new group, which always waits for
+  your review.
+- Or add one by hand on the Roadmap, then set **Captured as**, **Asked by** and **Raised on** on its card.
+- **To triage**, on the Roadmap, lists open captures by workstream, oldest first, with **Unassigned** last. Open one
+  to **Hand off** (to an initiative or a Jira issue) or **Decline** with a reason; **Reopen** puts it back.
+
+A date doesn't commit a capture, and handing it off doesn't mark anything done: those stay roadmap decisions. A Jira
+issue it became stays Jira's; the plan keeps only its key. Captures sit in the shared plan file, so write them as you'd
+say them in the room.
+
 ## Between meetings
 
 - Start in **Work → Today** for attention, blockers and due decisions.

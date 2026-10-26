@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.131.0",
+    "date": "2026-10-26",
+    "headline": "Capture what comes up in meetings",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Roadmap",
+        "title": "Capture requests, ideas, gaps and questions, and triage them",
+        "before": "Things raised in meetings that weren't work yet could only go in as roadmap ideas, with no record of who asked or what became of them.",
+        "now": "A roadmap item can be captured as a request, idea, process gap or question, with who asked, the meeting's date and its source. To triage lists open captures by workstream, oldest first. Hand one off to an initiative or a Jira issue, or decline it with a reason; neither marks anything done.",
+        "where": "Roadmap, To triage; the item's card"
+      },
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Assistants can capture from meeting notes, and new people and groups always wait for you",
+        "before": "An assistant could add a person or a skill on its own at the levels that apply routine changes.",
+        "now": "Your assistant can capture each item from your meeting notes with who asked. A new person, group or skill always waits for your review, whatever it may do on its own.",
+        "where": "Connect assistant; the meeting-to-plan skill"
+      }
+    ]
+  },
+  {
     "version": "1.130.0",
     "date": "2026-10-26",
     "headline": "Ask any assistant about your plan",

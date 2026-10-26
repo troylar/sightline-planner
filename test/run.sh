@@ -60,6 +60,7 @@ run_suite harness145 90 node harness145.js
 run_suite harness146 120 node harness146.js
 run_suite harness147 90 node harness147.js
 run_suite harness148 60 node harness148.js
+run_suite harness149 60 node harness149.js
 run_suite harness144 90 node harness144.js
 run_suite harness139 90 node harness139.js
   run_suite build 240 python3 test_build.py
