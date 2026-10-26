@@ -1817,13 +1817,15 @@ ACTIONS = {
     "task.link": ({"id": "id", "after": "id"}, False),
     "task.unlink": ({"id": "id", "after": "id"}, False),
     "task.del": ({"id": "id"}, False),
-    "outcome.add": ({"id": "id?", "name": "str", "source": "str?", "target": "str?", "release": "id?", "date": "iso?", "jira": "keys?"}, False),
+    "outcome.add": ({"id": "id?", "name": "str", "source": "str?", "target": "str?", "release": "id?", "date": "iso?", "jira": "keys?", "capture": "str?", "askedBy": "who?", "raised": "iso?", "lane": "id?"}, False),
     "outcome.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "outcome.setTarget": ({"id": "id", "target": "str?", "date": "iso?"}, True),
     "outcome.setRelease": ({"id": "id", "release": "idOrBlank"}, True),
     "outcome.linkJira": ({"id": "id", "keys": "keys"}, False),
     "outcome.unlinkJira": ({"id": "id", "key": "str"}, False),
     "outcome.drop": ({"id": "id", "reason": "str?"}, False),
+    "outcome.handoff": ({"id": "id", "initiative": "id?", "jira": "str?"}, True),
+    "outcome.reopen": ({"id": "id"}, False),
     "outcome.del": ({"id": "id"}, True),
     "link.add": ({"id": "id", "after": "id"}, False),
     "link.remove": ({"id": "id", "after": "id"}, False),
@@ -1846,6 +1848,7 @@ ACTIONS = {
     "skill.remove": ({"id": "id"}, False),
     "meeting.set": ({"id": "id", "field": "str", "value": "str"}, True),
     "person.add": ({"id": "id?", "name": "str", "role": "str?", "days": "int?", "outside": "any?"}, False),
+    "group.add": ({"id": "id?", "name": "str", "members": "ids?"}, False),
     "person.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "person.setAlloc": ({"id": "id", "alloc": "any"}, True),
     "person.setSplit": ({"id": "id", "lanes": "weights"}, True),
@@ -1911,7 +1914,9 @@ def _act_type_ok(t: str, v) -> bool:
     if t == "keys":
         return isinstance(v, list) and len(v) <= 500 and all(isinstance(k, str) and len(k) <= 40 for k in v)
     if t == "any":
-        return v is None or isinstance(v, bool) or _act_type_ok("num", v) or _act_type_ok("str", v) or _act_type_ok("ids", v)
+        return v is None or isinstance(v, bool) or _act_type_ok("num", v) or _act_type_ok("str", v) or _act_type_ok("ids", v) or _act_type_ok("who", v)
+    if t == "who":      # who asked for a captured item: {"type": "person" or "group", "id": ...}
+        return v is None or (isinstance(v, dict) and set(v) == {"type", "id"} and v["type"] in ("person", "group") and isinstance(v["id"], str) and bool(re.match(r"^[A-Za-z0-9._-]{1,60}$", v["id"])))
     if t == "weights":
         return v is None or (isinstance(v, dict) and len(v) <= 20 and all(_act_type_ok("id", k) and _act_type_ok("int", x) for k, x in v.items()))
     return False
