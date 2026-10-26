@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.124.5",
+    "date": "2026-10-26",
+    "headline": "Opening and closing an item is quicker",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Performance",
+        "title": "Choosing an item no longer redraws the whole timeline",
+        "before": "Clicking an initiative, task, Jira story or milestone, or closing its panel with Esc, ×, or Done, redrew the whole timeline just to move the highlight. In a large plan that took about two seconds.",
+        "now": "The timeline stays as it is and only the highlight and its links move, so in a large plan opening an item takes about 75% less time and closing it about 85% less. Anything that changes what the timeline shows, like an edit, a filter, a new day or a folded sprint shelf, still redraws it in full.",
+        "where": "Timeline, Weeks and Days"
+      }
+    ]
+  },
+  {
     "version": "1.124.4",
     "date": "2026-10-26",
     "headline": "Sprint presets answer in half the time",
