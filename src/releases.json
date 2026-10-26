@@ -1,5 +1,27 @@
 [
   {
+    "version": "1.126.0",
+    "date": "2026-10-26",
+    "headline": "Names stay in view as you scroll the timeline",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Bars keep their names when their start is off the screen",
+        "before": "Scrolling the timeline sideways cut a bar's name at the left edge, so a bar that started off the screen showed only the end of its name.",
+        "now": "A bar's name rides along the left edge of the chart for as long as any of the bar shows. Where only part of the bar is on screen, the name is shortened with an ellipsis inside the bar and never covers the next one. Hover or a screen reader still gives the whole name.",
+        "where": "Timeline, in Weeks, zoomed to a few sprints"
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Milestone, gate and stretch labels follow too",
+        "now": "When a milestone, gate or stretch marker is just off to the left, its label stays at the left edge with ‹ in place of the marker, until its own space scrolls away. Printing shows every label where it starts.",
+        "where": "Timeline, in Weeks and Days"
+      }
+    ]
+  },
+  {
     "version": "1.125.3",
     "date": "2026-10-26",
     "headline": "Jira stories stay with their epic when the epic has a parent",
