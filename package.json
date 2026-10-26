@@ -39,7 +39,8 @@
     "build": "bash ./build.sh",
     "test": "bash ./test/run.sh",
     "check": "bash ./build.sh && bash ./test/run.sh",
-    "prepack": "bash ./build.sh"
+    "prepack": "bash ./build.sh",
+    "perf": "node test/perf/run.js"
   },
   "repository": {
     "type": "git",
@@ -50,6 +51,7 @@
     "url": "https://github.com/troylar/sightline-planner/issues"
   },
   "devDependencies": {
-    "jsdom": "^24.1.3"
+    "jsdom": "^24.1.3",
+    "playwright": "1.57.0"
   }
 }

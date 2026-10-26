@@ -33,3 +33,10 @@ __pycache__/
 
 # browser automation output (page snapshots can hold real plan text)
 .playwright-mcp/
+
+# performance harness output (baseline.json and the budgets are kept)
+test/perf/results.json
+test/perf/report.html
+test/perf/*.cpuprofile
+perf-results.json
+perf-report.html

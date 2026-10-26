@@ -1,0 +1,188 @@
+{
+ "about": "A regression guard for the CI runner (S and M at 1x): four times a development machine's 1x median at M, until CI's own numbers replace it. The real budgets are in budgets.json.",
+ "budgets": {
+  "load.open": {
+   "ms": 1818,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "jira.apply": {
+   "ms": 696,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "tl.fit": {
+   "ms": 693,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "tl.this": {
+   "ms": 1268,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "tl.two": {
+   "ms": 1252,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "tl.three": {
+   "ms": 650,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "tl.zoomIn": {
+   "ms": 334,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "tl.zoomOut": {
+   "ms": 329,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "tl.scrollX": {
+   "fps": 30.3,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "tl.scrollY": {
+   "fps": 30.2,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "tl.shelves": {
+   "ms": 547,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "days.open": {
+   "ms": 1266,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "days.scroll": {
+   "fps": 30.4,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "ui.panelOpen": {
+   "ms": 853,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "ui.panelClose": {
+   "ms": 614,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "ui.drag": {
+   "ms": 727,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "ui.find": {
+   "ms": 62,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "ui.filter": {
+   "ms": 602,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "ui.view": {
+   "ms": 884,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "ui.undo": {
+   "ms": 705,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "ui.save": {
+   "ms": 825,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "page.today": {
+   "ms": 99,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "page.sprint": {
+   "ms": 164,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "page.list": {
+   "ms": 1168,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "page.roadmap": {
+   "ms": 99,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  },
+  "page.capacity": {
+   "ms": 208,
+   "sizes": [
+    "M"
+   ],
+   "cpu": 1
+  }
+ },
+ "known": {}
+}

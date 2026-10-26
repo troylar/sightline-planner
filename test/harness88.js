@@ -46,7 +46,7 @@ async function page(fileText){
     ev(`S.deliverables = [{id:"dv-h", name:"Broad", stage:"planned", target:(d0 => d0.slice(0, 4) + (+d0.slice(5, 7) <= 6 ? "-H1" : "-H2"))(dayToIso(startDay() + 20))}]; UI.ws = "timeline"; UI.zoom = "weeks"; render();`); await wait(20);
     const hdr = [...d.querySelectorAll(".sechdr")].find(x=>/Deliverables/.test(x.textContent));
     ok("P5 with only broader deliverables, the Timeline still says where they are", !!hdr && /1 broader, on the Roadmap/.test(hdr.textContent) && /Open the Roadmap/.test(hdr.textContent));
-    ev(`setMe(S.people[0].id); const o = S.people[1].id, ago = h => new Date(Date.now() - h * 3600e3).toISOString(); S.changes = [...Array(15)].map((_, i)=>({id:"c" + i, by:o, at:ago(i + 1), what:"change " + i, ops:[]})); UI.sinceMode = "week"; UI.ws = "today"; render();`); await wait(20);
+    ev(`setMe(S.people[0].id); const o = S.people[1].id, cut = sinceCut("week").at, at = i => new Date(cut + (Date.now() - cut) * (i + 1) / 16).toISOString(); S.changes = [...Array(15)].map((_, i)=>({id:"c" + i, by:o, at:at(i), what:"change " + i, ops:[]})); UI.sinceMode = "week"; UI.ws = "today"; render();`); await wait(20);
     ok("P6 Today sums up what changed under its heading", /15 changes since Monday/.test(d.querySelector("#tSinceSum")?.textContent || ""), d.querySelector("#tSinceSum")?.textContent || "none");
     ok("P7 and past the first 12, See all opens Activity", !!d.querySelector("#tSinceAll") && (d.querySelector("#tSinceAll").click(), ev("UI.ws === 'plan' && UI.planTab === 'activity'")));
   });
