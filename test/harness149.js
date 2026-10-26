@@ -58,9 +58,15 @@ const HOSTILE = '<img src=x onerror="window.pwned=1"> Support desk';
     ok("A6 declining a capture needs a reason, for whoever asked", !noWhy.ok && dropped.stage === "dropped" && dropped.dropReason === "Covered by the release digest", noWhy.reason);
     const re = J("(RA(Q, 'outcome.reopen', {id:'dv-a'}), Q.deliverables.find(x=>x.id === 'dv-a'))");
     ok("A7 reopening puts it back on the list: an idea again, no reason, no handoff", re.stage === "idea" && !re.dropReason && !re.handoff && ev("capOpen(Q.deliverables.find(x=>x.id === 'dv-a'))") === true);
+    const lc = J(`(()=>{ const p = clone(Q), q = clone(Q); RA(p, 'outcome.drop', {id:'dv-a', reason:'Not this year'}); RA(q, 'outcome.handoff', {id:'dv-a', jira:'ABC-7'});
+      return [RA(p, 'outcome.handoff', {id:'dv-a', jira:'ABC-7'}), RA(q, 'outcome.drop', {id:'dv-a', reason:'Changed our mind'})]; })()`);
+    ok("A8 a declined capture can't be handed off, nor a handed-off one declined, until it's reopened", !lc[0].ok && !lc[1].ok && /Reopen it first/.test(lc[0].reason) && /Reopen it first/.test(lc[1].reason), lc.map(x=>x.reason).join(" / "));
     const risk = k => ev(`amRiskOf({ops:[{op:'action', action:'${k}', args:{}}]})`);
     ok("R1 a new person, group or skill always waits for a person; a capture itself is routine", risk("person.add") === "floor" && risk("group.add") === "floor" && risk("skill.add") === "floor" && risk("outcome.add") === "routine",
       ["person.add", "group.add", "skill.add", "outcome.add"].map(risk).join());
+    const why = k => ev(`(()=>{ try { return amFloorWhy({ops:[{op:'action', action:'${k}', args:{}}]}); } catch(e){ return "none: " + e.message; } })()`);
+    ok("R3 a held change says why it waits: adding a person, group or skill isn't called deleting an initiative", /adds a person/.test(why("person.add")) && /adds a group/.test(why("group.add")) && /adds a skill/.test(why("skill.add")) && /deletes a workstream/.test(why("workstream.del")),
+      ["person.add", "group.add", "skill.add"].map(why).join(" | "));
     const g = J("(()=>{ const p = P(); const r = RA(p, 'group.add', {id:'grp-agents', name:'Agent builders'}); return [r.ok, (p.groups || []).find(x=>x.id === 'grp-agents')]; })()");
     ok("R2 group.add adds a named group, with no members when none are known", g[0] && g[1] && g[1].name === "Agent builders" && Array.isArray(g[1].members) && !g[1].members.length);
 
@@ -69,6 +75,12 @@ const HOSTILE = '<img src=x onerror="window.pwned=1"> Support desk';
       mine.deliverables[0].askedBy = {type:'group', id:'grp-support'}; theirs.deliverables[0].handoff = {to:'jira', key:'ABC-121'};
       return mergePlans(base, mine, theirs).plan.deliverables[0]; })()`);
     ok("M1 a merge keeps my requester and a teammate's handoff", m.askedBy && m.askedBy.id === "grp-support" && m.handoff && m.handoff.key === "ABC-121", JSON.stringify(m));
+
+    const m2 = J(`(()=>{ const base = {...clone(S), deliverables:[{id:'dv-m2', name:'M2', stage:'idea', capture:'request'}]}, mine = clone(base), theirs = clone(base);
+      RA(mine, 'outcome.drop', {id:'dv-m2', reason:'Out of scope'}); RA(theirs, 'outcome.handoff', {id:'dv-m2', jira:'ABC-130'});
+      const d = mergePlans(base, mine, theirs).plan.deliverables[0]; let st = ""; try { st = capState(d); } catch(e){ st = "none: " + e.message; } return {d, st, open:capOpen(d)}; })()`);
+    ok("M2 if one person declines while a teammate hands it off, the card says both and asks for a reopen, never picking one quietly",
+      m2.d.handoff && m2.d.stage === "dropped" && !m2.open && /two ways/.test(m2.st) && /ABC-130/.test(m2.st) && /Out of scope/.test(m2.st) && /Reopen/.test(m2.st), m2.st);
 
     // The export an assistant reads.
     ev(`S.deliverables = Q.deliverables.concat([

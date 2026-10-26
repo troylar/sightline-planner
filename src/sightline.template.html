@@ -7724,13 +7724,15 @@ defAction("outcome.unlinkJira", {scope:"outcomes", risk:"routine", args:{id:"id"
   check:(p, a)=>{ if (!actDv(p, a.id)) return actMissing("deliverable"); },
   run:(p, a)=>dvChange(p, a.id, x=>{ if (!(x.jira || []).includes(a.key)) return NOCHANGE; x.jira = x.jira.filter(y=>y !== a.key); if (!x.jira.length) delete x.jira; })});
 defAction("outcome.drop", {scope:"outcomes", risk:"routine", args:{id:"id", reason:"str?"},
-  check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); if (d.capture && !String(a.reason || "").trim()) return actInvalid("Say why it's declined: whoever asked will want to know."); },
+  check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); if (d.capture && !String(a.reason || "").trim()) return actInvalid("Say why it's declined: whoever asked will want to know.");
+    if (d.handoff && d.stage !== "dropped") return actInvalid("It's handed off already. Reopen it first to decline it."); },
   run:(p, a)=>dvChange(p, a.id, x=>{ if (x.stage === "dropped") return NOCHANGE; x.stage = "dropped"; const why = String(a.reason || "").trim(); if (why) x.dropReason = why.slice(0, 300); })});
 // A capture handed off to an initiative or a Jira issue is closed as a capture; nothing is marked done or planned, and
 // the Jira issue stays Jira's (only its key is kept). Reopen puts it back on the triage list.
 defAction("outcome.handoff", {scope:"outcomes", risk:"routine", args:{id:"id", initiative:"id?", jira:"str?"},
   cur:(p, a)=>{ const d = actDv(p, a.id); return d ? clone(d.handoff || null) : undefined; },
   check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); if (!d.capture) return actInvalid("Only a captured item is handed off. Give it a capture type first.");
+    if (d.stage === "dropped") return actInvalid("It's declined. Reopen it first to hand it off.");
     if (!!a.initiative === !!a.jira) return actInvalid("Hand it off to one initiative or one Jira issue.");
     if (a.initiative && !actBar(p, a.initiative)) return actMissing("initiative");
     if (a.jira && !JKEY.test(String(a.jira).trim().toUpperCase())) return actInvalid("That isn't a Jira key (like ABC-123)."); },
@@ -13253,6 +13255,10 @@ const amPauseKey = pid => `sightline-assistant-pause:${pid}`;
 function amPausedByMe(){ if (!AM || !AM.dir) return false; try { return localStorage.getItem(amPauseKey(AM.planId)) === "1"; } catch(e){ return false; } }
 function amSetPaused(on){ if (!AM || !AM.dir) return; try { on ? localStorage.setItem(amPauseKey(AM.planId), "1") : localStorage.removeItem(amPauseKey(AM.planId)); } catch(e){ setStatus("This browser couldn't keep that setting."); return; }
   AM.autoGen = (AM.autoGen || 0) + 1; render(); setStatus(on ? "Paused: your assistant's changes wait until you resume." : "Resumed: your assistant's changes apply again at the level you picked."); assistantTick(); }
+// Why a change always waits for a person: its first always-reviewed action, else the one floor that isn't an action's own.
+const FLOOR_WHY = {"workstream.del":"It deletes a workstream", "workstream.reid":"It changes a workstream's ID", "person.add":"It adds a person to the team",
+  "group.add":"It adds a group", "skill.add":"It adds a skill to the team's list"};
+function amFloorWhy(c){ const o = (c.ops || []).find(o=>o && FLOOR_WHY[o.action]); return (o ? FLOOR_WHY[o.action] : "It deletes an initiative with Jira-linked work") + ", so a person always reviews it."; }
 // How risky a change is: "floor" (always reviewed), "risky" (reviewed below "all") or "routine".
 function amRiskOf(c, p = S){ let risk = "routine";
   for (const o of c.ops || []){ if (!o || o.op !== "action") continue; const A = amHas(planActions, String(o.action)) ? planActions[o.action] : null; if (!A) continue;
@@ -13284,7 +13290,7 @@ async function amAuto(){
   else if (rows.length){ const why = amAutoBlock(F), jiraHeld = new Set();          // placements wait anyway, and still count toward the batch's size
     rows.forEach(r=>{ const risk = why ? "" : amRiskOf(r.eff, r.base);
       if (why) held[r.c.id] = why;
-      else if (risk === "floor") held[r.c.id] = {code:"review", reason:(r.eff.ops || []).some(o=>o && o.action === "workstream.del") ? "It deletes a workstream, so a person always reviews it." : "It deletes an initiative with Jira-linked work, so a person always reviews it."};
+      else if (risk === "floor") held[r.c.id] = {code:"review", reason:amFloorWhy(r.eff)};
       else if (risk === "jira"){ held[r.c.id] = {code:"review", reason:"It places Jira work on the plan, so a person always reviews it."}; jiraHeld.add(r.c.id); }
       else if (risk === "risky" && level !== "all") held[r.c.id] = {code:"review", reason:"It deletes something, so it waits for review at this level."}; });
     // risk by size: what a change moves besides its own items, and how many items the batch touches in all
@@ -13974,6 +13980,12 @@ const capType = d => (CAPTURE_TYPES.find(c=>c[0] === d.capture) || [, ""])[1];
 function capWho(w){ if (!w) return ""; if (w.type === "group"){ const g = (S.groups || []).find(x=>x.id === w.id); return g ? g.name : "a group no longer in the plan"; }
   const pp = personById(w.id); return pp ? pp.name : "someone no longer in the plan"; }
 function capAge(d){ const t = d.added && stampDay(d.added.at); if (t == null) return {days:null, text:"added: not recorded"}; const n = Math.max(0, todayDay() - t); return {days:n, text:n === 0 ? "added today" : `open ${n} day${n === 1 ? "" : "s"}`}; }
+// What became of a capture, in one line. Two people can close it differently at once (a merge keeps both); say so, never pick one.
+function capState(d){ const declined = `declined${d.dropReason ? ": " + d.dropReason : ""}`;
+  if (d.handoff && d.stage === "dropped") return `Closed two ways at once: handed off to ${capHandoffText(d.handoff)}, and ${declined}. Reopen it, then close it once.`;
+  if (d.handoff) return `Handed off to ${capHandoffText(d.handoff)}.`;
+  if (d.stage === "dropped") return `D${declined.slice(1)}${d.dropReason ? "" : "."}`;
+  const age = capAge(d); return `${age.text[0].toUpperCase()}${age.text.slice(1)}.`; }
 function capHandoffText(ho){ if (!ho) return ""; if (ho.to === "jira") return ho.key; const b = barById(ho.id); return b ? chartLabel(b) : "an initiative no longer in the plan"; }
 // After any change to a deliverable: a release's date sets its quarter; a target makes an idea Planned and no timing makes
 // a Planned one an idea again; new wording (or no longer Done) needs approving again. Card edits and amendments both use it.
@@ -14026,7 +14038,7 @@ function capturePanel(d, can){
     (S.groups || []).length ? h("optgroup",{label:"Groups"}, ...S.groups.map(g=>h("option",{value:"group:" + g.id, selected:whoVal === "group:" + g.id}, g.name))) : null,
     h("optgroup",{label:"People"}, ...S.people.filter(pp=>!pp.inactive || whoVal === "person:" + pp.id).map(pp=>h("option",{value:"person:" + pp.id, selected:whoVal === "person:" + pp.id}, pp.name + (pp.external ? " (outside)" : "")))));
   const raised = h("input",{type:"date",id:"f-dvraised","aria-label":"Raised on",value:d.raised || "",disabled:!can,onchange:e=>{ const v = e.target.value; if (v && !validIso(v)) return; set("raised", v, "raised on"); }});
-  const age = capAge(d), state = d.handoff ? `Handed off to ${capHandoffText(d.handoff)}.` : d.stage === "dropped" ? `Declined${d.dropReason ? ": " + d.dropReason : "."}` : `${age.text[0].toUpperCase()}${age.text.slice(1)}.`;
+  const state = capState(d);
   const bars = S.bars.filter(b=>!b.parked).slice().sort((a, b)=>chartLabel(a).localeCompare(chartLabel(b)));
   const toBar = h("select",{id:"f-dvhobar","aria-label":"Hand off to an initiative"}, h("option",{value:""}, "An initiative…"), ...bars.map(b=>h("option",{value:b.id}, chartLabel(b))));
   const toKey = h("input",{id:"f-dvhokey",placeholder:"or a Jira key, like ABC-123","aria-label":"Hand off to a Jira issue",maxlength:"40"});
