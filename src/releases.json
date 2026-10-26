@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.131.1",
+    "date": "2026-10-26",
+    "headline": "Tags on short bars show whole or not at all",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "A late or +1 tag is never cut off on a short bar",
+        "before": "On short bars, especially at Fit, a tag that didn't fit was cut mid-word, so late showed as \"lat\" or \"la\".",
+        "now": "A tag shows whole, or not at all when the bar is too short for it. Late bars keep their red outline, and screen readers still hear late and every owner.",
+        "where": "Timeline, Weeks and Fit"
+      }
+    ]
+  },
+  {
     "version": "1.131.0",
     "date": "2026-10-26",
     "headline": "Capture what comes up in meetings",
