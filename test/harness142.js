@@ -118,6 +118,10 @@ async function open(iso, fresh){
     ok("Q5 …and plain number keys still change pages", F.ev("UI.ws") === "timeline");
     pb(2).click(); F.ev("zoomOut()");
     ok("Q6 − still works from a preset, as a fine step from the same sprint", F.ev("zoomN()") === 3 && F.ev("UI.zoomSp") === "2026-09-28" && F.ev("UI.zoomPreset") == null);
+    F.ev("window.__draws = 0; window.__render = render; render = function(){ __draws++; return __render.apply(this, arguments); }");
+    const draws = [1, 2, 0, 0].map(k => { F.ev("__draws = 0"); pb(k).click(); return F.ev("__draws") + ":" + F.ev("UI.zoomPreset"); });
+    F.ev("render = __render");
+    ok("Q13 a preset draws the page once, and is remembered (This sprint, This + next, Fit, Fit again)", draws.join(",") === "1:1,1:2,1:0,1:0", draws.join(","));
     ok("Q7 no page errors", !F.w.errs.length, F.w.errs.join(" | "));
     // First open: a plan with timeboxes opens on This + next.
     const G = await open("2026-10-07", true);

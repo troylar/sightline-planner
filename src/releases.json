@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.124.4",
+    "date": "2026-10-26",
+    "headline": "Sprint presets answer in half the time",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Performance",
+        "title": "Presets draw the timeline once",
+        "before": "Choosing This sprint, This + next, Next 3 or Fit, by button or with Shift and a number, drew the whole timeline twice.",
+        "now": "It's drawn once, so in a large plan a preset takes about half as long. The preset is still remembered for your next visit.",
+        "where": "Timeline, the toolbar's 1, 2, 3 and Fit"
+      }
+    ]
+  },
+  {
     "version": "1.124.3",
     "date": "2026-10-26",
     "headline": "The Timeline answers faster with sprint shelves on",
