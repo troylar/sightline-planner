@@ -213,6 +213,30 @@ HTML, shows as plain text.
 set with `template.set`), and gates have a description. Propose them with `milestone.set` field `story` and
 `gate.set` field `description`. A meeting's note is shown as Markdown and set with `meeting.set` field `note`.
 
+## Dates in words
+
+Any date in a proposed change can be written the way people say it, not only as YYYY-MM-DD: a task's start, a
+milestone's day, time off, when a capture was raised, a due date. Sightline reads it against today when you review
+the change:
+
+| Say | Means (on Wednesday, Oct 7) |
+|-----|-----------------------------|
+| today, tomorrow, yesterday | Oct 7, Oct 8, Oct 6 |
+| +3d, in 2 weeks, 3 days ago, -2w | Oct 10, Oct 21, Oct 4, Sep 23 |
+| Friday | the next Friday: Oct 9 |
+| this Friday, next Friday | that day this week or next week (weeks start Monday): Oct 9, Oct 16 |
+| last Friday | the latest Friday before today: Oct 2 |
+| next week, last week | that week's Monday: Oct 12, Sep 28 |
+| next month, last month | the 1st: Nov 1, Sep 1 |
+| this sprint, next sprint | the sprint's first day |
+
+The review says which date each one became ("next Friday" is Friday, Oct 16, 2026), and Apply uses that date. A
+task's start that lands on a weekend or holiday moves to the next working day, as a typed date does, and the review
+says so ("+3d" is Saturday, Oct 10, 2026, so the task starts Monday, Oct 12). A day that turns out to be before today is
+flagged "(that's in the past)", unless the words mean the past on purpose (yesterday, last Friday, 3 days ago, -2d).
+Anything else is refused with the forms that work, never guessed. Because words are read on the day you review, review a change on the
+day it was written if the exact day matters.
+
 ## Skills, needs and hints
 
 **Requires Sightline 1.117.0 or later.** The plan keeps a skills catalog (**Settings → Team**, up to 500, each label
