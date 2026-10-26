@@ -18,6 +18,14 @@ Assistants see what each change does.
 
 - **Every change an assistant can propose comes with a plain description** (Assistant). Each change in the context file now has a one-line description of what it does. The planning skills tell the assistant to choose by that description and use the arguments exactly. *Where:* The assistant folder's context file, and the bundled planning skills
 
+## 1.128.1 · Oct 26, 2026
+
+Owner initials stay clear of names.
+
+### Fixed
+
+- **Three-letter owner initials no longer cover the name on a short bar** (Timeline). Three-letter initials are set slightly smaller, and the circle on a bar never grows past its space, so the name always stops before it. *Where:* Weeks and Days, on Jira stories and tasks
+
 ## 1.128.0 · Oct 26, 2026
 
 See who owns each Jira item at a glance.

@@ -468,7 +468,7 @@ body.presenting #filterBtn,body.presenting #viewSave{display:none!important}
 .oav.ext{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--pc),0 0 0 1px var(--surface)}
 .oav.none{background:var(--surface);box-shadow:none;border:1.5px dashed var(--ink-3)}
 .oav.spot{box-shadow:0 0 0 2px var(--accent)}
-.bar>.oav,.tbar>.oav{position:absolute;right:3px;top:50%;margin-top:-8px}.bar:has(>.oav){padding-right:23px}.tbar:has(>.oav){padding-right:21px}.ownav{display:inline-flex;align-items:center;gap:6px}
+.bar>.oav,.tbar>.oav{position:absolute;right:3px;top:50%;margin-top:-8px;max-width:18px;overflow:hidden}.oav.x3{font-size:7.5px;letter-spacing:-.02em;padding:0 1px}.bar:has(>.oav){padding-right:23px}.tbar:has(>.oav){padding-right:21px}.ownav{display:inline-flex;align-items:center;gap:6px}
 .tbar .who{display:inline-flex;gap:2px}
 .tbar .who .ini{min-width:15px;height:15px;font-size:8.5px;box-shadow:0 0 0 1px rgba(255,255,255,.6)}
 .offlist{display:flex;flex-direction:column;gap:5px}
@@ -1970,7 +1970,8 @@ function ownerAv(who, beside){   // beside: the name is written next to it, so i
   const named = say => beside ? {"aria-hidden":"true",title:say} : {role:"img",title:say,"aria-label":say};
   if (!name) return h("i",{class:"oav none",...named("Unassigned")});
   const k = pp ? pp.id : "~" + name, c = pp ? pp.color : avColor(name), say = `Owner: ${name}` + (pp && pp.external ? " (outside the team)" : "");
-  return h("i",{class:"oav" + (pp && pp.external ? " ext" : "") + (UI.spot && UI.spot === k ? " spot" : ""),...named(say),"data-who":k,style:{"--pc":c,"--pf":iniFg(c)}}, avIndex().ini.get(k) || autoInitials(name));
+  const ini = avIndex().ini.get(k) || autoInitials(name);   // three letters set smaller: on a bar the circle never grows past the room kept for it
+  return h("i",{class:"oav" + (pp && pp.external ? " ext" : "") + (UI.spot && UI.spot === k ? " spot" : "") + ([...ini].length > 2 ? " x3" : ""),...named(say),"data-who":k,style:{"--pc":c,"--pf":iniFg(c)}}, ini);
 }
 // An item's title. If its own Jira key is in the Jira files, it's Jira's summary (shown, never copied into the plan);
 // if the files aren't loaded, the stored label, marked stale; otherwise the plan's label. from: "jira" | "stale" | "plan".

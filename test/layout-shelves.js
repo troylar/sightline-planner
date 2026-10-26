@@ -1,7 +1,7 @@
 // Sprint shelf labels, laid out in a real browser (jsdom has no layout): at two text sizes and two label widths the
 // label stays within two lines, nothing spills out of the label column, a shelf with nothing on screen takes one
 // line, the row is no taller than its tiles or its label, and the Show menu's Spotlight lights up every shelf.
-// Run by hand, not by run.sh (CI has no browser yet): node test/layout-shelves.js. Playwright comes from node_modules,
+// run.sh runs it when Playwright is installed, and CI always does. By hand: node test/layout-shelves.js. Playwright comes from node_modules,
 // or from PLAYWRIGHT=/path/to/node_modules/playwright. Every name is invented.
 const fs = require("fs"), path = require("path");
 let pw; try { pw = require(process.env.PLAYWRIGHT || "playwright"); } catch(e){ console.log("FAIL  Playwright isn't installed. Run npm ci, then npx playwright install chromium (or set PLAYWRIGHT)."); console.log("\n0/1 passed"); process.exit(1); }
