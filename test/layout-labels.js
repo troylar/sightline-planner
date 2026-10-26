@@ -73,8 +73,12 @@ function setup([FIX, z]){
       await page.addInitScript(() => { const RD = Date, now = new RD("2026-10-07T14:00:00").getTime(); window.Date = class extends RD { constructor(...a){ a.length ? super(...a) : super(now); } static now(){ return now; } }; });
       await page.goto("file://" + HTML); await page.waitForTimeout(300);
       await page.evaluate(setup, [FIX, 2]); await page.evaluate(rows=>{ UI.rows = rows; setZoomN(0, 0); render(); }, rows); await page.keyboard.press("Escape"); await page.waitForTimeout(300);
-      const part = await page.evaluate(partTags), m = await page.evaluate(()=>({late:[...document.querySelectorAll("#gantt .bar.late")].length, hidLate:[...document.querySelectorAll("#gantt .bar.late .tag.bad.tagcut")].length}));
+      const part = await page.evaluate(partTags), m = await page.evaluate(()=>({late:[...document.querySelectorAll("#gantt .bar.late")].length, hidLate:[...document.querySelectorAll("#gantt .bar.late .tag.bad.tagcut")].length,
+        // a hidden tag leaves the accessibility tree too, so the bar's own name must still say it: late, and every owner behind +N
+        unsaid:[...document.querySelectorAll("#gantt .tagcut")].filter(t=>{ const a = t.closest("[aria-label]").getAttribute("aria-label") || "", n = /^\+(\d+)$/.exec(t.textContent.trim());
+          return t.textContent.trim() === "late" ? !/late/i.test(a) : n ? !(/Owner: ([^.]*)/.exec(a) && /Owner: ([^.]*)/.exec(a)[1].split(",").length >= +n[1] + 1) : false; }).map(t=>t.textContent + " on " + t.closest("[aria-label]").getAttribute("aria-label").slice(0, 60))}));
       ok(`T2 Fit by ${rows === "people" ? "person" : "workstream"}, 1200px: a tag that doesn't fit a short bar is hidden whole, and the bar keeps its late ring`, !part.length && m.late >= 1 && (rows === "lanes" || m.hidLate >= 1), part.slice(0, 4).join(", ") + ` late ${m.late}, late tag hidden on ${m.hidLate}`);
+      ok(`T3 Fit by ${rows === "people" ? "person" : "workstream"}, 1200px: a bar whose tag is hidden still says it to a screen reader (late, every owner behind +N)`, !m.unsaid.length, m.unsaid.slice(0, 3).join(" | "));
       await page.close(); }
     ok("Z no page errors", !errs.length, errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, e.stack); }

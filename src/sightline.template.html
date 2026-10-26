@@ -6553,7 +6553,7 @@ function weekItemEl(it, style, id, canDrag){
     const t = it.t, selected = sel && sel.type==="task" && sel.id===t.id, late = taskLate(t, HS());
     const tj = sideOf(t, "task") === "jira";
     const el = h("div",{"data-sel":"task:"+t.id,class:["bar","taskbar","st-"+t.status, late?"late":"", selected?"selected":"", tj ? "jira" : "plan"].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id+":"+(id ?? "none"),
-      "aria-label":`${taskTitle(t)}. In ${chartLabel(b)}. ${fmtDay(it.s)} to ${fmtDay(it.e)}`, "data-peek-type":"task", "data-peek-id":t.id, style:Object.assign(style, tj ? jiraPaint(lane) : {backgroundColor:lane.color, color:fg})},
+      "aria-label":`${taskTitle(t)}. In ${chartLabel(b)}. ${fmtDay(it.s)} to ${fmtDay(it.e)}${late ? ". Late" : ""}`, "data-peek-type":"task", "data-peek-id":t.id, style:Object.assign(style, tj ? jiraPaint(lane) : {backgroundColor:lane.color, color:fg})},
       keyChip(t, "task"), h("span",{class:"nm"}, (t.status==="done" ? "✓ " : "") + taskTitle(t)), noteBadge(noteKeysOf(t, "task")), canDrag ? h("span",{class:"tags"}, h("span",{class:"tag soft"}, chartLabel(b).slice(0,22))) : null, t.jira && jiraOf(t.jira) ? ownerAv(jiraWho(jiraOf(t.jira))) : null);
     el.addEventListener("click", ()=>select("task", t.id));
     el.addEventListener("keydown", e=>{ if (e.key==="Enter" || e.key===" "){ e.preventDefault(); select("task", t.id); } });
@@ -6619,7 +6619,7 @@ function dayItemEl(it, style, id, canDrag){
   Object.assign(style, {backgroundColor:lane.color, color:fg});
   if (it.type === "task"){
     const t = it.t, late = taskLate(t, HS()), selected = sel && sel.type==="task" && sel.id===t.id;
-    const title = [taskTitle(t), `In: ${chartLabel(b)}`, `${fmtDay(it.s)} → ${fmtDay(it.e)} · ${t.days} working day${t.days===1?"":"s"}`, canDrag ? "Drag sideways to move, or onto another person to reassign" : "From the plan; open it to change it"].join("\n");
+    const title = [taskTitle(t), `In: ${chartLabel(b)}`, `${fmtDay(it.s)} → ${fmtDay(it.e)} · ${t.days} working day${t.days===1?"":"s"}` + (late ? " · late" : ""), canDrag ? "Drag sideways to move, or onto another person to reassign" : "From the plan; open it to change it"].join("\n");
     const el = h("div",{"data-sel":"task:"+t.id,class:["tbar","st-"+t.status, late?"late":"", selected?"selected":""].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id+":"+(id ?? "none"), "aria-label":title.replace(/\n/g,". "), "data-peek-type":"task", "data-peek-id":t.id, style},
       canDrag ? h("span",{class:"h l","data-edge":"l","aria-hidden":"true"}) : keyChip(t, "task"), h("span",{class:"nm"}, (t.status==="done" ? "✓ " : "") + taskTitle(t)),
       h("span",{class:"tags"}, late ? h("span",{class:"tag bad"},"late") : null, canDrag ? h("span",{class:"tag"}, chartLabel(b).slice(0,18)) : null),
