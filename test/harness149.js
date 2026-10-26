@@ -144,6 +144,11 @@ const HOSTILE = '<img src=x onerror="window.pwned=1"> Support desk';
     ok("C6 the next capture this session starts with the same meeting and date", d.querySelector("#capFrom").value === "Weekly sync" && d.querySelector("#capRaised").value === "2026-10-05" && d.querySelector("#capType").value === "question");
     d.querySelector("#capCancel").click(); await wait(10);
     ok("C7 Cancel closes the form and adds nothing", !dlg() && J("S.deliverables.length") === n0 + 2);
+    const addWhy = d.querySelector("#rmAddWhy");
+    ok("C8 the roadmap's own add row says it's for things we might ship, and points meeting asks to Capture", /New roadmap idea/.test(d.querySelector("#rmAdd").textContent) && /Add to the roadmap/.test(d.querySelector("#rmAddGo").textContent)
+      && addWhy && /Capture it/.test(addWhy.textContent) && /To triage/.test(addWhy.textContent));
+    addWhy.querySelector("#rmAddCapture").click(); await wait(10);
+    ok("C9 its Capture it link opens the capture form", !!d.querySelector("#dlgCapture") && d.querySelector("#dlgCapture").open); d.querySelector("#capCancel").click(); await wait(10);
     ok("Z no page errors", !w.errs.length, w.errs.join(" | "));
   } catch(e){ ok("harness ran", false, e && e.stack ? e.stack.split("\n").slice(0, 3).join(" ") : e); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

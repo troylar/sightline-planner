@@ -1079,7 +1079,7 @@ td input:disabled,td select:disabled{opacity:1;color:var(--ink);-webkit-appearan
 .suhead .cnt{margin-left:6px;font-weight:500;color:var(--ink-3);font-variant-numeric:tabular-nums}
 /* Roadmap: deliverables by workstream and time; a broad target is a wide card */
 .roadmap{padding:16px}.rmhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px 20px}.rmhead h2{margin:0;font-size:20px}.rmhead p.hint{margin:2px 0 0;max-width:70ch}
-.rmadd{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:flex-end}.rmf{display:flex;flex-direction:column;gap:3px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2)}
+.rmadd{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:flex-end}.rmaddwhy{flex-basis:100%;margin:0}.rmf{display:flex;flex-direction:column;gap:3px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2)}
 .rmf input{font-size:14px;text-transform:none;letter-spacing:0;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:7px 10px}.rmf input::placeholder{color:var(--ink-3)}
 .rmf-idea input{width:min(100vw - 64px, 360px)}.rmf #rmFrom{width:180px}
 .rmtools{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;font-size:12.5px;color:var(--ink-2);margin:10px 0}
@@ -14037,7 +14037,8 @@ function openCapture(){
       h("div",{class:"qrow capbtns"}, h("button",{type:"submit",class:"btn primary",id:"capGo"}, "Capture"),
         h("button",{type:"button",class:"btn",id:"capAgain",onclick:()=>save(true)}, "Capture and add another"),
         h("button",{type:"button",class:"linkish",id:"capCancel",onclick:()=>dialog.close()}, "Cancel"))));
-  dialog.addEventListener("close", ()=>{ dialog.remove(); if (UI.ws === "roadmap") render(); });
+  const opener = document.activeElement && document.activeElement.id;   // a redraw replaces the button that opened it: focus its replacement
+  dialog.addEventListener("close", ()=>{ dialog.remove(); if (UI.ws === "roadmap") render(); const back = opener && document.getElementById(opener); if (back) back.focus(); });
   document.body.append(dialog); dialog.showModal(); what.focus();
 }
 function setDvTarget(id, target){ const d = dvById(id); if (!d) return Promise.resolve(false); const p = target === "later" ? {label:"Later"} : periodRange(target);
@@ -14124,8 +14125,9 @@ function renderRoadmap(){
   const inp = composerField("roadmap", "rmIdea", h("input",{id:"rmIdea","data-key":"roadmap:idea",placeholder:"e.g. Make onboarding effortless",maxlength:"120",autocomplete:"off"}));
   const from = h("input",{id:"rmFrom",placeholder:"optional, e.g. Planning topics",list:"rmFromList",value:ideaSource(),maxlength:"60",oninput:e=>{ UI.ideaFrom = {...(UI.ideaFrom && typeof UI.ideaFrom === "object" ? UI.ideaFrom : {}), [S.meta.planId]: e.target.value}; saveUI(); }});
   const add = h("form",{class:"rmadd",id:"rmAdd",onsubmit:e=>{ e.preventDefault(); const raw = inp.value, v = raw.trim(); if (!v){ inp.focus(); return; } addIdea(v).then(id=>{ if (id){ composerSubmitted("roadmap", [["rmIdea",raw]], draftPlan); if (S.meta.planId !== draftPlan) return; setStatus(`Added the idea "${v}". Sort it when you're ready.`); const f = $("#rmIdea"); if (f){ if (f.value === raw) f.value = ""; f.focus(); } } }); }},
-    h("label",{class:"rmf rmf-idea"}, h("span",{}, "New idea"), inp), h("label",{class:"rmf"}, h("span",{}, "From"), from),
-    h("datalist",{id:"rmFromList"}, ...[...new Set((S.meetings || []).map(m=>m.title))].map(t=>h("option",{value:t}))), h("button",{type:"submit",class:"btn primary",id:"rmAddGo"},"+ Add idea"));
+    h("label",{class:"rmf rmf-idea"}, h("span",{}, "New roadmap idea"), inp), h("label",{class:"rmf"}, h("span",{}, "From"), from),
+    h("datalist",{id:"rmFromList"}, ...[...new Set((S.meetings || []).map(m=>m.title))].map(t=>h("option",{value:t}))), h("button",{type:"submit",class:"btn primary",id:"rmAddGo"},"+ Add to the roadmap"),
+    h("p",{class:"hint rmaddwhy",id:"rmAddWhy"}, "Something we might ship. A request or question someone raised? ", h("button",{type:"button",class:"linkish",id:"rmAddCapture",onclick:openCapture},"Capture it"), " instead, so it waits in To triage with who asked."));
   const ghost = d => { const sp = dvSpan(d, cols); return h("button",{type:"button",class:"dvcard dvghost" + (d._status === "changed" ? " stale" : ""),"data-amghost":d._am,style: sp ? {gridColumn:`${sp.a + 1} / ${sp.b + 2}`} : {},
       title:"Proposed by your assistant: not in the plan yet. Click to review.",onclick:()=>{ sel = {type:"amend", id:"x"}; render(); }}, h("span",{class:"dvname"}, d.name), h("span",{class:"dvmeta"}, h("span",{class:"dvb dvb-jira"}, d._status === "changed" ? "Proposed · changed since" : "Proposed"))); };
   const card = d => { const sp = dvSpan(d, cols), P = dvProgress(d), b = dvBadges(d, cols, P), own = (d.owners || []).map(personById).filter(Boolean);

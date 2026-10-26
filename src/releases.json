@@ -11,6 +11,14 @@
         "before": "Capturing by hand took two steps: add a roadmap idea, then set Captured as, Asked by and Raised on on its card.",
         "now": "One short form: what was raised, its type, who asked, the workstream, the meeting and its date. Only what was raised is needed; nothing else is guessed. The meeting and date carry over, and Capture and add another keeps the form open.",
         "where": "Add (or A, then C) and Capture a request or idea; Roadmap, To triage"
+      },
+      {
+        "kind": "improved",
+        "area": "Roadmap",
+        "title": "The roadmap's add row says what it's for",
+        "before": "New idea and Capture sat side by side with nothing saying which to use.",
+        "now": "The row at the top is New roadmap idea, + Add to the roadmap, for something you might ship. A line under it sends requests and questions someone raised to Capture, so they wait in To triage with who asked.",
+        "where": "Roadmap, top row"
       }
     ]
   },

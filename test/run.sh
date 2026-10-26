@@ -193,9 +193,9 @@ main(){
   # Layout in a real browser (jsdom has no layout). CI installs Chromium and must run them; elsewhere they run when
   # Playwright is installed (npm ci, then npx playwright install chromium), or say plainly that they were skipped.
   if node -e 'require(process.env.PLAYWRIGHT || "playwright")' 2>/dev/null || [[ -n "$CI" ]]; then
-    for t in layout-shelves layout-labels layout-avatars side-scroll; do run_suite "$t" 180 node "$t.js"; done
+    for t in layout-shelves layout-labels layout-avatars side-scroll capture-dialog; do run_suite "$t" 180 node "$t.js"; done
   else
-    printf "  %-10s %s\n" "browser" "SKIPPED: Playwright isn't installed here, so layout-shelves, layout-labels, layout-avatars and side-scroll didn't run"
+    printf "  %-10s %s\n" "browser" "SKIPPED: Playwright isn't installed here, so layout-shelves, layout-labels, layout-avatars, side-scroll and capture-dialog didn't run"
   fi
   return "$fail"
 }

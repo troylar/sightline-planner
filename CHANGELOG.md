@@ -10,6 +10,10 @@ Capture in one step.
 
 - **Capture a request or idea in one step, even mid-meeting** (Roadmap). One short form: what was raised, its type, who asked, the workstream, the meeting and its date. Only what was raised is needed; nothing else is guessed. The meeting and date carry over, and Capture and add another keeps the form open. *Where:* Add (or A, then C) and Capture a request or idea; Roadmap, To triage
 
+### Improved
+
+- **The roadmap's add row says what it's for** (Roadmap). The row at the top is New roadmap idea, + Add to the roadmap, for something you might ship. A line under it sends requests and questions someone raised to Capture, so they wait in To triage with who asked. *Where:* Roadmap, top row
+
 ## 1.131.2 · Oct 26, 2026
 
 A capture closes one way, and held changes say why.
