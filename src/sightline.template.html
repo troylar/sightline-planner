@@ -14602,7 +14602,7 @@ function drawStandup(host){
         D && D.of ? h("div",{class:"sprog",id:"suProgress"}, h("span",{}, cap1(dayOfSprint(D.n, D.of, D.work))), h("i",{role:"progressbar","aria-label":"Sprint elapsed","aria-valuemin":"0","aria-valuemax":String(D.of),"aria-valuenow":String(D.n)}, h("b",{style:{width:`${Math.round(D.n / D.of * 100)}%`}}))) : null),
       ((w => w.some(Boolean) ? h("div",{class:"widgets"}, ...w) : h("p",{class:"hint",id:"suNoWidgets"}, "No active Jira sprint in the Jira files yet. Sync with --board (Settings, then Jira connection) to see the burndown, capacity and pull requests here."))([commitPanel(), burndownPanel(), capacityPanel(), prPanel(all)])),
       cardsBar(C, qHidden),
-      planOnly ? h("p",{class:"hint",id:"suPlanOnly"}, `Sprint shows Jira's work. ${planOnly} plan-only item${planOnly===1?" is":"s are"} on Today and the Timeline.`) : null,
+      planOnly ? h("p",{class:"hint",id:"suPlanOnly"}, `Sprint shows Jira's work. ${planOnly} item${planOnly===1?"":"s"} added here (not in Jira) ${planOnly===1?"is":"are"} on Today and the Timeline.`) : null,
       hidden ? h("p",{class:"hint",id:"suHidden"}, `${its(hidden)} in this sprint hidden by your view or filters. `,
         viewNarrowed() ? h("button",{type:"button",class:"linkish",id:"suShowAll",onclick:()=>{ setLayer("all"); setHide(x=>{ x.people = []; x.unknown = false; }); UI.filter.authors = []; saveUI(); render(); }},"Show everyone's") : null,
         viewNarrowed() && fActive(UI.filter) ? " · " : null,
@@ -15113,7 +15113,7 @@ function renderPlanningGuide(){
 // ================= List: the plan's work as rows (docs/workspaces.md) =================
 // The same items Timeline draws for the same filters, read top to bottom: initiatives as group headers, their tasks and
 // the Jira stories placed under them. It only reads; edits happen in the side panel.
-const LIST_KEY = "sightline-list-layout", LIST_LAYOUTS = [["initiative", "By initiative"], ["lane", "By workstream"], ["person", "By person"], ["start", "By start date", "Everything in one list, by start date"], ["order", "By order", "Steps from what waits for what: first what waits for nothing, then what waits only on those"]], LIST_DEFAULT = "lane";
+const LIST_KEY = "sightline-list-layout", LIST_LAYOUTS = [["initiative", "By initiative"], ["lane", "By workstream"], ["person", "By person"], ["start", "By start date", "Everything in one list, by start date"], ["order", "By order", "Steps from what waits for what: first what waits for nothing, then what waits only on those. Order, not what's ready: done work still counts"]], LIST_DEFAULT = "lane";
 let listMemo = null, listFocus = null;
 function listLayout(){
   if (listMemo !== null) return listMemo;
@@ -15148,9 +15148,9 @@ function listStatus(type, x){
 // initiative; Jira dependencies, with a warning when one ends after the item starts. Each entry can open what it names.
 function listWaits(type, x, start, label){
   const out = [], pre = label ? label + ": " : "";
-  if (type === "task") (x.dependsOn || []).forEach(id=>{ const f = taskById(id); out.push({text:pre + "after " + (f ? taskTitle(f.t) : "a removed task"), open:f ? ["task", id] : null}); });
+  if (type === "task") (x.dependsOn || []).forEach(id=>{ const f = taskById(id); out.push({text:pre + (f ? taskTitle(f.t) : "a removed task"), open:f ? ["task", id] : null}); });
   if (type === "bar"){
-    (x.dependsOn || []).forEach(id=>{ const b = barById(id); out.push({text:pre + "after " + (b ? chartLabel(b) : "a removed initiative"), open:b ? ["bar", id] : null}); });
+    (x.dependsOn || []).forEach(id=>{ const b = barById(id); out.push({text:pre + (b ? chartLabel(b) : "a removed initiative"), open:b ? ["bar", id] : null}); });
     (x.waitsFor || []).forEach(id=>{ const g = (S.gates || []).find(y=>y.id === id);
       if (g) out.push({text:pre + "gate: " + g.gate, open:["gate", id]});
       else { const blk = (S.blocks || []).find(y=>y.id === id); out.push({text:pre + "process: " + predName(id), open:blk ? ["block", id] : null}); } });
@@ -15202,9 +15202,10 @@ function orderSteps(){
 function listGroups(m, layout){
   const items = m.rows.filter(r=>!r.header), byStart = (a, b) => (a.s ?? 1e12) - (b.s ?? 1e12) || a.ord - b.ord;
   if (layout === "start") return [{label:null, rows:items.slice().sort(byStart)}];
-  if (layout === "order"){ const st = orderSteps(), groups = new Map();
-    items.forEach(r=>{ const k = st.get(r.type + ":" + r.id) ?? 0; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
-    return [...groups.keys()].sort((a, b)=>(a < 0 ? 1e9 : a) - (b < 0 ? 1e9 : b)).map(k=>({label:k < 0 ? "In a loop: these wait for each other" : k === 0 ? "Step 1: waits for nothing" : `Step ${k + 1}`, step:k, rows:groups.get(k).sort(byStart)})); }
+  if (layout === "order"){ const st = orderSteps(), groups = new Map(), WAIT = -2;       // waiting and unstaffed rows hold a place; they aren't work
+    items.forEach(r=>{ const k = r.b && r.b.kind === "waiting" ? WAIT : st.get(r.type + ":" + r.id) ?? 0; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
+    const rank = k => k === WAIT ? 2e9 : k < 0 ? 1e9 : k;
+    return [...groups.keys()].sort((a, b)=>rank(a) - rank(b)).map(k=>({label:k === WAIT ? "Waiting and unstaffed" : k < 0 ? "In a loop: these wait for each other" : k === 0 ? "Step 1: waits for nothing" : k === 1 ? "Step 2: waits for step 1" : `Step ${k + 1}: waits for steps 1 to ${k}`, step:k, rows:groups.get(k).sort(byStart)})); }
   if (layout === "lane"){
     // Each workstream in its order, its initiatives as on By initiative; a sub-initiative in another workstream starts at its own top level.
     const depth = b => { let n = 0; for (let p = b.parent && barById(b.parent), seen = new Set(); p && p.lane === b.lane && !seen.has(p.id); p = p.parent && barById(p.parent)){ seen.add(p.id); n++; b = p; } return n; };
@@ -15243,7 +15244,7 @@ function listCopy(text){
 }
 // Column widths and wrapping are the viewer's own, kept in this browser. The first resize fixes every column at the width
 // it shows, so nothing else jumps; a column that doesn't wrap keeps one line, cut short with the full text on hover.
-const LIST_COLS = [["start", "Start", 96], ["end", "End", 96], ["item", "Item", 320], ["lane", "Workstream", 150], ["owner", "Owner", 180], ["waits", "Waits on", 220], ["status", "Status", 170]];
+const LIST_COLS = [["start", "Start", 96], ["end", "End", 96], ["item", "Item", 320], ["lane", "Workstream", 150], ["owner", "Owner", 180], ["waits", "Waits for", 220], ["status", "Status", 170]];
 const listColsShown = (layout = listLayout()) => LIST_COLS.filter(c=>c[0] !== "lane" || layout !== "lane");   // By workstream names the workstream once, in its group
 const LCOL_MIN = 48, LCOL_MAX = 900, LCOL_NW = ["start", "end"], lcolW = v => Math.round(Math.max(LCOL_MIN, Math.min(LCOL_MAX, v)));
 let listColsOpen = false;

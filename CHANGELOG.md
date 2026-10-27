@@ -8,7 +8,7 @@ Order without dates.
 
 ### New
 
-- **See the work in order, without dates** (List). By order, in the List, groups work into steps: step 1 waits for nothing, and each later step waits only on earlier ones. Waiting for an initiative means waiting for everything in it. Work that waits on itself through a loop is set apart. Filters hide rows but never change a step. *Where:* List, By order
+- **See the work in order, without dates** (List). By order, in the List, groups work into steps: step 1 waits for nothing, and each later step waits only on earlier ones. Waiting for an initiative means waiting for everything in it. Steps show order, not what's ready. Loops, and waiting and unstaffed rows, are set apart. The Waits on column is now Waits for. *Where:* List, By order
 
 ### Improved
 
