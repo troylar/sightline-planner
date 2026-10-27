@@ -1,5 +1,5 @@
 // Too early, counted: an open task that starts before what it waits for finishes joins the initiatives that do, in the
-// "start before what they wait for finishes" banner, Present's dependency conflict count and its cycling, and Move them
+// "start before what they wait for finishes" banner, Present's "starts too early" count and its cycling, and Move them
 // later. A done one isn't counted, and isn't moved: finished work keeps the dates it ran on. Fixed clock (Wed Oct 7, 2026); the sample plan with invented tasks.
 const {JSDOM, VirtualConsole} = require("jsdom"), fs = require("fs"), path = require("path");
 const html = fs.readFileSync(process.env.SIGHTLINE_HTML || path.join(__dirname, "..", "dist", "sightline.html"), "utf8").replace(/<link[^>]+fonts[^>]+>/, "");
@@ -30,12 +30,12 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     if (link) link.click(); await wait(20);
     ok("T3 its name opens the task", J(`sel`)?.type === "task" && J(`sel`)?.id === "b", JSON.stringify(J(`sel`)));
     ev(`sel = null; present = true; drawBanners();`);
-    const chip = $$("#banners .review .rchip").map(e=>e.textContent).find(t=>/dependency conflict/.test(t)) || "";
-    ok("T4 Present counts it as a dependency conflict", chip === "1dependency conflict", chip);
+    const chip = $$("#banners .review .rchip").map(e=>e.textContent).find(t=>/too early/.test(t)) || "";
+    ok("T4 Present counts it in the banner's words: 1 starts too early", chip === "1starts too early", chip);
     ev(`cycleReview("dep");`);
     ok("T5 cycling the conflicts selects the task", J(`sel`)?.type === "task" && J(`sel`)?.id === "b");
     ev(`present = false; sel = null; render();`);
-    ok("T6 Move them later is offered", !!$("#fixDeps"));
+    ok("T6 for one, the button says Move it later", $("#fixDeps")?.textContent === "Move it later", $("#fixDeps")?.textContent);
     ev(`fixDeps();`);
     const st = $("#status")?.textContent || "";
     ok("T7 Move them later moves it after what it waits for, and nothing is left; the done task keeps its dates", T(`taskById("b").t.start`) === "2026-10-16" && T(`taskById("c").t.start`) === "2026-10-05" && T(`depClashes().length`) === 0 && /^Moved 1 item so it starts after what it waits for\./.test(st), `${T(`taskById("b").t.start`)} | ${st}`);

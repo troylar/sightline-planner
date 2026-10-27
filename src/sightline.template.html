@@ -4160,7 +4160,7 @@ function drawBanners(){
     const sets = reviewSets(), any = sets.some(x=>x[3].length);
     host.append(h("div",{class:"review",role:"group","aria-label":"Review summary"},
       h("span",{class:"lbl"}, partialView() ? "Review of the whole plan" : "Review"),
-      any ? sets.filter(x=>x[3].length).map(([k,label,cls,arr])=>h("button",{class:"rchip "+cls,type:"button",title:`Show each ${label} item in turn`,onclick:()=>cycleReview(k)}, h("b",{},String(arr.length)), label + (arr.length===1||k!=="dep" ? "" : "s")))
+      any ? sets.filter(x=>x[3].length).map(([k,label,cls,arr])=>h("button",{class:"rchip "+cls,type:"button",title:k === "dep" ? "Show each item that starts before what it waits for finishes, in turn" : `Show each ${label} item in turn`,onclick:()=>cycleReview(k)}, h("b",{},String(arr.length)), k === "dep" && arr.length !== 1 ? "start too early" : label))
           : h("span",{class:"rchip ok"},"✓ Nothing late, at risk or in conflict"),
       S.baseline ? h("span",{class:"rchip"}, baselineStory()) : null,
       fActive() ? h("span",{class:"scope"}, `${viewLabel()} · ${rangeLabel()} · ${visibleCount()} of ${S.bars.length} initiatives`) : null));
@@ -4182,7 +4182,7 @@ function drawBanners(){
     host.append(h("div",{class:"banner warn",role:"status"},
       late.length ? h("span",{}, h("b",{}, `${late.length} late${partialView() ? " in the whole plan" : ""}: `), ...list(late)) : null,
       dep.length ? h("span",{}, h("b",{}, dep.length === 1 ? "1 starts before what it waits for finishes: " : `${dep.length} start before what they wait for finishes: `), ...list(dep), " ",
-        editable() ? h("button",{type:"button",class:"btn",id:"fixDeps",title:"Push each one to start after what it waits for (and anything after it)",onclick:()=>fixDeps()},"Move them later")
+        editable() ? h("button",{type:"button",class:"btn",id:"fixDeps",title:"Push each one to start after what it waits for (and anything after it)",onclick:()=>fixDeps()}, dep.length === 1 ? "Move it later" : "Move them later")
           : file.handle && !present ? h("span",{class:"hint"},"(Start editing to fix)") : null) : null,
       cyc.length ? h("span",{}, h("b",{}, `Dependency loop: `), ...list(cyc)) : null,
       dead.length ? h("span",{}, h("b",{}, `${dead.length} wait${dead.length===1?"s":""} for something canceled: `), dead.slice(0,4).join(", ") + (dead.length > 4 ? "…" : ""), " (open them to re-link or drop the link)") : null));
@@ -10194,7 +10194,7 @@ function onDrag(e){
         drag.nestTo ? h("div",{class:"g"}, `Release to put it inside "${chartLabel(barById(drag.nestTo)).slice(0,36)}"`) : drag.hoverId ? h("div",{}, `Hold to put it inside "${chartLabel(barById(drag.hoverId)).slice(0,36)}"…`) : null,
         toLane ? h("div",{}, `→ ${toLane.name}`) : null,
         (()=>{ if (drag.fromPerson === undefined) return null; const op2 = document.elementFromPoint(e.clientX, e.clientY)?.closest(".lane[data-person]"); if (!op2 || op2.dataset.person === drag.fromPerson) return null; const pp = personById(op2.dataset.person); return h("div",{class:"g"}, op2.dataset.person === "none" ? `→ Unassign ${personName(drag.fromPerson)}` : `→ Reassign from ${personName(drag.fromPerson)} to ${pp ? pp.name : "them"}`); })(),
-        probs.length ? h("div",{class:"w"}, `⚠ Starts before "${(probs[0].label||"").slice(0,36)}" ends`) : drag.p0 ? h("div",{class:"g"}, "✓ Clears the dependency conflict") : null,
+        probs.length ? h("div",{class:"w"}, `⚠ Starts before "${(probs[0].label||"").slice(0,36)}" ends`) : drag.p0 ? h("div",{class:"g"}, "✓ No longer starts too early") : null,
         h("small",{}, e.shiftKey ? "Fine steps" : "Hold Shift for fine steps")]);
     }
   } else {
@@ -15612,7 +15612,7 @@ function reviewSets(){
   return [
     ["late", "late", "bad", S.bars.filter(isLate)],
     ["atrisk", "at risk", "warn", S.bars.filter(b=>effStatus(b)==="atrisk" && !isLate(b))],
-    ["dep", "dependency conflict", "warn", depClashes()]];
+    ["dep", "starts too early", "warn", depClashes()]];
 }
 function cycleReview(key){
   const set = reviewSets().find(x=>x[0]===key)[3]; if (!set.length) return;

@@ -237,7 +237,7 @@ with `after`, the tasks it starts after, and leave out `start`:
   forecast, which uses effort.
 - When what it waits for runs late, Sightline pushes the task later on its own, unless automatic moving is off or a Jira
   sprint dates the task. Then the task is flagged on its card, tagged **too early** on the Days view, and counted in
-  the warning bar's "starts before what it waits for finishes" list and Present's dependency conflicts. A done task
+  the warning bar's "starts before what it waits for finishes" list and Present's "starts too early" count. A done task
   is never moved and never counted: it keeps the dates it ran on.
 - When what it waits for finishes sooner, the task's card offers the day it could start. Sightline never moves work
   earlier on its own.
