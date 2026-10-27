@@ -1,5 +1,42 @@
 [
   {
+    "version": "1.147.0",
+    "date": "2026-10-27",
+    "headline": "Focus on one initiative or one person",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Focus, and step back out",
+        "before": "Seeing one initiative or one person's work took several steps in different places: Show only this, then the Days button, then a banner or the Filters panel to undo it.",
+        "now": "Press Focus on an initiative's or person's card, or select it and press Z. An initiative opens in Days by itself. Focus on a person inside it to see just their work there. The path above the chart steps back: click a step, press Esc, or Leave focus for the view you had.",
+        "where": "Timeline, List and Capacity: the Focus button on a card, or Z"
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Teammates' work, when you want it",
+        "now": "While focused on a person, Show teammates' work on their initiatives adds everyone else's tasks there, dimmed so that person's work stays easy to pick out.",
+        "where": "The focus path above the chart"
+      },
+      {
+        "kind": "fixed",
+        "area": "Filters",
+        "title": "A lead's initiative stays in their work",
+        "before": "Filtering to a person hid an initiative they lead when none of its tasks were theirs.",
+        "now": "It stays, with its tasks filtered as before.",
+        "where": "Filters > People, and Focus on a person"
+      },
+      {
+        "kind": "improved",
+        "area": "Details",
+        "title": "Shortcuts on the one-line boxes",
+        "now": "Add an update and Add a note show their shortcuts, U and S, when you point at them, and screen readers announce them. An empty box you opened stays open until you reload the page.",
+        "where": "The details panel for an initiative or task"
+      }
+    ]
+  },
+  {
     "version": "1.146.0",
     "date": "2026-10-27",
     "headline": "Empty boxes take one line",
