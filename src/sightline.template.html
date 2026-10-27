@@ -5560,7 +5560,7 @@ const HELP = [
     h("p",{class:"hint"},"New here? Open the Today tab first. It's what you'd check each morning.")]],
   ["daily", "Every day", ()=>[
     h("h3",{},"The Today tab"),
-    h("p",{}, "What needs attention, for you (Mine) or the whole team: ", h("b",{},"blocked"), " work (oldest first), ", h("b",{},"stale"), " work (past due, nobody's said anything), ", h("b",{},"late"), " work (past due, but updated), work that ", h("b",{},"should have started"), ", and what's ", h("b",{},"due soon"), ". On the right: today's meetings, decisions due this week, who's out, and what got done."),
+    h("p",{}, "What needs attention, for you (Mine) or the whole team: ", h("b",{},"blocked"), " work (oldest first), ", h("b",{},"stale"), " work (past due, nobody's said anything), ", h("b",{},"late"), " work (past due, but updated), work that ", h("b",{},"should have started"), ", what's ", h("b",{},"due soon"), " and, for the team, captures ", h("b",{},"waiting in triage"), " over 30 days. On the right: today's meetings, decisions due this week, who's out, and what got done."),
     h("p",{}, "Every row has buttons: move it, mark it done, unblock it. The red number on the tab is blocked + late."),
     h("h3",{},"On any task or initiative"),
     h("ul",{}, h("li",{}, "Status buttons at the top of its panel (keys I and X)."), h("li",{}, h("b",{},"Mark blocked"), ": say what's in the way and who you're waiting on (B). It shows on the chart and in Today until someone unblocks it."),
@@ -12045,7 +12045,9 @@ function todayData(scope = todayScope()){
     ...(S.risks || []).filter(x=>x.state !== "closed" && x.escalateBy && isoToDay(x.escalateBy) <= t0).map(x=>({kind:"risk", x, by:isoToDay(x.escalateBy), why:"escalate"}))].filter(e=>minePR(e.x)).sort((a, b)=>a.by - b.by);
   const meetings = S.meetings.filter(m=>occurrences(m, t0, t0).length && (scope === "team" || attendeesOf(m).includes(me))).sort((a,b)=>(a.time||"99").localeCompare(b.time||"99"));
   const out = team().filter(pp=>!pp.external).map(pp=>({pp, off:personOff(pp)})).filter(x=>x.off.has(t0) || [...x.off].some(d=>d > t0 && d <= weekStart + 4));
-  return {t0, blocked, late, stale, notStarted, dueSoon, doneWeek, decisions, escalate, meetings, out};
+  // Captures nobody has handed off or declined in over 30 days, oldest first: the team's, so none quietly rot.
+  const oldCaps = scope === "team" ? (S.deliverables || []).filter(d=>capOpen(d) && capAge(d).days > 30).sort((a, b)=>capAge(b).days - capAge(a).days) : [];
+  return {t0, blocked, late, stale, notStarted, dueSoon, doneWeek, decisions, escalate, meetings, out, oldCaps};
 }
 function todayCounts(){ try { const d = todayData(); return d.blocked.length + d.late.length + d.stale.length + d.escalate.length; } catch(e){ return 0; } }
 // Standup (vision.md, many views on one wall): this sprint's work by person, in To do / In progress / Done. Jira
@@ -14741,7 +14743,7 @@ function todaySummary(D, scope){
   const go = title => { const el = document.querySelector(`#today [data-tsec="${CSS.escape(title)}"]`); if (el){ el.scrollIntoView({block:"start"}); const b = el.querySelector("button"); if (b) b.focus({preventScroll:true}); } };
   const chip = (n, label, title, cls) => n ? h("button",{type:"button",class:"tchip " + cls,"data-tchip":title,onclick:()=>go(title)}, h("b",{}, String(n)), " " + label) : null;
   const chips = [chip(D.escalate.length, "to escalate", "Escalate", "bad"), chip(D.blocked.length, "blocked", "Blocked", "bad"), chip(D.stale.length, "stale", "Stale", "warn"), chip(D.late.length, "late", "Late", "warn"),
-    chip(D.notStarted.length, "should have started", "Should have started", "warn"), chip(D.decisions.length, "decision" + (D.decisions.length === 1 ? "" : "s") + " due", "Decisions due", "")].filter(Boolean);
+    chip(D.notStarted.length, "should have started", "Should have started", "warn"), chip(D.oldCaps.length, "waiting in triage", "Waiting in triage", "warn"), chip(D.decisions.length, "decision" + (D.decisions.length === 1 ? "" : "s") + " due", "Decisions due", "")].filter(Boolean);
   const wd = n => `${n} working day${n === 1 ? "" : "s"}`;
   const ms = S.milestones.filter(m=>m.at != null && atToDay(m.at) >= t0).sort((a, b)=>a.at - b.at)[0];
   const rel = releasesInPlan().find(r=>isoToDay(r.date) >= t0);
@@ -14811,7 +14813,13 @@ function renderToday(){
         section("hourglass", "Stale", "Past due with no update since. Check in, or move it.", D.stale.map(it=>(rowKey = it.key, itemRow(it, lateMeta(it), [...moveBtns(it), doneBtn(it)]))), "bad", bulk, "stale"),
         section("clock", "Late", "Past due, but someone updated it since.", D.late.map(it=>(rowKey = it.key, itemRow(it, lateMeta(it), [...moveBtns(it), doneBtn(it)]))), "warn", null, "late"),
         section("play", "Should have started", "Its start date has passed and it's still Not started.", D.notStarted.map(it=>(rowKey = it.key, itemRow(it, `was to start ${fmtDay(it.sp.s)}`, [btn("Start", ()=>act(it.key, `${itemLabel(it)}: in progress`, w=>{ w.obj.status = "inprogress"; })), ...moveBtns(it)]))), "warn", null, "late to start"),
-        section("meeting", "Due in the next 3 working days", "", D.dueSoon.map(it=>(rowKey = it.key, itemRow(it, it.sp.e === t0 ? h("b",{},"due today") : `due ${fmtDay(it.sp.e)}`, [doneBtn(it)]))), "", null, "due in the next 3 working days")].filter(Boolean);
+        section("meeting", "Due in the next 3 working days", "", D.dueSoon.map(it=>(rowKey = it.key, itemRow(it, it.sp.e === t0 ? h("b",{},"due today") : `due ${fmtDay(it.sp.e)}`, [doneBtn(it)]))), "", null, "due in the next 3 working days"),
+        scope === "team" ? section("hourglass", "Waiting in triage", "Captured over 30 days ago, not handed off or declined yet. Oldest first.", D.oldCaps.map(d=>{ rowKey = "capture:" + d.id;
+          const open = ()=>{ UI.rmTriage = true; goWs("roadmap"); sel = {type:"deliverable", id:d.id}; render(); };
+          return h("li",{class:"trow small","data-tkey":"capture:" + d.id},
+            h("div",{class:"tmain"}, h("button",{type:"button",class:"linkish tname","data-key":"today:capture:" + d.id,onclick:open}, d.name || "(untitled)"),
+              h("small",{}, [capType(d), d.askedBy ? "asked by " + capWho(d.askedBy) : "asked by: not known", d.source || "", capAge(d).text].filter(Boolean).join(" · "))),
+            present ? null : h("div",{class:"tacts"}, btn("Triage", open))); }), "warn", null, "waiting in triage for over 30 days") : null].filter(Boolean);
           return [...secs, clearLine(secs.length ? "Nothing else is " : "All clear. Nothing is ", secs.length ? "" : "big")]; })()),
       h("div",{class:"tcol side"}, present ? null : sinceSection(),
         ...(JIRA && jiraDiffs().length ? [section("link", "Jira disagrees", `Synced ${jiraAge()}`, jiraDiffs().filter(({it})=>scope === "team" || itemOwners(it).includes(me)).slice(0,15).map(({it, j})=>h("li",{class:"trow small"},

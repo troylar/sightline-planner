@@ -67,6 +67,8 @@ have no way to send release notes to the teams that use them". Keep them in the 
   come up. Your assistant does the same with the meeting-to-plan skill (since 1.133.0).
 - **To triage**, on the Roadmap, lists open captures by workstream, oldest first, with **Unassigned** last. Open one
   to **Hand off** (to an initiative or a Jira issue) or **Decline** with a reason; **Reopen** puts it back.
+- A capture still open after 30 days also shows on **Today**, in the **Team** view, under **Waiting in triage** (oldest
+  first, with a count in Needs attention), so none quietly rots. **Triage** on a row opens it in To triage to hand it off or decline it.
 
 **By asker**, in To triage, lists everything each person or group raised, open ones first, then what became of the
 rest. **Copy a note for them** copies a short plain-text note to send back: each thing they raised and where it stands,

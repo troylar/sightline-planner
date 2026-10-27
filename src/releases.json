@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.143.0",
+    "date": "2026-10-27",
+    "headline": "Old captures show on Today",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Today",
+        "title": "Captures waiting over 30 days show on Today",
+        "before": "A request or idea nobody handed off or declined stayed in To triage, on the Roadmap, however old it got.",
+        "now": "In the Team view, Today lists captures open for over 30 days under Waiting in triage, oldest first, with who asked and how long it's been open. Needs attention counts them. Triage opens one in To triage, to hand it off or decline it.",
+        "where": "Today, Team"
+      }
+    ]
+  },
+  {
     "version": "1.142.0",
     "date": "2026-10-27",
     "headline": "Tasks that start too early are counted",
