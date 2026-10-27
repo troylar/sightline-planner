@@ -59,5 +59,18 @@ ok("retains complete stdout and stderr on failure", result.returncode != 0 and a
 payload = "import time; print('1/1 passed', flush=True); time.sleep(5)" if "run_suite(){" in SOURCE else "print('1/1 passed'); raise SystemExit(124)"
 result = exercise(payload, "1")
 ok("a timeout after a passing summary still fails and is identified", result.returncode != 0 and "timed out" in result.stdout and "1/1 passed" in result.stdout, result.stdout[-500:])
+
+# Skipped browser suites: a failure unless SIGHTLINE_NO_BROWSER=1 says the skip is on purpose, and said either way.
+def browser(no_browser: str) -> subprocess.CompletedProcess[str]:
+    env = dict(os.environ, CI="", PLAYWRIGHT="/nonexistent/playwright", SIGHTLINE_NO_BROWSER=no_browser)
+    command = 'source "$1"; fail=0; browser_checks; exit "$fail"'
+    return subprocess.run(["bash", "-c", command, "runner-test", str(RUNNER)], capture_output=True, text=True, env=env, timeout=30)
+if "browser_checks(){" in SOURCE:
+    result = browser("")
+    ok("skipped browser suites fail the run, and say how many", result.returncode != 0 and "SKIPPED: 5 browser suites" in result.stdout and "SIGHTLINE_NO_BROWSER=1" in result.stdout, result.stdout[-500:])
+    result = browser("1")
+    ok("SIGHTLINE_NO_BROWSER=1 skips them on purpose, still saying so", result.returncode == 0 and "SKIPPED: 5 browser suites" in result.stdout, result.stdout[-500:])
+else:
+    ok("skipped browser suites fail the run, and say how many", False, "run.sh has no browser_checks")
 print(f"{passed}/{passed + failed} passed")
 sys.exit(1 if failed else 0)

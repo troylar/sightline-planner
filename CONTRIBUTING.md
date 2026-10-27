@@ -10,9 +10,14 @@ on Windows use a Bash environment with those commands available.
 
 ```sh
 npm ci
+npx playwright install chromium
 ./build.sh
 ./test/run.sh
 ```
+
+The suite includes five layout checks in a real browser, and it fails if Playwright isn't installed, so a local pass
+means the same as CI's. To skip them on purpose, run `SIGHTLINE_NO_BROWSER=1 ./test/run.sh`; the run still says they
+were skipped.
 
 Edit **src/sightline.template.html**, never generated **dist/** files. Build before testing: harnesses execute
 the built HTML. See AGENTS.md for focused checks, deterministic dates and the exact runner requirements.
