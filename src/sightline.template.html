@@ -537,7 +537,10 @@ body.presenting #filterBtn,body.presenting #viewSave{display:none!important}
 .qst.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
 .qlate .qrow .btn,.qblocked .btn{font-size:12px;padding:3px 8px}
 .qreason{margin:3px 0 6px;font-size:12.5px}
-.qblock summary,.qslip summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.qblock summary,.qslip summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-2);list-style:none;display:flex;align-items:center;gap:6px}
+.qblock>summary::-webkit-details-marker,.qslip>summary::-webkit-details-marker{display:none}
+.qblock>summary::before,.qslip>summary::before{content:"";flex:none;width:6px;height:6px;border-right:1.5px solid var(--ink-3);border-bottom:1.5px solid var(--ink-3);transform:rotate(-45deg);transition:transform var(--state) var(--ease);margin:0 2px}
+.qblock[open]>summary::before,.qslip[open]>summary::before{transform:rotate(45deg)}
 .qform{display:flex;flex-direction:column;gap:6px;margin-top:6px}
 .qform input,.qform select,.uadd textarea{border:1px solid var(--rule);border-radius:6px;padding:5px 7px;font:inherit;font-size:13px;background:var(--surface);color:var(--ink)}
 .qform .btn{align-self:flex-start}
@@ -11122,7 +11125,7 @@ function renderSide(){
 }
 // A folded part of the details panel. The summary line says what's inside; open or closed is remembered per item type,
 // in this browser. Organize keeps the id it always had.
-const depSum = n => n ? `${n} item${n === 1 ? "" : "s"}` : "Nothing";
+const depSum = names => !names.length ? "Nothing" : names.length <= 2 ? names.join(", ") : `${names.length} items`;   // one or two by name
 function fold(type, key, title, sum, ...kids){
   const list = kids.flat(Infinity).filter(x=>x != null && x !== false); if (!list.length) return null;
   const k = type + ":" + key, o = UI.sideFold || {}, open = !!o[k];
@@ -11305,7 +11308,7 @@ function sideBody(put){
       probs.length ? h("div",{class:"msg warn"}, `Starts ${wkDate(b.start)}, before "${probs[0].label}" ends ${endDate(probs[0])}.`) : null,
       !probs.length && depTight(b).length ? h("div",{class:"msg",style:{background:"var(--paper)"}}, `Tight handoff: starts ${depOverlap(b, depTight(b)[0])} working day${depOverlap(b, depTight(b)[0])===1?"":"s"} before "${depTight(b)[0].label}" ends ${endDate(depTight(b)[0])}. Fine if the team can overlap a little.`) : null,
       isLate(b) ? h("div",{class:"msg bad"}, r && r.late ? "Late: a task is past its end date and isn't done." : `Late: ended ${endDate(b)} and isn't marked done.`) : null,
-      out.length ? h("div",{class:"msg warn"}, `${out.length} task(s) fall outside the planned dates. Adjust them, or set Dates to "From tasks".`) : null,
+      out.length ? h("div",{class:"msg warn"}, `${out.length} task${out.length === 1 ? " falls" : "s fall"} outside the planned dates. Adjust ${out.length === 1 ? "it" : "them"}, or set Dates to "From tasks".`) : null,
       r ? h("div",{class:"msg",style:{background:"var(--paper)"}}, `${r.done} of ${r.n} ${hasKids(b) ? "items" : "tasks"} done · ${r.pct}% of task-days · status ${STATUSES.find(x=>x[0]===r.status)[1].toLowerCase()}`) : null,
       quickPanel("bar:" + b.id), stickies(noteKeysOf(b, "bar"), b.lane),
       (()=>{ const rs = S.risks.filter(x=>x.item===b.id), ds = S.decisions.filter(x=>x.item===b.id && x.state !== "decided"); if (!rs.length && !ds.length) return null;
@@ -11336,7 +11339,7 @@ function sideBody(put){
           field("f-span","Length (weeks)", h("input",{id:"f-span",type:"number",step:"0.5",min:"0.5",max:String(W),value:snap(b.span),disabled:derived(b) || !!jiraLockOf(b)?.dates,onchange:e=>commit(()=>act("initiative.move", {id:b.id, span:num(e.target.value,b.span)}))}))),
         (()=>{ const hol = derived(b) || b.kind === "waiting" ? [] : holidaysIn(nextWork(wkDay(b.start), new Set()), barEndDay(b));
           return hol.length ? h("p",{class:"hint"}, `${hol.map(x=>(x.name||"Holiday") + " (" + fmtDay(isoToDay(x.date)) + ")").join(", ")} ${hol.length===1?"falls":"fall"} inside, so it ends ${hol.length} working day${hol.length===1?"":"s"} later than a plain ${snap(b.span)}-week block.`) : null; })()),
-      fold("bar", "deps", "Waits for", depSum(b.dependsOn.length + (b.waitsFor||[]).length + (b.jiraDeps||[]).length),
+      fold("bar", "deps", "Waits for", depSum([...b.dependsOn.map(barById).filter(Boolean).map(chartLabel), ...(b.waitsFor||[]).map(id=>gateById(id)?.gate || instById(id)?.label).filter(Boolean), ...(b.jiraDeps||[])]),
         h("div",{class:"field"}, h("span",{class:"flabel"},"Starts after these finish"), depBox),
         (()=>{ const opts = liveBlocks().filter(i=>i.status !== "canceled" || (b.waitsFor||[]).includes(i.id)); if (!opts.length) return null;
           return h("div",{class:"field"}, h("span",{class:"flabel"},"Waits for process blocks"),
@@ -11412,7 +11415,7 @@ function sideBody(put){
           field("f-tstart","Start", h("input",{id:"f-tstart",type:"date",disabled:!!jiraLockOf(t)?.dates,min:S.meta.start,value:dayToIso(sp.s),onchange:e=>commit(()=>validIso(e.target.value) ? act("task.move", {id:t.id, start:e.target.value}) : NOCHANGE)})),
           field("f-tdays","Working days", h("input",{id:"f-tdays",type:"number",disabled:!!jiraLockOf(t)?.dates,min:"1",max:"260",value:t.days,onchange:e=>commit(()=>act("task.move", {id:t.id, days:clampInt(e.target.value,1,260,t.days)}))}))),
         h("label",{class:"chk",for:"f-trough"}, h("input",{type:"checkbox",id:"f-trough",checked:!!t.rough,disabled:!!jiraLockOf(t)?.dates,onchange:e=>{ commit(()=>act("task.set", {id:t.id, field:"rough", value:e.target.checked})); $("#f-trough")?.focus(); }}), " Length is a guess")),
-      fold("task", "deps", "Waits for", depSum((t.dependsOn||[]).length + (t.jiraDeps||[]).length),
+      fold("task", "deps", "Waits for", depSum([...(t.dependsOn||[]).map(taskById).filter(Boolean).map(f=>taskTitle(f.t)), ...(t.jiraDeps||[])]),
         jiraDepsField(t, "task"),
         h("div",{class:"field"}, h("span",{class:"flabel"},"Starts after these tasks"),
           (t.dependsOn || []).length ? h("p",{class:"hint",id:"f-tmoves"}, jiraLockOf(t)?.dates ? "Its Jira sprint sets its dates, so it doesn't move when what it waits for runs late. Late work shows as starting too early."
