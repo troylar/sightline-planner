@@ -213,6 +213,13 @@ HTML, shows as plain text.
 set with `template.set`), and gates have a description. Propose them with `milestone.set` field `story` and
 `gate.set` field `description`. A meeting's note is shown as Markdown and set with `meeting.set` field `note`.
 
+## What a change moves, and what Apply did
+
+The review lists each date a change moves, like "Wire it moves 2 days later (Oct 14 to Oct 16), waits for "Adapter"".
+It says what the item waits for, not that it moved because of it: holidays, time off and gates move dates too. After
+Apply, the status line counts what changed, like "Applied changes 1 to 30 (30 tasks added, 29 links added, 12 dates
+moved)". Your assistant reads the same summary in its results file.
+
 ## Order before dates
 
 When you know the order of the work but not its dates, don't give every task the same placeholder start. Add each task

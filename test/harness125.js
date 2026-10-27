@@ -63,7 +63,7 @@ const byId = (rs, id) => rs.find(r=>r.id === id) || {};
     ok("B3 …stops at 4: nothing after it lands ahead of it", !ev("taskById('task-ba-3')") && ev("barById('m4').label") === m4);
     ok("B3 …as one update with one undo", ev("past.length + quickDone.length") === undo0 + 1);
     const said = ev("document.querySelector('#status').textContent");
-    ok("B3 it says what applied, what was already there, what waits and why, and that it's saved", /^Applied changes 1 and 2; change 3 was already in the plan; change 4 waits: op 1: .*isn't in the plan\. Saved\./.test(said), said);
+    ok("B3 it says what applied, what was already there, what waits and why, and that it's saved", /^Applied changes 1 and 2( \([^)]*\))?; change 3 was already in the plan; change 4 waits: op 1: .*isn't in the plan\. Saved\./.test(said), said);
     ok("B3 already-there work isn't counted as applied", !/changes 1, 2 and 3/.test(said) && ev(`amReceipt('batch-ba', AM.file.changes[2])`) === "already");
     ok("B3 the quick update was saved to the shared file", JSON.parse(hd.text).bars.find(b=>b.id === "m2").tasks.some(t=>t.id === "task-ba-2"));
     await exportNow(); let res = results();

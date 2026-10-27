@@ -75,7 +75,7 @@ async function page(opts = {}){
     ok("A1: Apply saves the ready ones to the shared file", plan.deliverables.find(x=>x.id === "dv-bed").target === "2027-Q2" && !!plan.deliverables.find(x=>x.id === "dv-eval" && x.stage === "idea" && x.source === "Planning topics") && plan.proposals.some(x=>x.key === "ABC-11" && x.field === "points"));
     ok("A2: links merge by membership, so a teammate's link stays", JSON.stringify(plan.deliverables.find(x=>x.id === "dv-chk").jira.sort()) === JSON.stringify(["ABC-10","ABC-11","ABC-12"]));
     ok("A3: the stale and broken ones weren't applied", plan.deliverables.find(x=>x.id === "dv-chk").target === "2026-Q4" && !plan.deliverables.find(x=>x.id === "dv-bed").color);
-    ok("A4: it says what happened, via the assistant", /^Applied changes 1, 5, 6 and 7\. Saved\./.test(ev("document.querySelector('#status')?.textContent || ''")), ev("document.querySelector('#status')?.textContent || ''"));
+    ok("A4: it says what happened, via the assistant", /^Applied changes 1, 5, 6 and 7( \([^)]*\))?\. Saved\./.test(ev("document.querySelector('#status')?.textContent || ''")), ev("document.querySelector('#status')?.textContent || ''"));
     ok("A5: the change log says it came via Sample Helper", ev(`S.changes.some(c=>/via Sample Helper/.test(c.what))`));
     ok("R1: applied ones are completed, and stay completed on a refresh", (await load(ev, null, ev("AMTEXT")), JSON.stringify(Object.values(g()).filter(x=>x === "completed").length)) === "4");
     ev(`sel = {type:"amend", id:"x"}; render();`); d.querySelector('[data-amskip="stale"]').click(); await wait(10);

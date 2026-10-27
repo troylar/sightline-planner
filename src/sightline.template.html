@@ -284,6 +284,8 @@ td.spname input{width:100%}
 .bar.jira,.tbar.jira,.ibar.jira{border:2px solid var(--lc);border-left-width:4px;line-height:22px}
 .bar.jira.st-inprogress,.tbar.jira.st-inprogress{border-left-color:var(--prog)}.bar.jira.st-atrisk{border-left-color:var(--warn)}
 .bar.jira .tag,.tbar.jira .tag{background:var(--paper);color:var(--ink-2)}
+.tag.here{background:transparent;border:1px dashed currentColor;color:inherit;opacity:.9}
+.lhere{margin-left:6px;font-size:11px;padding:0 5px;border:1px dashed var(--rule);border-radius:3px;color:var(--ink-3);white-space:nowrap}
 .jkey{font-family:var(--font-code);font-size:10px;line-height:15px;padding:0 4px;border-radius:3px;flex:none;background:color-mix(in srgb,var(--lc,#5c6878) 16%,var(--surface));color:var(--ink)}
 .gsprint.plan{background:var(--paper);font-style:italic;color:var(--ink-2)}
 .lg-jira{display:inline-flex;align-items:center;justify-content:center;width:34px;height:14px;border:2px solid var(--accent);border-left-width:4px;border-radius:3px;background:var(--surface);vertical-align:-3px;margin-right:4px}
@@ -1524,7 +1526,7 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
   <div class="panel gwrap gscroll" id="gscroll"><div class="gantt" id="gantt"></div>
     <div class="legend" id="legend" aria-label="Key">
       <button type="button" class="lg-tg" id="legendTg" aria-expanded="false" title="What the colors and shapes mean">Key</button>
-      <span title="Comes from Jira: read-only here, and it follows Jira"><i class="lg-jira"><b>KEY</b></i>From Jira</span><span title="Added in Sightline: anyone can change it"><i class="lg-plan"></i>Added here</span>
+      <span title="Comes from Jira: read-only here, and it follows Jira"><i class="lg-jira"><b>KEY</b></i>From Jira</span><span title="Added in Sightline: anyone can change it"><i class="lg-plan"></i>Added here: no Jira key, not tracked in Jira</span>
       <span title="Counts say what they count: stories from Jira, tasks or items added here">5/9 stories · 2/5 tasks</span><span title="Sprint headers in italics are timeboxes added in this plan, not Jira sprints"><i class="lg-tbox"></i>Plan timebox</span>
       <span title="Note (N shows or hides notes)"><i class="lg-note"></i>Note</span><span title="Meeting"><i class="mi-cal"></i>Meeting</span>
       <span title="Initiative"><i class="lg-init"></i>Initiative</span><span title="Dates come from its tasks, so drag its tasks (or the whole bar) instead of resizing"><b class="lg-dk">≡</b>Dates from tasks</span><span title="Task"><i class="lg-task"></i>Task</span>
@@ -6001,7 +6003,7 @@ function dayCols(){
 // ================= rendering =================
 function remember(){ const a = document.activeElement; if (!a || !a.dataset) return null; return a.dataset.key || (a.id && a.closest("#side") ? "#" + a.id : null); }
 function restore(key){ if (!key) return; const el = key[0] === "#" ? document.getElementById(key.slice(1)) : document.querySelector(`[data-key="${CSS.escape(key)}"]`); if (el && !el.disabled) el.focus({preventScroll:true}); }
-const dropJiraMemos = () => { avMemo = null; noteMemo = null; fitMemo = null; storyMemo = null; countMemo = new Map(); epicListMemo = null; layerMemo = null; hideMemo = null; kindsMemo = null; tagMemo = null; seenMemo = null; onlyMemo = null; };   // after any change to the plan, Jira data or the day
+const dropJiraMemos = () => { avMemo = null; noteMemo = null; fitMemo = null; storyMemo = null; countMemo = new Map(); epicListMemo = null; layerMemo = null; hideMemo = null; kindsMemo = null; tagMemo = null; seenMemo = null; onlyMemo = null; hereMemo = null; };   // after any change to the plan, Jira data or the day
 // Selecting an item, or closing its panel, keeps the chart on screen when nothing it shows has changed since it was drawn:
 // the highlight moves to the elements tagged data-sel and the rest of the page draws as usual. Anything else draws in full:
 // another page or zoom, an edit, Jira, a new day or width, a kind of item not listed here, an item that isn't drawn yet, or
@@ -7571,18 +7573,22 @@ function actLine(id, args, p){ const a = args && typeof args === "object" ? args
   const rest = Object.entries(a).filter(([k])=>k !== "id" && k !== "prev").map(([k, v])=>k === "field" ? v : `${Array.isArray(v) ? v.map(x=>nm("", x)).join(", ") || "none" : nm(k, v)}`).join(" → ");
   return `${who}: ${id.split(".").slice(1).join(" ")}${rest ? " " + rest : ""}`.slice(0, 200); }
 // What a change moved: each initiative, task and milestone whose dates differ, with both dates and how much later.
+// The names of what an item waits for, in plan p: tasks, initiatives, or gates (process blocks have no name here).
+function waitNames(p, ids, kind){ return (ids || []).map(id=>{ if (kind === "task"){ const f = actTask(p, id); return f ? f.t.label || "a task" : null; }
+  if (kind === "bar"){ const x = actBar(p, id); return x ? barTitle(x) : null; } const g = (p.gates || []).find(y=>y.id === id); return g ? g.gate || "a gate" : null; }).filter(Boolean); }
+const waitsText = L => !L || !L.length ? "" : `, waits for ${L.slice(0, 2).map(x=>`"${String(x).slice(0, 60)}"`).join(" and ")}${L.length > 2 ? ` and ${L.length - 2} more` : ""}`;
 function planMoves(a, b){
   const out = [], d0 = p => isoToDay(p.meta.start), barDay = (p, x) => d0(p) + Math.round(x.start * 7), msDay = (p, m) => d0(p) + Math.round(m.at * 7);
   const A = new Map(a.bars.map(x=>[x.id, x])), T = new Map(a.bars.flatMap(x=>(x.tasks || []).map(t=>[t.id, t])));
-  b.bars.forEach(x=>{ const o = A.get(x.id); if (o && (o.start !== x.start || o.span !== x.span)) out.push({type:"initiative", id:x.id, label:barTitle(x), from:dayToIso(barDay(a, o)), to:dayToIso(barDay(b, x)), days:barDay(b, x) - barDay(a, o), weeks:Math.round((x.start - o.start) * 2) / 2, endWeeks:Math.round((x.start + x.span - o.start - o.span) * 2) / 2});
-    (x.tasks || []).forEach(t=>{ const ot = T.get(t.id); if (ot && (ot.start !== t.start || ot.days !== t.days)) out.push({type:"task", id:t.id, label:t.label || "Task", from:ot.start, to:t.start, days:isoToDay(t.start) - isoToDay(ot.start)}); }); });
+  b.bars.forEach(x=>{ const o = A.get(x.id); if (o && (o.start !== x.start || o.span !== x.span)) out.push({type:"initiative", id:x.id, label:barTitle(x), from:dayToIso(barDay(a, o)), to:dayToIso(barDay(b, x)), days:barDay(b, x) - barDay(a, o), weeks:Math.round((x.start - o.start) * 2) / 2, endWeeks:Math.round((x.start + x.span - o.start - o.span) * 2) / 2, waits:[...waitNames(b, x.dependsOn, "bar"), ...waitNames(b, x.waitsFor, "gate")]});
+    (x.tasks || []).forEach(t=>{ const ot = T.get(t.id); if (ot && (ot.start !== t.start || ot.days !== t.days)) out.push({type:"task", id:t.id, label:t.label || "Task", from:ot.start, to:t.start, days:isoToDay(t.start) - isoToDay(ot.start), waits:waitNames(b, t.dependsOn, "task")}); }); });
   const M = new Map(a.milestones.map(m=>[m.id, m]));
   b.milestones.forEach(m=>{ const o = M.get(m.id); if (o && o.at != null && m.at != null && o.at !== m.at) out.push({type:"milestone", id:m.id, label:m.what || "Milestone", from:dayToIso(msDay(a, o)), to:dayToIso(msDay(b, m)), days:msDay(b, m) - msDay(a, o)}); });
   return out;
 }
 const moveLine = m => { const n = Math.abs(m.weeks != null && m.weeks ? m.weeks : m.days), unit = m.weeks != null && m.weeks ? "week" : "day", dir = (m.weeks || m.days) > 0 ? "later" : "earlier";
   return m.weeks === 0 && m.days === 0 ? `${m.label}'s end moves ${Math.abs(m.endWeeks)} week${Math.abs(m.endWeeks) === 1 ? "" : "s"} ${m.endWeeks > 0 ? "later" : "earlier"}`
-    : `${m.label} moves ${n} ${unit}${n === 1 ? "" : "s"} ${dir} (${fmtDay(isoToDay(m.from))} to ${fmtDay(isoToDay(m.to))})`; };
+    : `${m.label} moves ${n} ${unit}${n === 1 ? "" : "s"} ${dir} (${fmtDay(isoToDay(m.from))} to ${fmtDay(isoToDay(m.to))})${dir === "later" ? waitsText(m.waits) : ""}`; };
 const actBar = (p, id) => p.bars.find(b=>b.id === id);
 const actTask = (p, id) => { for (const b of p.bars) for (const t of (b.tasks || [])) if (t.id === id) return {t, b}; return null; };
 const actDv = (p, id) => (p.deliverables || []).find(d=>d.id === id);
@@ -8321,7 +8327,7 @@ function packRows(items, s, e, cap = Infinity){
 }
 function describeBar(b){
   const lines = [barTitle(b), `${wkDate(b.start)} → ${endDate(b)}` + (derived(b) ? " (from tasks)" : "")];
-  if (b.jira) lines.push("Jira: " + b.jira);
+  if (b.jira) lines.push("Jira: " + b.jira); else if (untracked(b, "bar")) lines.push("Added here: in this plan, not tracked in Jira");
   const own = effOwner(b); if (own) lines.push("Owner: " + own);
   lines.push("Status: " + STATUSES.find(s=>s[0]===effStatus(b))[1] + (isLate(b) ? " (late)" : "") + (hasTasks(b) ? " (from tasks)" : ""));
   { const hol = holidaysIn(nextWork(wkDay(b.start), new Set()), barEndDay(b)); if (b.kind !== "waiting" && !derived(b)) lines.push(`${workBetween(nextWork(wkDay(b.start), new Set()), barEndDay(b), HS())} working days` + (hol.length ? ` · ${hol.map(x=>x.name||fmtDay(isoToDay(x.date))).join(", ")} ${hol.length===1?"pushes":"push"} the end out ${hol.length} day${hol.length===1?"":"s"}` : "")); }
@@ -8343,6 +8349,18 @@ function sideOf(x, type){
   if (type === "bar") return (x.epics || []).length || JKEY.test(upKey(x.jira)) ? "jira" : "plan";
   return "plan";
 }
+// "Added here" on work the plan holds that nothing in Jira tracks: a plan task, or an initiative with no epic, no key and
+// nothing inside it from Jira. Only in a plan that has Jira work too, where the two could be mistaken for each other.
+let hereMemo = null;
+function untracked(x, type){
+  if (!hereMemo){ const jt = b => sideOf(b, "bar") === "jira" || (b.tasks || []).some(t=>sideOf(t, "task") === "jira"); hereMemo = {mixed:S.bars.some(jt), bars:new Map()};
+    const kids = new Map(); S.bars.forEach(b=>{ if (b.parent) (kids.get(b.parent) || kids.set(b.parent, []).get(b.parent)).push(b); });
+    const walk = (b, seen) => { if (hereMemo.bars.has(b.id)) return hereMemo.bars.get(b.id); if (seen.has(b.id)) return true; seen.add(b.id);
+      const v = !jt(b) && (kids.get(b.id) || []).every(k=>walk(k, seen)); hereMemo.bars.set(b.id, v); return v; };
+    S.bars.forEach(b=>walk(b, new Set())); }
+  if (!hereMemo.mixed) return false;
+  return type === "bar" ? x.kind !== "waiting" && !!hereMemo.bars.get(x.id) : type === "task" ? sideOf(x, "task") === "plan" : false; }
+const hereTag = (x, type) => untracked(x, type) ? h("span",{class:"tag here",title:"Added here: in this plan, not tracked in Jira"}, "Added here") : null;
 function keyChip(x, type){        // the Jira key, as a small chip before the name (an initiative with several epics: "+n")
   if (sideOf(x, type) !== "jira") return null;
   const ks = type === "bar" ? [...new Set([...(x.epics || []), ...(JKEY.test(upKey(x.jira)) ? [upKey(x.jira)] : [])])] : [upKey(x.jira)];
@@ -9875,7 +9893,7 @@ function renderDays(){
           h("span",{class:"h l","data-edge":"l","aria-hidden":"true"}),
           keyChip(t, "task"),
           h("span",{class:"nm"}, (t.status==="done" ? "✓ " : "") + taskTitle(t)), noteBadge(noteKeysOf(t, "task")),
-          h("span",{class:"tags"}, late ? h("span",{class:"tag bad"},"late") : null, tooEarly(t, x.s) ? h("span",{class:"tag bad",title:"Starts before what it waits for finishes"},"too early") : null, t.rough ? h("span",{class:"tag",title:"Length is a guess"},"guess") : null, isBlocked(t) ? h("span",{class:"tag bad",title:"Blocked: " + t.blocked.reason},"⛔") : null, (m => m ? h("span",{class:"tag jira",title:"Jira and the plan disagree"}, `Jira: ${JCAT_LABEL[m.category]}`) : null)(jiraMismatch(t)), sl ? h("span",{class:"tag"+(sl>0?" bad":"")}, fmtD(sl)) : null),
+          h("span",{class:"tags"}, late ? h("span",{class:"tag bad"},"late") : null, hereTag(t, "task"), tooEarly(t, x.s) ? h("span",{class:"tag bad",title:"Starts before what it waits for finishes"},"too early") : null, t.rough ? h("span",{class:"tag",title:"Length is a guess"},"guess") : null, isBlocked(t) ? h("span",{class:"tag bad",title:"Blocked: " + t.blocked.reason},"⛔") : null, (m => m ? h("span",{class:"tag jira",title:"Jira and the plan disagree"}, `Jira: ${JCAT_LABEL[m.category]}`) : null)(jiraMismatch(t)), sl ? h("span",{class:"tag"+(sl>0?" bad":"")}, fmtD(sl)) : null),
           t.jira && jiraOf(t.jira) ? ownerAv(jiraWho(jiraOf(t.jira))) : own(t).length ? h("span",{class:"who"}, ...own(t).map(id=>{ const pp = personById(id); return h("i",{class:"ini",style:{background:pp?.color||"#888", color:iniFg(pp?.color)},title:pp?.name||""}, pp?.initials || "?"); })) : null,
           h("span",{class:"h r","data-edge":"r","aria-hidden":"true"}));
         el.addEventListener("pointerdown", e=>startTaskDrag(e, t.id, e.target.dataset.edge || "move"));
@@ -9885,7 +9903,7 @@ function renderDays(){
         track.append(el);
         if (x.out) track.append(h("button",{"data-sel":"task:"+t.id,class:"tlabel" + (selected ? " selected" : ""),type:"button",tabindex:"-1","data-peek-type":"task","data-peek-id":t.id,
           style:{left:`calc(${(colOf(x.e)+1)/N*100}% + 4px)`, top:(22 + tp.pos.get(t.id)*28)+"px"},
-          onclick:()=>select("task", t.id)}, keyChip(t, "task"), taskTitle(t), late ? h("span",{class:"tl-late"}," · late") : null, tooEarly(t, x.s) ? h("span",{class:"tl-late"}," · too early") : null, t.rough ? h("span",{class:"tl-guess"}," · guess") : null));
+          onclick:()=>select("task", t.id)}, keyChip(t, "task"), taskTitle(t), late ? h("span",{class:"tl-late"}," · late") : null, tooEarly(t, x.s) ? h("span",{class:"tl-late"}," · too early") : null, t.rough ? h("span",{class:"tl-guess"}," · guess") : null, untracked(t, "task") ? h("span",{class:"tl-guess"}," · added here") : null));
       });
       // Jira stories: drawn where their sprint puts them, read-only (change them in Jira)
       if (!collapsed) sspans.forEach(y=>{
@@ -12990,12 +13008,19 @@ function amRestore(){ const pid = S.meta.planId; if (amTried === pid) return; ch
 // the first change that can't apply, so a later one never lands ahead of it. Says what happened in plain words, and the
 // results file says the same.
 const amList = ns => ns.length === 1 ? `change ${ns[0]}` : `changes ${ns.slice(0, -1).join(", ")} and ${ns[ns.length - 1]}`;
+// "30 tasks added, 29 links, 12 dates moved": what an Apply changed, the plan before it against the plan after its
+// automatic moves. Dates moved counts items that were already there; new ones are counted as added.
+function applyTally(a, b){ const tk = p => new Map(p.bars.flatMap(x=>(x.tasks || []).map(t=>[t.id, t]))), A = tk(a), B = tk(b), ab = new Set(a.bars.map(x=>x.id)), am = new Set(a.milestones.map(m=>m.id));
+  const nT = [...B.keys()].filter(id=>!A.has(id)).length, nB = b.bars.filter(x=>!ab.has(x.id)).length, nM = b.milestones.filter(m=>!am.has(m.id)).length;
+  const links = (p, T) => p.bars.reduce((n, x)=>n + (x.dependsOn || []).length + (x.waitsFor || []).length, 0) + [...T.values()].reduce((n, t)=>n + (t.dependsOn || []).length, 0);
+  const nL = links(b, B) - links(a, A), nD = planMoves(a, b).length, pl = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+  return [nB ? pl(nB, "initiative") + " added" : "", nT ? pl(nT, "task") + " added" : "", nM ? pl(nM, "milestone") + " added" : "", nL > 0 ? pl(nL, "link") + " added" : nL < 0 ? pl(-nL, "link") + " removed" : "", nD ? pl(nD, "date") + " moved" : ""].filter(Boolean).join(", "); }
 function amApply(ids, opts = {}){ const F = AM && AM.file, me = AM; if (!F) return Promise.resolve(false);
   const want = F.changes.filter(c=>ids.includes(c.id)); if (!want.length) return Promise.resolve(false);
   if (want.length > AM_APPLY_MAX + (opts.inOrder ? AM_MAX_CHANGES : 0)){ setStatus(`Apply up to ${AM_APPLY_MAX} at a time, so the update stays undoable.`); return Promise.resolve(false); }
   const num = id => F.changes.findIndex(c=>c.id === id) + 1;
   let out = {applied:[], already:[], waiting:[]};
-  const fn = rerun(s=>{ out = {applied:[], already:[], waiting:[]}; const candidate = clone(s);         // actions can change any part of the plan
+  const fn = rerun(s=>{ out = {applied:[], already:[], waiting:[], before:clone(s)}; const candidate = clone(s);         // actions can change any part of the plan
     for (const c of want){ if (opts.inOrder && out.waiting.length) break;
       const r = amCheck(amEff(F.batchId, c), candidate);
       if (r.status === "ready"){ try { r.apply(candidate); out.applied.push(c.id); } catch(e){ out.waiting.push({id:c.id, reason:String(e.message || e).slice(0, 160)}); } }
@@ -13011,13 +13036,14 @@ function amApply(ids, opts = {}){ const F = AM && AM.file, me = AM; if (!F) retu
     if (opts.stop && !waiting.length) waiting.push(opts.stop);
     const skipped = (opts.skipped || []).map(num), saved = !applied.length ? null : !file.handle ? "browser" : file.dirty ? "editing" : "saved";
     const parts = [];
-    if (applied.length) parts.push(`Applied ${amList(applied.map(num))}`);
+    const tally = applied.length && out.before ? applyTally(out.before, S) : "";
+    if (applied.length) parts.push(`Applied ${amList(applied.map(num))}${tally ? ` (${tally})` : ""}`);
     if (out.already.length) parts.push(`${amList(out.already.map(num))} ${out.already.length === 1 ? "was" : "were"} already in the plan`);
     if (skipped.length) parts.push(`${amList(skipped)} skipped`);
     if (waiting.length) parts.push(`${amList([num(waiting[0].id)])} waits: ${waiting[0].reason}` + (waiting.length > 1 ? `; ${waiting.length - 1} more ${waiting.length === 2 ? "waits" : "wait"}` : ""));
     const said = (out.refused ? out.refused : parts.length ? parts.join("; ") + "." : "Nothing applied.") + (opts.more && ok ? ` More are ready: apply the next ${AM_APPLY_MAX}.` : "") +
       (saved === "editing" ? " Not saved yet: you're editing." : saved === "saved" ? " Saved." : saved === "browser" ? " Kept in this browser." : "");
-    if (me === AM){ me.lastApply = {batchId:F.batchId, at:new Date().toISOString(), summary:said, applied, already:out.already, skipped:opts.skipped || [], waiting, saved:saved || "nothing-applied", auto:!!opts.auto};
+    if (me === AM){ me.lastApply = {batchId:F.batchId, at:new Date().toISOString(), summary:said, tally, applied, already:out.already, skipped:opts.skipped || [], waiting, saved:saved || "nothing-applied", auto:!!opts.auto};
       me.autoGen = (me.autoGen || 0) + 1; assistantScheduleExport(); }
     setStatus(said + (opts.auto ? ` (via ${F.source}, on its own)` : ""));
     render(); return ok; }); }
@@ -15263,7 +15289,7 @@ function renderList(){
   const lc = listCols(), cc = (k, cls) => ({"data-col":k, class:(cls ? cls + " " : "") + (lc.nw.includes(k) ? "nw" : "")});
   const row = (r, g) => { const o = listOwners(r.type, r.x), s = listStatus(r.type, r.x), w = listRowWaits(r, layout), on = cur && cur.type === r.type && cur.id === r.id;
     const name = h(r.header ? "th" : "td",{...cc("item", "lname"), ...(r.header ? {scope:"row"} : {}), style:listTree(layout) ? {paddingLeft:(8 + r.depth * 18) + "px"} : null},
-      h("span",{class:"lt"}, r.label), r.key && r.type !== "bar" ? h("span",{class:"lkey mono"}, r.key) : null,
+      h("span",{class:"lt"}, r.label), r.key && r.type !== "bar" ? h("span",{class:"lkey mono"}, r.key) : null, ["bar", "task"].includes(r.type) && untracked(r.x, r.type) ? h("span",{class:"lhere"}, "Added here") : null,
       r.header ? h("span",{class:"hint"}, ` ${r.count} item${r.count === 1 ? "" : "s"}`) : null,
       !listTree(layout) && r.type !== "bar" ? h("span",{class:"hint lin"}, `in ${chartLabel(r.b)}`) : null, r.shared ? h("span",{class:"lshared"}, "shared") : null,
       r.why ? h("span",{class:"hint lwhy"}, r.why) : null);
