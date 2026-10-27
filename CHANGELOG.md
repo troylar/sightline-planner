@@ -8,7 +8,7 @@ Old captures show on Today.
 
 ### New
 
-- **Captures waiting over 30 days show on Today** (Today). In the Team view, Today lists captures open for over 30 days under Waiting in triage, oldest first, with who asked and how long it's been open. Needs attention counts them. Click one to open it in To triage and hand it off or decline it. *Where:* Today, Team
+- **Captures waiting over 30 days show on Today** (Today). In the Team view, Today lists captures open for over 30 days under Waiting in triage, oldest first, with who asked and how long it's been open. Needs attention counts them. Triage opens one in To triage, to hand it off or decline it. *Where:* Today, Team
 
 ## 1.142.0 · Oct 27, 2026
 

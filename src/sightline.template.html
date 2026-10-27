@@ -14813,11 +14813,13 @@ function renderToday(){
         section("hourglass", "Stale", "Past due with no update since. Check in, or move it.", D.stale.map(it=>(rowKey = it.key, itemRow(it, lateMeta(it), [...moveBtns(it), doneBtn(it)]))), "bad", bulk, "stale"),
         section("clock", "Late", "Past due, but someone updated it since.", D.late.map(it=>(rowKey = it.key, itemRow(it, lateMeta(it), [...moveBtns(it), doneBtn(it)]))), "warn", null, "late"),
         section("play", "Should have started", "Its start date has passed and it's still Not started.", D.notStarted.map(it=>(rowKey = it.key, itemRow(it, `was to start ${fmtDay(it.sp.s)}`, [btn("Start", ()=>act(it.key, `${itemLabel(it)}: in progress`, w=>{ w.obj.status = "inprogress"; })), ...moveBtns(it)]))), "warn", null, "late to start"),
-        scope === "team" ? section("hourglass", "Waiting in triage", "Captured over 30 days ago, not handed off or declined yet. Oldest first.", D.oldCaps.map(d=>h("li",{class:"trow","data-tkey":"capture:" + d.id},
-          h("div",{class:"tmain"}, h("button",{type:"button",class:"linkish tname","data-key":"today:capture:" + d.id,onclick:()=>{ UI.rmTriage = true; goWs("roadmap"); sel = {type:"deliverable", id:d.id}; render(); }}, d.name || "(untitled)"),
-            h("small",{}, [capType(d), d.askedBy ? "asked by " + capWho(d.askedBy) : "asked by: not known", d.source || ""].filter(Boolean).join(" · "))),
-          h("div",{class:"tmeta"}, h("b",{}, capAge(d).text)))), "warn", null, "waiting in triage for over 30 days") : null,
-        section("meeting", "Due in the next 3 working days", "", D.dueSoon.map(it=>(rowKey = it.key, itemRow(it, it.sp.e === t0 ? h("b",{},"due today") : `due ${fmtDay(it.sp.e)}`, [doneBtn(it)]))), "", null, "due in the next 3 working days")].filter(Boolean);
+        section("meeting", "Due in the next 3 working days", "", D.dueSoon.map(it=>(rowKey = it.key, itemRow(it, it.sp.e === t0 ? h("b",{},"due today") : `due ${fmtDay(it.sp.e)}`, [doneBtn(it)]))), "", null, "due in the next 3 working days"),
+        scope === "team" ? section("hourglass", "Waiting in triage", "Captured over 30 days ago, not handed off or declined yet. Oldest first.", D.oldCaps.map(d=>{ rowKey = "capture:" + d.id;
+          const open = ()=>{ UI.rmTriage = true; goWs("roadmap"); sel = {type:"deliverable", id:d.id}; render(); };
+          return h("li",{class:"trow small","data-tkey":"capture:" + d.id},
+            h("div",{class:"tmain"}, h("button",{type:"button",class:"linkish tname","data-key":"today:capture:" + d.id,onclick:open}, d.name || "(untitled)"),
+              h("small",{}, [capType(d), d.askedBy ? "asked by " + capWho(d.askedBy) : "asked by: not known", d.source || "", capAge(d).text].filter(Boolean).join(" · "))),
+            present ? null : h("div",{class:"tacts"}, btn("Triage", open))); }), "warn", null, "waiting in triage for over 30 days") : null].filter(Boolean);
           return [...secs, clearLine(secs.length ? "Nothing else is " : "All clear. Nothing is ", secs.length ? "" : "big")]; })()),
       h("div",{class:"tcol side"}, present ? null : sinceSection(),
         ...(JIRA && jiraDiffs().length ? [section("link", "Jira disagrees", `Synced ${jiraAge()}`, jiraDiffs().filter(({it})=>scope === "team" || itemOwners(it).includes(me)).slice(0,15).map(({it, j})=>h("li",{class:"trow small"},
