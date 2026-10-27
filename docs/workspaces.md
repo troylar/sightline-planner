@@ -94,6 +94,7 @@ an idea you start typing while the save finishes is retained. Copy or submit dra
 
 Today distinguishes no work loaded, missing Jira status data, and incomplete connected data. Its attention flags
 describe the available plan and sync; a quiet summary does not establish delivery feasibility.
+In the Team view it also lists captures that have waited in To triage for over 30 days.
 
 Open the menu at the right of the header (**Choose yourself**, or your initials once you have) and choose **Choose yourself** or **You: [name]** to identify yourself for Mine and author stamps. This is a browser preference, not a verified identity. The same menu has text size, theme, **What's new** and help.
 
