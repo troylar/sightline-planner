@@ -1268,6 +1268,7 @@ dialog.capdlg{width:min(560px,92vw)}.capdlg form{display:flex;flex-direction:col
 .tlabel:hover{text-decoration:underline}
 .tlabel.selected{box-shadow:inset 0 -2px 0 var(--sel)}
 .tlabel .tl-late{color:var(--bad);font-weight:600}
+.tlabel .tl-guess{color:var(--ink-3)}
 .dlabel small{display:block;font-weight:400;color:var(--ink-3);font-size:11px}
 .ibar{position:absolute;top:6px;height:10px;border-radius:5px;cursor:pointer}
 .tbar{position:absolute;height:22px;border-radius:11px;padding:0 6px 0 8px;font-size:11px;line-height:22px;white-space:nowrap;overflow:hidden;display:flex;align-items:center;gap:4px;z-index:2;cursor:grab;touch-action:none;border-left:3px solid rgba(0,0,0,.2)}
@@ -1275,6 +1276,7 @@ dialog.capdlg{width:min(560px,92vw)}.capdlg form{display:flex;flex-direction:col
 .tbar.st-inprogress{border-left-color:#fff}
 .tbar.st-atrisk{border-left-color:var(--warn)}
 .tbar.late{box-shadow:0 0 0 2px var(--bad)}
+.tbar.rough{background-image:repeating-linear-gradient(135deg,transparent 0 6px,rgba(255,255,255,.3) 6px 9px)}
 .tbar.selected{outline:2px solid var(--sel);outline-offset:1px;z-index:5}
 .tbar .h{position:absolute;top:0;bottom:0;width:6px;cursor:ew-resize}
 .tbar .h.l{left:0}.tbar .h.r{right:0}
@@ -1710,7 +1712,7 @@ const LEGACY_KEYS = ["timeline-planner-v2","timeline-planner-v1"];
 const MAX_BYTES = 2 * 1024 * 1024, MAX_READ_BYTES = 5 * 1024 * 1024, MAX_DEPTH = 24, MAX_NODES = 60000;   // write up to 2 MB (what copies before 1.19 can open); read up to 5 MB
 // Plan format. SCHEMA changes only for a change older copies can't read; new optional parts are named in meta.features,
 // and a copy that finds one it doesn't know opens the plan read-only instead of saving over what it can't see.
-const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1", "stories1", "skills1", "aiHint1", "msStory1", "descriptions1", "laneIds1", "cardLayout1", "hideWhy1", "captures1", "captureAgain1"];
+const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1", "stories1", "skills1", "aiHint1", "msStory1", "descriptions1", "laneIds1", "cardLayout1", "hideWhy1", "captures1", "captureAgain1", "rough1"];
 // A deliverable's target: a year, a half or a quarter ("2027", "2027-H1", "2027-Q2"), or "later".
 const TARGET_RE = /^(\d{4})(?:-(Q[1-4]|H[12]))?$/;
 const PR_DRAFT_RE = /^\s*[\[(]?\s*(draft|wip)\s*[\])]?\s*[:\-]?\s/i;    // a draft pull request's title: "Draft: …", "[WIP] …"
@@ -1827,6 +1829,7 @@ const featuresIn = plan => { const f = [];
   if ((plan.deliverables || []).some(d=>d && d.approved)) f.push("approvals");
   if ((plan.deliverables || []).some(d=>d && (d.capture || d.askedBy || d.raised || d.handoff))) f.push("captures1");
   if ((plan.deliverables || []).some(d=>d && Array.isArray(d.raisedAgain) && d.raisedAgain.length)) f.push("captureAgain1");
+  if ((plan.bars || []).some(b=>b && (b.tasks || []).some(t=>t && t.rough === true))) f.push("rough1");
   if ((plan.snapshots || []).length) f.push("snapshots");
   if ((plan.reports || []).length) f.push("reports");
   if ((plan.commitments || []).length) f.push("commitments");
@@ -2187,7 +2190,7 @@ function normalize(input, strict){
     if (strict){ const seen = new Set(); d.bars.forEach(b=>b.tasks.forEach(t=>{ if (t.id != null){ const id = String(t.id); if (seen.has(id)) throw new Error(`Duplicate id "${id}" in tasks.`); seen.add(id); } })); }
     d.bars.forEach(b=>{ b.tasks = b.tasks.map(t=>{
       let st = validIso(t.start) ? t.start : d.meta.start; if (isoToDay(st) < sd) st = d.meta.start;
-      return {id:tUniq(t.id,"task-"+(++k)), label:str(t.label), start:st, days:clampInt(t.days,1,260,1), owners:ownersOf(t), _deps:Array.isArray(t.dependsOn) ? t.dependsOn.map(str) : [], jira:str(t.jira), status:STATUSES.some(x=>x[0]===t.status)?t.status:"notstarted", ...workState(t), ...storyField(t.story), ...hintField(t.aiHint)};
+      return {id:tUniq(t.id,"task-"+(++k)), label:str(t.label), start:st, days:clampInt(t.days,1,260,1), owners:ownersOf(t), _deps:Array.isArray(t.dependsOn) ? t.dependsOn.map(str) : [], jira:str(t.jira), status:STATUSES.some(x=>x[0]===t.status)?t.status:"notstarted", ...workState(t), ...storyField(t.story), ...hintField(t.aiHint), ...(t.rough === true ? {rough:true} : {})};
     }); });
   }
   const barIds = new Set(d.bars.map(b=>b.id));
@@ -7337,7 +7340,7 @@ const ACTION_DESC = {
   "initiative.setScope":"Leave an initiative out of the forecast on purpose (out), or bring it back (in).",
   "initiative.delivers.add":"Record that an initiative delivers an outcome.",
   "initiative.delivers.remove":"Remove an outcome from what an initiative delivers.",
-  "task.add":"Add a task to an initiative.",
+  "task.add":"Add a task to an initiative, with a start, the tasks it starts after, or both.",
   "task.set":"Change one field of a task, such as its label, story, owners or tags.",
   "task.setStatus":"Set a task's status (Jira-linked status comes from Jira).",
   "task.move":"Move a task to a new start date, or change how many working days it takes.",
@@ -7460,6 +7463,7 @@ const ACT_ARG = {
   str: v => typeof v === "string" && v.length <= 4000,
   num: v => typeof v === "number" && Number.isFinite(v),
   int: v => Number.isInteger(v),
+  bool: v => typeof v === "boolean",
   iso: v => validIso(v),
   isoOrNull: v => v === null || validIso(v),
   keys: v => Array.isArray(v) && v.length <= 500 && v.every(k=>typeof k === "string" && k.length <= 40),
@@ -7547,7 +7551,7 @@ function actLine(id, args, p){ const a = args && typeof args === "object" ? args
     "jira.epicLink": () => `Link epic ${upKey(a.epic || "")} to ${who}`, "jira.epicNew": () => `Epic ${upKey(a.epic || "")} as a new initiative in ${nm("", a.lane)}`,
     "milestone.move": () => { const at = validIso(a.day) ? fmtDay(isoToDay(a.day)) : String(a.day); return a.stretch === true ? (a.day === null ? `${who}: stretch date cleared` : `${who}: stretch date ${at}`) : `Move ${who} to ${at}`; },
     "sprint.addThrough": () => `Add timeboxes through ${validIso(a.date) ? fmtDay(isoToDay(a.date)) : a.date}`,
-    "initiative.add": () => `New initiative "${a.label || "New initiative"}"`, "task.add": () => `New task "${a.label || "New task"}" in ${nm("", a.bar)}`, "outcome.add": () => `New deliverable "${a.name}"`,
+    "initiative.add": () => `New initiative "${a.label || "New initiative"}"`, "task.add": () => `New task "${a.label || "New task"}" in ${nm("", a.bar)}` + (Array.isArray(a.after) && a.after.length ? `, starting after ${a.after.slice(0, 3).map(x=>{ const f = actTask(p, x); return f ? `"${String(taskTitle(f.t)).slice(0, 60)}"` : x; }).join(", ")}${a.after.length > 3 ? ` and ${a.after.length - 3} more` : ""}` : "") + (a.rough ? " (length is a guess)" : ""), "outcome.add": () => `New deliverable "${a.name}"`,
   }[id];
   if ((id === "initiative.set" || id === "task.set") && a.field === "story") return `${who}: ${String(a.value || "").trim() ? "story (shown below)" : "clear the story"}`;
   const skl = v => (Array.isArray(v) ? v : []).map(x=>`"${((p.skills || []).find(s=>s.id === x) || {label:x}).label}"`).join(", ") || "none";
@@ -7672,7 +7676,11 @@ defAction("initiative.del", {done:(p, a)=>!actBar(p, a.id), scope:"initiatives",
     return all.length; }});
 
 // Tasks
-const TASK_SET = {label:"str", owners:"ids", story:"str", needs:"ids", aiHint:"str"};
+const TASK_SET = {label:"str", owners:"ids", story:"str", needs:"ids", aiHint:"str", rough:"bool"};
+const wkName = n => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][dow(n)];
+const tooEarly = (t, s) => !!(t.dependsOn || []).length && (n => n != null && isoToDay(n) > s)(afterStart(S, t.dependsOn, t));
+function afterStart(p, deps, t){ const hs = holidaySet(p), L = deps.map(id=>actTask(p, id)).filter(Boolean); if (!L.length) return null;
+  const end = Math.max(...L.map(f=>taskSpan(f.t, hs, p).e)); return dayToIso(nextWork(Math.max(isoToDay(p.meta.start), end + 1), taskHs(t, p))); }
 const taskStart = (p, iso) => dayToIso(nextWork(Math.max(isoToDay(p.meta.start), isoToDay(iso)), holidaySet(p)));
 // Forecast inputs: effort on a leaf initiative, what it delivers, and leaving it out on purpose.
 const effortArg = v => v == null || (typeof v === "number" && Number.isFinite(v) && v >= .5 && v <= 520 && Math.round(v * 2) === v * 2);
@@ -7696,12 +7704,18 @@ defAction("initiative.delivers.add", {scope:"initiatives", risk:"routine", args:
 defAction("initiative.delivers.remove", {scope:"initiatives", risk:"routine", args:{id:"id", outcome:"id"}, done:(p, a)=>!(actBar(p, a.id)?.delivers || []).includes(a.outcome),
   check:(p, a)=>{ if (!actBar(p, a.id)) return actMissing("initiative"); },
   run:(p, a)=>{ const b = actBar(p, a.id), n = (b.delivers || []).filter(x=>x !== a.outcome); if (n.length === (b.delivers || []).length) return NOCHANGE; if (n.length) b.delivers = n; else delete b.delivers; }});
-defAction("task.add", {scope:"tasks", risk:"routine", done:(p, a)=>{ const f = a.id && actTask(p, a.id); return !!f && f.b.id === a.bar && f.t.label === (a.label ?? "New task"); }, args:{id:"id?", bar:"id", start:"iso", days:"int?", label:"str?", owners:"ids?", tags:"ids?", story:"str?"},
+defAction("task.add", {scope:"tasks", risk:"routine", done:(p, a)=>{ const f = a.id && actTask(p, a.id); return !!f && f.b.id === a.bar && f.t.label === (a.label ?? "New task"); }, args:{id:"id?", bar:"id", start:"iso?", after:"ids?", days:"int?", rough:"bool?", label:"str?", owners:"ids?", tags:"ids?", story:"str?"},
   check:(p, a)=>{ if (!actFreeId(p, a.id) || actTaken(p, a.id)) return actInvalid(`${a.id} is already used.`); if (storyTooLong(a.story)) return storyTooLong(a.story); if (!actBar(p, a.bar)) return actMissing("initiative");
+    if (a.start === undefined && a.after === undefined) return actInvalid("Give a start, or after: the tasks it starts after.");
+    if (a.after){ if (!a.after.length) return actInvalid("after lists the tasks it starts after; leave it out to give only a start."); if (a.id && a.after.includes(a.id)) return "A task can't start after itself.";
+      const miss = a.after.find(x=>!actTask(p, x)); if (miss) return actMissing(`task it starts after (${miss})`); }
     if (a.days !== undefined && (a.days < 1 || a.days > 260)) return actInvalid("Working days are from 1 to 260."); if (a.owners && !actPeople(p, a.owners)) return actMissing("person"); },
   run:(p, a)=>{ const b = actBar(p, a.bar), id = a.id || newId("task");
-    b.tasks.push({id, label:a.label ?? "New task", start:taskStart(p, a.start), days:a.days ?? 1, owners: a.owners ? [...a.owners] : [...own(b)], jira:"", status:"notstarted", ...(a.tags && a.tags.length ? {tags:[...a.tags]} : {}), ...storyField(a.story)});
-    return id; }});
+    const t = {id, label:a.label ?? "New task", start:"", days:a.days ?? 1, owners: a.owners ? [...a.owners] : [...own(b)], jira:"", status:"notstarted", ...(a.tags && a.tags.length ? {tags:[...a.tags]} : {}), ...storyField(a.story)};
+    const deps = a.after ? [...new Set(a.after)] : [], given = a.start !== undefined ? taskStart(p, a.start) : null, after = deps.length ? afterStart(p, deps, t) : null;
+    t.start = given && after ? (given > after ? given : after) : given || after;
+    if (deps.length) t.dependsOn = deps; if (a.rough) t.rough = true;
+    b.tasks.push(t); return id; }});
 defAction("task.set", {scope:"tasks", risk:"routine", args:{id:"id", field:"str", value:"any"},
   cur:(p, a)=>{ const f = actTask(p, a.id); return f && a.field in TASK_SET ? optCur(f.t, a.field) : undefined; },
   check:(p, a)=>{ if (!actTask(p, a.id)) return actMissing("task");
@@ -7714,7 +7728,9 @@ defAction("task.set", {scope:"tasks", risk:"routine", args:{id:"id", field:"str"
     if (a.field === "aiHint") return hintProblem(a.value);
     if (a.field === "needs") return skillsProblem(p, a.value);
     if (a.field === "owners" && !actPeople(p, a.value)) return actMissing("person"); },
-  run:(p, a)=>{ if (a.field === "story") return setStory(actTask(p, a.id).t, a.value); const {t} = actTask(p, a.id), v = a.field === "owners" ? [...a.value] : a.value; if (jeq(t[a.field], v)) return NOCHANGE; t[a.field] = v; }});
+  run:(p, a)=>{ if (a.field === "story") return setStory(actTask(p, a.id).t, a.value);
+    if (a.field === "rough"){ const {t} = actTask(p, a.id); if (!!t.rough === a.value) return NOCHANGE; if (a.value) t.rough = true; else delete t.rough; return; }
+    const {t} = actTask(p, a.id), v = a.field === "owners" ? [...a.value] : a.value; if (jeq(t[a.field], v)) return NOCHANGE; t[a.field] = v; }});
 defAction("task.setStatus", {scope:"tasks", risk:"routine", args:{id:"id", status:"str"},
   cur:(p, a)=>actTask(p, a.id)?.t.status,
   check:(p, a)=>{ const f = actTask(p, a.id); if (!f) return actMissing("task"); if (!STATUS_IDS.includes(a.status)) return actInvalid(`Status is one of ${STATUS_IDS.join(", ")}.`);
@@ -9852,14 +9868,14 @@ function renderDays(){
       if (!collapsed) spans.forEach(x=>{
         if (!vis(x.s, x.e)) return;
         const t = x.t, late = taskLate(t,hs), sl = slipTask(t), selected = sel && sel.type==="task" && sel.id===t.id;
-        const title = [taskTitle(t), `${fmtDay(x.s)} → ${fmtDay(x.e)} · ${t.days} working day${t.days===1?"":"s"}`, own(t).length ? "Owner: " + ownerNames(t).join(", ") : "", t.jira ? "Jira: "+t.jira : "", "Status: " + STATUSES.find(z=>z[0]===t.status)[1] + (late?" (late)":""), sl ? `Baseline: end moved ${fmtD(sl)}` : ""].filter(Boolean).join("\n");
+        const title = [taskTitle(t), `${fmtDay(x.s)} → ${fmtDay(x.e)} · ${t.days} working day${t.days===1?"":"s"}${t.rough ? " (a guess)" : ""}`, own(t).length ? "Owner: " + ownerNames(t).join(", ") : "", t.jira ? "Jira: "+t.jira : "", "Status: " + STATUSES.find(z=>z[0]===t.status)[1] + (late?" (late)":""), sl ? `Baseline: end moved ${fmtD(sl)}` : ""].filter(Boolean).join("\n");
         const tj = sideOf(t, "task") === "jira";
-        const el = h("div",{"data-sel":"task:"+t.id,class:["tbar","st-"+t.status, late?"late":"", selected?"selected":"", tj ? "jira" : "plan"].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id, "aria-label":title.replace(/\n/g,". "), "data-peek-type":"task", "data-peek-id":t.id,
+        const el = h("div",{"data-sel":"task:"+t.id,class:["tbar","st-"+t.status, late?"late":"", selected?"selected":"", tj ? "jira" : "plan", t.rough ? "rough" : ""].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id, "aria-label":title.replace(/\n/g,". "), "data-peek-type":"task", "data-peek-id":t.id,
           style:Object.assign(pos(x.s, x.e), {top:(22 + tp.pos.get(t.id)*28)+"px"}, tj ? jiraPaint(lane) : {backgroundColor:lane.color, color:fg})},
           h("span",{class:"h l","data-edge":"l","aria-hidden":"true"}),
           keyChip(t, "task"),
           h("span",{class:"nm"}, (t.status==="done" ? "✓ " : "") + taskTitle(t)), noteBadge(noteKeysOf(t, "task")),
-          h("span",{class:"tags"}, late ? h("span",{class:"tag bad"},"late") : null, isBlocked(t) ? h("span",{class:"tag bad",title:"Blocked: " + t.blocked.reason},"⛔") : null, (m => m ? h("span",{class:"tag jira",title:"Jira and the plan disagree"}, `Jira: ${JCAT_LABEL[m.category]}`) : null)(jiraMismatch(t)), sl ? h("span",{class:"tag"+(sl>0?" bad":"")}, fmtD(sl)) : null),
+          h("span",{class:"tags"}, late ? h("span",{class:"tag bad"},"late") : null, tooEarly(t, x.s) ? h("span",{class:"tag bad",title:"Starts before what it waits for finishes"},"too early") : null, t.rough ? h("span",{class:"tag",title:"Length is a guess"},"guess") : null, isBlocked(t) ? h("span",{class:"tag bad",title:"Blocked: " + t.blocked.reason},"⛔") : null, (m => m ? h("span",{class:"tag jira",title:"Jira and the plan disagree"}, `Jira: ${JCAT_LABEL[m.category]}`) : null)(jiraMismatch(t)), sl ? h("span",{class:"tag"+(sl>0?" bad":"")}, fmtD(sl)) : null),
           t.jira && jiraOf(t.jira) ? ownerAv(jiraWho(jiraOf(t.jira))) : own(t).length ? h("span",{class:"who"}, ...own(t).map(id=>{ const pp = personById(id); return h("i",{class:"ini",style:{background:pp?.color||"#888", color:iniFg(pp?.color)},title:pp?.name||""}, pp?.initials || "?"); })) : null,
           h("span",{class:"h r","data-edge":"r","aria-hidden":"true"}));
         el.addEventListener("pointerdown", e=>startTaskDrag(e, t.id, e.target.dataset.edge || "move"));
@@ -9869,7 +9885,7 @@ function renderDays(){
         track.append(el);
         if (x.out) track.append(h("button",{"data-sel":"task:"+t.id,class:"tlabel" + (selected ? " selected" : ""),type:"button",tabindex:"-1","data-peek-type":"task","data-peek-id":t.id,
           style:{left:`calc(${(colOf(x.e)+1)/N*100}% + 4px)`, top:(22 + tp.pos.get(t.id)*28)+"px"},
-          onclick:()=>select("task", t.id)}, keyChip(t, "task"), taskTitle(t), late ? h("span",{class:"tl-late"}," · late") : null));
+          onclick:()=>select("task", t.id)}, keyChip(t, "task"), taskTitle(t), late ? h("span",{class:"tl-late"}," · late") : null, tooEarly(t, x.s) ? h("span",{class:"tl-late"}," · too early") : null, t.rough ? h("span",{class:"tl-guess"}," · guess") : null));
       });
       // Jira stories: drawn where their sprint puts them, read-only (change them in Jira)
       if (!collapsed) sspans.forEach(y=>{
@@ -11158,7 +11174,7 @@ function sideBody(put){
       h("p",{class:"hint mono"}, `${wkDate(b.start)} → ${endDate(b)}` + (hasKids(b) ? " · spans what's inside" : derived(b) ? " · from tasks" : "")),
       (()=>{ const hol = derived(b) || b.kind === "waiting" ? [] : holidaysIn(nextWork(wkDay(b.start), new Set()), barEndDay(b));
         return hol.length ? h("p",{class:"hint"}, `${hol.map(x=>(x.name||"Holiday") + " (" + fmtDay(isoToDay(x.date)) + ")").join(", ")} ${hol.length===1?"falls":"fall"} inside, so it ends ${hol.length} working day${hol.length===1?"":"s"} later than a plain ${snap(b.span)}-week block.`) : null; })(),
-      h("div",{class:"field"}, h("span",{class:"flabel"},`Tasks (${(b.tasks||[]).length})`), taskList),
+      h("div",{class:"field"}, h("span",{class:"flabel"},`Tasks (${(b.tasks||[]).length})`, (n => n ? h("span",{class:"hint",id:"f-rough"}, ` · ${n} with a guessed length`) : null)((b.tasks||[]).filter(t=>t.rough).length)), taskList),
       h("div",{class:"row2"},
         h("button",{class:"btn",onclick:()=>addTask(b)},"+ Task"),
         h("button",{class:"btn nav",onclick:()=>openInitiative(b.id)},"Open day view")),
@@ -11213,7 +11229,17 @@ function sideBody(put){
         field("f-tstart","Start", h("input",{id:"f-tstart",type:"date",disabled:!!jiraLockOf(t)?.dates,min:S.meta.start,value:dayToIso(sp.s),onchange:e=>commit(()=>validIso(e.target.value) ? act("task.move", {id:t.id, start:e.target.value}) : NOCHANGE)})),
         field("f-tdays","Working days", h("input",{id:"f-tdays",type:"number",disabled:!!jiraLockOf(t)?.dates,min:"1",max:"260",value:t.days,onchange:e=>commit(()=>act("task.move", {id:t.id, days:clampInt(e.target.value,1,260,t.days)}))}))),
       h("p",{class:"hint mono"}, `${fmtDay(sp.s)} → ${fmtDay(sp.e)} (weekends and holidays skipped)`),
+      h("label",{class:"chk",for:"f-trough"}, h("input",{type:"checkbox",id:"f-trough",checked:!!t.rough,disabled:!!jiraLockOf(t)?.dates,onchange:e=>{ commit(()=>act("task.set", {id:t.id, field:"rough", value:e.target.checked})); $("#f-trough")?.focus(); }}), " Length is a guess"),
+      (()=>{ if (!(t.dependsOn || []).length || jiraLockOf(t)?.dates) return null; const c = afterStart(S, t.dependsOn, t); if (!c || isoToDay(c) === sp.s) return null;
+        const n = isoToDay(c), day = `${wkName(n)}, ${fmtDay(n)}`, L = t.dependsOn.map(taskById).filter(Boolean), what = L.length === 1 ? `"${taskTitle(L[0].t)}"` : "the last of what it waits for", early = n > sp.s;
+        const behind = L.filter(f=>taskLate(f.t));      // its planned finish has passed and it isn't done: don't offer a day built on that finish
+        if (behind.length && !early) return h("p",{class:"hint",id:"f-tafter"}, `${behind.length === 1 ? `"${taskTitle(behind[0].t)}" is` : `${behind.length} of what it waits for are`} late, so this can't start until ${behind.length === 1 ? "it's" : "they're"} done.`);
+        return h("p",{class:"hint" + (early ? " bad" : ""),id:"f-tafter"}, early ? `Starts before ${what} finishes. The earliest it can start is ${day}. ` : `Could start ${day}, the working day after ${what} finishes. It's set for ${fmtDay(sp.s)} now. `,
+          h("button",{type:"button",class:"linkish",id:"f-tafterGo",onclick:()=>{ if (commit(()=>act("task.move", {id:t.id, start:c}))) setStatus(`Starts ${day}, right after ${what}.`); }}, `Start ${fmtDay(n)}`)); })(),
       h("div",{class:"field"}, h("span",{class:"flabel"},"Starts after these tasks"),
+        (t.dependsOn || []).length ? h("p",{class:"hint",id:"f-tmoves"}, jiraLockOf(t)?.dates ? "Its Jira sprint sets its dates, so it doesn't move when what it waits for runs late. Late work shows as starting too early."
+          : S.meta.autoSchedule === false ? "Automatic moving is off (Settings), so it stays put when what it waits for runs late. It's flagged as starting too early instead."
+          : "Moves later on its own when what it waits for runs late. It never moves earlier on its own.") : null,
         h("div",{class:"linkchips"}, ...(t.dependsOn||[]).map(id=>{ const x = taskById(id); return x ? h("span",{class:"lchip"}, taskTitle(x.t), h("button",{type:"button",class:"ox","aria-label":"Remove link",onclick:()=>commit(()=>act("task.unlink", {id:t.id, after:id}))},"×")) : null; }),
           h("select",{id:"f-tdep","aria-label":"Add a task this one waits for",onchange:e=>{ const v = e.target.value; if (!v) return; if (!commit(()=>act("task.link", {id:t.id, after:v}))) e.target.value = ""; }},
             h("option",{value:""},"+ Add…"), ...S.bars.filter(x=>(x.tasks||[]).length).map(x=>h("optgroup",{label:chartLabel(x)}, ...x.tasks.filter(y=>y.id !== t.id && !(t.dependsOn||[]).includes(y.id)).map(y=>h("option",{value:y.id}, y.label || "Untitled task"))))))),
@@ -13136,6 +13162,7 @@ function assistantView(){
       "Descriptions and guidance, for people: guide.set {section, value, prev} (section purpose, scope, breakdown, vocabulary, rules or examples) and guide.setWorkstream {lane, value, prev} write the Planning guide, the same text a workstream's card shows; template.set {kind:'initiative'|'task'|'milestone', value, prev} sets a story template (empty is the built-in one). milestone.set field story, gate.set field description and meeting.set field note (up to 500) take markdown. Say what it is and why, in plain words, from what the plan shows.",
       "Skills: planning.skills is the plan's catalog. skill.add {id, label}, skill.rename {id, label, prev} (keeps the id) and skill.remove {id} (refused while anyone or any work uses it). person.set field skills and initiative.set or task.set field needs take a list of skill ids, up to 20; an empty list clears it. Labels are unique ignoring case. Never infer a skill from a name, a role or past work: ask.",
       "Dates: any date you give (a task's start, a milestone's day, time off, when something was raised, a due date) can be YYYY-MM-DD or a day in words, read against the person's today when they review: today, tomorrow, yesterday, +3d, in 2 weeks, 3 days ago, Friday (the next one), this Friday / next Friday (that day this week / next week), last Friday, next week, next month, this sprint, next sprint. Prefer the words people used, so the review shows which date each became. A task's start moves to its next working day.",
+      "Order without dates: when only the order is known, add each task with after (the tasks it starts after) and no start, in order, so each starts the working day after the last of those finishes. Give days when you know them; otherwise give your best guess and rough: true, so the plan shows the length is a guess. Given both start and after, the later wins. Don't give every task the same placeholder start.",
       "Hints for you: field aiHint on initiative.set, task.set, milestone.set, gate.set, person.set, outcome.set, risk.set and decision.set, plain text up to 500 characters. People see it only under For the assistant. A hint is a preference, never authorization or evidence of ability; anyone who can open the plan can read it, so never write secrets or judgments about people.",
       "Workstreams: workstream.set {id, field:'note'|'color'|'from'|'until', value, prev}, workstream.move {id, index}, workstream.reid {lane, id, prev} and workstream.del {id}. workstream.reid changes a workstream's id (lane, its id now; id, the new one) and every reference with it; its old ids are in was, still accepted from files written before, and never used again. A person always reviews it. workstream.del is refused while anything still points at the workstream (it says what), and a person always reviews it; move its work first with initiative.setLane, and change person.setSplit.",
       "coverage.context counts what the plan doesn't say yet (workstreams without guidance, people without skills, open work without a story or needs, milestones in the next 12 weeks without a story). Mention the gaps that weaken a suggestion and offer to fill them; never guess to cover one.",

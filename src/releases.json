@@ -1,5 +1,34 @@
 [
   {
+    "version": "1.137.0",
+    "date": "2026-10-27",
+    "headline": "Order before dates",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "Add tasks by what they start after",
+        "before": "Every task needed a start date, so a plan whose order was known but not its dates got the same placeholder date on every task.",
+        "now": "A proposed task can say what it starts after instead of a date. It starts the working day after the last of those finishes, skipping weekends, holidays and its owners' time off. The review says what each starts after.",
+        "where": "Your assistant's proposed changes, in the review panel"
+      },
+      {
+        "kind": "new",
+        "area": "Tasks",
+        "title": "Mark a length as a guess",
+        "now": "Length is a guess, on a task's card, hatches the task on the Days view and labels it guess. The initiative's card counts how many of its tasks have guessed lengths.",
+        "where": "A task's card, under its dates"
+      },
+      {
+        "kind": "new",
+        "area": "Tasks",
+        "title": "Start right after what it waits for",
+        "now": "A task that could start sooner says so on its card, with the day and a link to start then. One that starts before what it waits for finishes is flagged on its card and tagged too early on the Days view. The card also says whether it moves later on its own.",
+        "where": "A task's card, under its dates"
+      }
+    ]
+  },
+  {
     "version": "1.136.0",
     "date": "2026-10-26",
     "headline": "Show only some initiatives",
