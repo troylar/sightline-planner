@@ -92,7 +92,7 @@ button:disabled{cursor:default}
 .pfold>summary::before{content:"";flex:none;align-self:center;width:6px;height:6px;border-right:1.5px solid var(--ink-3);border-bottom:1.5px solid var(--ink-3);transform:rotate(-45deg);transition:transform var(--state) var(--ease);margin-right:2px}
 .pfold[open]>summary::before{transform:rotate(45deg)}
 .pfold>summary:hover .pft{color:var(--ink)}.pfold>summary:focus-visible{outline:2px solid var(--sel);outline-offset:1px}
-.pft{font-size:13px;font-weight:600;color:var(--ink-2)}.pfs{margin-left:auto;font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pft{flex:none;font-size:13px;font-weight:600;color:var(--ink-2);white-space:nowrap}.pfs{margin-left:auto;font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .pfold[open]>summary .pfs{visibility:hidden}
 .pfb{display:flex;flex-direction:column;gap:10px;padding:2px 0 12px}.pfb>.field,.pfb>.row2{margin-bottom:0}
 @media (prefers-reduced-motion:no-preference){.pfold[open]>.pfb{animation:pf-in 140ms var(--ease)}@keyframes pf-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}}
@@ -10349,7 +10349,7 @@ function keyNudge(e,type,id,stretch){
   }, {coalesce:"nudge:"+id});
   sel = {type,id}; render();
 }
-const focusSoon = q => setTimeout(()=>{ const el = $(q); if (el){ el.focus(); el.select?.(); } }, 0);
+const focusSoon = q => setTimeout(()=>{ const el = $(q); if (el){ const f = el.closest("details.pfold"); if (f && !f.open) f.open = true; el.focus(); el.select?.(); } }, 0);   // a field in a closed fold opens it first
 // The day under the pointer in either view (weekends snap to the nearest weekday).
 function dayFromEvent(e){
   const tr = e.target.closest(".track"), r = tr.getBoundingClientRect(), frac = Math.min(.999, Math.max(0, (e.clientX - r.left)/(r.width||1)));
@@ -11115,19 +11115,31 @@ let sideAllTasks = "";
 function renderSide(){
   const ae = document.activeElement, id = ae?.closest("#side") && ae.id, start = id ? ae.selectionStart : null, end = id ? ae.selectionEnd : null;
   const side = $("#side"), at = sel ? sel.type + ":" + sel.id : null, top = at && at === sideAt ? side.scrollTop : 0;
-  renderSide0(); sideExtras(); foldItemOptions();
+  renderSide0(); sideExtras(); settleFolds(); foldItemOptions();
   sideAt = sel ? sel.type + ":" + sel.id : null; if (top && sideAt === at) side.scrollTop = top;
   if (id){ const next = document.getElementById(id); if (next && !next.disabled){ next.focus({preventScroll:true}); if (start != null && typeof next.setSelectionRange === "function") next.setSelectionRange(start, end); } }
   if (pendingDelete){ const a = document.querySelector('#side [data-armed="1"]'); if (a) a.focus({preventScroll:true}); }
 }
 // A folded part of the details panel. The summary line says what's inside; open or closed is remembered per item type,
 // in this browser. Organize keeps the id it always had.
-const depSum = n => n ? `Waits for ${n}` : "Nothing";
+const depSum = n => n ? `${n} item${n === 1 ? "" : "s"}` : "Nothing";
 function fold(type, key, title, sum, ...kids){
   const list = kids.flat(Infinity).filter(x=>x != null && x !== false); if (!list.length) return null;
   const k = type + ":" + key, o = UI.sideFold || {}, open = !!o[k];
   return h("details",{class:"pfold",id:key === "organize" ? "itemOptions" : "fold-" + key,open,ontoggle:e=>{ if (!e.currentTarget.isConnected) return; UI.sideFold = {...(UI.sideFold || {}), [k]:e.currentTarget.open}; saveUI(); }},
     h("summary",{}, h("span",{class:"pft"}, title), sum ? h("span",{class:"pfs"}, sum) : null), h("div",{class:"pfb"}, ...list));
+}
+// What renders around the item's own fields joins its folds: a story not written yet gets its own, tags and
+// needs go in Organize, who added it and the assistant hint in More.
+function settleFolds(){
+  if (!sel || !["bar","task"].includes(sel.type)) return; const side = $("#side"), x = selObj(); if (!x || !side.querySelector(".pfold")) return;
+  const t = sel.type, body = id => side.querySelector(`#${id} > .pfb`), story = side.querySelector("#f-storybox");
+  if (story && !storyOf(x)){ const s = null, editing = storyEdits.has(t + ":" + x.id);     // a written story stays on top, in full; an empty one folds
+    const f = fold(t, "story", "Story", editing ? "Editing" : s ? (s.from === "jira" ? "From Jira" : "Written") : "Not written yet", story); if (editing) f.open = true;
+    const at = side.querySelector("#fold-schedule, #fold-deps, #itemOptions"); if (at) at.before(f); else side.append(f); }
+  const org = body("itemOptions"), more = body("fold-more");
+  if (org){ const needs = side.querySelector("#f-needs")?.closest(".field"), tags = side.querySelector("#f-tags"); if (needs) org.prepend(needs); if (tags) org.prepend(tags); }
+  if (more){ const by = side.querySelector("#f-addedby"), hint = side.querySelector("#f-hintbox"); if (by) more.prepend(by); if (hint) more.append(hint); }
 }
 function foldItemOptions(){
   if (!sel || !["bar","task"].includes(sel.type) || $("#side #itemOptions")) return;

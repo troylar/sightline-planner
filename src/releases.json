@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.145.0",
+    "date": "2026-10-27",
+    "headline": "A lighter details panel",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Details",
+        "title": "What you need first, the rest folded",
+        "before": "An initiative's or task's details showed every field at once, so you scrolled past schedule, links and setup to find what you needed.",
+        "now": "Warnings, status, updates, notes, title, owner, dates and the first three tasks come first. Schedule, Waits for, Organize and More fold away, each with a one-line summary such as \"2 weeks\". The folds you open are remembered for initiatives and tasks, in this browser.",
+        "where": "Click any initiative or task"
+      }
+    ]
+  },
+  {
     "version": "1.144.0",
     "date": "2026-10-27",
     "headline": "A lighter menu",

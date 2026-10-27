@@ -189,7 +189,8 @@ state and can include unsaved applied edits. Neither path establishes cloud fres
 
 **Requires Sightline 1.109.0 or later.** An initiative or task can carry a story: a markdown description of why
 the work exists, what it delivers and when it's done. Hover an item to see the first lines; click it to read the
-whole story in the details panel, or Edit to write one with a live preview. A new story starts from the plan's
+whole story at the top of the details panel, or Edit to write one with a live preview (an item with no story yet
+folds it under **Story**). A new story starts from the plan's
 template for that kind of item (**Settings → Planning guide**, Story templates). An initiative's panel also lists its tasks and
 whether each has a story, so you can walk the breakdown; Up and Down move to the next item while the panel is open.
 

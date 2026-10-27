@@ -125,6 +125,12 @@ Unsent notes, quick updates and blocker explanations stay with their plan and it
 
 Use **Connect assistant** in the toolbar to set up the [private assistant folder](assistant-workflow.md). Proposed changes wait for your review. Common initiative and task updates remain visible; open **Organize this initiative** or **Move this task** for structural changes.
 
+The details panel shows what you need first: warnings, quick status, updates, notes, the title, status, owner,
+dates and an initiative's first three tasks (**Show all** lists the rest). The rest folds into **Story** (when none is
+written yet), **Schedule**, **Waits for**, **Organize** and **More**, and each fold's line says what's inside, such as
+"2 weeks" or "1 item". Warnings never fold. Sightline remembers which folds you open for initiatives and for tasks,
+in this browser only.
+
 **Settings → Planning guide** describes project scope, workstream purposes, work breakdown, vocabulary, rules,
 and examples for your assistant. Save the guide, then save the shared plan to include it in automatic assistant
 context. Unsaved editor drafts stay in this tab's session and are excluded from exports. See the
