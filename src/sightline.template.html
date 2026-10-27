@@ -1493,7 +1493,7 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
         <div class="mh" id="rowsH">Rows</div>
     <span class="seg" role="group" aria-labelledby="rowsH" id="rowsSeg"><button type="button" id="rLanes" aria-pressed="true" title="One row per workstream">By workstream</button><button type="button" id="rPeople" aria-pressed="false" title="One row per person: who's doing what (R)">By person</button><button type="button" id="rEpics" aria-pressed="false" hidden title="One row per Jira epic, nested by parent links: epic, feature, initiative. From Jira, so it can't be dragged (R)">By epic</button></span>
         <div class="mh" id="layerH">Show work from</div>
-    <span class="seg" role="group" aria-labelledby="layerH" id="layerSeg"><button type="button" id="lyAll" aria-pressed="true" title="Everything, from Jira and added here by anyone">All sources</button><button type="button" id="lyJira" aria-pressed="false" title="Only what comes from Jira">Jira only</button><button type="button" id="lyMine" aria-pressed="false" title="Jira's work, plus what you added (not teammates' additions)">Jira + mine</button></span>
+    <span class="seg" role="group" aria-labelledby="layerH" id="layerSeg"><button type="button" id="lyAll" aria-pressed="true" title="Everything, from Jira and added here by anyone">All sources</button><button type="button" id="lyJira" aria-pressed="false" title="Only what comes from Jira">Jira only</button><button type="button" id="lyMine" aria-pressed="false" title="Jira's work, plus what you added (not teammates' additions)">Jira + mine</button><button type="button" id="lyHere" aria-pressed="false" title="Only work added here, that nothing in Jira tracks">Added here</button></span>
       </div>
     </div>
     <span class="seg" role="group" aria-label="Zoom" id="zoomSeg"><button type="button" id="zWeeks" aria-pressed="true" title="Initiatives by week (W)">Weeks</button><button type="button" id="zDays" aria-pressed="false" title="Tasks by working day (D)">Days</button></span>
@@ -4458,6 +4458,7 @@ const storiesWord = n => `${n.toLocaleString("en-US")} ${n === 1 ? "story" : "st
 const shelfText = s => `${storiesWord(s.n)} · ${fmtPts(s.pts)} pts estimated, ${fmtPts(s.done)} done (estimated points)` + (s.un ? ` · ${s.un} not estimated` : "");
 const shelfShort = s => [`${fmtPts(s.pts)} pts`, `${fmtPts(s.done)} done`, s.un ? `${s.un} not est.` : null].filter(Boolean);
 function storyVisible(x, f = UI.filter, R = fRangeDays(f)){
+  if (hereOnly()) return false;
   if (hidKind("done") && x.status === "done") return false;
   if (tagHides(x, "story", f)) return false;
   if (f.status.length && !statusHit({}, x.status, f)) return false;
@@ -6131,7 +6132,7 @@ function applyNav(st){
     if (st.n != null || validIso(st.sp)){ presetLoaded = true; delete UI.zoomPreset; }        // a link's zoom wins over a remembered preset
     UI.zoomSp = validIso(st.sp) ? st.sp : UI.zoomSp && st.n != null ? null : UI.zoomSp;   // a link without a sprint doesn't keep mine
     try { UI.filter = cleanFilter(normFilter(st.f ? JSON.parse(st.f) : {})); } catch(e){}
-    if (st.layer === "jira" || st.layer === "mine" || !st.layer) setLayerQuiet(st.layer || "all");
+    if (LAYERS.includes(st.layer) || !st.layer) setLayerQuiet(st.layer || "all");
     sel = null;
     if (st.sel && (!st.plan || st.plan === S.meta.planId)){ const i = st.sel.indexOf(":"), t = st.sel.slice(0, i), id = st.sel.slice(i + 1); if (NAV_SEL.includes(t) && navFind(t, id)) sel = {type:t, id}; }
     saveUI(); fitKey = ""; render();
@@ -6169,6 +6170,7 @@ function taskVisible(t, f = UI.filter, R = fRangeDays(f)){
   if (hidKind("done") && t.status === "done") return false;
   if (tagHides(t, "task", f)) return false;
   if (viewNarrowed() && sideOf(t, "task") === "plan" && viewHidesPlan(t)) return false;
+  if (hereOnly() && sideOf(t, "task") === "jira") return false;
   if (f.status.length && !statusHit(t, t.status, f)) return false;
   if (f.people.length && !peopleMatch(peopleOf(t), f)) return false;
   const sp = taskSpan(t, HS()); return inRange(sp.s, sp.e, R);
@@ -6184,6 +6186,7 @@ function barVisible(b, f = UI.filter, R = fRangeDays(f)){
   if (b.parked) return false;                          // switched off in the Jira tab: kept, not shown
   if (hidKind(b.kind) || (hidKind("done") && effStatus(b) === "done")) return false;   // hidden to declutter: hide wins
   if (sideOf(b, "bar") === "plan" && viewNarrowed() && viewHidesPlan(b) && !(b.tasks || []).some(t=>sideOf(t, "task") === "jira" || !viewHidesPlan(t)) && !kidsOf(b.id).some(k=>barVisible(k, f, R))) return false;   // a plan holder of shown work stays
+  if (hereOnly() && b.kind !== "waiting" && !untracked(b, "bar") && !(b.tasks || []).some(t=>sideOf(t, "task") === "plan" && taskVisible(t, f, R)) && !kidsOf(b.id).some(k=>barVisible(k, f, R))) return false;   // Jira's, unless it holds work added here
   if (!fActive(f)) return true;
   { const only = onlyScope(f); if (only && !only.has(b.id)) return false; }
   if (hasKids(b) && !hasTasks(b) && kidsOf(b.id).some(x=>barVisible(x, f, R))) return true;   // a holder shows when something inside it does (or on its own terms below)
@@ -7216,7 +7219,9 @@ function renderWs(){
   { const rm = rowsMode(); $("#rLanes").setAttribute("aria-pressed", String(rm === "lanes")); $("#rPeople").setAttribute("aria-pressed", String(rm === "people")); $("#rEpics").setAttribute("aria-pressed", String(rm === "epics")); $("#rEpics").hidden = !hasJiraTree(); }
   $("#layerSeg").hidden = (ws !== "timeline" && ws !== "standup" && ws !== "list") || (!hasJiraWork() && !(S.changes || []).length && !mineOnly());
   $("#lyAll").setAttribute("aria-pressed", String(layerOf() === "all")); $("#lyJira").setAttribute("aria-pressed", String(jiraOnly())); $("#lyMine").setAttribute("aria-pressed", String(mineOnly()));
+  $("#lyHere").hidden = ws === "standup" || !hasJiraWork(); $("#lyHere").setAttribute("aria-pressed", String(hereOnly())); if (layerOf() === "here" && !hereOnly()) $("#lyAll").setAttribute("aria-pressed", "true");
   { const hs = $("#hiddenStrip"), t = ws === "timeline" ? hiddenTally() : null, parts = [];
+    if (ws === "timeline" && hereOnly()) parts.push(h("span",{}, "Showing only work added here: Jira's work is hidden, except initiatives that hold work added here. ", h("button",{type:"button",class:"linkish",id:"hsHereAll",onclick:()=>setLayer("all")},"Show everything")));
     if (t && t.layer) parts.push(h("span",{}, (mineOnly() ? `Showing Jira's work and what you added: ${t.layer} item${t.layer===1?"":"s"} added by others ${t.layer===1?"is":"are"} hidden` + (t.unknown ? ` (${t.unknown} with no recorded author)` : "") + ". "
       : `Showing only what comes from Jira: ${t.layer} item${t.layer===1?"":"s"} added here ${t.layer===1?"is":"are"} hidden. `), h("button",{type:"button",class:"linkish",id:"hsEveryone",onclick:()=>setLayer("all")},"Show everyone")));
     if (t && Object.keys(t.people).length){ const ps = Object.entries(t.people), n = ps.reduce((a, [, v])=>a + v, 0);
@@ -8401,19 +8406,20 @@ function barPaint(b, lane, fg){
   if (jira && b.kind !== "waiting") return {...jiraPaint(lane), backgroundImage: layers.join(",") || "none"};
   return {backgroundColor: b.kind === "waiting" ? "transparent" : lane.color, backgroundImage: layers.join(",") || "none", color: fg};
 }
-// What a viewer shows: everyone's work, or only what comes from Jira. A preference per plan, in this browser only.
-const LAYER_KEY = "sightline-layer";
+// What a viewer shows: everyone's work, only what comes from Jira, Jira's plus what I added, or only what was added here
+// (nothing in Jira tracks it). A preference per plan, in this browser only.
+const LAYER_KEY = "sightline-layer", LAYERS = ["jira", "mine", "here"];
 let layerMemo = null;
 function layerOf(){
   if (layerMemo !== null) return layerMemo;
-  try { const o = JSON.parse(localStorage.getItem(LAYER_KEY) || "{}"), v = o && o[S.meta.planId]; layerMemo = v === "jira" || v === "mine" ? v : "all"; } catch(e){ layerMemo = "all"; }
+  try { const o = JSON.parse(localStorage.getItem(LAYER_KEY) || "{}"), v = o && o[S.meta.planId]; layerMemo = LAYERS.includes(v) ? v : "all"; } catch(e){ layerMemo = "all"; }
   return layerMemo;
 }
-function setLayerQuiet(v){ const L = v === "jira" || v === "mine" ? v : "all";
+function setLayerQuiet(v){ const L = LAYERS.includes(v) ? v : "all";
   try { const o = JSON.parse(localStorage.getItem(LAYER_KEY) || "{}") || {}; if (L !== "all") o[S.meta.planId] = L; else delete o[S.meta.planId]; localStorage.setItem(LAYER_KEY, JSON.stringify(o)); } catch(e){}
   layerMemo = L; }
 function setLayer(v){
-  const L = v === "jira" || v === "mine" ? v : "all";
+  const L = LAYERS.includes(v) ? v : "all";
   try { const o = JSON.parse(localStorage.getItem(LAYER_KEY) || "{}") || {}; if (L !== "all") o[S.meta.planId] = L; else delete o[S.meta.planId]; localStorage.setItem(LAYER_KEY, JSON.stringify(o)); } catch(e){}
   layerMemo = L; render();
 }
@@ -8606,6 +8612,7 @@ const viewHidesPlan = x => !!hideReason(x);
 const viewNarrowed = () => layerOf() !== "all" || hideActive() || (UI.filter.authors || []).length > 0;
 const jiraOnly = () => layerOf() === "jira";
 const mineOnly = () => layerOf() === "mine";
+const hereOnly = () => layerOf() === "here" && UI.ws !== "standup" && hasJiraWork();   // Sprint is Jira's sprint; a plan without Jira work is all added here
 const hasJiraWork = () => !!JIRA || S.bars.some(b=>sideOf(b, "bar") === "jira" || (b.tasks || []).some(t=>sideOf(t, "task") === "jira"));
 // What the current view leaves out, by reason, so nothing disappears silently.
 function hiddenTally(){
@@ -15556,7 +15563,7 @@ $("#addMeeting").onclick = ()=>createAt("meeting", null, Math.max(startDay(), to
 $("#addPerson").onclick = ()=>{ const id = newId("person"); if (commit(s=>s.people.push(mkPerson(id, "New person", s.people.length)))){ select("person", id); focusSoon("#f-pname"); } };
 function setRows(r){ UI.rows = ["people","epics"].includes(r) ? r : "lanes"; saveUI(); render(); }
 $("#rLanes").onclick = ()=>setRows("lanes"); $("#rPeople").onclick = ()=>setRows("people"); $("#rEpics").onclick = ()=>setRows("epics");
-$("#lyAll").onclick = ()=>setLayer("all"); $("#lyJira").onclick = ()=>setLayer("jira"); $("#lyMine").onclick = ()=>{ if (!meId()){ whoAmI(null, ()=>setLayer("mine")); return; } setLayer("mine"); };
+$("#lyAll").onclick = ()=>setLayer("all"); $("#lyJira").onclick = ()=>setLayer("jira"); $("#lyHere").onclick = ()=>setLayer("here"); $("#lyMine").onclick = ()=>{ if (!meId()){ whoAmI(null, ()=>setLayer("mine")); return; } setLayer("mine"); };
 $("#zWeeks").onclick = ()=>setZoom("weeks");
 $("#placeMs").onclick = ()=>placeFromLabels();
 let resizeT;
