@@ -7220,8 +7220,15 @@ function setPin(id, on){
   if (on && p.length >= PIN_MAX){ setStatus(`You can pin up to ${PIN_MAX} pages. Unpin one first.`); return; }
   if (on){ p.push(id); freshPin = id; } UI.navPins = p; saveUI(); renderMainNav();
   setStatus(on ? `Pinned ${lbl} to the top of the menu.` : `Unpinned ${lbl}. It's still in its group.`); }
+let pinsKey = "";
 function renderPins(current){
   const box = $("#snpins"), pins = navPins(), cur = current && pins.includes(current.id) ? current.id : "";
+  const shown = sel => [...sel].filter(x=>!x.hidden), hot = MAIN_NAV.groups.map(g=>shown(g.querySelectorAll(".snpages .tbadge, .snpages .warnc")).length > 0);
+  const key = JSON.stringify([navRail(), present, pins, cur, freshPin, hot, MAIN_NAV.groups.map(g=>g.classList.contains("open")),
+    pins.map(id=>[$("#" + id).title, ...shown($("#" + id).querySelectorAll(":scope > .tbadge, :scope > .warnc")).map(x=>x.className + x.title + x.textContent)])]);
+  if (cur) current.removeAttribute("aria-current");      // one current page: the pinned copy
+  if (key === pinsKey) return;     // renders run often; rebuild the menu only when something in it changed
+  pinsKey = key;
   box.hidden = navRail() || present || !pins.length;
   box.replaceChildren(...pins.map(id=>{ const b = $("#" + id), lbl = b.querySelector(".snl").textContent;
     const marks = [...b.querySelectorAll(":scope > .tbadge, :scope > .warnc")].filter(x=>!x.hidden).map(x=>{ const c = x.cloneNode(true); c.removeAttribute("id"); return c; });
@@ -7229,9 +7236,8 @@ function renderPins(current){
       h("button",{type:"button",class:"snpinx on",tabindex:"-1","aria-pressed":"true",title:`Unpin ${lbl} (P)`,"aria-label":`Unpin ${lbl}`,onclick:()=>setPin(id, false)}, icon("tack"))); }));
   if (pins.length) box.prepend(h("span",{class:"snsub",id:"snPinnedH"}, "Pinned"));
   freshPin = "";
-  MAIN_NAV.groups.forEach(g=>{ const hot = [...g.querySelectorAll(".snpages .tbadge, .snpages .warnc")].some(b=>!b.hidden), hd = g.querySelector(".snh");   // a closed group says when something inside needs you
-    g.querySelector(".sndot").hidden = !hot; if (hot && !g.classList.contains("open")) hd.setAttribute("aria-label", `${hd.querySelector(".snl").textContent}, something here needs attention`); else hd.removeAttribute("aria-label"); });
-  if (cur) current.removeAttribute("aria-current");      // one current page: the pinned copy
+  MAIN_NAV.groups.forEach((g, i)=>{ const hd = g.querySelector(".snh");   // a closed group says when something inside needs you
+    g.querySelector(".sndot").hidden = !hot[i]; if (hot[i] && !g.classList.contains("open")) hd.setAttribute("aria-label", `${hd.querySelector(".snl").textContent}, something here needs attention`); else hd.removeAttribute("aria-label"); });
   MAIN_NAV.pages.forEach(b=>{ const x = b.parentElement.querySelector(":scope > .snpinx"); if (!x) return; const on = pins.includes(b.id), lbl = b.querySelector(".snl").textContent;
     x.classList.toggle("on", on); x.setAttribute("aria-pressed", String(on)); x.title = on ? `Unpin ${lbl} (P)` : `Pin ${lbl} to the top (P)`; b.setAttribute("aria-keyshortcuts", "P"); x.setAttribute("aria-label", on ? `Unpin ${lbl}` : `Pin ${lbl} to the top`); });
 }
