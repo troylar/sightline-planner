@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.140.1",
+    "date": "2026-10-27",
+    "headline": "Waits-for links merge link by link",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Shared plans",
+        "title": "Two people adding what something waits for both keep their links",
+        "before": "When you and a teammate both changed what the same task or initiative waits for, their links won and yours went to a backup.",
+        "now": "Both sets of links are kept, and a link one of you removed stays removed. A link that would make work wait for itself through the other person's links isn't merged: theirs wins, yours is backed up, and Sightline tells you which link wasn't kept.",
+        "where": "Saving a shared plan someone else changed"
+      }
+    ]
+  },
+  {
     "version": "1.140.0",
     "date": "2026-10-27",
     "headline": "Line up existing tasks behind what they wait for",

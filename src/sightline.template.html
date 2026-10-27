@@ -2596,13 +2596,14 @@ function diffPlans(a, b){
 // Apply ops to a copy. Idempotent: re-adding an existing item updates it; setting or deleting a missing item is a no-op (a delete wins).
 // Lists of Jira keys (skips, an initiative's epics, its stories that are off) merge item by item, and so do the status
 // maps: two people changing different keys both win. Used by rebaseOnto and when a quick update is replayed on a retry.
-const SET_FIELDS = {meta:["jiraSkip"], people:["skills"], bars:["epics","storiesOff","tags","jiraDeps","delivers","needs"], task:["tags","jiraDeps","needs"], milestones:["tags"], gates:["tags"], meetings:["tags"], notes:["tags"], blocks:["tags"], jiraItems:["tags"], deliverables:["tags","jira"]}, OBJ_FIELDS = ["jiraStatusMap","jiraResMap","hideWhy"];
+const SET_FIELDS = {meta:["jiraSkip"], people:["skills"], bars:["epics","storiesOff","tags","jiraDeps","delivers","needs","dependsOn"], task:["tags","jiraDeps","needs","dependsOn"], milestones:["tags"], gates:["tags"], meetings:["tags"], notes:["tags"], blocks:["tags"], jiraItems:["tags"], deliverables:["tags","jira"]}, OBJ_FIELDS = ["jiraStatusMap","jiraResMap","hideWhy"];
 // Team capacity rates merge by date: two people adding rates on different dates both win.
 const rateObj = L => Object.fromEntries((L || []).map(r=>[r.from, r.points])), rateList = o => Object.entries(o || {}).filter(([, v])=>v != null).map(([from, points])=>({from, points})).sort((a, b)=>a.from < b.from ? -1 : 1);
 const mergeRates = (prev, mine, theirs) => rateList(objMerge(rateObj(prev), rateObj(mine), rateObj(theirs)));
 const objMerge = (b0, mv, tv) => { const B = b0 || {}, M = mv || {}, out = {...(tv || {})};
   new Set([...Object.keys(B), ...Object.keys(M)]).forEach(k=>{ if (B[k] === M[k]) return; if (k in M) out[k] = M[k]; else delete out[k]; }); return out; };
 const setMerge = (b0, mv, tv) => { const B = new Set(b0 || []), M = new Set(mv || []), rem = new Set([...B].filter(x=>!M.has(x)));
+  if ((tv || []).length === B.size && (tv || []).every(x=>B.has(x))) return [...M];      // they didn't change it: mine, in my order
   return [...new Set([...(tv || []), ...[...M].filter(x=>!B.has(x))])].filter(x=>!rem.has(x)); };
 // Lists of records with their own ids (a capture's raised-again asks) merge record by record: both sides' additions are
 // kept, a record I removed stays removed, and my change to a record wins. setMerge can't: cloned objects never match.
@@ -2648,7 +2649,7 @@ function applyOps(plan, ops){
         (REC_FIELDS[o.type] || []).forEach(f=>{ if (Array.isArray(arr[i][f]) && arr[i][f].length) v[f] = recMerge([], v[f], arr[i][f]); });
         Object.assign(arr[i], v); if (a) arr[i].added = a; } else arr.push(v); }
     else if (o.op === "set"){ if (i >= 0 && o.field === "added" && arr[i].added){} else if (i >= 0 && o.field !== "tasks"){
-        if ((SET_FIELDS[o.type] || []).includes(o.field) && "prev" in o){ const m = setMerge(o.prev, o.value, arr[i][o.field]); setField(arr[i], o.field, m.length || o.field === "epics" ? m : undefined); }
+        if ((SET_FIELDS[o.type] || []).includes(o.field) && "prev" in o){ const m = setMerge(o.prev, o.value, arr[i][o.field]); setField(arr[i], o.field, m.length || o.field === "epics" || o.field === "dependsOn" ? m : undefined); }
         else if ((REC_FIELDS[o.type] || []).includes(o.field) && "prev" in o){ const m = recMerge(o.prev, o.value, arr[i][o.field]); setField(arr[i], o.field, m.length ? m : undefined); }
         else setField(arr[i], o.field, o.value); } else if (i < 0) skipped.push(o); }
     else if (o.op === "del"){ if (i >= 0) arr.splice(i, 1); }
@@ -3760,7 +3761,13 @@ function mergePlans(base, S, theirs){
   all.forEach(o=>{ if (o.op === "set" && o.type !== "meta" && GROUP.includes(o.field)){ const b0 = ent(base, o.type, o.id), t = ent(theirs, o.type, o.id); if (b0 && t && GROUP.some(f=>!jeq(t[f], b0[f]))) groupHit.add(o.type + ":" + o.id); } });
   // Lists of Jira keys (skips, an initiative's epics) merge item by item: two people adding different keys both win.
   const SETF = SET_FIELDS, OBJF = OBJ_FIELDS;
-  const kept = [], keptDel = [], mine = all.filter(o=>{
+  // What an item waits for merges the same way, unless a link I added would close a loop with theirs: then theirs wins
+  // and mine is kept as a clash, so nobody gets work that waits for itself.
+  const depsOf = (pl, type, id) => (type === "task" ? pl.bars.flatMap(b=>b.tasks || []).find(t=>t.id === id) : pl.bars.find(b=>b.id === id))?.dependsOn || [];
+  const reaches = (pl, type, from, to) => { const seen = new Set(), q = [from]; while (q.length){ const x = q.pop(); if (x === to) return true; if (seen.has(x)) continue; seen.add(x); q.push(...depsOf(pl, type, x)); } return false; };
+  const loopsTo = o => (o.value || []).filter(x=>!(o.prev || []).includes(x)).filter(x=>reaches(theirs, o.type, x, o.id));
+  const kept = [], keptDel = [], loops = [], mine = all.filter(o=>{
+    if (o.op === "set" && o.field === "dependsOn" && (o.type === "task" || o.type === "bars")){ const to = loopsTo(o); if (to.length){ kept.push(o); loops.push({type:o.type, id:o.id, to}); return false; } }
     if (o.type === "planningGuide" && o.op === "add"){ const t = ent(theirs, o.type, o.id); if (t){ if (t.text !== o.value.text) kept.push(o); return false; } }
     if (o.op === "set" && o.field === "added") return false;                         // who added it doesn't change
     if (o.op === "set" && o.field === "edited"){ const t = theirVal(o.type, o.id, "edited"); return !(t.has && t.v && o.value && t.v.at > o.value.at); }   // the later edit's stamp wins, never a clash
@@ -3780,7 +3787,7 @@ function mergePlans(base, S, theirs){
     kept.push(o); return false; });
   const res = applyOps(theirs, mine);
   let merged; try { merged = normalize(res.plan, false); } catch(e){ return null; }
-  return {plan:merged, kept, keptDel, skipped:res.skipped};
+  return {plan:merged, kept, keptDel, loops, skipped:res.skipped};
 }
 function rebaseOnto(theirs, text){
   const l = lockOf(theirs); if (l && !l.mine && !l.expired) return false;
@@ -3794,8 +3801,11 @@ function rebaseOnto(theirs, text){
   S = merged; jiraShadow.clear(); rollup(S); sel = keepSel; file.baseText = text; file.baseHash = hashText(text);
   resetHistory();                                  // older undo steps predate teammates' updates; undoing them could erase their work
   const lost = res.skipped.length;
-  const nk = new Set(kept.map(o=>o.type + ":" + o.id)).size, nd = keptDel.length;
-  if (nk || lost || nd) mergeNote = [nk ? `Kept a teammate's newer change on ${nk} item${nk===1?"":"s"} you also edited` : "", nd ? `Didn't delete ${nd} item${nd===1?"":"s"} a teammate changed meanwhile` : "", lost ? `${lost} of your edits were to items a teammate deleted` : "", backedUp ? "Your version was downloaded as a backup" : ""].filter(Boolean).join(". ") + ".";
+  const loopKeys = new Set((m.loops || []).map(x=>x.type + ":" + x.id)), nk = new Set(kept.map(o=>o.type + ":" + o.id).filter(k=>!loopKeys.has(k))).size, nd = keptDel.length;
+  const nm = (type, id) => { const x = type === "task" ? merged.bars.flatMap(b=>b.tasks || []).find(t=>t.id === id) : merged.bars.find(b=>b.id === id); return `"${String(x ? (type === "task" ? taskTitle(x) : barTitle(x)) : id).slice(0, 60)}"`; };
+  const loopLines = (m.loops || []).slice(0, 3).map(x=>`Your "waits for" link from ${nm(x.type, x.id)} to ${x.to.slice(0, 2).map(t=>nm(x.type, t)).join(" and ")} wasn't kept: it would make a loop with a teammate's change`);
+  if (m.loops && m.loops.length > 3) loopLines.push(`and ${m.loops.length - 3} more links like it`);
+  if (nk || lost || nd || loopLines.length) mergeNote = [...loopLines, nk ? `Kept a teammate's newer change on ${nk} item${nk===1?"":"s"} you also edited` : "", nd ? `Didn't delete ${nd} item${nd===1?"":"s"} a teammate changed meanwhile` : "", lost ? `${lost} of your edits were to items a teammate deleted` : "", backedUp ? "Your version was downloaded as a backup" : ""].filter(Boolean).join(". ") + ".";
   return true;
 }
 let mergeNote = "";
