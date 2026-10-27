@@ -12242,6 +12242,11 @@ function capacityPanel(){
   const sumLine = sps.map(sp=>{ const rs = ppl.map(pp=>ratio(pp, sp)).filter(r=>r != null), over = rs.filter(r=>r > 1).length, close = rs.filter(r=>r > CAP_CLOSE && r <= 1).length;
     return rs.length ? `${sprintBase(sp.name) || sp.name}: ${over} over · ${close} close · ${rs.length - over - close} within` : ""; }).filter(Boolean);
   if (unlinked) sumLine.push(`${unlinked} not linked to Jira, so their load is unknown`);
+  // What the points leave out, in these sprints: Jira work with no estimate, and open work added here (not in Jira).
+  const noEst = Object.values(jiraAll()).filter(j=>ids.has(j.sprintId) && !isEpic(j) && (jiraStateOf(j) || {}).state !== "abandoned" && typeof j.points !== "number").length;
+  const lo = Math.min(...sps.map(sp=>isoToDay(sp.start))), hi = Math.max(...sps.map(sp=>isoToDay(sp.end))), hsx = HS();
+  const hereN = S.bars.reduce((n, b)=>n + (b.tasks || []).filter(t=>t.status !== "done" && sideOf(t, "task") === "plan" && (x=>x.s <= hi && x.e >= lo)(taskSpan(t, hsx))).length, 0);
+  const leftOut = [noEst ? `${noEst} Jira item${noEst === 1 ? "" : "s"} with no estimate` : "", hereN ? `${hereN} open task${hereN === 1 ? "" : "s"} added here (not in Jira)` : ""].filter(Boolean);
   const toPeople = () => { goWs("people"); render(); const el = $("#sec-jirapeople"); if (el) el.scrollIntoView({block:"start"}); };
   return h("section",{class:"widget sucap",id:"suCap"},
     h("header",{}, h("h3",{}, "Capacity"), h("span",{class:"hint"}, "story points assigned in Jira, against each person's share of the team's capacity (less time off)")),
@@ -12257,6 +12262,7 @@ function capacityPanel(){
     big ? h("div",{class:"capsum"}, sumLine.length ? h("span",{class:"hint"}, sumLine.join("   ·   ")) : null,
       h("button",{type:"button",class:"linkish",id:"capAll",onclick:()=>{ UI.capAll = !showAll; saveUI(); renderStandup(); }}, showAll ? "Show only who's over or close" : `Show all ${ppl.length} people`),
       !showAll && !flagged.length && ppl.some(p=>p.jira) ? h("span",{class:"hint"}, unlinked ? " Everyone linked to Jira is within capacity." : " Everyone is within capacity.") : null) : null,
+    leftOut.length ? h("p",{class:"hint",id:"capLeftOut"}, `Not counted in these points: ${leftOut.join(", ")}.`) : null,
     h("p",{class:"caplegend"}, ppl.some(hasCap) ? [h("i",{class:"h1"}), "under 70%", h("i",{class:"h2"}), "70–100%", h("i",{class:"h3"}), "over", h("i",{class:"h4"}), "30%+ over"] : null,
       ppl.some(p=>!hasCap(p)) ? [h("i",{class:"n2"}), ppl.some(hasCap) ? "no capacity set: shaded by load" : "shaded by load; set the team capacity to compare with what each person can take"] : null),
     rest ? h("p",{class:"hint"}, ["",
@@ -15107,7 +15113,7 @@ function renderPlanningGuide(){
 // ================= List: the plan's work as rows (docs/workspaces.md) =================
 // The same items Timeline draws for the same filters, read top to bottom: initiatives as group headers, their tasks and
 // the Jira stories placed under them. It only reads; edits happen in the side panel.
-const LIST_KEY = "sightline-list-layout", LIST_LAYOUTS = [["initiative", "By initiative"], ["lane", "By workstream"], ["person", "By person"], ["start", "By start date", "Everything in one list, by start date"]], LIST_DEFAULT = "lane";
+const LIST_KEY = "sightline-list-layout", LIST_LAYOUTS = [["initiative", "By initiative"], ["lane", "By workstream"], ["person", "By person"], ["start", "By start date", "Everything in one list, by start date"], ["order", "By order", "Steps from what waits for what: first what waits for nothing, then what waits only on those"]], LIST_DEFAULT = "lane";
 let listMemo = null, listFocus = null;
 function listLayout(){
   if (listMemo !== null) return listMemo;
@@ -15180,9 +15186,25 @@ function listModel(f = UI.filter){
   return {rows, off, hidden};
 }
 // The rows for a layout, as groups: [{label, rows}]. Flat layouts sort by start; ties go by initiative, then plan order.
+// Which step each piece of work is in: 0 when it waits for nothing, otherwise one after the latest step of what it waits
+// for. A task waits for its own links and for what its initiatives wait for; an initiative, for its links and what holds
+// it waits for. Waiting for an initiative is waiting for everything in it. Work hidden by filters still counts. -1: part
+// of a loop. Keyed "bar:id" / "task:id".
+function orderSteps(){
+  const preds = new Map(), add = (k, L) => preds.set(k, [...(preds.get(k) || []), ...L]);
+  const barWaits = b => { const out = []; for (let x = b, seen = new Set(); x && !seen.has(x.id); x = x.parent && barById(x.parent)){ seen.add(x.id); (x.dependsOn || []).forEach(id=>{ const y = barById(id); if (!y || sameTree(id, b.id)) return; [y, ...descendantsOf(id)].forEach(z=>{ out.push("bar:" + z.id); (z.tasks || []).forEach(t=>out.push("task:" + t.id)); }); }); } return out; };
+  S.bars.forEach(b=>{ add("bar:" + b.id, barWaits(b)); (b.tasks || []).forEach(t=>add("task:" + t.id, [...(t.dependsOn || []).filter(id=>taskById(id)).map(id=>"task:" + id), ...barWaits(b)])); });
+  const step = new Map(), on = new Set();
+  const walk = k => { if (step.has(k)) return step.get(k); if (on.has(k)) return -1; on.add(k); let v = 0;
+    for (const q of preds.get(k) || []){ const x = walk(q); if (x < 0){ v = -1; break; } v = Math.max(v, x + 1); }
+    on.delete(k); step.set(k, v); return v; };
+  preds.forEach((_, k)=>walk(k)); return step; }
 function listGroups(m, layout){
   const items = m.rows.filter(r=>!r.header), byStart = (a, b) => (a.s ?? 1e12) - (b.s ?? 1e12) || a.ord - b.ord;
   if (layout === "start") return [{label:null, rows:items.slice().sort(byStart)}];
+  if (layout === "order"){ const st = orderSteps(), groups = new Map();
+    items.forEach(r=>{ const k = st.get(r.type + ":" + r.id) ?? 0; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
+    return [...groups.keys()].sort((a, b)=>(a < 0 ? 1e9 : a) - (b < 0 ? 1e9 : b)).map(k=>({label:k < 0 ? "In a loop: these wait for each other" : k === 0 ? "Step 1: waits for nothing" : `Step ${k + 1}`, step:k, rows:groups.get(k).sort(byStart)})); }
   if (layout === "lane"){
     // Each workstream in its order, its initiatives as on By initiative; a sub-initiative in another workstream starts at its own top level.
     const depth = b => { let n = 0; for (let p = b.parent && barById(b.parent), seen = new Set(); p && p.lane === b.lane && !seen.has(p.id); p = p.parent && barById(p.parent)){ seen.add(p.id); n++; b = p; } return n; };
