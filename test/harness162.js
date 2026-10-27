@@ -48,6 +48,16 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("N8 a quick update that changes nothing writes nothing", handle.writes === w2 && file().meta.revision === r1 && /^Nothing changed, so nothing was saved/.test(status()), status());
     await ev(`quickSave("renamed", s=>{ s.bars[0].label = "Quick rename"; })`); await wait(50);
     ok("N9 a real quick update still saves", handle.writes === w2 + 1 && file().bars[0].label === "Quick rename" && file().meta.revision === r1 + 1);
+    // The file on disk no longer matches what was opened: Save never says "nothing to save" without checking it.
+    await ev("startEditing(false)"); await wait(50); const good = handle._text;
+    handle._text = good.slice(0, Math.floor(good.length / 2)); const w3 = handle.writes;
+    await ev("save()"); await wait(50);
+    ok("N10 a cut-off file on disk is not taken as saved: Save stops and shows the clash", handle.writes === w3 && !/No changes to save/.test(status()) && !!d.querySelector("#banners button") && /Overwrite with mine/.test(d.querySelector("#banners").textContent), status());
+    [...d.querySelectorAll("#banners button")].find(b=>/Overwrite with mine/.test(b.textContent)).click(); await wait(80);
+    ok("N11 and Overwrite with mine writes the plan back whole, though nothing was edited", handle.writes === w3 + 1 && (()=>{ try { return JSON.parse(handle._text).bars.length === ev("S.bars.length"); } catch(e){ return false; } })(), status());
+    const w4 = handle.writes, real = handle.getFile; handle.getFile = async()=>{ const e = new Error("A requested file or directory could not be found."); e.name = "NotFoundError"; throw e; };
+    await ev("save()"); await wait(50); handle.getFile = real;
+    ok("N12 a missing file is never written or reported as nothing to save: it says the file is gone", handle.writes === w4 && !/No changes to save/.test(status()) && /moved, renamed or deleted/.test(d.querySelector("#banners").textContent), d.querySelector("#banners").textContent.slice(0, 120));
     ok("E1 no page errors", !JSON.parse(ev("JSON.stringify(errs)")).length, ev("errs.join('; ')"));
   } catch(e){ R.push("FAIL  harness threw: " + e.stack); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length;
