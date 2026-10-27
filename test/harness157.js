@@ -56,7 +56,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     const rv = T(`(()=>{ const r = amCheck({id:'c-line', ops:[{op:'action', action:'task.link', args:{id:'z', after:'a'}}, {op:'action', action:'task.move', args:{id:'z', start:'after', prev:'2026-11-02'}}, {op:'action', action:'task.set', args:{id:'z', field:'rough', value:true, prev:false}}]}, S);
       const q = P(); if (r.status === 'ready') r.apply(q); const t = actTask(q, 'z').t; return {status:r.status, reasons:r.reasons, text:JSON.stringify(r.notes || []) + JSON.stringify(r.lines || []), start:t.start, rough:t.rough}; })()`);
     ok("A1 a proposal can link a task, move it after, and mark it a guess in one change", rv && rv.status === "ready" && rv.start === "2026-10-12" && rv.rough === true, JSON.stringify(rv && {s:rv.status, r:rv.reasons, st:rv.start}));
-    ok("A2 the review says it starts after what it waits for, and the date it moves", rv && /Start \\"Loose\\" the working day after what it waits for/.test(rv.text) && /\\"Loose\\" starts Oct 12 \(was Nov 2\), the working day after \\"Contract\\" finishes/.test(rv.text), rv && rv.text.slice(0, 500));
+    ok("A2 the review says it starts after what it waits for, and the date it moves", rv && /Start \\"Loose\\" the working day after what it waits for/.test(rv.text) && /\\"Loose\\": length is a guess/.test(rv.text) && /\\"Loose\\" starts Oct 12 \(was Nov 2\), the working day after \\"Contract\\" finishes/.test(rv.text), rv && rv.text.slice(0, 500));
 
     const py = spawnSync("python3", ["-I", "-c", `import importlib.util, json, sys; sp = importlib.util.spec_from_file_location('s', sys.argv[1]); m = importlib.util.module_from_spec(sp); sp.loader.exec_module(m)
 ids = {"bar": {"b1"}, "task": {"t0"}}

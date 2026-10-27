@@ -7559,6 +7559,7 @@ function actLine(id, args, p){ const a = args && typeof args === "object" ? args
   if ((id === "initiative.set" || id === "task.set") && a.field === "story") return `${who}: ${String(a.value || "").trim() ? "story (shown below)" : "clear the story"}`;
   const skl = v => (Array.isArray(v) ? v : []).map(x=>`"${((p.skills || []).find(s=>s.id === x) || {label:x}).label}"`).join(", ") || "none";
   if (amHas(AM_TEXT_FIELDS, id) && AM_TEXT_FIELDS[id].includes(a.field)) return `${who}: ${(AM_TEXT_NAME[a.field] || a.field).toLowerCase()} ${String(a.value || "").trim() ? "(shown below)" : "cleared"}`;
+  if (id === "task.set" && a.field === "rough" && typeof a.value === "boolean") return `${who}: ${a.value ? "length is a guess" : "length isn't a guess"}`;
   if (id === "task.move" && a.start === "after") return `Start ${who} the working day after what it waits for` + (a.days !== undefined ? `, taking ${a.days} working day${a.days === 1 ? "" : "s"}` : "");
   if (a.field === "needs" && (id === "initiative.set" || id === "task.set")) return `${who} needs ${skl(a.value)}`;
   if (a.field === "skills" && id === "person.set") return `Skills for ${who}: ${skl(a.value)}`;
