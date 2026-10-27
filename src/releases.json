@@ -9,7 +9,7 @@
         "area": "Timeline",
         "title": "Tasks that start too early are in the warning bar",
         "before": "A task that started before what it waits for finished was tagged too early on the Days view, but the warning bar and Present's review only counted initiatives.",
-        "now": "Open tasks that start too early are listed with initiatives in the warning bar's \"start before what they wait for finishes\". Click a name to open it, or Move them later to fix them all. Present's dependency conflicts count them too, and stepping through them opens each task.",
+        "now": "Open tasks that start too early are listed with initiatives in the warning bar, among work that starts before what it waits for finishes. Click a name to open it, or Move them later to fix them all. Present's dependency conflicts count them too, and stepping through them opens each task.",
         "where": "The warning bar above the chart, and Review in Present"
       },
       {

@@ -8,7 +8,7 @@ Tasks that start too early are counted.
 
 ### Improved
 
-- **Tasks that start too early are in the warning bar** (Timeline). Open tasks that start too early are listed with initiatives in the warning bar's "start before what they wait for finishes". Click a name to open it, or Move them later to fix them all. Present's dependency conflicts count them too, and stepping through them opens each task. *Where:* The warning bar above the chart, and Review in Present
+- **Tasks that start too early are in the warning bar** (Timeline). Open tasks that start too early are listed with initiatives in the warning bar, among work that starts before what it waits for finishes. Click a name to open it, or Move them later to fix them all. Present's dependency conflicts count them too, and stepping through them opens each task. *Where:* The warning bar above the chart, and Review in Present
 
 ### Fixed
 

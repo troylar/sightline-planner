@@ -4181,7 +4181,7 @@ function drawBanners(){
   if (late.length || dep.length || cyc.length || dead.length){
     host.append(h("div",{class:"banner warn",role:"status"},
       late.length ? h("span",{}, h("b",{}, `${late.length} late${partialView() ? " in the whole plan" : ""}: `), ...list(late)) : null,
-      dep.length ? h("span",{}, h("b",{}, `${dep.length} start before what they wait for finishes: `), ...list(dep), " ",
+      dep.length ? h("span",{}, h("b",{}, dep.length === 1 ? "1 starts before what it waits for finishes: " : `${dep.length} start before what they wait for finishes: `), ...list(dep), " ",
         editable() ? h("button",{type:"button",class:"btn",id:"fixDeps",title:"Push each one to start after what it waits for (and anything after it)",onclick:()=>fixDeps()},"Move them later")
           : file.handle && !present ? h("span",{class:"hint"},"(Start editing to fix)") : null) : null,
       cyc.length ? h("span",{}, h("b",{}, `Dependency loop: `), ...list(cyc)) : null,
