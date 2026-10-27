@@ -1812,7 +1812,7 @@ ACTIONS = {
     "task.add": ({"id": "id?", "bar": "id", "start": "iso?", "after": "ids?", "days": "int?", "rough": "bool?", "label": "str?", "owners": "ids?", "tags": "ids?", "story": "str?"}, False),
     "task.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "task.setStatus": ({"id": "id", "status": "str"}, True),
-    "task.move": ({"id": "id", "start": "iso?", "days": "int?"}, True),
+    "task.move": ({"id": "id", "start": "isoOrAfter?", "days": "int?"}, True),
     "task.moveTo": ({"id": "id", "bar": "id"}, True),
     "task.link": ({"id": "id", "after": "id"}, False),
     "task.unlink": ({"id": "id", "after": "id"}, False),
@@ -1901,6 +1901,8 @@ def _act_type_ok(t: str, v) -> bool:
         return isinstance(v, str) and bool(ACT_ID.match(v))
     if t == "isoOrNull":
         return v is None or _act_type_ok("iso", v)
+    if t == "isoOrAfter":
+        return v == "after" or _act_type_ok("iso", v)
     if t == "idOrBlank":
         return v == "" or _act_type_ok("id", v)
     if t == "ids":

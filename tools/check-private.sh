@@ -3,6 +3,9 @@
 # The terms live OUTSIDE the repo, one per line, in ~/.config/Sightline/private-terms, so they're never committed.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# A tracked symbolic link points outside the repo (a worktree's linked node_modules once slipped in): never commit one.
+links=$(git ls-files -s | awk '$1=="120000"{print $4}')
+if [ -n "$links" ]; then echo "check-private: tracked symbolic links (remove with git rm --cached):"; echo "$links"; exit 1; fi
 TERMS="${SIGHTLINE_PRIVATE_TERMS:-$HOME/.config/Sightline/private-terms}"
 [ -f "$TERMS" ] || { echo "check-private: no terms file at $TERMS (one term per line); skipping" >&2; exit 0; }
 pattern=$(grep -v '^\s*$' "$TERMS" | sed 's/[][\.*^$|?+(){}]/\\&/g' | paste -sd'|' -)

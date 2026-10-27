@@ -240,6 +240,20 @@ with `after`, the tasks it starts after, and leave out `start`:
 - When what it waits for finishes sooner, the task's card offers the day it could start. Sightline never moves work
   earlier on its own.
 
+For a task already in the plan, move it with `"start": "after"` instead of a date. It starts the working day after the
+last task it waits for finishes, the same day its card offers, and keeps its id and links. It needs at least one task
+to wait for; link it first with `task.link` in the same change. When a task it waits for is late and not done, `after`
+is refused, for adding and for moving: there's no day after a finish that has passed, so give a start instead. `prev` can be the task's current start alone. To mark
+an existing length as a guess, set `rough` with `prev: false` when the task isn't marked yet:
+
+```json
+{"op": "action", "action": "task.move", "args": {"id": "task-r02", "start": "after", "prev": "2026-11-03"}}
+{"op": "action", "action": "task.set", "args": {"id": "task-r02", "field": "rough", "value": true, "prev": false}}
+```
+
+There's no undated task: every task has a start. A task added or moved with `after` gets a real date, which Sightline
+pushes later when what it waits for slips.
+
 To wait for an approval, use a gate and have the initiative wait for it.
 
 ## Dates in words
