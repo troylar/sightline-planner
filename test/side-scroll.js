@@ -24,9 +24,11 @@ setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT"); process.exit
       ok(`S0 ${w}px: the panel is long enough to scroll`, room > 200 && was === 200, `room ${room}, at ${was}`);
       await page.evaluate(()=>render());
       ok(`S1 ${w}px: a redraw keeps the panel where it was`, await top() === was, `at ${await top()}`);
-      const btn = await page.evaluate(()=>{ const r = $("#side").getBoundingClientRect(), b = [...$("#side").querySelectorAll("button")].find(x=>{ const q = x.getBoundingClientRect(); return q.top > r.top + 40 && q.bottom < r.bottom - 10 && /^(Not started|In progress|Done)$/.test(x.textContent.trim()); }); if (!b) return null; b.dataset.probe = "1"; return b.textContent.trim(); });
+      // scroll so a button that saves and redraws (a status, or +1 day) sits 100px down, wherever the panel puts it
+      const [btn, at2] = await page.evaluate(()=>{ const side = $("#side"); side.scrollTop = 0; const r = side.getBoundingClientRect(), b = [...side.querySelectorAll("button")].find(x=>/^(Not started|In progress|Done|\+1 day)$/.test(x.textContent.trim()) && x.getBoundingClientRect().top - r.top > 120);
+        if (!b) return [null, 0]; side.scrollTop = Math.round(b.getBoundingClientRect().top - r.top - 100); b.dataset.probe = "1"; return [b.textContent.trim(), side.scrollTop]; });
       if (btn) { await page.click('#side [data-probe="1"]'); await page.waitForTimeout(150); }
-      ok(`S2 ${w}px: clicking a button in the panel keeps it where it was`, !!btn && Math.abs(await top() - was) <= 2, `${btn}: at ${await top()}`);
+      ok(`S2 ${w}px: clicking a button in the panel keeps it where it was`, !!btn && at2 > 0 && Math.abs(await top() - at2) <= 2, `${btn}: from ${at2} to ${await top()}`);
       await page.evaluate(()=>select("bar", S.bars[1].id)); await page.waitForTimeout(100);
       ok(`S3 ${w}px: a different item starts at the top`, await top() === 0, `at ${await top()}`);
       await page.close();
