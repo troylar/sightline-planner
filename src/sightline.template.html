@@ -1126,7 +1126,8 @@ body.hasnav{padding-left:var(--navw)}
 .snpins{display:flex;flex-direction:column;gap:1px;margin:0 0 6px;padding-bottom:8px;border-bottom:1px solid var(--rule)}.snpins[hidden]{display:none}
 .snpinx{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:24px;height:24px;display:grid;place-items:center;padding:0;border:0;border-radius:6px;background:transparent;color:var(--ink-3);cursor:pointer;opacity:0}
 .snpinx .ic svg{width:14px;height:14px}.snpinx:hover{background:var(--hov);color:var(--ink)}
-.snrow:hover>.snpinx,.snrow:focus-within>.snpinx{opacity:1}.snpages .snpinx.on{opacity:.55;color:var(--accent)}.snpages .snrow:hover>.snpinx.on{opacity:1}
+.snrow:hover>.snpinx,.snrow:focus-within>.snpinx{opacity:1}.snpinx.on{color:var(--accent)}.snpinx.on svg{fill:currentColor}.snpages .snpinx.on{opacity:.7}.snpages .snrow:hover>.snpinx.on{opacity:1}
+.snpins>.snsub{padding:2px 12px 4px}
 .snrow:has(.snpinx)>.snp{padding-right:30px}
 .sngroup:not(.open)>.snh .sndot:not([hidden]){display:block;margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--warn)}
 .sngroup:not(.open)>.snh:has(.sndot:not([hidden]))::after{margin-left:8px}
@@ -7221,14 +7222,15 @@ function renderPins(current){
   box.hidden = navRail() || present || !pins.length;
   box.replaceChildren(...pins.map(id=>{ const b = $("#" + id), lbl = b.querySelector(".snl").textContent;
     const marks = [...b.querySelectorAll(":scope > .tbadge, :scope > .warnc")].filter(x=>!x.hidden).map(x=>{ const c = x.cloneNode(true); c.removeAttribute("id"); return c; });
-    return h("div",{class:"snrow"}, h("button",{type:"button",class:"snk" + (id === freshPin ? " fresh" : ""),id:"pin-" + id,"data-pin":id,"aria-current":id === cur ? "page" : null,title:b.title || null,onclick:()=>b.click()}, h("span",{class:"snl"}, lbl), ...marks),
-      h("button",{type:"button",class:"snpinx",tabindex:"-1",title:`Unpin ${lbl}`,"aria-label":`Unpin ${lbl}`,onclick:()=>setPin(id, false)}, icon("tack"))); }));
+    return h("div",{class:"snrow"}, h("button",{type:"button",class:"snk" + (id === freshPin ? " fresh" : ""),id:"pin-" + id,"data-pin":id,"aria-current":id === cur ? "page" : null,"aria-keyshortcuts":"P",title:(b.title ? b.title + ". " : "") + "P unpins it",onclick:()=>b.click()}, h("span",{class:"snl"}, lbl), ...marks),
+      h("button",{type:"button",class:"snpinx on",tabindex:"-1","aria-pressed":"true",title:`Unpin ${lbl} (P)`,"aria-label":`Unpin ${lbl}`,onclick:()=>setPin(id, false)}, icon("tack"))); }));
+  if (pins.length) box.prepend(h("span",{class:"snsub",id:"snPinnedH"}, "Pinned"));
   freshPin = "";
   MAIN_NAV.groups.forEach(g=>{ const hot = [...g.querySelectorAll(".snpages .tbadge, .snpages .warnc")].some(b=>!b.hidden), hd = g.querySelector(".snh");   // a closed group says when something inside needs you
     g.querySelector(".sndot").hidden = !hot; if (hot && !g.classList.contains("open")) hd.setAttribute("aria-label", `${hd.querySelector(".snl").textContent}, something here needs attention`); else hd.removeAttribute("aria-label"); });
   if (cur) current.removeAttribute("aria-current");      // one current page: the pinned copy
   MAIN_NAV.pages.forEach(b=>{ const x = b.parentElement.querySelector(":scope > .snpinx"); if (!x) return; const on = pins.includes(b.id), lbl = b.querySelector(".snl").textContent;
-    x.classList.toggle("on", on); x.setAttribute("aria-pressed", String(on)); x.title = on ? `Unpin ${lbl}` : `Pin ${lbl} to the top (P)`; x.setAttribute("aria-label", on ? `Unpin ${lbl}` : `Pin ${lbl} to the top`); });
+    x.classList.toggle("on", on); x.setAttribute("aria-pressed", String(on)); x.title = on ? `Unpin ${lbl} (P)` : `Pin ${lbl} to the top (P)`; b.setAttribute("aria-keyshortcuts", "P"); x.setAttribute("aria-label", on ? `Unpin ${lbl}` : `Pin ${lbl} to the top`); });
 }
 function renderMainNav(){
   const group = workspaceGroup();

@@ -15,7 +15,8 @@ change them. Below them, every page has one home in a group:
 Groups start closed. Click a group's heading to open or fold it; the group you're in opens unless its page is pinned.
 A number shows only when something needs you, such as high risks on Risks or what needs attention on Today, and a
 closed group shows a dot when something inside it does. To pin a page, point at it in its group and click the pin, or
-focus it and press P. Unpin it the same way from the top. You can pin up to five pages; pins stay in this browser and
+focus it in the menu and press P (the arrow keys move through the menu). A filled pin means it's pinned. Unpin it the
+same way, from its group or from the top. You can pin up to five pages; pins stay in this browser and
 never change the plan. The button at the top of the menu, or the `\` key, collapses the menu to a rail of
 icons, and hovering or focusing an icon opens that group beside it. Sightline remembers the choice in this browser.
 On a narrow window the menu starts as a rail.
