@@ -213,6 +213,28 @@ HTML, shows as plain text.
 set with `template.set`), and gates have a description. Propose them with `milestone.set` field `story` and
 `gate.set` field `description`. A meeting's note is shown as Markdown and set with `meeting.set` field `note`.
 
+## Order before dates
+
+When you know the order of the work but not its dates, don't give every task the same placeholder start. Add each task
+with `after`, the tasks it starts after, and leave out `start`:
+
+```json
+{"op": "action", "action": "task.add", "args": {"id": "task-r02", "bar": "init-rollout", "after": ["task-r01"], "days": 3, "rough": true, "label": "R-02"}}
+```
+
+- The task starts the working day after the last of those finishes, skipping weekends, holidays and its owners' time off.
+- Add tasks in order, so each one's `after` is already placed. The review says what each starts after.
+- Give both `start` and `after`, and the later of the two wins.
+- `rough: true` marks a length as a guess. The task is hatched and labeled "guess" on the Days view, its card says
+  "Length is a guess", and the initiative counts how many lengths are guesses. Guessed lengths don't change the capacity
+  forecast, which uses effort.
+- When what it waits for runs late, Sightline pushes the task later on its own, unless automatic moving is off or a Jira
+  sprint dates the task. Then the task is flagged on its card and tagged **too early** on the Days view.
+- When what it waits for finishes sooner, the task's card offers the day it could start. Sightline never moves work
+  earlier on its own.
+
+To wait for an approval, use a gate and have the initiative wait for it.
+
 ## Dates in words
 
 Any date in a proposed change can be written the way people say it, not only as YYYY-MM-DD: a task's start, a

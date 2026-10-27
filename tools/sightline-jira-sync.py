@@ -1809,7 +1809,7 @@ ACTIONS = {
     "initiative.setScope": ({"id": "id", "scope": "str"}, True),
     "initiative.delivers.add": ({"id": "id", "outcome": "id"}, False),
     "initiative.delivers.remove": ({"id": "id", "outcome": "id"}, False),
-    "task.add": ({"id": "id?", "bar": "id", "start": "iso", "days": "int?", "label": "str?", "owners": "ids?", "tags": "ids?", "story": "str?"}, False),
+    "task.add": ({"id": "id?", "bar": "id", "start": "iso?", "after": "ids?", "days": "int?", "rough": "bool?", "label": "str?", "owners": "ids?", "tags": "ids?", "story": "str?"}, False),
     "task.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "task.setStatus": ({"id": "id", "status": "str"}, True),
     "task.move": ({"id": "id", "start": "iso?", "days": "int?"}, True),
@@ -1911,6 +1911,8 @@ def _act_type_ok(t: str, v) -> bool:
         return isinstance(v, (int, float)) and not isinstance(v, bool) and v == v and abs(v) != float("inf")
     if t == "int":
         return isinstance(v, int) and not isinstance(v, bool)
+    if t == "bool":
+        return isinstance(v, bool)
     if t == "iso":
         return _valid_iso(v) or _rel_day(v)
     if t == "keys":
@@ -1981,10 +1983,18 @@ def check_action_op(o, at: str, ids: dict, made: dict) -> str:
         made.setdefault("bar", set()).add(args["id"])
     if creates and "id" in spec and not (isinstance(args.get("id"), str) and args["id"]):
         return f"{at}: give the new item an id (like risk-vendor-limits), so reading the file again can't add it twice"
+    if name == "task.add" and "start" not in args and "after" not in args:
+        return f"{at}: task.add needs a start, or after: the tasks it starts after."
+    if name == "task.add" and isinstance(args.get("after"), list) and args.get("id") and args["id"] in args["after"]:
+        return f"{at}: a task can't start after itself."
+    if name == "task.add" and args.get("after") == []:
+        return f"{at}: after lists the tasks it starts after; leave it out to give only a start."
     for k, v in args.items():
         kind = ACT_REF_BY_NOUN.get(noun) if k == "id" else ACT_REF_BY_ARG.get(k)
         if name == "task.link" or name == "task.unlink":
             kind = "task" if k in ("id", "after") else kind
+        if name == "task.add" and k == "after":
+            kind = "task"
         if name in ("task.add", "task.moveTo") and k == "bar":
             kind = "bar"
         if name == "initiative.waitFor" and k == "gate":
