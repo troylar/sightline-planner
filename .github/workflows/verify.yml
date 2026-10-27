@@ -5,7 +5,12 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 20
+    # The suite is about 15 CPU-minutes of jsdom; one 2-job runner took 11-18 minutes. Four runners take a quarter each.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -13,17 +18,23 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - run: echo "$(nproc) CPUs, $(free -g | awk '/^Mem/{print $2}') GB"
       # Keyed on the playwright version in package-lock.json, so a version bump downloads a fresh browser.
       - id: pw
         run: echo "version=$(node -p 'require("./package-lock.json").packages["node_modules/playwright"].version')" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      - if: matrix.shard == 4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
       # Chromium for the layout checks in test/run.sh; the version comes from the playwright pinned in package.json.
-      - run: npx playwright install --with-deps chromium
+      # Only the last shard runs the browser checks (test/run.sh, SIGHTLINE_SHARD).
+      - if: matrix.shard == 4
+        run: npx playwright install --with-deps chromium
       # Two test files at a time: the runner's CPUs are small, and four at once pushed some past their own time limits.
       - run: npm run check
         env:
           SIGHTLINE_JOBS: '2'
-      - run: npm pack --dry-run --ignore-scripts
+          SIGHTLINE_SHARD: ${{ matrix.shard }}/4
+      - if: matrix.shard == 4
+        run: npm pack --dry-run --ignore-scripts
