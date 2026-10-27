@@ -18,7 +18,7 @@ On a narrow window the menu starts as a rail.
 
 Each group remembers your last page. Existing saved startup choices and links still open their original destinations. Views express audience preferences; file permissions control access.
 
-Saved views and filters apply to Timeline, List and Capacity. Roadmap and Status update use the whole plan and say so. Your filters remain available when you return to Timeline.
+Saved views and filters apply to Timeline, List and Capacity. To look at one or more initiatives, pick **Show only this** on an initiative's card (then **Also show this** on others), or pick them under **Filters > Initiatives**. Each shows with everything inside it and the initiatives that hold it, plus the milestones done when a shown initiative is. Gates are hidden while you're picking. Roadmap and Status update use the whole plan and say so. Your filters remain available when you return to Timeline.
 
 ## Cards
 

@@ -436,6 +436,7 @@ body.presenting .editstrip{display:none!important}
 .filterpop{width:min(420px,calc(100vw - 16px));max-height:75vh;overflow:auto;padding:10px 12px;gap:10px}
 .fgroup .fh{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3);font-weight:600;margin-bottom:5px}
 .fchips{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+#fBarAdd{max-width:100%;min-width:0;width:auto;font:inherit;font-size:13px;padding:4px 8px;border-radius:999px}
 .filterpop .fchip{width:auto;border:1px solid var(--rule);background:var(--surface);border-radius:999px;padding:3px 10px;font-size:12.5px;display:inline-flex;gap:6px;align-items:center}
 .filterpop .fchip[aria-pressed=true],.filterpop .fchip[aria-pressed=true]:hover{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .filterpop .fchip:hover:not([aria-pressed=true]){border-color:var(--ink-3)}
@@ -2060,7 +2061,7 @@ function normFilter(f){
   f = f && typeof f === "object" ? f : {};
   const list = (v, allowed, max) => Array.isArray(v) ? [...new Set(v.map(x=>str(x).slice(0,60)).filter(x=>x && (!allowed || allowed.includes(x))))].slice(0, max || 50) : [];
   const r = f.range && typeof f.range === "object" ? f.range : {}, type = RANGES.some(x=>x[0]===r.type) ? r.type : "all";
-  return {tags:list(f.tags,null,100), hideTags:list(f.hideTags,null,100), labels:list(f.labels,null,100), hideLabels:list(f.hideLabels,null,100), authors:list(f.authors,null,100), people:list(f.people,null,100), lanes:list(f.lanes,null,100), status:list(f.status, [...STATUSES.map(x=>x[0]), "blocked"]), mstatus:list(f.mstatus, MSTATUS), kinds:list(f.kinds, FILTER_KINDS.map(x=>x[0])),
+  return {bars:list(f.bars,null,100), tags:list(f.tags,null,100), hideTags:list(f.hideTags,null,100), labels:list(f.labels,null,100), hideLabels:list(f.hideLabels,null,100), authors:list(f.authors,null,100), people:list(f.people,null,100), lanes:list(f.lanes,null,100), status:list(f.status, [...STATUSES.map(x=>x[0]), "blocked"]), mstatus:list(f.mstatus, MSTATUS), kinds:list(f.kinds, FILTER_KINDS.map(x=>x[0])),
     range: type === "custom" ? {type, from: validIso(r.from) ? r.from : "", to: validIso(r.to) ? r.to : ""} : {type}, showEmpty: f.showEmpty === true};
 }
 const LW_DEFAULT = {weeks:160, days:220};
@@ -4127,10 +4128,15 @@ const ROUTINE_BANNERS = new Set(["jsprints"]);
 let noticesOpen = false;
 function setBanner(key, kind, kids){ banners.set(key, h("div",{class:"banner "+kind, role:kind==="bad"?"alert":"status"}, kids)); drawBanners(); }
 function clearBanner(key){ banners.delete(key); drawBanners(); }
+// While initiatives are picked, say so above the chart for as long as it lasts (the status line fades), Present too.
+function onlyStrip(){ const ids = (UI.filter.bars || []).filter(id=>barById(id)); if (!ids.length) return null;
+  return h("div",{class:"banner info",id:"onlyStrip",role:"status"}, h("span",{}, h("b",{}, ids.length === 1 ? `Showing only "${chartLabel(barById(ids[0]))}"` : `Showing only ${ids.length} initiatives`), " and what's inside"),
+    h("button",{type:"button",class:"linkish",id:"onlyAll",onclick:()=>{ setFilter(x=>{ x.bars = []; }); setStatus("Showing every initiative again."); }}, "Show every initiative")); }
 function drawBanners(){
   const host = $("#banners");
   if (present){
     host.replaceChildren(...[...banners.values()].filter(x=>x.classList.contains("bad")));
+    { const o = onlyStrip(); if (o) host.append(o); }
     const sets = reviewSets(), any = sets.some(x=>x[3].length);
     host.append(h("div",{class:"review",role:"group","aria-label":"Review summary"},
       h("span",{class:"lbl"},"Review"),
@@ -4148,12 +4154,13 @@ function drawBanners(){
       h("div",{class:"noticeline",id:"noticeLine"}, h("span",{class:"hint"}, `${routine.length} setup note${routine.length === 1 ? "" : "s"} for whoever runs this plan`), " · ",
         h("button",{type:"button",class:"linkish",id:"noticeShow",onclick:()=>{ noticesOpen = true; drawBanners(); }}, "Show")));
   } else host.replaceChildren(...banners.values());
+  { const o = onlyStrip(); if (o) host.append(o); }
   const late = S.bars.filter(isLate), dep = [...S.bars.filter(b=>depProblems(b).length), ...liveBlocks().filter(i=>blockProblems(i).length).map(i=>({id:i.id, label:i.label, isBlock:true}))], cyc = (()=>{ const c = [...findCycles()], tl = taskLoops(); S.bars.forEach(b=>{ if (!c.includes(b) && (b.tasks||[]).some(t=>tl.has(t.id))) c.push(b); }); return c; })(), dead = canceledDeps();
   const pick = b => h("button",{class:"linkish",onclick:()=>select(b.isBlock ? "block" : "bar",b.id)}, (b.label||"Untitled").slice(0,40));
   const list = (arr) => arr.slice(0,4).flatMap((b,i)=>[i?", ":"", pick(b)]).concat(arr.length>4?["…"]:[]);
   if (late.length || dep.length || cyc.length || dead.length){
     host.append(h("div",{class:"banner warn",role:"status"},
-      late.length ? h("span",{}, h("b",{}, `${late.length} late: `), ...list(late)) : null,
+      late.length ? h("span",{}, h("b",{}, `${late.length} late${(UI.filter.bars || []).length ? " in the whole plan" : ""}: `), ...list(late)) : null,
       dep.length ? h("span",{}, h("b",{}, `${dep.length} start before what they wait for finishes: `), ...list(dep), " ",
         editable() ? h("button",{type:"button",class:"btn",id:"fixDeps",title:"Push each one to start after what it waits for (and anything after it)",onclick:()=>fixDeps()},"Move them later")
           : file.handle && !present ? h("span",{class:"hint"},"(Start editing to fix)") : null) : null,
@@ -5991,7 +5998,7 @@ function dayCols(){
 // ================= rendering =================
 function remember(){ const a = document.activeElement; if (!a || !a.dataset) return null; return a.dataset.key || (a.id && a.closest("#side") ? "#" + a.id : null); }
 function restore(key){ if (!key) return; const el = key[0] === "#" ? document.getElementById(key.slice(1)) : document.querySelector(`[data-key="${CSS.escape(key)}"]`); if (el && !el.disabled) el.focus({preventScroll:true}); }
-const dropJiraMemos = () => { avMemo = null; noteMemo = null; fitMemo = null; storyMemo = null; countMemo = new Map(); epicListMemo = null; layerMemo = null; hideMemo = null; kindsMemo = null; tagMemo = null; seenMemo = null; };   // after any change to the plan, Jira data or the day
+const dropJiraMemos = () => { avMemo = null; noteMemo = null; fitMemo = null; storyMemo = null; countMemo = new Map(); epicListMemo = null; layerMemo = null; hideMemo = null; kindsMemo = null; tagMemo = null; seenMemo = null; onlyMemo = null; };   // after any change to the plan, Jira data or the day
 // Selecting an item, or closing its panel, keeps the chart on screen when nothing it shows has changed since it was drawn:
 // the highlight moves to the elements tagged data-sel and the rest of the page draws as usual. Anything else draws in full:
 // another page or zoom, an edit, Jira, a new day or width, a kind of item not listed here, an item that isn't drawn yet, or
@@ -6129,8 +6136,8 @@ window.addEventListener("popstate", ()=>applyNav(parseNav(location.hash)));
 const linkHere = () => { const u = location.href; (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(()=>setStatus("Link copied. It opens this place in this plan."), ()=>{ window.prompt("Copy this link:", u); }); };
 // ================= filters (what's shown; calculations always use the whole plan) =================
 const lc = x => String(x||"").trim().toLowerCase();
-const fActive = (f = UI.filter) => !!((f.tags || []).length || (f.hideTags || []).length || (f.labels || []).length || (f.hideLabels || []).length || (f.authors || []).length || f.people.length || f.lanes.length || f.status.length || f.mstatus.length || f.kinds.length || f.range.type !== "all");
-const fCount = (f = UI.filter) => [(f.tags || []).length + (f.hideTags || []).length, (f.labels || []).length + (f.hideLabels || []).length, (f.authors || []).length, f.people.length, f.lanes.length, f.status.length, f.mstatus.length, f.kinds.length, f.range.type !== "all"].filter(Boolean).length;
+const fActive = (f = UI.filter) => !!((f.bars || []).length || (f.tags || []).length || (f.hideTags || []).length || (f.labels || []).length || (f.hideLabels || []).length || (f.authors || []).length || f.people.length || f.lanes.length || f.status.length || f.mstatus.length || f.kinds.length || f.range.type !== "all");
+const fCount = (f = UI.filter) => [(f.bars || []).length, (f.tags || []).length + (f.hideTags || []).length, (f.labels || []).length + (f.hideLabels || []).length, (f.authors || []).length, f.people.length, f.lanes.length, f.status.length, f.mstatus.length, f.kinds.length, f.range.type !== "all"].filter(Boolean).length;
 function fRangeDays(f = UI.filter){
   const t = todayDay(), p0 = startDay();
   if (f.range.type === "sprint"){ let w0 = 0; for (const sp of S.sprints){ const a = wkDay(w0), z = wkDay(w0 + sp.weeks) - 3; w0 += sp.weeks; if (t < a) return [a, z]; if (t <= z + 2) return [a, z]; } return [1, 0]; }
@@ -6151,11 +6158,19 @@ function taskVisible(t, f = UI.filter, R = fRangeDays(f)){
   if (f.people.length && !peopleMatch(peopleOf(t), f)) return false;
   const sp = taskSpan(t, HS()); return inRange(sp.s, sp.e, R);
 }
+// Show only these initiatives: the ones picked, everything inside them, and the initiatives that hold them (so the rows
+// read as they do unfiltered). Kept per draw, keyed on the picked list and the plan's bars.
+let onlyMemo = null;
+function onlyScope(f = UI.filter){ const ids = f.bars || []; if (!ids.length) return null;
+  const key = ids.join(","); if (onlyMemo && onlyMemo.key === key && onlyMemo.bars === S.bars) return onlyMemo.set;
+  const set = new Set(); ids.forEach(id=>{ const b = barById(id); if (!b) return; set.add(id); descendantsOf(id).forEach(x=>set.add(x.id)); ancestorsOf(b).forEach(x=>set.add(x.id)); });
+  onlyMemo = {key, bars:S.bars, set}; return set; }
 function barVisible(b, f = UI.filter, R = fRangeDays(f)){
   if (b.parked) return false;                          // switched off in the Jira tab: kept, not shown
   if (hidKind(b.kind) || (hidKind("done") && effStatus(b) === "done")) return false;   // hidden to declutter: hide wins
   if (sideOf(b, "bar") === "plan" && viewNarrowed() && viewHidesPlan(b) && !(b.tasks || []).some(t=>sideOf(t, "task") === "jira" || !viewHidesPlan(t)) && !kidsOf(b.id).some(k=>barVisible(k, f, R))) return false;   // a plan holder of shown work stays
   if (!fActive(f)) return true;
+  { const only = onlyScope(f); if (only && !only.has(b.id)) return false; }
   if (hasKids(b) && !hasTasks(b) && kidsOf(b.id).some(x=>barVisible(x, f, R))) return true;   // a holder shows when something inside it does (or on its own terms below)
   if (f.lanes.length && !f.lanes.includes(b.lane)) return false;
   if (f.kinds.length && !f.kinds.includes(b.kind)) return false;
@@ -6174,6 +6189,7 @@ function msVisible(m, f = UI.filter, R = fRangeDays(f)){
   if (hidKind("milestone")) return false;
   if (!fActive(f)) return true;
   if (f.kinds.length && !f.kinds.includes("milestone")) return false;
+  { const only = onlyScope(f); if (only && !(m.after || []).some(id=>only.has(id))) return false; }      // only milestones done when a shown initiative is
   if (f.lanes.length && !f.lanes.includes(m.lane)) return false;
   if (f.mstatus.length && !f.mstatus.includes(m.status)) return false;
   if (tagHides(m, "ms", f)) return false;
@@ -6185,6 +6201,7 @@ function gateVisible(g, f = UI.filter, R = fRangeDays(f)){       // g from gateI
   if (hidKind("gate")) return false;
   if (!fActive(f)) return true;
   if (f.kinds.length && !f.kinds.includes("gate")) return false;
+  if ((f.bars || []).length) return false;                         // a gate isn't tied to an initiative
   if (f.people.length && !peopleMatch(own(g.x), f)) return false;
   return g.day == null || !R || (g.day >= R[0] && g.day <= R[1]);
 }
@@ -6974,6 +6991,13 @@ function renderFilterPop(){
     authorsInPlan().length ? h("div",{class:"fgroup",id:"fHide"}, h("div",{class:"fh"}, "Hide from my view", h("span",{class:"hint"}, " · just for you; it never hides what comes from Jira")),
       h("div",{class:"fchips"}, ...authorsInPlan().map(id=>h("label",{class:"fcheck"}, h("input",{type:"checkbox","data-hide":id,"data-fkey":"hide:" + id,checked:hideOf().people.includes(id),onchange:e=>setHide(x=>{ x.people = e.target.checked ? [...x.people, id] : x.people.filter(v=>v !== id); })}), " " + personOrFormer(id))),
         h("label",{class:"fcheck"}, h("input",{type:"checkbox","data-hide":"unknown","data-fkey":"hide:unknown",checked:hideOf().unknown,onchange:e=>setHide(x=>{ x.unknown = e.target.checked; })}), " Items with no recorded author"))) : null,
+    h("div",{class:"fgroup",id:"fBars"}, h("div",{class:"fh"}, "Show only these initiatives", h("span",{class:"hint"}, " · with what's inside them")),
+      h("div",{class:"fchips"}, ...(f.bars || []).map(id=>{ const b = barById(id), nm = b ? chartLabel(b) : id;
+          return h("button",{type:"button",class:"fchip tagchip only","data-fkey":"bars:" + id,"aria-pressed":"true","aria-label":`Stop showing ${nm}`,title:"Click to remove",onclick:()=>setOnly(id, false)}, nm, " ×"); }),
+        h("select",{id:"fBarAdd","data-fkey":"bars:add","aria-label":"Show only an initiative",onchange:e=>{ const v = e.target.value; if (v) setOnly(v, true); }},
+          h("option",{value:""}, (f.bars || []).length ? "Add another…" : "Pick an initiative…"),
+          ...S.lanes.map(l=>{ const L = S.bars.filter(b=>b.lane === l.id && !b.parked && !(f.bars || []).includes(b.id)).sort((a, b)=>chartLabel(a).localeCompare(chartLabel(b)));
+            return L.length ? h("optgroup",{label:l.name}, ...L.map(b=>h("option",{value:b.id}, chartLabel(b)))) : null; })))),
     group("Workstreams", S.lanes.map(l=>chip("lanes", l.id, l.name, h("i",{class:"fdot",style:{background:l.color}})))),
     group("Status", [...STATUSES, ["blocked","Blocked"]].map(([v,t])=>chip("status", v, t))),
     h("div",{class:"fgroup",id:"fKinds"}, h("div",{class:"fh"}, "Kinds", h("span",{class:"hint"}, " · click: show only, again: hide, again: off. Hide wins")),
@@ -6990,6 +7014,11 @@ function renderFilterPop(){
       h("button",{type:"button",class:"btn","data-fkey":"done",onclick:()=>closeFilterPop(true)},"Done"))));
   restoreFilterFocus(focus);
 }
+// Add an initiative to Show only, or take one off. From the card, the Filters panel or a chip.
+function setOnly(id, on){ const b = barById(id); if (!b) return;
+  setFilter(x=>{ x.bars = (x.bars || []).filter(v=>v !== id); if (on) x.bars.push(id); });
+  const n = UI.filter.bars.length;
+  setStatus(on ? `Showing only ${n === 1 ? `"${chartLabel(b)}"` : `${n} initiatives`} and what's inside. Filters takes it off.` : n ? `No longer showing "${chartLabel(b)}". Still showing only ${n === 1 ? `"${chartLabel(barById(UI.filter.bars[0]))}"` : `${n} initiatives`}.` : "Showing every initiative again."); }
 const visibleCount = () => { const R = fRangeDays(); return S.bars.filter(b=>barVisible(b, UI.filter, R)).length; };
 // "S1 · working day 4 of 10": where today falls in its sprint, counted in working days. On a weekend or holiday,
 // "4 of 10 working days done".
@@ -7029,6 +7058,7 @@ function scopeText(){
   const f = UI.filter, parts = [];
   { const js = activeJiraSprint(), sp = js ? jiraSprintNow(js) : sprintNow(); if (sp) parts.push(sp); }                  // the buttons on the right already say lane/person and weeks/days
 
+  if ((f.bars || []).length) parts.push(f.bars.length === 1 ? `only ${chartLabel(barById(f.bars[0]))}` : `only ${f.bars.length} initiatives`);
   if (f.range.type !== "all") parts.push(rangeLabel(f));
   if (f.people.length) parts.push(f.people.length <= 2 ? f.people.map(personName).join(", ") : `${f.people.length} people`);
   if ((f.authors || []).length) parts.push("added by " + (f.authors.length <= 2 ? f.authors.map(a=>a === "unknown" ? "no one recorded" : personOrFormer(a)).join(", ") : `${f.authors.length} people`));
@@ -7211,7 +7241,7 @@ function renderWs(){
 }
 function cleanFilter(f){
   const lanes = new Set(S.lanes.map(l=>l.id)), ppl = new Set(S.people.map(p=>p.id)), al = laneAliases(S);
-  return {...f, lanes:[...new Set(f.lanes.map(x=>al.get(x) || x))].filter(x=>lanes.has(x)), people:f.people.filter(x=>ppl.has(x))};
+  return {...f, lanes:[...new Set(f.lanes.map(x=>al.get(x) || x))].filter(x=>lanes.has(x)), people:f.people.filter(x=>ppl.has(x)), bars:(f.bars || []).filter(id=>barById(id))};
 }
 // What this browser remembers by workstream id (folded rows, the last workstream picked when sorting Jira, the selection)
 // follows a workstream whose id changed.
@@ -7225,7 +7255,7 @@ function cancelDerived(){ clearTimeout(derivedT); derivedT = null; }
 function scheduleDerived(){ cancelDerived(); derivedT = setTimeout(()=>{ derivedT = null; renderDerived(true); }, 120); }
 function renderDerived(editStateCurrent = false){ if (UI.view && !activeView()) UI.view = null; checkNewer();
   const wantLoad = UI.ws === "people";
-  relaneUI(); { const c = cleanFilter(UI.filter); if (c.lanes.join() !== UI.filter.lanes.join() || c.people.length !== UI.filter.people.length){ UI.filter = c; saveUI(); } } renderViewBar(); renderWs(); if (wantLoad) renderLoad(); if (UI.ws === "timeline") markJiraLocks(); drawBanners(); if (!editStateCurrent){ updateUndo(); updateFileUI(); } }
+  relaneUI(); { const c = cleanFilter(UI.filter); if (c.lanes.join() !== UI.filter.lanes.join() || c.people.length !== UI.filter.people.length || c.bars.length !== (UI.filter.bars || []).length){ UI.filter = c; saveUI(); } } renderViewBar(); renderWs(); if (wantLoad) renderLoad(); if (UI.ws === "timeline") markJiraLocks(); drawBanners(); if (!editStateCurrent){ updateUndo(); updateFileUI(); } }
 function updateUndo(){
   if (quickUndoable()){ const u = quickStack(quickDone).at(-1), r = quickStack(quickUndone).at(-1);
     $("#undo").disabled = !u; $("#redo").disabled = !r; $("#undo").title = u ? `Undo ${u.what} (Ctrl+Z)` : "Undo (Ctrl+Z)"; $("#redo").title = r ? `Redo ${r.what}` : "Redo"; return; }
@@ -11132,6 +11162,9 @@ function sideBody(put){
       h("div",{class:"row2"},
         h("button",{class:"btn",onclick:()=>addTask(b)},"+ Task"),
         h("button",{class:"btn nav",onclick:()=>openInitiative(b.id)},"Open day view")),
+      (()=>{ const L = UI.filter.bars || [], on = L.includes(b.id);
+        return h("div",{class:"row2"}, h("button",{type:"button",class:"btn",id:"f-only","aria-pressed":String(on),onclick:()=>{ setOnly(b.id, !on); $("#f-only")?.focus(); }},
+          on ? (L.length > 1 ? "Stop showing this one" : "Show every initiative") : L.length ? "Also show this" : "Show only this")); })(),
       field("f-kind","Type", h("select",{id:"f-kind",onchange:e=>commit(()=>act("initiative.set", {id:b.id, field:"kind", value:e.target.value}))}, KINDS.map(([v,t])=>h("option",{value:v,selected:b.kind===v},t)))),
       h("div",{class:"field"}, h("span",{class:"flabel"},"Starts after these finish"), depBox),
       (()=>{ const opts = liveBlocks().filter(i=>i.status !== "canceled" || (b.waitsFor||[]).includes(i.id)); if (!opts.length) return null;
