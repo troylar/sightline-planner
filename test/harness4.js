@@ -289,9 +289,9 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   ok("…and the status says initiatives moved", /initiative/.test(d.querySelector("#status").textContent), d.querySelector("#status").textContent);
   ok("waiting blocks don't stretch", ev(`dayToIso(barEndDay(barById("w1")))`)==="2026-10-16");
   ok("a 1-day holiday slip is a tight handoff, not a conflict", ev(`depProblems(barById("i2")).length`)===0 && ev(`depTight(barById("i2")).length`)===1);
-  ev("render()"); ok("tight tag on the bar, no warning banner", !!d.querySelector('[data-key="bar:i2"] .tag.soft') && !/start before what they wait for finishes/.test(d.querySelector("#banners").textContent));
+  ev("render()"); ok("tight tag on the bar, no warning banner", !!d.querySelector('[data-key="bar:i2"] .tag.soft') && !/starts? before what (it waits|they wait) for finishes/.test(d.querySelector("#banners").textContent));
   ev(`commit(()=>{ barById("i2").start = 3; })`);
-  ok("a full-week overlap is still a red conflict", ev(`depProblems(barById("i2")).length`)===1 && /start before what they wait for finishes/.test(d.querySelector("#banners").textContent));
+  ok("a full-week overlap is still a red conflict", ev(`depProblems(barById("i2")).length`)===1 && /starts? before what (it waits|they wait) for finishes/.test(d.querySelector("#banners").textContent));
   ev("undo()");
   ok("sprint header shows real working days", /9d/.test([...d.querySelectorAll("#gantt .gsprint")][1].textContent));
   ok("bar is drawn a day wider", ev(`visEndW(barById("i1"))`) > 4);

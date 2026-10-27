@@ -2484,6 +2484,7 @@ function reschedule(){
     let changed = false;
     tasks.forEach(t=>{
       if (looped.has(t.id) || jiraFixed(t)) return;          // Jira's sprint sets its dates; a clash shows as a warning instead
+      if (t.status === "done") return;                       // finished work keeps the dates it ran on
       const deps = (t.dependsOn || []).map(id=>tasks.get(id)).filter(Boolean); if (!deps.length) return;
       const earliest = Math.max(...deps.map(x=>taskSpan(x, hs).e)) + 1, cur = taskSpan(t, hs).s;
       if (cur < earliest){ t.start = dayToIso(nextWork(earliest, taskHs(t))); changed = true; movedIds.add(t.id); }
@@ -4159,7 +4160,7 @@ function drawBanners(){
     const sets = reviewSets(), any = sets.some(x=>x[3].length);
     host.append(h("div",{class:"review",role:"group","aria-label":"Review summary"},
       h("span",{class:"lbl"}, partialView() ? "Review of the whole plan" : "Review"),
-      any ? sets.filter(x=>x[3].length).map(([k,label,cls,arr])=>h("button",{class:"rchip "+cls,type:"button",title:`Show each ${label} item in turn`,onclick:()=>cycleReview(k)}, h("b",{},String(arr.length)), label + (arr.length===1||k!=="dep" ? "" : "s")))
+      any ? sets.filter(x=>x[3].length).map(([k,label,cls,arr])=>h("button",{class:"rchip "+cls,type:"button",title:k === "dep" ? "Show each item that starts before what it waits for finishes, in turn" : `Show each ${label} item in turn`,onclick:()=>cycleReview(k)}, h("b",{},String(arr.length)), k === "dep" && arr.length !== 1 ? "start too early" : label))
           : h("span",{class:"rchip ok"},"✓ Nothing late, at risk or in conflict"),
       S.baseline ? h("span",{class:"rchip"}, baselineStory()) : null,
       fActive() ? h("span",{class:"scope"}, `${viewLabel()} · ${rangeLabel()} · ${visibleCount()} of ${S.bars.length} initiatives`) : null));
@@ -4174,14 +4175,14 @@ function drawBanners(){
         h("button",{type:"button",class:"linkish",id:"noticeShow",onclick:()=>{ noticesOpen = true; drawBanners(); }}, "Show")));
   } else host.replaceChildren(...banners.values());
   host.append(...viewStrips());
-  const late = S.bars.filter(isLate), dep = [...S.bars.filter(b=>depProblems(b).length), ...liveBlocks().filter(i=>blockProblems(i).length).map(i=>({id:i.id, label:i.label, isBlock:true}))], cyc = (()=>{ const c = [...findCycles()], tl = taskLoops(); S.bars.forEach(b=>{ if (!c.includes(b) && (b.tasks||[]).some(t=>tl.has(t.id))) c.push(b); }); return c; })(), dead = canceledDeps();
-  const pick = b => h("button",{class:"linkish",onclick:()=>select(b.isBlock ? "block" : "bar",b.id)}, (b.label||"Untitled").slice(0,40));
+  const late = S.bars.filter(isLate), dep = [...depClashes(), ...liveBlocks().filter(i=>blockProblems(i).length).map(i=>({id:i.id, label:i.label, isBlock:true}))], cyc = (()=>{ const c = [...findCycles()], tl = taskLoops(); S.bars.forEach(b=>{ if (!c.includes(b) && (b.tasks||[]).some(t=>tl.has(t.id))) c.push(b); }); return c; })(), dead = canceledDeps();
+  const pick = b => h("button",{class:"linkish",onclick:()=>select(b.isBlock ? "block" : b.isTask ? "task" : "bar",b.id)}, (b.label||"Untitled").slice(0,40));
   const list = (arr) => arr.slice(0,4).flatMap((b,i)=>[i?", ":"", pick(b)]).concat(arr.length>4?["…"]:[]);
   if (late.length || dep.length || cyc.length || dead.length){
     host.append(h("div",{class:"banner warn",role:"status"},
       late.length ? h("span",{}, h("b",{}, `${late.length} late${partialView() ? " in the whole plan" : ""}: `), ...list(late)) : null,
-      dep.length ? h("span",{}, h("b",{}, `${dep.length} start before what they wait for finishes: `), ...list(dep), " ",
-        editable() ? h("button",{type:"button",class:"btn",id:"fixDeps",title:"Push each one to start after what it waits for (and anything after it)",onclick:()=>fixDeps()},"Move them later")
+      dep.length ? h("span",{}, h("b",{}, dep.length === 1 ? "1 starts before what it waits for finishes: " : `${dep.length} start before what they wait for finishes: `), ...list(dep), " ",
+        editable() ? h("button",{type:"button",class:"btn",id:"fixDeps",title:"Push each one to start after what it waits for (and anything after it)",onclick:()=>fixDeps()}, dep.length === 1 ? "Move it later" : "Move them later")
           : file.handle && !present ? h("span",{class:"hint"},"(Start editing to fix)") : null) : null,
       cyc.length ? h("span",{}, h("b",{}, `Dependency loop: `), ...list(cyc)) : null,
       dead.length ? h("span",{}, h("b",{}, `${dead.length} wait${dead.length===1?"s":""} for something canceled: `), dead.slice(0,4).join(", ") + (dead.length > 4 ? "…" : ""), " (open them to re-link or drop the link)") : null));
@@ -4190,10 +4191,10 @@ function drawBanners(){
 
 // One click: push everything that starts before what it waits for, even with automatic moving turned off.
 function fixDeps(){
-  const n0 = S.bars.filter(b=>depProblems(b).length).length, weeks0 = S.meta.weeks; let moved = 0;
+  const n0 = depClashes().length, weeks0 = S.meta.weeks; let moved = 0;
   const ok = commit(()=>{ const was = S.meta.autoSchedule; S.meta.autoSchedule = true; moved = reschedule().moved; S.meta.autoSchedule = was; if (!moved) return NOCHANGE; }, {quiet:true, grow:true});
   render();
-  const left = S.bars.filter(b=>depProblems(b).length).length;
+  const left = depClashes().length;
   setStatus(!ok ? "Nothing needed moving." : `Moved ${moved} item${moved===1?"":"s"} so ${n0 === 1 ? "it starts" : "they start"} after what ${n0 === 1 ? "it waits" : "they wait"} for` + (left ? `, but ${left} still conflict${left===1?"s":""}. Open ${left===1?"it":"them"} to check the links.` : ".") + (S.meta.weeks > weeks0 ? ` The plan now runs ${S.meta.weeks} weeks.` : "") + (file.handle ? " Click Save to keep it." : " Undo puts them back."));
 }
 // ================= Jira status (read from jira-status.json, written by the Sightline Jira helper) =================
@@ -5577,7 +5578,7 @@ const HELP = [
     h("h3",{},"Moving and nesting"),
     h("ul",{}, h("li",{}, "Drag a bar to move it, drag its edges to resize, drag it to another workstream to move it there."), h("li",{}, "Hold a dragged bar over another one for a moment to put it inside."), h("li",{}, "In Days view, drag the ⋮⋮ grip in the name column to reorder or nest. The panel also has Part of, Indent, Outdent and ↑ ↓.")),
     h("h3",{},"Dependencies"),
-    h("p",{}, "Drag from an item's dot to another item, or tick \"Starts after these finish\" in its panel. When something runs longer, what waits for it moves later automatically (you can turn that off with Move linked items automatically, in an initiative's panel). If the warning bar says items start before what they wait for, click ", h("b",{},"Move them later"), "."),
+    h("p",{}, "Drag from an item's dot to another item, or tick \"Starts after these finish\" in its panel. When something runs longer, what waits for it moves later automatically (you can turn that off with Move linked items automatically, in an initiative's panel). If the warning bar says items start before what they wait for, initiatives or open tasks, click ", h("b",{},"Move them later"), ". Finished tasks keep the dates they ran on."),
     h("h3",{},"Calendar"),
     h("p",{}, "Holidays (Settings → Work calendar) and each person's time off (Delivery → Capacity) are skipped when counting working days. ", h("b",{},"Set baseline"), " (Delivery → Snapshots) before a review; afterwards moved items show how far they slipped.")]],
   ["views", "Views and finding", ()=>[
@@ -7706,6 +7707,9 @@ defAction("initiative.del", {done:(p, a)=>!actBar(p, a.id), scope:"initiatives",
 const TASK_SET = {label:"str", owners:"ids", story:"str", needs:"ids", aiHint:"str", rough:"bool"};
 const wkName = n => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][dow(n)];
 const tooEarly = (t, s) => !!(t.dependsOn || []).length && (n => n != null && isoToDay(n) > s)(afterStart(S, t.dependsOn, t));
+// Open tasks that start before what they wait for finishes, counted with the initiatives that do (banner, review, Move them later).
+const earlyTasks = () => { const hs = HS(), out = []; S.bars.forEach(b=>(b.tasks || []).forEach(t=>{ if (t.status !== "done" && tooEarly(t, taskSpan(t, hs).s)) out.push({id:t.id, label:taskTitle(t), isTask:true}); })); return out; };
+const depClashes = () => [...S.bars.filter(b=>depProblems(b).length), ...earlyTasks()];
 // What a task waits for that ran late and isn't done: nothing can start the day after a finish that has passed.
 const lateDeps = (p, deps) => deps.map(id=>actTask(p, id)).filter(f=>f && taskLate(f.t, holidaySet(p)));
 const lateWhy = L => `${L.slice(0, 2).map(f=>`"${String(taskTitle(f.t)).slice(0, 60)}"`).join(" and ")}${L.length > 2 ? ` and ${L.length - 2} more` : ""} ${L.length === 1 ? "is" : "are"} late, so this can't start until ${L.length === 1 ? "it's" : "they're"} done. Give a start instead.`;
@@ -10190,7 +10194,7 @@ function onDrag(e){
         drag.nestTo ? h("div",{class:"g"}, `Release to put it inside "${chartLabel(barById(drag.nestTo)).slice(0,36)}"`) : drag.hoverId ? h("div",{}, `Hold to put it inside "${chartLabel(barById(drag.hoverId)).slice(0,36)}"…`) : null,
         toLane ? h("div",{}, `→ ${toLane.name}`) : null,
         (()=>{ if (drag.fromPerson === undefined) return null; const op2 = document.elementFromPoint(e.clientX, e.clientY)?.closest(".lane[data-person]"); if (!op2 || op2.dataset.person === drag.fromPerson) return null; const pp = personById(op2.dataset.person); return h("div",{class:"g"}, op2.dataset.person === "none" ? `→ Unassign ${personName(drag.fromPerson)}` : `→ Reassign from ${personName(drag.fromPerson)} to ${pp ? pp.name : "them"}`); })(),
-        probs.length ? h("div",{class:"w"}, `⚠ Starts before "${(probs[0].label||"").slice(0,36)}" ends`) : drag.p0 ? h("div",{class:"g"}, "✓ Clears the dependency conflict") : null,
+        probs.length ? h("div",{class:"w"}, `⚠ Starts before "${(probs[0].label||"").slice(0,36)}" ends`) : drag.p0 ? h("div",{class:"g"}, "✓ No longer starts too early") : null,
         h("small",{}, e.shiftKey ? "Fine steps" : "Hold Shift for fine steps")]);
     }
   } else {
@@ -15608,15 +15612,15 @@ function reviewSets(){
   return [
     ["late", "late", "bad", S.bars.filter(isLate)],
     ["atrisk", "at risk", "warn", S.bars.filter(b=>effStatus(b)==="atrisk" && !isLate(b))],
-    ["dep", "dependency conflict", "warn", S.bars.filter(b=>depProblems(b).length)]];
+    ["dep", "starts too early", "warn", depClashes()]];
 }
 function cycleReview(key){
   const set = reviewSets().find(x=>x[0]===key)[3]; if (!set.length) return;
   revIdx[key] = ((revIdx[key] ?? -1) + 1) % set.length;
-  const b = set[revIdx[key]];
-  if (UI.zoom === "days" && UI.focus && UI.focus !== b.id) UI.focus = null;
-  sel = {type:"bar", id:b.id}; render();
-  document.querySelector(`[data-key="bar:${CSS.escape(b.id)}"]`)?.scrollIntoView?.({block:"nearest", inline:"nearest"});
+  const b = set[revIdx[key]], home = b.isTask ? taskById(b.id)?.b.id : b.id;
+  if (UI.zoom === "days" && UI.focus && UI.focus !== home) UI.focus = null;
+  sel = {type:b.isTask ? "task" : "bar", id:b.id}; render();
+  document.querySelector(b.isTask ? `[data-sel="task:${CSS.escape(b.id)}"]` : `[data-key="bar:${CSS.escape(b.id)}"]`)?.scrollIntoView?.({block:"nearest", inline:"nearest"});
 }
 $("#present").onclick = ()=>setPresent(!present);
 const menu = $("#fileMenu"), menuBtn = $("#fileMenuBtn");
