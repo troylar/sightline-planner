@@ -33,6 +33,9 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     $("#delivery-risks").parentElement.querySelector(".snpinx").click(); await wait(10);
     ok("P7 pinning a page from its group adds it at the end, with what needs you", pins() === "Today,Sprint,Timeline,Capacity,Risks" && $("#pin-delivery-risks").textContent.includes(`${high} high`) && /^Pinned Risks/.test(status()), pins());
     ok("P7a and it's remembered in this browser", JSON.stringify(JSON.parse(w.localStorage.getItem("timeline-planner-ui")).navPins) === JSON.stringify(["tab-today","tab-standup","tab-timeline","tab-people","delivery-risks"]));
+    ok("P7c pin buttons say pinned or not (aria-pressed), and the pages announce P", $("#delivery-gates").parentElement.querySelector(".snpinx").getAttribute("aria-pressed") === "false" && $("#pin-tab-today").parentElement.querySelector(".snpinx").getAttribute("aria-pressed") === "true"
+      && $("#delivery-gates").getAttribute("aria-keyshortcuts") === "P" && $("#pin-tab-today").getAttribute("aria-keyshortcuts") === "P" && /\(P\)/.test($("#delivery-gates").parentElement.querySelector(".snpinx").title));
+    ok("P7d the pinned rows sit under a Pinned label", $("#snpins").firstElementChild?.textContent === "Pinned");
     ok("P7b the page's own pin button now reads Unpin", $("#delivery-risks").parentElement.querySelector(".snpinx").getAttribute("aria-pressed") === "true" && /^Unpin Risks/.test($("#delivery-risks").parentElement.querySelector(".snpinx").getAttribute("aria-label")));
     $("#delivery-gates").parentElement.querySelector(".snpinx").click(); await wait(10);
     ok("P8 a sixth pin is refused, and it says why", !pins().includes("Gates") && /up to 5 pages/.test(status()), status());
