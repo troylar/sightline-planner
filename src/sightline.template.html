@@ -9793,13 +9793,14 @@ function renderDays(){
     items.forEach(x=>{ x.day = nearWeekday(x.day); });
     const vis1 = items.filter(x=>x.day >= cols[0] && x.day <= cols[N-1]);
     if (!vis1.length && !always) return false;
-    const mp = packRows(vis1.map(x=>({id:x.key, a:colOf(x.day), z:colOf(x.day) + Math.ceil((textW(x.text) + 24)/colW)})), x=>x.a, x=>x.z);
+    vis1.forEach(x=>{ x.clip = colOf(x.day) + Math.ceil((textW(x.text) + 24)/colW) > N; });     // past the right edge: cut short, full on hover
+    const mp = packRows(vis1.map(x=>({id:x.key, a:colOf(x.day), z:Math.min(N, colOf(x.day) + Math.ceil((textW(x.text) + 24)/colW))})), x=>x.a, x=>x.z);
     const [ak, aid] = (addKey||"").split(":");
     const track = h("div",{class:"track",style:{height:(10 + Math.max(1,mp.count)*22)+"px",minHeight:"30px",backgroundImage:grid},"data-add":addKey||null,
       ondblclick: addKey ? e=>{ if (e.target.closest(".flag,.insbtn")) return; ak === "gates" ? createAt("gate", null, dayFromEvent(e)) : ak === "meetings" ? createAt("meeting", aid || null, dayFromEvent(e)) : ak === "note" ? createAt("note", aid, dayFromEvent(e)) : createAt("milestone", aid, dayFromEvent(e)); } : null});
     shades.forEach(([k,i])=>track.append(h("div",{class:"colshade "+k,style:{left:`${i/N*100}%`,width:`${100/N}%`}})));
     sprintStarts.forEach(i=>track.append(h("div",{class:"sprintline",style:{left:`${i/N*100}%`}})));
-    vis1.forEach(x=>track.append(h("button",{class:"flag " + x.cls,type:"button","aria-label":x.title.replace(/\n/g,". "),"data-sel":x.sel || null,"data-peek-type":x.peek?.[0] || null,"data-peek-id":x.peek?.[1] || null,style:{left:`calc(${(colOf(x.day)+0.5)/N*100}% + 5px)`,top:(5+mp.pos.get(x.key)*22)+"px","--c":x.color,color:/stretch|gate|meet/.test(x.cls)?"":labelOn(x.color)},onpointerdown:x.drop ? e=>markerDrag(e, x.drop, x.quick) : null,onclick:e=>{ if (dragJustEnded) return; x.click(e); }}, h("span",{class:"fl-t"}, x.text), x.peek && x.peek[0] !== "note" && !/stretch/.test(x.cls) ? noteBadge(({ms:"ms",gate:"gate",meeting:"meeting"})[x.peek[0]] + ":" + x.peek[1]) : null)));
+    vis1.forEach(x=>track.append(h("button",{class:"flag " + x.cls + (x.clip ? " clip" : ""),type:"button",title:x.clip ? x.title : null,"aria-label":x.title.replace(/\n/g,". "),"data-sel":x.sel || null,"data-peek-type":x.peek?.[0] || null,"data-peek-id":x.peek?.[1] || null,style:{left:`calc(${(colOf(x.day)+0.5)/N*100}% + 5px)`,top:(5+mp.pos.get(x.key)*22)+"px",maxWidth:x.clip ? `calc(${(N - colOf(x.day) - 0.5)/N*100}% - 7px)` : null,"--c":x.color,color:/stretch|gate|meet/.test(x.cls)?"":labelOn(x.color)},onpointerdown:x.drop ? e=>markerDrag(e, x.drop, x.quick) : null,onclick:e=>{ if (dragJustEnded) return; x.click(e); }}, h("span",{class:"fl-t"}, x.text), x.peek && x.peek[0] !== "note" && !/stretch/.test(x.cls) ? noteBadge(({ms:"ms",gate:"gate",meeting:"meeting"})[x.peek[0]] + ":" + x.peek[1]) : null)));
     g.append(h("div",{class:"lane markrow" + (onRow ? " "+onRow : "")}, labelCell, track));
     return true;
   };

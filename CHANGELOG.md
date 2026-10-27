@@ -8,7 +8,7 @@ Task names stay on screen in Days.
 
 ### Fixed
 
-- **Task names near the right edge are no longer cut off** (Days). A name that won't fit to the right of its bar sits to its left instead. If neither side has room, it is shortened with an ellipsis and shows in full when you point at it. *Where:* Days, especially with one initiative open
+- **Names near the right edge are no longer cut off** (Days). A task name that won't fit to the right of its bar sits to its left instead. If neither side has room, it is shortened with an ellipsis. Milestone names near the edge are shortened the same way. Point at a shortened name to see it in full. *Where:* Days, especially with one initiative open
 
 ## 1.143.1 · Oct 27, 2026
 

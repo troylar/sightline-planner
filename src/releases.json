@@ -7,9 +7,9 @@
       {
         "kind": "fixed",
         "area": "Days",
-        "title": "Task names near the right edge are no longer cut off",
-        "before": "In Days, the name of a short task near the right edge ran past the edge of the chart and was cut off.",
-        "now": "A name that won't fit to the right of its bar sits to its left instead. If neither side has room, it is shortened with an ellipsis and shows in full when you point at it.",
+        "title": "Names near the right edge are no longer cut off",
+        "before": "In Days, the name of a short task or a milestone near the right edge ran past the edge of the chart and was cut off.",
+        "now": "A task name that won't fit to the right of its bar sits to its left instead. If neither side has room, it is shortened with an ellipsis. Milestone names near the edge are shortened the same way. Point at a shortened name to see it in full.",
         "where": "Days, especially with one initiative open"
       }
     ]

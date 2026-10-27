@@ -35,6 +35,12 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("L2 at the right edge the name moves to the left of its bar, right-aligned", !!l && pct(l.style.right, "calc") != null && !l.style.left && l.style.textAlign === "right", l && l.getAttribute("style"));
     ok("L3 a name too long for either side is cut to the space left, and shows in full on hover", !!g && /calc/.test(g.style.maxWidth) && g.title === "x".repeat(400), g && g.getAttribute("style"));
     ok("L4 no name starts past the right edge or claims room beyond it", $$(".tlabel").every(x=>{ const a = pct(x.style.left, "calc"), m = pct(x.style.maxWidth, "calc"); return a == null || (a < 100 && (m == null || a + m <= 100.01)); }));
+    // A milestone near the right edge: its name is cut short at the edge and shows in full on hover.
+    ev(`(()=>{ const b = barById(${JSON.stringify(bid)}); commit(()=>{ S.milestones.push({id:"ms-edge", lane:b.lane, what:"Production ready with every integration partner signed off and announced", at:null, status:"planned"}); }); })()`);
+    const lastDay = ev(`taskSpan(barById(${JSON.stringify(bid)}).tasks.find(t=>t.id === "lbl-last"), HS()).e`);
+    ev(`(()=>{ const m = S.milestones.find(x=>x.id === "ms-edge"); m.at = dayToAt(${lastDay}); setZoom("days", ${JSON.stringify(bid)}); render(); })()`); await wait(20);
+    const mf = $$('.flag[data-sel="ms:ms-edge"]')[0];
+    ok("L5 a milestone name that would pass the right edge is cut short there, in full on hover", !!mf && mf.classList.contains("clip") && /calc/.test(mf.style.maxWidth) && /Production ready with every integration partner/.test(mf.title || ""), mf ? mf.getAttribute("style") + " / " + mf.className : "no flag");
     ok("E1 no page errors", !JSON.parse(ev("JSON.stringify(errs)")).length, ev("errs.join('; ')"));
   } catch(e){ R.push("FAIL  harness threw: " + e.stack); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length;
