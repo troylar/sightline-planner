@@ -35,6 +35,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("H5b the late count says it covers the whole plan, since this view hides some of it", /late in the whole plan: /.test(lateB), lateB);
     ev(`present = true; drawBanners();`);
     ok("H5c Present keeps the banner, so nobody presents a view without Jira's work unaware", !!$("#hereStrip") && !!$("#hereAll"));
+    ok("H5d Present's review counts say they cover the whole plan", ($("#banners .review .lbl")?.textContent || "") === "Review of the whole plan", $("#banners .review .lbl")?.textContent);
     ev(`present = false; drawBanners();`);
     ev(`setWs("list"); render();`); await wait(30);
     const ids = T(`listModel().rows.map(r=>r.x ? r.x.id : r.id)`) || [];

@@ -4158,7 +4158,7 @@ function drawBanners(){
     host.append(...viewStrips());
     const sets = reviewSets(), any = sets.some(x=>x[3].length);
     host.append(h("div",{class:"review",role:"group","aria-label":"Review summary"},
-      h("span",{class:"lbl"},"Review"),
+      h("span",{class:"lbl"}, partialView() ? "Review of the whole plan" : "Review"),
       any ? sets.filter(x=>x[3].length).map(([k,label,cls,arr])=>h("button",{class:"rchip "+cls,type:"button",title:`Show each ${label} item in turn`,onclick:()=>cycleReview(k)}, h("b",{},String(arr.length)), label + (arr.length===1||k!=="dep" ? "" : "s")))
           : h("span",{class:"rchip ok"},"✓ Nothing late, at risk or in conflict"),
       S.baseline ? h("span",{class:"rchip"}, baselineStory()) : null,
