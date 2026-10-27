@@ -50,23 +50,12 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     const before = T("VIS()")?.length; ev(`undo && undo(); UI.filter = normFilter({}); render();`);
     ok("V8 taking the pick off brings every initiative back", before === 4 && T("VIS()")?.length === all);
 
-    // The card.
+    // The card: Focus took the place of Show only this (harness166); picks still come from the Filters panel and chips.
     ev(`select("bar", "c2");`); await wait(30);
-    let b = $("#f-only");
-    ok("C1 an initiative's card offers Show only this", b && b.textContent === "Show only this" && b.getAttribute("aria-pressed") === "false", b && b.textContent);
-    b && b.click(); await wait(30);
-    ok("C2 clicking it picks that initiative", T("UI.filter.bars")?.join() === "c2" && T("VIS()")?.join() === "c1,c2,c3");
-    b = $("#f-only");
-    ok("C3 the card now offers to show everything again, and keeps focus", b && b.textContent === "Show every initiative" && b.getAttribute("aria-pressed") === "true" && w.document.activeElement === b, b && b.textContent);
+    ok("C1 an initiative's card offers Focus, not Show only this", !$("#f-only") && $("#f-focus")?.textContent === "Focus", $("#f-focus")?.textContent);
+    ev(`setOnly("c2", true);`); await wait(30);
+    ok("C2 setOnly still picks that initiative", T("UI.filter.bars")?.join() === "c2" && T("VIS()")?.join() === "c1,c2,c3");
     ok("C4 the status line says what's shown", /Showing only/.test($("#status")?.textContent || J("document.body.textContent")));
-    ev(`select("bar", "m1");`); await wait(30); b = $("#f-only");
-    ok("C5 another initiative's card offers Also show this", b && b.textContent === "Also show this", b && b.textContent);
-    b && b.click(); await wait(30);
-    ok("C6 and adds it", T("UI.filter.bars")?.join() === "c2,m1");
-    b = $("#f-only");
-    ok("C7 with two picked, the card takes just this one off", b && b.textContent === "Stop showing this one", b && b.textContent);
-    b && b.click(); await wait(30);
-    ok("C8 and only this one", T("UI.filter.bars")?.join() === "c2");
     ok("C9 the scope line names the pick", /only Runtime library spike/.test(J("scopeText()")), J("scopeText()"));
 
     // It stays said: a strip above the chart while picks are on, in Present too; late counts say they're the whole plan.
