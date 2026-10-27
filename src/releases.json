@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.145.1",
+    "date": "2026-10-27",
+    "headline": "Clearer help when the page doesn't start",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Start-up",
+        "title": "Check a copy on Windows too",
+        "before": "When Sightline didn't start, the page said to check the copy with sha256sum, a command most Windows computers don't have.",
+        "now": "It now gives the command for Windows (Get-FileHash in PowerShell), a Mac and Linux, says to compare with the .sha256 file beside it, and says a mismatch means the file changed on the way over: copy it as a file, not by pasting its text.",
+        "where": "The \"Sightline didn't start\" message"
+      }
+    ]
+  },
+  {
     "version": "1.145.0",
     "date": "2026-10-27",
     "headline": "A lighter details panel",

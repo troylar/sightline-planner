@@ -184,6 +184,8 @@ const byId = (rs, id) => rs.find(r=>r.id === id) || {};
     const ps = bf ? [...bf.querySelectorAll("p")].map(p=>p.textContent) : [];
     ok("F1 when the code is blocked, the first step is to wait for a synced folder", /^If this file is in OneDrive or another synced folder, wait for the sync to finish, then reload\./.test(ps[0] || ""), ps[0]);
     ok("F1 …and the checksum guidance stays", ps.some(t=>/sha256sum -c sightline\.html\.sha256/.test(t)) && ps.some(t=>/Content Security Policy/.test(t)));
+    const chk = bf?.querySelector("#bootfailCheck")?.textContent || "";
+    ok("F2 the checksum step works on Windows and a Mac too, and says what a mismatch means", /Get-FileHash sightline\.html/.test(chk) && /shasum -a 256 -c sightline\.html\.sha256/.test(chk) && /changed on the way over/.test(chk) && ps.some(t=>/not by pasting its text/.test(t)), chk);
   } catch(e){ ok("harness ran without throwing", false, e.stack); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
 })();

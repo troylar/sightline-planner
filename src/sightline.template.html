@@ -1377,7 +1377,8 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
   <b style="font-size:17px">Sightline didn't start.</b>
   <p id="bootfailSync"><b>If this file is in OneDrive or another synced folder, wait for the sync to finish, then reload.</b> A file that's still arriving looks changed to the browser.</p>
   <p>Otherwise, the page's code was blocked, which usually means this file changed while it was being copied: for example, pasted as text through a remote desktop, or opened and saved in an editor.</p>
-  <p>Copy <b>sightline.html</b> again as a file (OneDrive, or drag and drop), then reload. To check a copy, run <code>sha256sum -c sightline.html.sha256</code> in the same folder: it should say OK.</p>
+  <p>Copy <b>sightline.html</b> again as a file (OneDrive, or drag and drop), not by pasting its text, then reload.</p>
+  <p id="bootfailCheck">To check a copy, compare it with <b>sightline.html.sha256</b> in the same folder. On Windows, run <code>Get-FileHash sightline.html</code> in PowerShell: its Hash should match the first word of the .sha256 file (capital letters or not). On a Mac, run <code>shasum -a 256 -c sightline.html.sha256</code>; on Linux, <code>sha256sum -c sightline.html.sha256</code>. Either should say OK. If the hash differs, the file changed on the way over.</p>
   <p style="color:#6b3a36;font-size:13px">If the browser's console says "Content Security Policy", that's this problem. Your plan file is not affected.</p>
 </div>
 
