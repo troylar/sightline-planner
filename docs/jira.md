@@ -52,6 +52,9 @@ that computer. The default output is a **jira** folder beside the plan.
    Your assistant can propose where each issue goes (the **Sort Jira work** skill); you review every placement in
    **Changes** before anything joins the plan, and nothing is written to Jira. See
    [Sorting Jira work](assistant-workflow.md#sorting-jira-work).
+   On the Timeline, a bar with no Jira key was added here and isn't tracked in Jira (hover it to see). Once the plan
+   has Jira work, the List and the Days view label such work **Added here**. An initiative counts as tracked when it,
+   or anything inside it, links to Jira.
 5. An initiative or task linked to an issue shows the issue's description as its story, marked **From Jira**
    (Sightline 1.109.0 or later, with the matching sync). The sync reads descriptions only for issues the plan links.
 6. Every Jira item shows who owns it as a small circle with their initials. You'll see it on story and Jira-linked
