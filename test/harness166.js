@@ -135,6 +135,14 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ev(`select("task", "fa");`); await wait(5);
     const q = [...d.querySelectorAll("#side .qopen")].map(b=>b.title + "|" + b.getAttribute("aria-keyshortcuts"));
     ok("G9 the one-line boxes show their shortcuts", q.join() === "Add an update (U)|U,Add a note (S)|S", q.join());
+    // Peer review: one way out on screen, plain wording, a Filters count that's yours.
+    ev(`drillTo(0); UI.filter = normFilter({lanes:[${JSON.stringify(lane)}]}); render(); setStatus(""); focusOn("bar", "m2"); select("bar", "m2");`); await wait(10);
+    ok("H1 the header status line stays quiet; screen readers hear the focus from a live region", J(`$("#status").textContent`) === "" && /Focused on/.test(J(`$("#drillLive") && $("#drillLive").textContent`) || "") && J(`$("#drillLive").getAttribute("aria-live")`) === "polite");
+    ok("H2 the card of the level you're on has no Focus or Step out button", !$("#f-focus") && !/Step out/.test($("#side").textContent));
+    ev(`focusOn("person", A); select("person", A);`); await wait(10);
+    ok("H3 the teammates' option says it plainly", /Show teammates' work on Avery's initiatives/.test($("#drillPath")?.textContent || ""), ($("#drillPath")?.textContent || "").slice(0, 160));
+    ok("H4 the Filters count is your own filters, not the focus, and its hover says so", $("#filterBtn .fcount")?.textContent === "1" && /1 of your filters on, under the focus/.test($("#filterBtn").title), ($("#filterBtn .fcount")?.textContent || "none") + " | " + $("#filterBtn").title);
+    ev(`drillTo(0); UI.filter = normFilter({}); render();`);
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
   console.log(R.join("\n")); const f = R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

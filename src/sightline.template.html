@@ -221,7 +221,11 @@ button.lchip{padding:2px 9px;cursor:pointer}
 .drillpath ol{display:flex;flex-wrap:wrap;align-items:center;gap:2px;list-style:none;margin:0;padding:0;min-width:0;flex:1 1 auto}
 .drillpath li{display:flex;align-items:center;min-width:0}
 .drillpath li+li::before{content:"›";color:var(--ink-3);padding:0 6px}
-.drillpath .crumb{display:inline-flex;align-items:center;gap:6px;border:0;background:none;font:inherit;color:var(--ink-2);padding:3px 6px;border-radius:6px;max-width:28ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.drillpath .crumb{display:inline-flex;align-items:center;gap:6px;border:0;background:none;font:inherit;color:var(--ink-2);padding:3px 6px;border-radius:6px;max-width:28ch;min-width:0;white-space:nowrap}
+.drillpath .cname{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.drillpath li.lastc{flex:1 1 0;min-width:4ch}
+.drillpath li.lastc .crumb{max-width:100%}
+.taskbar.dimmed,.tbar.dimmed{opacity:.45}
 .drillpath button.crumb{cursor:pointer;text-decoration:underline;text-decoration-color:var(--rule);text-underline-offset:3px;transition:background-color .15s,color .15s}
 .drillpath button.crumb:hover{background:var(--hov);color:var(--ink)}
 .drillpath .crumb.here{color:var(--ink);font-weight:600;background:var(--hov)}
@@ -6713,7 +6717,7 @@ function weekItemEl(it, style, id, canDrag){
   } else {
     const t = it.t, selected = sel && sel.type==="task" && sel.id===t.id, late = taskLate(t, HS());
     const tj = sideOf(t, "task") === "jira";
-    const el = h("div",{"data-sel":"task:"+t.id,class:["bar","taskbar","st-"+t.status, late?"late":"", selected?"selected":"", tj ? "jira" : "plan"].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id+":"+(id ?? "none"),
+    const el = h("div",{"data-sel":"task:"+t.id,class:["bar","taskbar","st-"+t.status, late?"late":"", selected?"selected":"", tj ? "jira" : "plan", drillDim(t) ? "dimmed" : ""].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id+":"+(id ?? "none"),
       "aria-label":`${taskTitle(t)}. In ${chartLabel(b)}. ${fmtDay(it.s)} to ${fmtDay(it.e)}${late ? ". Late" : ""}`, "data-peek-type":"task", "data-peek-id":t.id, style:Object.assign(style, tj ? jiraPaint(lane) : {backgroundColor:lane.color, color:fg})},
       keyChip(t, "task"), h("span",{class:"nm"}, (t.status==="done" ? "✓ " : "") + taskTitle(t)), noteBadge(noteKeysOf(t, "task")), canDrag ? h("span",{class:"tags"}, h("span",{class:"tag soft"}, chartLabel(b).slice(0,22))) : null, t.jira && jiraOf(t.jira) ? ownerAv(jiraWho(jiraOf(t.jira))) : null);
     el.addEventListener("click", ()=>select("task", t.id));
@@ -6781,7 +6785,7 @@ function dayItemEl(it, style, id, canDrag){
   if (it.type === "task"){
     const t = it.t, late = taskLate(t, HS()), selected = sel && sel.type==="task" && sel.id===t.id;
     const title = [taskTitle(t), `In: ${chartLabel(b)}`, `${fmtDay(it.s)} → ${fmtDay(it.e)} · ${t.days} working day${t.days===1?"":"s"}` + (late ? " · late" : ""), canDrag ? "Drag sideways to move, or onto another person to reassign" : "From the plan; open it to change it"].join("\n");
-    const el = h("div",{"data-sel":"task:"+t.id,class:["tbar","st-"+t.status, late?"late":"", selected?"selected":""].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id+":"+(id ?? "none"), "aria-label":title.replace(/\n/g,". "), "data-peek-type":"task", "data-peek-id":t.id, style},
+    const el = h("div",{"data-sel":"task:"+t.id,class:["tbar","st-"+t.status, late?"late":"", selected?"selected":"", drillDim(t) ? "dimmed" : ""].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id+":"+(id ?? "none"), "aria-label":title.replace(/\n/g,". "), "data-peek-type":"task", "data-peek-id":t.id, style},
       canDrag ? h("span",{class:"h l","data-edge":"l","aria-hidden":"true"}) : keyChip(t, "task"), h("span",{class:"nm"}, (t.status==="done" ? "✓ " : "") + taskTitle(t)),
       h("span",{class:"tags"}, late ? h("span",{class:"tag bad"},"late") : null, canDrag ? h("span",{class:"tag"}, chartLabel(b).slice(0,18)) : null),
       canDrag ? h("span",{class:"h r","data-edge":"r","aria-hidden":"true"}) : null);
@@ -7134,9 +7138,10 @@ function renderFilterPop(){
 }
 // The Focus button on an initiative's or person's card: in, or back out when it's the level you're on.
 function focusBtn(k, id){
-  const d = drillOn() ? UI.drill : null, at = d ? d.stack.findIndex(s=>s.k === k && s.id === id) : -1, here = at >= 0 && at === d.stack.length - 1;
-  return h("button",{type:"button",class:"btn nav",id:"f-focus","aria-keyshortcuts":"Z",title:here ? "Step back out (Esc)" : k === "bar" ? "Show only this initiative, in Days (Z)" : "Show only their work (Z)",
-    onclick:()=>{ here ? drillTo(at) : focusOn(k, id); $("#f-focus")?.focus(); }}, here ? "Step out" : k === "bar" ? "Focus" : "Focus on their work");
+  const d = drillOn() ? UI.drill : null, at = d ? d.stack.findIndex(s=>s.k === k && s.id === id) : -1;
+  if (at >= 0 && at === d.stack.length - 1) return null;                                // already the level you're on: the path and Esc step out
+  return h("button",{type:"button",class:"btn nav",id:"f-focus","aria-keyshortcuts":"Z",title:k === "bar" ? "Show only this initiative, in Days (Z)" : "Show only their work (Z)",
+    onclick:()=>{ focusOn(k, id); $("#f-focus")?.focus(); }}, k === "bar" ? "Focus" : "Focus on their work");
 }
 // ---------- Focus: a temporary narrowing over your view, in this browser only ----------
 // UI.drill = {plan, base:{filter, zoom, focus, sel, x, y}, stack:[{k:"bar"|"person", id}], rest}. The filters shown while
@@ -7167,20 +7172,24 @@ function focusOn(k, id){
   else { const b = k === "bar" ? barById(id) : null, up = b ? new Set(ancestorsOf(b).map(x=>x.id)) : null;
     d.stack = d.stack.filter(s=>s.k !== k || (up && up.has(s.id)));      // one person at a time; an initiative nests only inside the ones that hold it
     d.stack.push({k, id}); }
-  drillApply(); setStatus(`Focused on ${drillName({k, id})}. Esc steps back out.`); return true;
+  drillApply(); drillSay(`Focused on ${drillName({k, id})}. Esc steps back out.`); return true;
 }
 function drillRoot(){ const v = activeView(); return v ? v.name : fActive(normFilter(clone(UI.drill.base.filter))) ? "Current view" : "All work"; }
 function drillTo(n){
   if (!drillOn()) return; const d = UI.drill;
-  if (n > 0){ if (n >= d.stack.length) return; d.stack.length = n; drillApply(); setStatus(`Focused on ${drillName(d.stack[n - 1])}.`); return; }
+  if (n > 0){ if (n >= d.stack.length) return; d.stack.length = n; drillApply(); drillSay(`Focused on ${drillName(d.stack[n - 1])}.`); return; }
   const b = d.base, root = drillRoot(); UI.drill = null;
   UI.filter = cleanFilter(normFilter(clone(b.filter))); UI.zoom = b.zoom === "days" ? "days" : "weeks"; UI.focus = b.focus && barById(b.focus) ? b.focus : null;
   if (b.sel && NAV_SEL.includes(b.sel.type) && navFind(b.sel.type, b.sel.id)) sel = b.sel;
   saveUI(); fitKey = ""; render();
   const g = $("#gscroll"); if (g){ g.scrollLeft = b.x || 0; g.scrollTop = b.y || 0; }
-  setStatus(`Back to ${root}.`);
+  drillSay(`Back to ${root}.`);
 }
 const drillUp = () => drillTo(UI.drill.stack.length - 1);
+// The path says where you are; this says it to screen readers, from one live region that stays put across redraws.
+function drillSay(t){ let el = $("#drillLive"); if (!el){ el = h("div",{class:"vh",id:"drillLive",role:"status","aria-live":"polite"}); document.body.append(el); } el.textContent = t; }
+// While teammates' work is shown, theirs is dimmed so the focused person's stays the subject.
+function drillDim(t){ if (!drillOn() || !UI.drill.rest) return false; const p = drillLevel(UI.drill, "person"); return !!p && !own(t).includes(p.id); }
 // From a control that the redraw removes: keyboard focus goes to what was selected, or the Weeks/Days switch.
 function drillLeave(){ drillTo(0); const k = sel && (sel.type + ":" + sel.id); (k && document.querySelector(`#gantt [data-key="${CSS.escape(k)}"]`) || $("#zWeeks"))?.focus({preventScroll:true}); }
 // End a focus without drawing: the view under it comes back, cleaned against the plan that's open now.
@@ -7200,11 +7209,11 @@ function drillCheck(){
 }
 function drillStrip(){
   const d = UI.drill, n = d.stack.length, per = drillLevel(d, "person");
-  const crumb = (s, i) => i === n - 1 ? h("li",{}, h("span",{class:"crumb here","aria-current":"location",tabindex:"-1"}, icon(s.k === "bar" ? "initiative" : "person"), drillName(s)))
-    : h("li",{}, h("button",{type:"button",class:"crumb","data-drill":String(i + 1),onclick:()=>{ drillTo(i + 1); $("#drillPath .crumb.here")?.focus(); }}, drillName(s)));
+  const crumb = (s, i) => i === n - 1 ? h("li",{class:"lastc"}, h("span",{class:"crumb here","aria-current":"location",tabindex:"-1",title:drillName(s)}, icon(s.k === "bar" ? "initiative" : "person"), h("span",{class:"cname"}, drillName(s))))
+    : h("li",{}, h("button",{type:"button",class:"crumb","data-drill":String(i + 1),title:drillName(s),onclick:()=>{ drillTo(i + 1); $("#drillPath .crumb.here")?.focus(); }}, h("span",{class:"cname"}, drillName(s))));
   return h("nav",{class:"banner info drillpath",id:"drillPath","aria-label":"Focus"},
     h("ol",{}, h("li",{}, h("button",{type:"button",class:"crumb",id:"drillRoot",onclick:()=>drillLeave()}, drillRoot())), ...d.stack.map(crumb)),
-    per ? h("label",{class:"fcheck drest"}, h("input",{type:"checkbox",id:"drillRest",checked:!!d.rest,onchange:e=>{ d.rest = e.target.checked; drillApply(); $("#drillRest")?.focus(); }}), ` Show teammates' work where ${personName(per.id)} has some`) : null,
+    per ? h("label",{class:"fcheck drest"}, h("input",{type:"checkbox",id:"drillRest",checked:!!d.rest,onchange:e=>{ d.rest = e.target.checked; drillApply(); $("#drillRest")?.focus(); }}), ` Show teammates' work on ${personName(per.id)}'s initiatives`) : null,
     h("button",{type:"button",class:"btn sm",id:"drillOut",title:"Esc steps back one level",onclick:()=>drillLeave()}, "Leave focus"));
 }
 // Add an initiative to Show only, or take one off. From the Filters panel or a chip.
@@ -7276,11 +7285,12 @@ function renderViewBar(){
   { const mode = UI.notes || "all", nb = $("#notesBtn");
     nb.replaceChildren(...["✎ Notes", mode === "all" ? null : h("span",{class:"nmode"}, mode === "none" ? " hidden" : mode === "mine" ? " mine" : " others'")].filter(Boolean));
     nb.classList.toggle("factive", mode !== "all"); nb.hidden = !["timeline","people","standup","today"].includes(UI.ws); }
-  const a = activeView(), mod = viewModified(), n = fCount();
+  const a = activeView(), mod = viewModified(), n = fCount(drillOn() ? normFilter(clone(UI.drill.base.filter)) : UI.filter);
   $("#viewBtn").replaceChildren(...[h("span",{class:"vlabel"}, viewLabel()), mod ? h("span",{class:"vmod"}," · Modified") : null, " ▾"].filter(Boolean));
   $("#viewBtn").title = a ? `View: ${a.name}` + (mod ? " (changed since saved)" : "") : "Switch or save views (V)";
   $("#viewSave").hidden = !(filtered && a && mod && !present && (UI.view.src === "personal" || editable()));
   $("#filterBtn").replaceChildren(...["Filters", n ? h("span",{class:"fcount"}, String(n)) : null].filter(Boolean));
+  $("#filterBtn").title = drillOn() ? `Filter what's shown (F). ${n ? n + " of your filters" : "None of your filters"} on, under the focus shown above the chart.` : "Filter what's shown (F)";
   $("#filterBtn").classList.toggle("factive", n > 0);
 }
 
@@ -10134,7 +10144,7 @@ function renderDays(){
         const t = x.t, late = taskLate(t,hs), sl = slipTask(t), selected = sel && sel.type==="task" && sel.id===t.id;
         const title = [taskTitle(t), `${fmtDay(x.s)} → ${fmtDay(x.e)} · ${t.days} working day${t.days===1?"":"s"}${t.rough ? " (a guess)" : ""}`, own(t).length ? "Owner: " + ownerNames(t).join(", ") : "", t.jira ? "Jira: "+t.jira : "", "Status: " + STATUSES.find(z=>z[0]===t.status)[1] + (late?" (late)":""), sl ? `Baseline: end moved ${fmtD(sl)}` : ""].filter(Boolean).join("\n");
         const tj = sideOf(t, "task") === "jira";
-        const el = h("div",{"data-sel":"task:"+t.id,class:["tbar","st-"+t.status, late?"late":"", selected?"selected":"", tj ? "jira" : "plan", t.rough ? "rough" : ""].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id, "aria-label":title.replace(/\n/g,". "), "data-peek-type":"task", "data-peek-id":t.id,
+        const el = h("div",{"data-sel":"task:"+t.id,class:["tbar","st-"+t.status, late?"late":"", selected?"selected":"", tj ? "jira" : "plan", t.rough ? "rough" : "", drillDim(t) ? "dimmed" : ""].join(" "), role:"button", tabindex:"0", "data-key":"task:"+t.id, "aria-label":title.replace(/\n/g,". "), "data-peek-type":"task", "data-peek-id":t.id,
           style:Object.assign(pos(x.s, x.e), {top:(22 + tp.pos.get(t.id)*28)+"px"}, tj ? jiraPaint(lane) : {backgroundColor:lane.color, color:fg})},
           h("span",{class:"h l","data-edge":"l","aria-hidden":"true"}),
           keyChip(t, "task"),
@@ -11684,7 +11694,7 @@ function sideBody(put){
     const pp = personById(sel.id); if (!pp){ sel=null; return; }
     const n = assignedCount(pp.id);
     put(
-      present ? null : h("div",{class:"row2"}, focusBtn("person", pp.id)),
+      present ? null : (b => b && h("div",{class:"row2"}, b))(focusBtn("person", pp.id)),
       h("div",{class:"row2"},
         field("f-pname","Name", textIn("f-pname", ()=>pp.name, v=>{ pp.name = v.slice(0,60); })),
         field("f-pini","Initials", h("input",{id:"f-pini",value:pp.initials,maxlength:"3",onchange:e=>commit(()=>{ pp.initials = e.target.value.toUpperCase().slice(0,3) || autoInitials(pp.name); })}))),

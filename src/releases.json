@@ -16,7 +16,7 @@
         "kind": "improved",
         "area": "Timeline",
         "title": "Teammates' work, when you want it",
-        "now": "While focused on a person, Show teammates' work adds everyone else's tasks in the initiatives where that person has work.",
+        "now": "While focused on a person, Show teammates' work on their initiatives adds everyone else's tasks there, dimmed so that person's work stays easy to pick out.",
         "where": "The focus path above the chart"
       },
       {
