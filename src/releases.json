@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.144.0",
+    "date": "2026-10-27",
+    "headline": "A lighter menu",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Menu",
+        "title": "Pin the pages you use, and the rest folds away",
+        "before": "The menu showed every page in every group at once, with a count beside most of them.",
+        "now": "Your pinned pages sit at the top: Today, Sprint, Timeline and Capacity to start. Groups start closed and show a dot when something inside needs you. Numbers show only when something needs you, such as high risks. Delivery is split into Plan, Review and History.",
+        "where": "The menu on the left. Point at a page and click the pin, or focus it and press P. Up to five, in this browser only."
+      }
+    ]
+  },
+  {
     "version": "1.143.2",
     "date": "2026-10-27",
     "headline": "Task names stay on screen in Days",

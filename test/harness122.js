@@ -27,7 +27,7 @@ const w = dom.window, d = w.document, ev = s=>w.eval(s), wait = ms=>new Promise(
     ok("D1 List opens By workstream for anyone who hasn't chosen a layout", ev("listLayout()") === "lane" && d.querySelector('#listWs [data-layout="lane"]').getAttribute("aria-pressed") === "true" && !w.localStorage.getItem("sightline-list-layout"));
     ok("D1 …the start-date layout is called By start date, with the longer wording on hover", d.querySelector('#listWs [data-layout="start"]').textContent === "By start date" && /by start date/.test(d.querySelector('#listWs [data-layout="start"]').title));
     ev("setListLayout('initiative')"); await wait(10);   // the checks below read By initiative
-    ok("L1 List is a tab under Delivery, next to Timeline", ev("UI.ws") === "list" && !d.querySelector("#ws-list").hidden && d.querySelector("#tab-list").previousElementSibling.id === "tab-timeline" && ev("workspaceGroup('list')") === "delivery");
+    ok("L1 List is a tab under Delivery, next to Timeline", ev("UI.ws") === "list" && !d.querySelector("#ws-list").hidden && d.querySelector("#tab-list").closest(".snrow").previousElementSibling.querySelector(".snp")?.id === "tab-timeline" && ev("workspaceGroup('list')") === "delivery");
     const head = rows().find(r=>r.dataset.lk === "list:bar:" + bar(0).id);
     ok("L2 an initiative with tasks is a group header with its own dates, owner and task count", head && head.classList.contains("lhead") && head.querySelector("th[scope=row]") && /3 items/.test(head.textContent) && head.cells[0].textContent !== "", head && head.textContent);
     const under = lks().slice(lks().indexOf("list:bar:" + bar(0).id) + 1, lks().indexOf("list:bar:" + bar(0).id) + 4);

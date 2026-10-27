@@ -27,7 +27,7 @@ async function page(fileText){
 
 (async()=>{
   const sec = async fn => { try { await fn(); } catch(e){ ok("section crashed", false, String(e.message).slice(0,140)); } };
-  await sec(async ()=>{ const {ev, d, w} = await page(); await wait(300); ev(`UI.navOpen = {}; UI.navRail = false; UI.ws = "today"; render();`); await wait(10);
+  await sec(async ()=>{ const {ev, d, w} = await page(); await wait(300); ev(`UI.navOpen = {}; UI.navPins = []; UI.navRail = false; UI.ws = "today"; render();`);   // no pins: each page shows in its group (pins: harness164) await wait(10);
     const pagesOf = g => [...d.querySelectorAll(`#snp-${g} .snp`)].map(b=>b.dataset.ws || b.dataset.section || b.dataset.updates).join();
     ok("R1 Work holds Today, Sprint, Sort Jira work, Cards and Jira change proposals", pagesOf("work") === "today,standup,epics,cards,proposals", pagesOf("work"));
     ok("R2 Delivery holds every delivery page at one level", pagesOf("delivery") === "timeline,list,people,report,milestones,gates,decisions,risks,snapshots,activity", pagesOf("delivery"));
@@ -45,7 +45,9 @@ async function page(fileText){
     d.querySelector("#tab-plan").click(); await wait(5);
     ok("R4c the group you're in stays open when you click its heading", d.querySelector("#tab-plan").getAttribute("aria-expanded") === "true");
     d.querySelector("#nav-updates").click(); await wait(5);
-    ok("R4d another group's heading folds it, and that's remembered", d.querySelector("#nav-updates").getAttribute("aria-expanded") === "false" && ev("UI.navOpen.updates") === false && ev("UI.ws") === "plan");
+    ok("R4d0 another group starts closed; its heading opens it", d.querySelector("#nav-updates").getAttribute("aria-expanded") === "true" && ev("UI.navOpen.updates") === true);
+    d.querySelector("#nav-updates").click(); await wait(5);
+    ok("R4d a second click folds it, and that's remembered", d.querySelector("#nav-updates").getAttribute("aria-expanded") === "false" && ev("UI.navOpen.updates") === false && ev("UI.ws") === "plan");
     d.querySelector("#tab-timeline").click(); await wait(10);
     ok("R5 Timeline is current; only one page is ever current", ev("UI.ws") === "timeline" && d.querySelectorAll('#sidenav [aria-current="page"]').length === 1);
     d.querySelector("#tab-timeline").focus(); d.querySelector("#sidenav").dispatchEvent(new w.KeyboardEvent("keydown", {key:"ArrowDown", bubbles:true}));
