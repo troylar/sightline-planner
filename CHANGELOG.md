@@ -8,7 +8,7 @@ Waits-for links merge link by link.
 
 ### Fixed
 
-- **Two people adding what something waits for both keep their links** (Shared plans). Both sets of links are kept, and a link one of you removed stays removed. A link that would make work wait for itself through the other person's links isn't merged: theirs wins and yours is backed up. *Where:* Saving a shared plan someone else changed
+- **Two people adding what something waits for both keep their links** (Shared plans). Both sets of links are kept, and a link one of you removed stays removed. A link that would make work wait for itself through the other person's links isn't merged: theirs wins, yours is backed up, and Sightline tells you which link wasn't kept. *Where:* Saving a shared plan someone else changed
 
 ## 1.140.0 · Oct 27, 2026
 
