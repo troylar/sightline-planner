@@ -8,7 +8,7 @@ Line up existing tasks behind what they wait for.
 
 ### New
 
-- **Move a task to right after what it waits for** (Assistant). A proposed move can say start after instead of a date. The task starts the working day after the last thing it waits for finishes, skipping weekends, holidays and its owners' time off. It keeps its id and its links. *Where:* Your assistant's proposed changes, in the review panel
+- **Move a task to right after what it waits for** (Assistant). A proposed move can say start after instead of a date. The task starts the working day after the last thing it waits for finishes, skipping weekends, holidays and its owners' time off. It keeps its id and its links. When something it waits for is late and not done, it's refused: give a date. *Where:* Your assistant's proposed changes, in the review panel
 
 ### Fixed
 

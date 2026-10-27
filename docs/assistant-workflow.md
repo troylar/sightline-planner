@@ -242,7 +242,8 @@ with `after`, the tasks it starts after, and leave out `start`:
 
 For a task already in the plan, move it with `"start": "after"` instead of a date. It starts the working day after the
 last task it waits for finishes, the same day its card offers, and keeps its id and links. It needs at least one task
-to wait for; link it first with `task.link` in the same change. `prev` can be the task's current start alone. To mark
+to wait for; link it first with `task.link` in the same change. When a task it waits for is late and not done, `after`
+is refused, for adding and for moving: there's no day after a finish that has passed, so give a start instead. `prev` can be the task's current start alone. To mark
 an existing length as a guess, set `rough` with `prev: false` when the task isn't marked yet:
 
 ```json

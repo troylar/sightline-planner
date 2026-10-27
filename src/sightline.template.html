@@ -7688,6 +7688,13 @@ defAction("initiative.del", {done:(p, a)=>!actBar(p, a.id), scope:"initiatives",
 const TASK_SET = {label:"str", owners:"ids", story:"str", needs:"ids", aiHint:"str", rough:"bool"};
 const wkName = n => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][dow(n)];
 const tooEarly = (t, s) => !!(t.dependsOn || []).length && (n => n != null && isoToDay(n) > s)(afterStart(S, t.dependsOn, t));
+// What a task waits for that ran late and isn't done: nothing can start the day after a finish that has passed.
+const lateDeps = (p, deps) => deps.map(id=>actTask(p, id)).filter(f=>f && taskLate(f.t, holidaySet(p)));
+const lateWhy = L => `${L.slice(0, 2).map(f=>`"${String(taskTitle(f.t)).slice(0, 60)}"`).join(" and ")}${L.length > 2 ? ` and ${L.length - 2} more` : ""} ${L.length === 1 ? "is" : "are"} late, so this can't start until ${L.length === 1 ? "it's" : "they're"} done. Give a start instead.`;
+// The review's line for a task moved "after": the day it lands, the day it was, and what it starts after.
+function afterLine(p, id, was){ const t = actTask(p, id).t, hs = holidaySet(p), L = (t.dependsOn || []).map(x=>actTask(p, x)).filter(Boolean), end = Math.max(...L.map(f=>taskSpan(f.t, hs, p).e));
+  const last = L.filter(f=>taskSpan(f.t, hs, p).e === end).map(f=>`"${String(taskTitle(f.t)).slice(0, 60)}"`);
+  return `Start "${String(taskTitle(t)).slice(0, 60)}" ${fmtDay(isoToDay(t.start))}${was !== t.start ? ` (was ${fmtDay(isoToDay(was))})` : ""}, the working day after ${last.slice(0, 2).join(" and ")}${last.length > 2 ? ` and ${last.length - 2} more` : ""} ${last.length === 1 ? "finishes" : "finish"}`; }
 function afterStart(p, deps, t){ const hs = holidaySet(p), L = deps.map(id=>actTask(p, id)).filter(Boolean); if (!L.length) return null;
   const end = Math.max(...L.map(f=>taskSpan(f.t, hs, p).e)); return dayToIso(nextWork(Math.max(isoToDay(p.meta.start), end + 1), taskHs(t, p))); }
 const taskStart = (p, iso) => dayToIso(nextWork(Math.max(isoToDay(p.meta.start), isoToDay(iso)), holidaySet(p)));
@@ -7717,7 +7724,8 @@ defAction("task.add", {scope:"tasks", risk:"routine", done:(p, a)=>{ const f = a
   check:(p, a)=>{ if (!actFreeId(p, a.id) || actTaken(p, a.id)) return actInvalid(`${a.id} is already used.`); if (storyTooLong(a.story)) return storyTooLong(a.story); if (!actBar(p, a.bar)) return actMissing("initiative");
     if (a.start === undefined && a.after === undefined) return actInvalid("Give a start, or after: the tasks it starts after.");
     if (a.after){ if (!a.after.length) return actInvalid("after lists the tasks it starts after; leave it out to give only a start."); if (a.id && a.after.includes(a.id)) return "A task can't start after itself.";
-      const miss = a.after.find(x=>!actTask(p, x)); if (miss) return actMissing(`task it starts after (${miss})`); }
+      const miss = a.after.find(x=>!actTask(p, x)); if (miss) return actMissing(`task it starts after (${miss})`);
+      if (a.start === undefined){ const L = lateDeps(p, a.after); if (L.length) return actInvalid(lateWhy(L)); } }
     if (a.days !== undefined && (a.days < 1 || a.days > 260)) return actInvalid("Working days are from 1 to 260."); if (a.owners && !actPeople(p, a.owners)) return actMissing("person"); },
   run:(p, a)=>{ const b = actBar(p, a.bar), id = a.id || newId("task");
     const t = {id, label:a.label ?? "New task", start:"", days:a.days ?? 1, owners: a.owners ? [...a.owners] : [...own(b)], jira:"", status:"notstarted", ...(a.tags && a.tags.length ? {tags:[...a.tags]} : {}), ...storyField(a.story)};
@@ -7750,6 +7758,7 @@ defAction("task.move", {scope:"schedule", risk:"routine", args:{id:"id", start:"
   prevAs:(p, a, v)=>{ const f = actTask(p, a.id); return !!f && validIso(v) && v === f.t.start; },          // the start alone, as the card shows it
   check:(p, a)=>{ const f = actTask(p, a.id); if (!f) return actMissing("task"); if (a.start === undefined && a.days === undefined) return actInvalid("Give a start, working days, or both.");
     if (a.start === "after" && !(f.t.dependsOn || []).some(x=>actTask(p, x))) return actInvalid("It waits for no task, so there's no after. Link it first (task.link), or give a date.");
+    if (a.start === "after"){ const L = lateDeps(p, f.t.dependsOn); if (L.length) return actInvalid(lateWhy(L)); }
     if (a.days !== undefined && (a.days < 1 || a.days > 260)) return actInvalid("Working days are from 1 to 260.");
     const L = jiraLockOf(f.t); if (L && L.dates) return jiraDatesMsg(L); },
   run:(p, a)=>{ const {t} = actTask(p, a.id), s0 = t.start, d0 = t.days;
@@ -12807,9 +12816,10 @@ function amCheck0(c00, p){
       const extra = Object.keys(o).filter(k=>!["op","action","args"].includes(k)); if (extra.length) return bad.push(`${at}: an action op has op, action and args (not ${extra.map(k=>k.slice(0, 20)).join(", ")})`);
       if (/\.add$/.test(A.id) && "id" in A.args && !(o.args && typeof o.args.id === "string" && o.args.id)) return bad.push(`${at}: give the new item an id (like risk-vendor-limits), so reading the file again can't add it twice`);
       if (!cand) cand = clone(p); acts.slice(candN).forEach(fn=>fn(cand));
-      const args = o.args && typeof o.args === "object" && !Array.isArray(o.args) ? clone(o.args) : o.args, r = runAction(cand, A.id, args); candN = acts.length + 1;
+      const args = o.args && typeof o.args === "object" && !Array.isArray(o.args) ? clone(o.args) : o.args, was = A.id === "task.move" && args && args.start === "after" ? actTask(cand, args.id)?.t.start : null;
+      const r = runAction(cand, A.id, args); candN = acts.length + 1;
       if (!r.ok){ if (r.code === "stale") stale.push(`Changed since: ${actLine(A.id, args, cand)}. ${r.reason}`); else bad.push(`${at}: ${r.reason}`); acts.push(()=>{}); return; }
-      lines.push(actLine(A.id, args, cand) + (r.nochange ? " (already so)" : ""));
+      lines.push(was && r.ok && !r.nochange ? afterLine(cand, args.id, was) : actLine(A.id, args, cand) + (r.nochange ? " (already so)" : ""));
       if (A.scope === "schedule" || A.id.endsWith(".del") || A.id.endsWith(".add")) dated = true;
       if (!r.nochange) todo++;
       acts.push(s=>{ const x = runAction(s, A.id, clone(args)); if (!x.ok) throw new Error(x.reason); }); return; }
@@ -12941,11 +12951,7 @@ function amCheck0(c00, p){
       if (!now || now === a.at) return null; const on = a.deps.map(d=>t === "bar" ? barById(d) && barTitle(barById(d)) : (taskById(d) || {}).t?.label).filter(Boolean);
       return `${a.name} would start ${fmtDay(isoToDay(now))}, not ${fmtDay(isoToDay(a.at))}: ` + (on.length ? `it waits on ${on.slice(0, 3).join(", ")}${on.length > 3 ? ` and ${on.length - 3} more` : ""}. Change what it waits on, or move that first.` : "the plan's dates or schedule keep it there."); }).filter(Boolean);
     if (undone.length) bad.push(...undone);
-    else if (hit) bad.push(hit); else {
-      c.ops.forEach(o=>{ if (!o || o.op !== "action" || o.action !== "task.move" || !o.args || o.args.start !== "after") return; const id = String(o.args.id || ""), a = asked.get("task:" + id), was = actTask(p, id);
-        if (!a || !was) return; const on = a.deps.map(d=>actTask(after, d)).filter(Boolean).map(f=>`"${String(taskTitle(f.t)).slice(0, 60)}"`);
-        notes.push(`"${String(a.name).slice(0, 60)}" starts ${fmtDay(isoToDay(a.at))}${was.t.start !== a.at ? ` (was ${fmtDay(isoToDay(was.t.start))})` : ""}, the working day after ${on.length > 1 ? "the last of " : ""}${on.slice(0, 3).join(", ")}${on.length > 3 ? ` and ${on.length - 3} more` : ""} finishes.`); });
-      planMoves(b0, b1).filter(m=>!c.ops.some(o=>o && o.op === "action" && o.args && o.args.id === m.id && /\.move$/.test(o.action))).forEach(m=>notes.push(moveLine(m))); } }
+    else if (hit) bad.push(hit); else planMoves(b0, b1).filter(m=>!c.ops.some(o=>o && o.op === "action" && o.args && o.args.id === m.id && /\.move$/.test(o.action))).forEach(m=>notes.push(moveLine(m))); }
   const status = bad.length ? "invalid" : stale.length ? "changed" : todo ? "ready" : "done";
   return {status, reasons:[...bad, ...stale], notes:[...new Set(notes)], lines, dated,
     apply: cand ? s=>{ const t = clone(s); acts.forEach(fn=>fn(t)); for (const k of Object.keys(s)) delete s[k]; Object.assign(s, t); }        // actions can touch any part of the plan
@@ -13203,7 +13209,7 @@ function assistantView(){
       "Descriptions and guidance, for people: guide.set {section, value, prev} (section purpose, scope, breakdown, vocabulary, rules or examples) and guide.setWorkstream {lane, value, prev} write the Planning guide, the same text a workstream's card shows; template.set {kind:'initiative'|'task'|'milestone', value, prev} sets a story template (empty is the built-in one). milestone.set field story, gate.set field description and meeting.set field note (up to 500) take markdown. Say what it is and why, in plain words, from what the plan shows.",
       "Skills: planning.skills is the plan's catalog. skill.add {id, label}, skill.rename {id, label, prev} (keeps the id) and skill.remove {id} (refused while anyone or any work uses it). person.set field skills and initiative.set or task.set field needs take a list of skill ids, up to 20; an empty list clears it. Labels are unique ignoring case. Never infer a skill from a name, a role or past work: ask.",
       "Dates: any date you give (a task's start, a milestone's day, time off, when something was raised, a due date) can be YYYY-MM-DD or a day in words, read against the person's today when they review: today, tomorrow, yesterday, +3d, in 2 weeks, 3 days ago, Friday (the next one), this Friday / next Friday (that day this week / next week), last Friday, next week, next month, this sprint, next sprint. Prefer the words people used, so the review shows which date each became. A task's start moves to its next working day.",
-      "Order without dates: when only the order is known, add each task with after (the tasks it starts after) and no start, in order, so each starts the working day after the last of those finishes. Give days when you know them; otherwise give your best guess and rough: true, so the plan shows the length is a guess. Given both start and after, the later wins. Don't give every task the same placeholder start. To line up a task already in the plan, task.move with start 'after' (link it first with link.add if it waits for nothing): it keeps its id and links. rough is false when the length isn't a guess; set it with task.set field rough, prev false. Every task has a real start; there's no undated task.",
+      "Order without dates: when only the order is known, add each task with after (the tasks it starts after) and no start, in order, so each starts the working day after the last of those finishes. Give days when you know them; otherwise give your best guess and rough: true, so the plan shows the length is a guess. Given both start and after, the later wins. Don't give every task the same placeholder start. To line up a task already in the plan, task.move with start 'after' (link it first with link.add if it waits for nothing): it keeps its id and links. When something it waits for is late and not done, after is refused: give a start. rough is false when the length isn't a guess; set it with task.set field rough, prev false. Every task has a real start; there's no undated task.",
       "Hints for you: field aiHint on initiative.set, task.set, milestone.set, gate.set, person.set, outcome.set, risk.set and decision.set, plain text up to 500 characters. People see it only under For the assistant. A hint is a preference, never authorization or evidence of ability; anyone who can open the plan can read it, so never write secrets or judgments about people.",
       "Workstreams: workstream.set {id, field:'note'|'color'|'from'|'until', value, prev}, workstream.move {id, index}, workstream.reid {lane, id, prev} and workstream.del {id}. workstream.reid changes a workstream's id (lane, its id now; id, the new one) and every reference with it; its old ids are in was, still accepted from files written before, and never used again. A person always reviews it. workstream.del is refused while anything still points at the workstream (it says what), and a person always reviews it; move its work first with initiative.setLane, and change person.setSplit.",
       "coverage.context counts what the plan doesn't say yet (workstreams without guidance, people without skills, open work without a story or needs, milestones in the next 12 weeks without a story). Mention the gaps that weaken a suggestion and offer to fill them; never guess to cover one.",
