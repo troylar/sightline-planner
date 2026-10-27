@@ -208,14 +208,25 @@ main(){
     [[ "$(cat "$dir/$name.rc" 2>/dev/null)" == 0 ]] || fail=1
   done
   rm -rf "$dir"
-  # Layout in a real browser (jsdom has no layout). CI installs Chromium and must run them; elsewhere they run when
-  # Playwright is installed (npm ci, then npx playwright install chromium), or say plainly that they were skipped.
-  if node -e 'require(process.env.PLAYWRIGHT || "playwright")' 2>/dev/null || [[ -n "$CI" ]]; then
-    for t in layout-shelves layout-labels layout-avatars side-scroll capture-dialog; do run_suite "$t" 180 node "$t.js"; done
-  else
-    printf "  %-10s %s\n" "browser" "SKIPPED: Playwright isn't installed here, so layout-shelves, layout-labels, layout-avatars, side-scroll and capture-dialog didn't run"
-  fi
+  browser_checks
   return "$fail"
+}
+# Layout in a real browser (jsdom has no layout). CI installs Chromium and must run them. Elsewhere they run when Playwright
+# is installed (npm ci, then npx playwright install chromium, or PLAYWRIGHT=/path/to/node_modules/playwright). A skip fails
+# the run, so a local pass means what CI's does, unless SIGHTLINE_NO_BROWSER=1 says the skip is on purpose.
+browser_checks(){
+  local t suites=(layout-shelves layout-labels layout-avatars side-scroll capture-dialog)
+  if node -e 'require(process.env.PLAYWRIGHT || "playwright")' 2>/dev/null || [[ -n "$CI" ]]; then
+    for t in "${suites[@]}"; do run_suite "$t" 180 node "$t.js"; done
+    return
+  fi
+  printf "  %-10s %s\n" "browser" "SKIPPED: ${#suites[@]} browser suites (${suites[*]}): Playwright isn't installed here"
+  if [[ "${SIGHTLINE_NO_BROWSER:-}" == 1 ]]; then
+    printf "  %-10s %s\n" "" "SIGHTLINE_NO_BROWSER=1, so the skip doesn't fail the run"
+    return
+  fi
+  printf "  %-10s %s\n" "" "FAILED: install Playwright (npm ci, then npx playwright install chromium) or set PLAYWRIGHT, or run with SIGHTLINE_NO_BROWSER=1 to skip them on purpose"
+  fail=1
 }
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   if [[ "${1:-}" == --one ]]; then
