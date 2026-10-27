@@ -26,6 +26,13 @@
         "before": "Filtering to a person hid an initiative they lead when none of its tasks were theirs.",
         "now": "It stays, with its tasks filtered as before.",
         "where": "Filters > People, and Focus on a person"
+      },
+      {
+        "kind": "improved",
+        "area": "Details",
+        "title": "Shortcuts on the one-line boxes",
+        "now": "Add an update and Add a note show their shortcuts, U and S, when you point at them, and screen readers announce them. An empty box you opened stays open until you reload the page.",
+        "where": "The details panel for an initiative or task"
       }
     ]
   },

@@ -5907,6 +5907,7 @@ UI.filter = normFilter(UI.filter); UI.pinTop = UI.pinTop === true; UI.labelW = n
 UI.view = UI.view && typeof UI.view === "object" && ["team","personal"].includes(UI.view.src) ? {src:UI.view.src, id:str(UI.view.id)} : null;
 function saveUI(){ try { localStorage.setItem("timeline-planner-ui", JSON.stringify(UI)); } catch(e){} }
 function setZoom(z, focus){
+  if (z === "days" && !focus && drillOn() && UI.ws === "timeline") focus = drillLevel(UI.drill, "bar")?.id || null;
   const entering = z === "days" && (UI.zoom !== "days" || (UI.focus && !focus));
   UI.zoom = z; UI.focus = focus || null; saveUI(); render();
   if (z === "days") dayScrollTo(focus ? cols0() : Math.max(startDay(), mondayOf(todayDay())), !entering);
@@ -6190,7 +6191,7 @@ function navState(){
   const f = drillOn() ? normFilter(clone(UI.drill.base.filter)) : UI.filter, def = normFilter({}), diff = {}; Object.keys(f).forEach(k=>{ if (JSON.stringify(f[k]) !== JSON.stringify(def[k])) diff[k] = f[k]; });
   if (Object.keys(diff).length) st.f = JSON.stringify(diff);
   if (layerOf() !== "all") st.layer = layerOf();
-  if (drillOn()){ st.dr = UI.drill.stack.map(x=>x.k + ":" + x.id).join(","); if (UI.drill.rest) st.drr = "1"; }
+  if (drillOn()){ st.dr = UI.drill.stack.map(x=>x.k + ":" + x.id).join(","); if (UI.drill.rest) st.drr = "1"; if (UI.drill.base.zoom === "days") st.dz = "days"; }
   return st;
 }
 const encodeNav = st => new URLSearchParams(Object.entries(st).filter(([, v])=>v != null && v !== "")).toString();
@@ -6226,11 +6227,12 @@ function applyNav(st){
 function applyNavDrill(st){
   const stack = String(st.dr || "").split(",").slice(0, 8).map(x=>{ const i = x.indexOf(":"); return {k:x.slice(0, i), id:x.slice(i + 1)}; })
     .filter(x=>(x.k === "bar" && barById(x.id)) || (x.k === "person" && personById(x.id)));
-  if (!stack.length){ UI.drill = null; return; }
-  const was = drillOn() ? UI.drill.base : null, g = $("#gscroll");
-  UI.drill = {plan:S.meta.planId, base:was || {filter:clone(UI.filter), zoom:UI.zoom, focus:UI.focus || null, sel:null, x:g ? g.scrollLeft : 0, y:g ? g.scrollTop : 0}, stack, rest:st.drr === "1"};
-  if (was) UI.drill.base.filter = clone(UI.filter);
-  const bar = drillLevel(UI.drill, "bar"); UI.filter = drillFilter(UI.drill); if (bar && UI.ws === "timeline"){ UI.zoom = "days"; UI.focus = bar.id; }
+  const was = drillOn() ? UI.drill.base : null;
+  if (!stack.length){ if (was) UI.focus = was.focus && barById(was.focus) ? was.focus : null; UI.drill = null; return; }
+  const g = $("#gscroll"), zoom = st.dz === "days" ? "days" : "weeks";
+  UI.drill = {plan:S.meta.planId, base:was ? {...was, filter:clone(UI.filter), zoom} : {filter:clone(UI.filter), zoom, focus:null, sel:null, x:g ? g.scrollLeft : 0, y:g ? g.scrollTop : 0}, stack, rest:st.drr === "1"};
+  const bar = drillLevel(UI.drill, "bar"); UI.filter = drillFilter(UI.drill);
+  if (bar && UI.ws === "timeline"){ UI.zoom = "days"; UI.focus = bar.id; } else if (!bar) UI.focus = UI.drill.base.focus && barById(UI.drill.base.focus) ? UI.drill.base.focus : null;
 }
 function syncNav(){
   if (navApplying || typeof history === "undefined") return;
@@ -6853,7 +6855,7 @@ function applyView(src, v){
   if (UI.zoom === "days" && !onList){ const R = fRangeDays(); dayScrollTo(R && Number.isFinite(R[0]) ? Math.max(startDay(), R[0]) : Math.max(startDay(), mondayOf(todayDay()))); }
   setStatus(`Showing ${v.name}`);
 }
-function clearView(){ UI.view = null; UI.filter = normFilter({}); UI.rows = "lanes"; setLayerQuiet("all"); setHiddenQuiet([]); saveUI(); render(); setStatus("Showing all work"); }
+function clearView(){ drillEnd(); UI.view = null; UI.filter = normFilter({}); UI.rows = "lanes"; setLayerQuiet("all"); setHiddenQuiet([]); saveUI(); render(); setStatus("Showing all work"); }
 function saveCurrentView(){
   const v = activeView(); if (!v) return;
   if (UI.view.src === "personal"){ const list = personalViews().map(x=>x.id === v.id ? {...x, def:currentDef()} : x); if (savePersonalViews(list)){ render(); setStatus(`Saved ${v.name}`); } }
@@ -6941,7 +6943,7 @@ function setFilter(mut){
   const focus = filterFocus();
   const f = clone(UI.filter); mut(f); const next = normFilter(f);
   if (drillOn()){ const same = k => JSON.stringify(next[k] || []) === JSON.stringify(UI.filter[k] || []);
-    if (!same("bars") || !same("people")) UI.drill = null; else { const b = normFilter(clone(UI.drill.base.filter)); mut(b); UI.drill.base.filter = normFilter(b); } }
+    if (!same("bars") || !same("people")) UI.drill = null; else { const b = normFilter(clone(UI.drill.base.filter)); mut(b); UI.drill.base.filter = normFilter(b); UI.filter = drillFilter(UI.drill); saveUI(); render(); renderFilterPop(); restoreFilterFocus(focus); return; } }
   UI.filter = next; saveUI(); render(); renderFilterPop();
   restoreFilterFocus(focus);
 }
@@ -6992,6 +6994,8 @@ function renderFind(q){
 }
 // Show an item: switch to where it lives, unfold what hides it, clear a filter that hides it, select it and scroll to it.
 function goTo(kind, id){
+  if (drillOn()){ const t = kind === "task" ? taskById(id) : null, b = kind === "bar" ? barById(id) : t ? t.b : null;     // a jump to something the focus hides ends it
+    if (!(b && barVisible(b) && (!t || taskVisible(t.t)))) drillEnd(); }
   const scrollTo = sel0 => setTimeout(()=>{ const el = document.querySelector(sel0); if (el){ el.scrollIntoView({block:"center", inline:"center", behavior:"smooth"}); el.classList.add("flash"); setTimeout(()=>el.classList.remove("flash"), 1600); } }, 60);
   const unfold = b => { ancestorsOf(b).forEach(a=>{ delete UI.collapsed[a.id]; }); saveUI(); };
   { const b = kind === "bar" ? barById(id) : kind === "task" ? taskById(id)?.b : kind === "story" ? storyByKey(id)?.b : null, t = kind === "task" ? taskById(id)?.t : null, x = kind === "story" ? storyByKey(id) : null;
@@ -7177,22 +7181,31 @@ function drillTo(n){
   setStatus(`Back to ${root}.`);
 }
 const drillUp = () => drillTo(UI.drill.stack.length - 1);
+// From a control that the redraw removes: keyboard focus goes to what was selected, or the Weeks/Days switch.
+function drillLeave(){ drillTo(0); const k = sel && (sel.type + ":" + sel.id); (k && document.querySelector(`#gantt [data-key="${CSS.escape(k)}"]`) || $("#zWeeks"))?.focus({preventScroll:true}); }
+// End a focus without drawing: the view under it comes back, cleaned against the plan that's open now.
+function drillEnd(){ const d = UI.drill; UI.drill = null; if (!d || !d.base || typeof d.base !== "object") return;
+  try { UI.filter = cleanFilter(normFilter(clone(d.base.filter || {}))); } catch(e){ UI.filter = normFilter({}); }
+  const bar = Array.isArray(d.stack) ? drillLevel(d, "bar") : null;                  // the zoom goes back only if it's still the framing the focus set
+  if (bar && UI.zoom === "days" && UI.focus === bar.id){ UI.zoom = d.base.zoom === "days" ? "days" : "weeks"; UI.focus = d.base.focus && barById(d.base.focus) ? d.base.focus : null; }
+  else if (UI.focus && !barById(UI.focus)) UI.focus = null; }
 // Every draw: a focus from another plan, or on something since deleted, steps back by itself.
 function drillCheck(){
   const d = UI.drill; if (!d) return;
-  if (!d.base || typeof d.base !== "object" || !Array.isArray(d.stack) || d.plan !== S.meta.planId){ UI.drill = null; return; }
+  if (!d.base || typeof d.base !== "object" || !Array.isArray(d.stack) || d.plan !== S.meta.planId){ drillEnd(); return; }
   const keep = d.stack.filter(s=>s && (s.k === "bar" ? barById(s.id) : s.k === "person" ? personById(s.id) : false));
-  if (keep.length === d.stack.length) return;
-  d.stack = keep; if (keep.length) UI.filter = drillFilter(d); else { UI.drill = null; UI.filter = cleanFilter(normFilter(clone(d.base.filter))); }
+  if (!keep.length){ drillEnd(); return; }
+  if (keep.length !== d.stack.length || d.rest){ d.stack = keep; UI.filter = drillFilter(d); }        // where someone has work changes as the plan does
+  const bar = drillLevel(d, "bar"); if (bar && UI.zoom === "days" && UI.ws === "timeline" && !UI.focus) UI.focus = bar.id;
 }
 function drillStrip(){
   const d = UI.drill, n = d.stack.length, per = drillLevel(d, "person");
-  const crumb = (s, i) => i === n - 1 ? h("li",{}, h("span",{class:"crumb here","aria-current":"location"}, icon(s.k === "bar" ? "initiative" : "person"), drillName(s)))
-    : h("li",{}, h("button",{type:"button",class:"crumb","data-drill":String(i + 1),onclick:()=>drillTo(i + 1)}, drillName(s)));
+  const crumb = (s, i) => i === n - 1 ? h("li",{}, h("span",{class:"crumb here","aria-current":"location",tabindex:"-1"}, icon(s.k === "bar" ? "initiative" : "person"), drillName(s)))
+    : h("li",{}, h("button",{type:"button",class:"crumb","data-drill":String(i + 1),onclick:()=>{ drillTo(i + 1); $("#drillPath .crumb.here")?.focus(); }}, drillName(s)));
   return h("nav",{class:"banner info drillpath",id:"drillPath","aria-label":"Focus"},
-    h("ol",{}, h("li",{}, h("button",{type:"button",class:"crumb",id:"drillRoot",onclick:()=>drillTo(0)}, drillRoot())), ...d.stack.map(crumb)),
+    h("ol",{}, h("li",{}, h("button",{type:"button",class:"crumb",id:"drillRoot",onclick:()=>drillLeave()}, drillRoot())), ...d.stack.map(crumb)),
     per ? h("label",{class:"fcheck drest"}, h("input",{type:"checkbox",id:"drillRest",checked:!!d.rest,onchange:e=>{ d.rest = e.target.checked; drillApply(); $("#drillRest")?.focus(); }}), ` Show teammates' work where ${personName(per.id)} has some`) : null,
-    h("button",{type:"button",class:"btn sm",id:"drillOut",title:"Esc steps back one level",onclick:()=>drillTo(0)}, "Leave focus"));
+    h("button",{type:"button",class:"btn sm",id:"drillOut",title:"Esc steps back one level",onclick:()=>drillLeave()}, "Leave focus"));
 }
 // Add an initiative to Show only, or take one off. From the Filters panel or a chip.
 function setOnly(id, on){ const b = barById(id); if (!b) return;
@@ -11214,9 +11227,9 @@ function composerField(key, field, el){
 }
 // An empty Updates or Notes box is one line until someone opens it; a draft or an earlier open keeps it open.
 const quietOpen = new Set();
-function quietBox(key, field, empty, label, add, field_){
+function quietBox(key, field, empty, label, add, field_, kbd){
   const k = composerKey(key, field); if (!empty || quietOpen.has(k) || composerDrafts.has(k)) return field_;
-  const open = h("button",{type:"button",class:"qopen","data-qopen":field,"aria-expanded":"false"}, h("span",{class:"qplus","aria-hidden":"true"}, "+"), label);
+  const open = h("button",{type:"button",class:"qopen","data-qopen":field,"aria-expanded":"false",title:`${label} (${kbd})`,"aria-keyshortcuts":kbd}, h("span",{class:"qplus","aria-hidden":"true"}, "+"), label);
   add.hidden = true; field_.classList.add("quiet"); field_.append(open);
   open.addEventListener("click", ()=>{ quietOpen.add(k); add.hidden = false; field_.classList.remove("quiet"); open.remove(); add.querySelector("textarea")?.focus(); });
   return field_;
@@ -12242,7 +12255,7 @@ function quickPanel(key){
   const uadd = h("div",{class:"uadd"}, txt, h("button",{type:"button",class:"btn",id:"q-addupd",onclick:()=>{ const v = txt.value.trim(); if (!v){ txt.focus(); return; } act("update added", (w,s)=>{ addUpdate(s, key, v); }, [["q-upd",txt.value]]); }},"Add update"));
   box.append(quietBox(key, "q-upd", !ups.length, "Add an update", uadd, h("div",{class:"field"}, h("span",{class:"flabel"}, `Updates${ups.length ? " (" + ups.length + ")" : ""}`), uadd,
     ups.length ? list : null,
-    ups.length > 5 && UI.allUpdates !== key ? h("button",{type:"button",class:"linkish nav",onclick:()=>{ UI.allUpdates = key; render(); }}, `Show all ${ups.length}`) : null)));
+    ups.length > 5 && UI.allUpdates !== key ? h("button",{type:"button",class:"linkish nav",onclick:()=>{ UI.allUpdates = key; render(); }}, `Show all ${ups.length}`) : null), "U"));
   // what does this push?
   if (leaf && x.status !== "done"){
     const n0 = h("input",{type:"number",min:"1",max:"60",value:"3",id:"q-slipn",class:"rnum","aria-label":"Working days"}), res = h("div",{class:"slipres"});
@@ -15092,7 +15105,7 @@ function stickies(key, laneHint){
         h("button",{type:"button",class:"linkish nav",onclick:()=>select("note", n.id)},"Edit"),
         (!n.author || n.author === me) ? h("button",{type:"button",class:"linkish",onclick:()=>quickSave("note removed", s=>{ const i = s.notes.findIndex(x=>x.id===n.id); if (i < 0) return NOCHANGE; s.notes.splice(i,1); })},"Remove") : null)))) : null,
     hid.length ? h("p",{class:"hint",id:"notesHidden"}, `${hid.length} more hidden by your view. `, h("button",{type:"button",class:"linkish",id:"notesReveal",onclick:()=>{ revealNotes = key; render(); }},"Show")) : null,
-    sadd));
+    sadd), "S");
 }
 // After a Today action the row may leave its list: put focus on the same row if it's still there, else the next one.
 function restoreTodayFocus(){
@@ -15865,6 +15878,7 @@ function cycleReview(key){
   const set = reviewSets().find(x=>x[0]===key)[3]; if (!set.length) return;
   revIdx[key] = ((revIdx[key] ?? -1) + 1) % set.length;
   const b = set[revIdx[key]], home = b.isTask ? taskById(b.id)?.b.id : b.id;
+  if (drillOn() && !(barById(home) && barVisible(barById(home)) && (!b.isTask || taskVisible(taskById(b.id).t)))) drillEnd();
   if (UI.zoom === "days" && UI.focus && UI.focus !== home) UI.focus = null;
   sel = {type:b.isTask ? "task" : "bar", id:b.id}; render();
   document.querySelector(b.isTask ? `[data-sel="task:${CSS.escape(b.id)}"]` : `[data-key="bar:${CSS.escape(b.id)}"]`)?.scrollIntoView?.({block:"nearest", inline:"nearest"});

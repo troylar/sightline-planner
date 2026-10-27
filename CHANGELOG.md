@@ -13,6 +13,7 @@ Focus on one initiative or one person.
 ### Improved
 
 - **Teammates' work, when you want it** (Timeline). While focused on a person, Show teammates' work adds everyone else's tasks in the initiatives where that person has work. *Where:* The focus path above the chart
+- **Shortcuts on the one-line boxes** (Details). Add an update and Add a note show their shortcuts, U and S, when you point at them, and screen readers announce them. An empty box you opened stays open until you reload the page. *Where:* The details panel for an initiative or task
 
 ### Fixed
 
