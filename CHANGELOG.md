@@ -8,7 +8,7 @@ See only what was added here.
 
 ### New
 
-- **Show only work added here** (Timeline). Added here, next to All sources, Jira only and Jira + mine, shows only tasks and initiatives with no Jira key, plus any initiative holding such work. Jira-linked items and Jira's stories are hidden; milestones, gates and notes stay. It's your own choice, for this plan in this browser. *Where:* Timeline or List, View, Show work from
+- **Show only work added here** (Timeline). Added here, next to All sources, Jira only and Jira + mine, shows only tasks and initiatives with no Jira key, plus any initiative holding such work. Jira-linked items and Jira's stories are hidden; milestones, gates and notes stay. A banner says so, Present too. It's your own choice, for this plan in this browser. *Where:* Timeline or List, View, Show work from
 
 ## 1.140.1 · Oct 27, 2026
 

@@ -9,7 +9,7 @@
         "area": "Timeline",
         "title": "Show only work added here",
         "before": "You could show only Jira's work, but not the reverse: the work your team added that nothing in Jira tracks.",
-        "now": "Added here, next to All sources, Jira only and Jira + mine, shows only tasks and initiatives with no Jira key, plus any initiative holding such work. Jira-linked items and Jira's stories are hidden; milestones, gates and notes stay. It's your own choice, for this plan in this browser.",
+        "now": "Added here, next to All sources, Jira only and Jira + mine, shows only tasks and initiatives with no Jira key, plus any initiative holding such work. Jira-linked items and Jira's stories are hidden; milestones, gates and notes stay. A banner says so, Present too. It's your own choice, for this plan in this browser.",
         "where": "Timeline or List, View, Show work from"
       }
     ]

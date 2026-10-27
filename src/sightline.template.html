@@ -4143,7 +4143,11 @@ const ROUTINE_BANNERS = new Set(["jsprints"]);
 let noticesOpen = false;
 function setBanner(key, kind, kids){ banners.set(key, h("div",{class:"banner "+kind, role:kind==="bad"?"alert":"status"}, kids)); drawBanners(); }
 function clearBanner(key){ banners.delete(key); drawBanners(); }
-// While initiatives are picked, say so above the chart for as long as it lasts (the status line fades), Present too.
+// While initiatives are picked, or only work added here shows, say so above the chart for as long as it lasts (the status
+// line fades), Present too. partialView() is what makes counts like "late" say they cover the whole plan.
+const partialView = () => (UI.filter.bars || []).some(id=>barById(id)) || hereOnly();
+function viewStrips(){ return [onlyStrip(), hereOnly() ? h("div",{class:"banner info",id:"hereStrip",role:"status"}, h("span",{}, h("b",{}, "Showing only work added here"), ": Jira's work is hidden, except initiatives that hold work added here"),
+  h("button",{type:"button",class:"linkish",id:"hereAll",onclick:()=>{ setLayer("all"); setStatus("Showing work from every source again."); }}, "Show everything")) : null].filter(Boolean); }
 function onlyStrip(){ const ids = (UI.filter.bars || []).filter(id=>barById(id)); if (!ids.length) return null;
   return h("div",{class:"banner info",id:"onlyStrip",role:"status"}, h("span",{}, h("b",{}, ids.length === 1 ? `Showing only "${chartLabel(barById(ids[0]))}"` : `Showing only ${ids.length} initiatives`), " and what's inside"),
     h("button",{type:"button",class:"linkish",id:"onlyAll",onclick:()=>{ setFilter(x=>{ x.bars = []; }); setStatus("Showing every initiative again."); }}, "Show every initiative")); }
@@ -4151,7 +4155,7 @@ function drawBanners(){
   const host = $("#banners");
   if (present){
     host.replaceChildren(...[...banners.values()].filter(x=>x.classList.contains("bad")));
-    { const o = onlyStrip(); if (o) host.append(o); }
+    host.append(...viewStrips());
     const sets = reviewSets(), any = sets.some(x=>x[3].length);
     host.append(h("div",{class:"review",role:"group","aria-label":"Review summary"},
       h("span",{class:"lbl"},"Review"),
@@ -4169,13 +4173,13 @@ function drawBanners(){
       h("div",{class:"noticeline",id:"noticeLine"}, h("span",{class:"hint"}, `${routine.length} setup note${routine.length === 1 ? "" : "s"} for whoever runs this plan`), " · ",
         h("button",{type:"button",class:"linkish",id:"noticeShow",onclick:()=>{ noticesOpen = true; drawBanners(); }}, "Show")));
   } else host.replaceChildren(...banners.values());
-  { const o = onlyStrip(); if (o) host.append(o); }
+  host.append(...viewStrips());
   const late = S.bars.filter(isLate), dep = [...S.bars.filter(b=>depProblems(b).length), ...liveBlocks().filter(i=>blockProblems(i).length).map(i=>({id:i.id, label:i.label, isBlock:true}))], cyc = (()=>{ const c = [...findCycles()], tl = taskLoops(); S.bars.forEach(b=>{ if (!c.includes(b) && (b.tasks||[]).some(t=>tl.has(t.id))) c.push(b); }); return c; })(), dead = canceledDeps();
   const pick = b => h("button",{class:"linkish",onclick:()=>select(b.isBlock ? "block" : "bar",b.id)}, (b.label||"Untitled").slice(0,40));
   const list = (arr) => arr.slice(0,4).flatMap((b,i)=>[i?", ":"", pick(b)]).concat(arr.length>4?["…"]:[]);
   if (late.length || dep.length || cyc.length || dead.length){
     host.append(h("div",{class:"banner warn",role:"status"},
-      late.length ? h("span",{}, h("b",{}, `${late.length} late${(UI.filter.bars || []).length ? " in the whole plan" : ""}: `), ...list(late)) : null,
+      late.length ? h("span",{}, h("b",{}, `${late.length} late${partialView() ? " in the whole plan" : ""}: `), ...list(late)) : null,
       dep.length ? h("span",{}, h("b",{}, `${dep.length} start before what they wait for finishes: `), ...list(dep), " ",
         editable() ? h("button",{type:"button",class:"btn",id:"fixDeps",title:"Push each one to start after what it waits for (and anything after it)",onclick:()=>fixDeps()},"Move them later")
           : file.handle && !present ? h("span",{class:"hint"},"(Start editing to fix)") : null) : null,
@@ -7221,7 +7225,6 @@ function renderWs(){
   $("#lyAll").setAttribute("aria-pressed", String(layerOf() === "all")); $("#lyJira").setAttribute("aria-pressed", String(jiraOnly())); $("#lyMine").setAttribute("aria-pressed", String(mineOnly()));
   $("#lyHere").hidden = ws === "standup" || !hasJiraWork(); $("#lyHere").setAttribute("aria-pressed", String(hereOnly())); if (layerOf() === "here" && !hereOnly()) $("#lyAll").setAttribute("aria-pressed", "true");
   { const hs = $("#hiddenStrip"), t = ws === "timeline" ? hiddenTally() : null, parts = [];
-    if (ws === "timeline" && hereOnly()) parts.push(h("span",{}, "Showing only work added here: Jira's work is hidden, except initiatives that hold work added here. ", h("button",{type:"button",class:"linkish",id:"hsHereAll",onclick:()=>setLayer("all")},"Show everything")));
     if (t && t.layer) parts.push(h("span",{}, (mineOnly() ? `Showing Jira's work and what you added: ${t.layer} item${t.layer===1?"":"s"} added by others ${t.layer===1?"is":"are"} hidden` + (t.unknown ? ` (${t.unknown} with no recorded author)` : "") + ". "
       : `Showing only what comes from Jira: ${t.layer} item${t.layer===1?"":"s"} added here ${t.layer===1?"is":"are"} hidden. `), h("button",{type:"button",class:"linkish",id:"hsEveryone",onclick:()=>setLayer("all")},"Show everyone")));
     if (t && Object.keys(t.people).length){ const ps = Object.entries(t.people), n = ps.reduce((a, [, v])=>a + v, 0);
