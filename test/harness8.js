@@ -48,7 +48,7 @@ setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT after " + R.len
   ok("F1a: Save refuses a plan over 2 MB and leaves the file alone", handle._text === text0 && handle.writes === writes0, `writes ${handle.writes - writes0}, size ${handle._text.length}`);
   ok("F1a: and says why", /2 MB/.test(status()) && /Not saved/.test(status()), status());
   ok("F1a: the file still opens", safe(()=>{ ev(`parseText(${JSON.stringify(handle._text)})`); return true; }, false));
-  ev(`S.decisions = S.decisions.filter(x=>x.id !== "big")`); await ev("save()");
+  ev(`S.decisions = S.decisions.filter(x=>x.id !== "big"); S.decisions.push({id:"small", text:"A normal decision", state:"open", owners:[]})`); await ev("save()");
   ok("F1a: a normal save still works", handle.writes === writes0 + 1 && ev("file.handle === __h"), status());
   });
 

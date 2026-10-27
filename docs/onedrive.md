@@ -9,6 +9,7 @@ Sightline opens the plan file on your computer. OneDrive carries that file betwe
 3. Wait for OneDrive to finish downloading the folder, then open Sightline in Edge or Chrome. Choose **File → Open shared plan** and select the local file. Connect the local Jira folder if your team uses it.
 4. Leave **File → Check for teammates' saves every 15 s** on to pick up local changes; this is enabled by default unless you previously turned it off. Use **Refresh** before starting work. Check OneDrive's own status before handing the plan to a teammate.
 5. Edit one at a time: **Start editing**, **Save**, then **Done editing**. Agree who is editing when a computer is offline or sync is paused.
+   The file only changes when the plan does: **Save** with nothing changed writes nothing, and **Done editing** with nothing changed puts the file back exactly as it was before **Start editing**, with the same revision.
 
 OneDrive and your organization control folder access. Sightline's views, author stamps and edit lock are not access controls.
 

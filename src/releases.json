@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.143.1",
+    "date": "2026-10-27",
+    "headline": "No new version without a change",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Shared plans",
+        "title": "Saving with nothing changed leaves the file alone",
+        "before": "Done editing always saved, so the shared file got a new revision and a new save time even when you changed nothing. Save, and a quick update that changed nothing, did the same.",
+        "now": "The file only changes when the plan does. Done editing with nothing changed puts the file back exactly as it was before Start editing. Save, and quick updates, with nothing changed write nothing. An edit you changed back counts as nothing.",
+        "where": "Start editing, Save, Done editing, and quick updates on a shared plan"
+      }
+    ]
+  },
+  {
     "version": "1.143.0",
     "date": "2026-10-27",
     "headline": "Old captures show on Today",
