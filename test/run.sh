@@ -185,6 +185,7 @@ main(){
     "jira-sync 120 python3 test_jira_sync.py"
     "assistant 120 python3 test_assistant.py"
     "runner 30 python3 test_runner.py"
+    "repo 30 node repo-files.js"
     "app 90 python3 test_app.py"
     "package 30 node test_package.js"
     "bundled-skills 60 node harness-bundled-skills.js"
