@@ -2755,7 +2755,7 @@ function runSayg(force){
   clearTimeout(saygT); if ((!saygOn() && !force) || !file.handle || file.holdLock || !file.dirty || saygBusy) return Promise.resolve(false);
   if (coalesceKey) endCoalesce();                               // a pause in typing (this runs after one): save what's typed so far
   let ops; try { ops = diffPlans(parseText(file.baseText), planOfRecord(S)).filter(o=>o.type !== "changes"); } catch(e){ return Promise.resolve(false); }
-  if (!ops.length){ file.dirty = false; updateFileUI(); return Promise.resolve(true); }
+  if (!realOps(ops).length){ file.dirty = false; updateFileUI(); return Promise.resolve(true); }
   const rows = describeUnsaved(ops.filter(o=>!(o.op === "set" && (o.field === "edited" || o.field === "added")))), what = rows.length ? rows.slice(0, 2).map(r=>r.line).join("; ") + (rows.length > 2 ? ` and ${rows.length - 2} more` : "") : "changes";
   saygBusy = true; updateFileUI();
   const mine = clone(S), base = file.baseText, baseHash = file.baseHash, keepSel = sel;      // kept until the write is confirmed
@@ -3635,7 +3635,10 @@ function save(){
     if (gen !== file.gen) return;
     if (current !== file.baseText){
       let plan = null; try { plan = parseText(current); } catch(e){}
-      if (plan && rebaseOnto(plan, current)){ if (await writeMine(hd, true)) setStatus(withMergeNote(`Saved to local file ${hd.name}, keeping teammates' quick updates.`)); return; }
+      if (plan && rebaseOnto(plan, current)){ const r = await writeMine(hd, true);
+        if (r === true) setStatus(withMergeNote(`Saved to local file ${hd.name}, keeping teammates' quick updates.`));
+        else if (r === "unchanged") setStatus(withMergeNote(`Nothing left to save: ${hd.name} already has teammates' quick updates.`));
+        return; }
       const l = plan && lockOf(plan);
       showConflict(plan, current, l && !l.mine && !l.expired ? `Not saved: ${l.by || "someone"} took over editing.` : "Not saved: someone else saved the file since you opened it.");
       return;
@@ -3699,6 +3702,7 @@ function quickSave(what, mutate, tries = 0, ops = null, isUndo = false, fromSayg
         return true; }
       render(); return false; }                                         // refused (a blackout, a limit): the edit stays unsaved here
     const myOps = ops || diffPlans(before, S);
+    if (!realOps(myOps).length){ installPlan(plan, now, hd); sel = keepSel; render(); planChanged("quick"); setStatus(`Nothing changed, so nothing was saved: ${what}`); return true; }   // never a new revision for nothing
     const out = clone(S); { const rec = changeRecord(what, myOps, mutate && mutate.via); if (rec) out.changes = pruneChanges([...(out.changes || []), rec]); } out.meta.revision = (plan.meta.revision||0) + 1; out.meta.savedAt = new Date().toISOString(); out.meta.lock = theirLock;
     const text = serialize(out, hd.name);
     { const n = overLimit(text); if (n){ installPlan(plan, now, hd); sel = keepSel; render(); setStatus(limitMsg(n)); return false; } }
@@ -3812,8 +3816,26 @@ function rebaseOnto(theirs, text){
 let mergeNote = "";
 const withMergeNote = t => { const n = mergeNote; mergeNote = ""; if (n) showToast(n); return n ? `${t} ${n}` : t; };
 function checkWritable(plan){ try { normalize(clone(plan), true); return true; } catch(e){ setStatus("Not saved: the plan has a problem (" + e.message + "). Undo the last change and try again."); return false; } }
+// What a save would really change: the plan's content, not its bookkeeping (the change log, author stamps, a field
+// going from null to missing). The lock,
+// revision and save time aren't compared at all. Nothing real to save means no write and no new revision, ever.
+const realOps = ops => ops.filter(o=>o.type !== "changes" && !(o.op === "set" && (o.field === "edited" || (o.value == null && o.prev == null))));
+function planUnchanged(){ try { return !realOps(diffPlans(parseText(file.baseText), planOfRecord(S))).length; } catch(e){ return false; } }
 async function writeMine(hd, keepLock){
   flushEditing();
+  if (planUnchanged()){                                // nothing to save: Save writes nothing; Done only hands the lock back
+    if (keepLock){ file.dirty = false; updateFileUI(); setStatus("No changes to save."); return "unchanged"; }
+    let base; try { base = parseText(file.baseText); } catch(e){ base = null; }
+    const l = base && lockOf(base), pre = file.preLock;
+    const asBefore = pre && pre.locked === file.baseText && (()=>{ try { return !lockOf(parseText(pre.text)); } catch(e){ return false; } })();
+    if (base && l && l.mine){ base.meta.lock = null; const text = asBefore ? pre.text : serialize(base, hd.name);
+      try { if (await writeIfUnchanged(hd, file.baseText, text) !== "ok"){ setStatus("Not released: someone saved at the same moment. Click Done editing again."); return false; } }
+      catch(e){ setStatus("Couldn't finish editing: " + e.message); return false; }
+      file.baseText = text; file.baseHash = hashText(text); }
+    file.preLock = null; S.meta.lock = null; file.dirty = false; file.holdLock = false; markFileChecked(hd, file.gen); flushPersist();
+    stopHeartbeat(); showLockBanner(); updateFileUI(); planChanged("save");
+    return "unchanged";
+  }
   if (!checkWritable(S)) return false;
   let rec = null; try { const base = parseText(file.baseText); const ops = diffPlans(base, planOfRecord(S)), rows = describeUnsaved(ops.filter(o=>o.type !== "changes" && !(o.op === "set" && (o.field === "edited" || o.field === "added")))); rec = changeRecord(rows.length ? `saved: ${rows.slice(0, 3).map(r=>r.line).join("; ")}${rows.length > 3 ? ` and ${rows.length - 3} more` : ""}` : "saved", ops); } catch(e){}
   const withRec = o => { if (rec) o.changes = pruneChanges([...(o.changes || []).filter(c=>c.id !== rec.id), rec]); return o; };
@@ -3972,6 +3994,7 @@ function startEditing(takeOver){
     catch(e){ setStatus("Couldn't mark the file as being edited: " + e.message); return; }
     if (file.dirty){ S.meta.lock = plan.meta.lock; file.baseText = text; file.baseHash = hashText(text); file.lastCheck = Date.now(); flushPersist(); }
     else installPlan(plan, text, hd);
+    file.preLock = {text:now, locked:text};          // Done with nothing changed puts this back, exactly
     file.holdLock = true; startHeartbeat(); showLockBanner(); render();
     setStatus(withMergeNote(`Editing ${hd.name}. Save as you go; click Done editing when finished.`));
   });
@@ -3984,7 +4007,9 @@ function doneEditing(){
     if (gen !== file.gen) return false;
     if (now !== file.baseText){ let plan = null; try { plan = parseText(now); } catch(e){}
       if (!(plan && rebaseOnto(plan, now))){ showConflict(plan, now, "Not saved: someone else saved the file since you opened it."); return false; } }
-    if (await writeMine(hd, false)){ setStatus(withMergeNote(`Saved to local file and released ${hd.name}. Teammates can edit now.`)); return true; }
+    const r = await writeMine(hd, false);
+    if (r === "unchanged"){ setStatus(withMergeNote(`No changes to save. Released ${hd.name}; teammates can edit now.`)); return true; }
+    if (r){ setStatus(withMergeNote(`Saved to local file and released ${hd.name}. Teammates can edit now.`)); return true; }
     return false;
   });
 }
