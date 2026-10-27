@@ -57,7 +57,7 @@ const col = (r, i) => r ? r.querySelectorAll(".sucol")[i] : null;
 
   await sec(async ()=>{ const {d, ev} = await page(); ev("goWs('standup')"); await wait(10);
     const pid = ev("P"), who = ev(`peopleOf(S.bars.find(b=>b.id===P))[0]`), c = d.querySelector('#standupWs [data-card="bar:' + pid + '"]');
-    ok("A1: Cards is Jira's work: a plan-only item isn't on it, and the board says where it is", !c && /plan-only item/.test(d.querySelector("#suPlanOnly")?.textContent || ""));
+    ok("A1: Cards is Jira's work: a plan-only item isn't on it, and the board says where it is", !c && /added here \(not in Jira\)/.test(d.querySelector("#suPlanOnly")?.textContent || ""));
     const jc = d.querySelector('#standupWs [data-card="bar:' + ev("J") + '"]'); jc.click(); await wait(10);
     ok("A2: clicking a card opens it", ev("sel && sel.id") === ev("J") && ev("UI.ws") === "standup");
     ev("setLayer('jira'); renderStandup();"); await wait(10);

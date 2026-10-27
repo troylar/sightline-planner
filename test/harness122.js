@@ -47,8 +47,8 @@ const w = dom.window, d = w.document, ev = s=>w.eval(s), wait = ms=>new Promise(
     ok("L6 …a Jira item shows its Jira assignee and, apart, the plan lead", /^Jira: Avery/.test(cell("list:task:t-0-0", 3)) && /Lead:/.test(cell("list:task:t-0-0", 3)) && cell("list:story:ABC-102", 3) === "Jira: Unassigned", cell("list:task:t-0-0", 3));
     ok("L7 Status: the effective status, and for Jira items Jira's own status and freshness", cell("list:task:t-0-1", 5) === "Not started" && /^In progressJira: In Progress, synced /.test(cell("list:task:t-0-0", 5)), cell("list:task:t-0-0", 5));
     const waits = k => [...(rows().find(r=>r.dataset.lk === k) || d.createElement("tr")).querySelectorAll(".lwaits li")].map(x=>x.textContent);
-    ok("L8 Waits on: a task's link to the task before it", waits("list:task:t-0-2").join() === "after " + ev("taskTitle(taskById('t-0-1').t)"), waits("list:task:t-0-2").join());
-    ok("L8 …the initiative's own waits on its header: another initiative, a gate and a process step", waits("list:bar:" + bar(3).id).includes("after " + bar(1).label) && waits("list:bar:" + bar(4).id).includes(`gate: ${ev("S.gates[0].gate")}`) && waits("list:bar:" + bar(4).id).includes("process: Security review"), waits("list:bar:" + bar(4).id).join(" | "));
+    ok("L8 Waits on: a task's link to the task before it", waits("list:task:t-0-2").join() === ev("taskTitle(taskById('t-0-1').t)"), waits("list:task:t-0-2").join());
+    ok("L8 …the initiative's own waits on its header: another initiative, a gate and a process step", waits("list:bar:" + bar(3).id).includes(bar(1).label) && waits("list:bar:" + bar(4).id).includes(`gate: ${ev("S.gates[0].gate")}`) && waits("list:bar:" + bar(4).id).includes("process: Security review"), waits("list:bar:" + bar(4).id).join(" | "));
     const ext = rows().find(r=>r.dataset.lk === "list:task:t-3-0").querySelector(".lwaits a");
     ok("L8 …an external Jira prerequisite links to Jira, and warns when it ends after the item starts", ext && ext.href === "https://jira.example.com/browse/XYZ-9" && ext.target === "_blank" && /ends Nov 13, after this starts/.test(ext.textContent), ext && ext.textContent);
     rows().find(r=>r.dataset.lk === "list:task:t-2-0").querySelector(".lwaits button").click(); await wait(10);
@@ -58,7 +58,7 @@ const w = dom.window, d = w.document, ev = s=>w.eval(s), wait = ms=>new Promise(
     ev(`UI.filter = normFilter({people:['${avery}']}); saveUI(); render()`);
     const listShown = new Set(lks().filter(k=>!rows().find(r=>r.dataset.lk === k).classList.contains("lhead") && !rows().find(r=>r.dataset.lk === k).classList.contains("loff")).map(k=>k.replace(/^list:/, "")));
     ok("F1 a filter narrows the list, and the summary counts what it hides", listShown.size > 0 && /hidden by filters/.test(d.querySelector("#listSummary").textContent), d.querySelector("#listSummary").textContent);
-    ok("F1 …a prerequisite hidden by the filter still shows by name and opens", (()=>{ const r = rows().find(x=>x.dataset.lk === "list:task:t-0-1"); return !!r && waits("list:task:t-0-1").join() === "after " + ev("taskTitle(taskById('t-0-0').t)"); })() || waits("list:task:t-0-2").length === 1, waits("list:task:t-0-1").join());
+    ok("F1 …a prerequisite hidden by the filter still shows by name and opens", (()=>{ const r = rows().find(x=>x.dataset.lk === "list:task:t-0-1"); return !!r && waits("list:task:t-0-1").join() === ev("taskTitle(taskById('t-0-0').t)"); })() || waits("list:task:t-0-2").length === 1, waits("list:task:t-0-1").join());
     ev("goWs('timeline'); setZoom('days'); render()"); await wait(20);
     const tlTasks = new Set([...d.querySelectorAll('#gantt [data-key^="task:"], #gantt [data-key^="story:"]')].map(x=>x.dataset.key));
     const lsTasks = new Set([...listShown].filter(k=>/^(task|story):/.test(k)));
@@ -95,7 +95,7 @@ const w = dom.window, d = w.document, ev = s=>w.eval(s), wait = ms=>new Promise(
     ok("G4 a sub-initiative in another workstream starts at that workstream's top level", moved === 0, String(moved));
     ev(`S.bars[12].lane = S.bars[10].lane; dropJiraMemos(); render()`); await wait(10);
     const lmd = ev("listMarkdown(listGroups(listModel(), 'lane'), 'lane')").trim().split("\n");
-    ok("G5 Copy as table keeps the workstream groups, with counts, and names the workstream once, in its group", lg.every(g=>lmd.includes(`|  |  | **${g.label}** (${g.count}) |  |  |  |`)) && lmd[0] === "| Start | End | Item | Owner | Waits on | Status |" && lmd.every(l=>l.split(/(?<!\\)\|/).length === 8), lmd.find(l=>/\*\*/.test(l)));
+    ok("G5 Copy as table keeps the workstream groups, with counts, and names the workstream once, in its group", lg.every(g=>lmd.includes(`|  |  | **${g.label}** (${g.count}) |  |  |  |`)) && lmd[0] === "| Start | End | Item | Owner | Waits for | Status |" && lmd.every(l=>l.split(/(?<!\\)\|/).length === 8), lmd.find(l=>/\*\*/.test(l)));
     ok("G5 …and on screen there's no Workstream column in this layout", ![...d.querySelectorAll("#listTable [data-col=lane]")].length && d.querySelectorAll("#listTable thead th[scope=col]").length === 6 && [...d.querySelectorAll("#listTable tr.lgroup th")].every(t=>t.getAttribute("colspan") === "6"));
     ok("G6 the layout is in the link; as the default it isn't stored", /ll=lane/.test(w.location.hash) && !(ev("S.meta.planId") in JSON.parse(w.localStorage.getItem("sightline-list-layout") || "{}")), w.location.hash);
     w.localStorage.setItem("sightline-list-layout", JSON.stringify({[ev("S.meta.planId")]:"start"})); ev("listMemo = null");
@@ -148,7 +148,7 @@ const w = dom.window, d = w.document, ev = s=>w.eval(s), wait = ms=>new Promise(
     // Copy as table.
     const md = ev("listMarkdown(listGroups(listModel(), 'initiative'), 'initiative')");
     const lines = md.trim().split("\n");
-    ok("C1 Copy as table makes a markdown table with the seven columns", lines[0] === "| Start | End | Item | Workstream | Owner | Waits on | Status |" && lines[1] === "| --- | --- | --- | --- | --- | --- | --- |" && lines.length > 30);
+    ok("C1 Copy as table makes a markdown table with the seven columns", lines[0] === "| Start | End | Item | Workstream | Owner | Waits for | Status |" && lines[1] === "| --- | --- | --- | --- | --- | --- | --- |" && lines.length > 30);
     ok("C1 …pipes are escaped and line breaks inside a cell are flattened", md.includes("Pipes \\| and breaks") && lines.every(l=>l.startsWith("|") && l.endsWith("|")) && lines.every(l=>l.split(/(?<!\\)\|/).length === 9), lines.find(l=>/Pipes/.test(l)));
     let copied = null; w.navigator.clipboard = {writeText:t=>{ copied = t; return Promise.resolve(); }};
     d.querySelector("#listCopy").click(); await wait(20);

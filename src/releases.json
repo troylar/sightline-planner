@@ -1,5 +1,27 @@
 [
   {
+    "version": "1.139.0",
+    "date": "2026-10-27",
+    "headline": "Order without dates",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "List",
+        "title": "See the work in order, without dates",
+        "now": "By order, in the List, groups work into steps: step 1 waits for nothing, and each later step waits only on earlier ones. Waiting for an initiative means waiting for everything in it. Steps show order, not what's ready. Loops, and waiting and unstaffed rows, are set apart. The Waits on column is now Waits for.",
+        "where": "List, By order"
+      },
+      {
+        "kind": "improved",
+        "area": "Sprint",
+        "title": "Capacity says what it doesn't count",
+        "before": "Capacity counted story points in Jira, so work with no estimate, or work added here, quietly didn't show up in it.",
+        "now": "Under the capacity table, a line says what the points leave out in those sprints: Jira items with no estimate, and open tasks added here.",
+        "where": "Sprint, Capacity"
+      }
+    ]
+  },
+  {
     "version": "1.138.0",
     "date": "2026-10-27",
     "headline": "Clearer about what's what",

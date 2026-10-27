@@ -52,7 +52,7 @@ async function page(opts = {}){
     ev(`JIRA = parseJiraStatus(${JSON.stringify(J2)}); S.meta.jiraBase = "https://jira.example.com/browse/"; team()[0].jira = {key:"U1", user:"u1", name:"A"}; goWs("standup"); render();`); await wait(10);
     const keys = [...d.querySelectorAll("#standupWs .sucard")].map(c=>c.dataset.card);
     ok("K1: the sprint's issues are on Cards even when they aren't on the plan", keys.includes("jira:Z-1") && keys.includes("jira:Z-2") && !keys.includes("jira:Z-3"), keys.join(" "));
-    ok("K2: plan-only work isn't, and the board says where it is", keys.every(k=>/^(jira:|story:)/.test(k) || ev(`!!keysOf(${k.startsWith("bar:") ? "barById" : "taskById"}("${k.split(":")[1]}"), "x")`)) && (keys.some(k=>/^(bar|task):/.test(k)) || /plan-only item/.test(d.querySelector("#suPlanOnly")?.textContent || "")));
+    ok("K2: plan-only work isn't, and the board says where it is", keys.every(k=>/^(jira:|story:)/.test(k) || ev(`!!keysOf(${k.startsWith("bar:") ? "barById" : "taskById"}("${k.split(":")[1]}"), "x")`)) && (keys.some(k=>/^(bar|task):/.test(k)) || /added here \(not in Jira\)/.test(d.querySelector("#suPlanOnly")?.textContent || "")));
     ok("K3: an issue sits with its Jira assignee", !!d.querySelector(`[data-person="${ev("team()[0].id")}"] [data-card="jira:Z-1"]`));
     ev(`window.OPENED = []; window.open = (u)=>OPENED.push(u);`); d.querySelector('[data-card="jira:Z-2"]').click();
     ok("K4: one not on the plan opens in Jira", ev("OPENED[0]") === "https://jira.example.com/browse/Z-2", ev("OPENED[0]")); });

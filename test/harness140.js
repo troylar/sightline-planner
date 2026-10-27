@@ -66,7 +66,7 @@ const open = async (ui) => { const dom = boot(ui), w = dom.window, d = w.documen
     ok("W3 any column can wrap, the dates too", !cells("start").some(c=>c.classList.contains("nw")) && !saved().nw.includes("start"));
     ok("W4 the CSS keeps a one-line column on one line, and cuts it short only when widths are fixed", /\.ltable \.nw,\.ltable \.nw \*\{white-space:nowrap\}/.test(html) && /\.ltable\.lfixed \.nw,\.ltable\.lfixed \.nw>\*\{overflow:hidden;text-overflow:ellipsis\}/.test(html) && /\.ltable\.lfixed\{table-layout:fixed\}/.test(html));
     ok("W5 printing shows every column in full: no fixed widths, wrapping, no resize edges", /body\.on-list \.ltable\.lfixed\{table-layout:auto;width:100%!important\}/.test(html) && /body\.on-list \.lrz\{display:none\}/.test(html));
-    ok("M1 Copy as table is unchanged", ev("listMarkdown(listGroups(listModel(), listLayout()), listLayout())").startsWith("| Start | End | Item | Workstream | Owner | Waits on | Status |\n"));
+    ok("M1 Copy as table is unchanged", ev("listMarkdown(listGroups(listModel(), listLayout()), listLayout())").startsWith("| Start | End | Item | Workstream | Owner | Waits for | Status |\n"));
     ev("setListLayout('lane')"); const sum = J("listColsShown().reduce((n, [k, , d0])=>n + (listCols().w[k] || d0), 0)");
     ok("L1 By workstream has no Workstream column, and its fixed width leaves that column out", !rz("lane") && !cells("lane").length && tbl().style.width === sum + "px" && !J("listColsShown().some(c=>c[0] === 'lane')"), tbl().style.width + " / " + sum);
     ev("setListLayout('initiative')");
