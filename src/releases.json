@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.146.0",
+    "date": "2026-10-27",
+    "headline": "Empty boxes take one line",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Details",
+        "title": "Updates and Notes stay small until you use them",
+        "before": "An item with no updates or notes still showed two empty text boxes, each with its own button, near the top of its details.",
+        "now": "Each empty box is one line with Add an update or Add a note. Click it, or press U or S, and the box opens with the cursor in it. A box with updates, notes or a half-written draft shows in full.",
+        "where": "The details panel for an initiative or task"
+      }
+    ]
+  },
+  {
     "version": "1.145.1",
     "date": "2026-10-27",
     "headline": "Clearer help when the page doesn't start",
