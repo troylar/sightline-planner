@@ -546,6 +546,11 @@ body.presenting #filterBtn,body.presenting #viewSave{display:none!important}
 .qform .btn{align-self:flex-start}
 .uadd{display:flex;flex-direction:column;gap:5px}
 .uadd .btn{align-self:flex-start}
+.field.quiet{flex-direction:row;align-items:center;justify-content:space-between;gap:8px}
+.quick.quiet{padding:5px 6px 5px 10px}
+.qopen{display:inline-flex;align-items:center;gap:6px;border:1px solid transparent;background:none;color:var(--ink-2);font:inherit;font-size:12.5px;padding:3px 8px;border-radius:999px;cursor:pointer;transition:background-color .15s,color .15s,border-color .15s}
+.qopen:hover{background:var(--hov);color:var(--ink);border-color:var(--rule)}
+.qplus{font-weight:700;color:var(--accent);line-height:1}
 .ulog{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:7px}
 .ulog li{border-left:2px solid var(--rule);padding-left:8px}
 .ulog .uh{display:flex;gap:6px;align-items:center;font-size:11.5px;color:var(--ink-3)}
@@ -5881,8 +5886,8 @@ function quickKey(k){
   if ((k === "i" || k === "x") && leaf){ const v = k === "i" ? "inprogress" : (it.obj.status === "done" ? "inprogress" : "done");
     act(`${itemLabel(it)}: ${v === "done" ? "done" : "in progress"}`, w=>{ if (w.obj.status === v) return NOCHANGE; w.obj.status = v; }); return true; }
   if (k === "b" && leaf){ const d0 = document.querySelector("#side .qblock"); if (d0){ d0.open = true; $("#q-breason")?.focus(); } else if (isBlocked(it.obj)) $("#q-unblock")?.focus(); return true; }
-  if (k === "u"){ $("#q-upd")?.focus(); $("#q-upd")?.scrollIntoView({block:"nearest"}); return true; }
-  if (k === "s"){ $("#sticky-in")?.focus(); $("#sticky-in")?.scrollIntoView({block:"nearest"}); return true; }
+  if (k === "u"){ openBox("q-upd"); return true; }
+  if (k === "s"){ openBox("sticky-in"); return true; }
   return false;
 }
 // ================= zoom (per-browser view settings, not saved in the file) =================
@@ -6595,7 +6600,7 @@ function noteEl(n, style){
   return el;
 }
 document.addEventListener("click", e=>{ const b = e.target.closest?.("#gantt .nbadge"); if (!b) return; e.stopPropagation(); const k = b.dataset.peekId, i = k.indexOf(":"), t = k.slice(0,i), id = k.slice(i+1);
-  if (t === "meeting") openMeeting(id); else select(t, id); setTimeout(()=>document.querySelector("#side .stickies textarea")?.focus(), 30); }, true);
+  if (t === "meeting") openMeeting(id); else select(t, id); setTimeout(()=>openBox("sticky-in"), 30); }, true);
 // Drag a note sideways to another day, or up/down onto another lane (Weeks or Days). Arrow keys move it a working day.
 function laneOfTrack(tr){
   if (!tr) return null;
@@ -11117,6 +11122,16 @@ function composerField(key, field, el){
   const keep = ()=>{ if (el.value || field.startsWith("uedit:")) composerDrafts.set(id, el.value); else composerDrafts.delete(id); };
   el.addEventListener("input", keep); el.addEventListener("change", keep); return el;
 }
+// An empty Updates or Notes box is one line until someone opens it; a draft or an earlier open keeps it open.
+const quietOpen = new Set();
+function quietBox(key, field, empty, label, add, field_){
+  const k = composerKey(key, field); if (!empty || quietOpen.has(k) || composerDrafts.has(k)) return field_;
+  const open = h("button",{type:"button",class:"qopen","data-qopen":field,"aria-expanded":"false"}, h("span",{class:"qplus","aria-hidden":"true"}, "+"), label);
+  add.hidden = true; field_.classList.add("quiet"); field_.append(open);
+  open.addEventListener("click", ()=>{ quietOpen.add(k); add.hidden = false; field_.classList.remove("quiet"); open.remove(); add.querySelector("textarea")?.focus(); });
+  return field_;
+}
+function openBox(id){ const ta = document.getElementById(id); if (!ta) return; ta.closest(".field")?.querySelector(".qopen")?.click(); ta.focus(); ta.scrollIntoView?.({block:"nearest"}); }
 function composerSubmitted(key, entries, plan){
   // A save may finish after the person has already started their next message.
   for (const [field, value] of entries){ const id = composerKey(key, field, plan); if (composerDrafts.get(id) === value) composerDrafts.delete(id); }
@@ -12137,10 +12152,10 @@ function quickPanel(key){
         u.edited ? h("span",{class:"hint",title:`Edited by ${ed ? ed.name : "someone"}, ${fmtDay(stampDay(u.edited.at))}`}, " · edited") : null,
         present ? null : h("span",{class:"uacts"}, h("button",{type:"button",class:"linkish","data-uedit":u.id,onclick:()=>edit()},"Edit"), h("button",{type:"button",class:"linkish","data-udel":u.id,"data-armed":pendingDelete === delId ? "1" : null,"aria-live":"polite",onclick:remove}, pendingDelete === delId ? "Click again to delete" : "Delete"))),
       body); }));
-  box.append(h("div",{class:"field"}, h("span",{class:"flabel"}, `Updates${ups.length ? " (" + ups.length + ")" : ""}`),
-    h("div",{class:"uadd"}, txt, h("button",{type:"button",class:"btn",id:"q-addupd",onclick:()=>{ const v = txt.value.trim(); if (!v){ txt.focus(); return; } act("update added", (w,s)=>{ addUpdate(s, key, v); }, [["q-upd",txt.value]]); }},"Add update")),
-    ups.length ? list : h("p",{class:"hint"},"No updates yet."),
-    ups.length > 5 && UI.allUpdates !== key ? h("button",{type:"button",class:"linkish nav",onclick:()=>{ UI.allUpdates = key; render(); }}, `Show all ${ups.length}`) : null));
+  const uadd = h("div",{class:"uadd"}, txt, h("button",{type:"button",class:"btn",id:"q-addupd",onclick:()=>{ const v = txt.value.trim(); if (!v){ txt.focus(); return; } act("update added", (w,s)=>{ addUpdate(s, key, v); }, [["q-upd",txt.value]]); }},"Add update"));
+  box.append(quietBox(key, "q-upd", !ups.length, "Add an update", uadd, h("div",{class:"field"}, h("span",{class:"flabel"}, `Updates${ups.length ? " (" + ups.length + ")" : ""}`), uadd,
+    ups.length ? list : null,
+    ups.length > 5 && UI.allUpdates !== key ? h("button",{type:"button",class:"linkish nav",onclick:()=>{ UI.allUpdates = key; render(); }}, `Show all ${ups.length}`) : null)));
   // what does this push?
   if (leaf && x.status !== "done"){
     const n0 = h("input",{type:"number",min:"1",max:"60",value:"3",id:"q-slipn",class:"rnum","aria-label":"Working days"}), res = h("div",{class:"slipres"});
@@ -14980,16 +14995,17 @@ function stickies(key, laneHint){
   const on = S.notes.filter(n=>keys.includes(noteOn(n))), hid = viewNarrowed() && revealNotes !== key ? on.filter(viewHidesPlan) : [];
   const ns = on.filter(n=>!hid.includes(n)), me = meId(), inp = composerField(key, "sticky-in", h("textarea",{rows:"2",maxlength:"500",placeholder:"Add a note to this…","aria-label":"New note",id:"sticky-in"}));
   const item = key.split(":"), laneOf = () => { const [t, id] = [key.slice(0,key.indexOf(":")), key.slice(key.indexOf(":")+1)]; return t === "bar" ? barById(id)?.lane : t === "task" ? taskById(id)?.b.lane : t === "ms" ? S.milestones.find(m=>m.id===id)?.lane : t === "meeting" ? meetingById(id)?.lane : ""; };
-  return h("div",{class:"field stickies quick"}, h("span",{class:"flabel"}, `Notes${ns.length ? " (" + ns.length + ")" : ""}`),
+  const sadd = h("div",{class:"uadd"}, inp, h("button",{type:"button",class:"btn",id:"sticky-add",onclick:()=>{ const raw = inp.value, v = raw.trim(); if (!v){ inp.focus(); return; }
+      whoAmI(null, me2=>quickSave("note added", s=>{ s.notes.push({id:newId("note"), text:v.slice(0,500), date:dayToIso(nearWeekday(Math.min(startDay() + S.meta.weeks*7 - 3, Math.max(startDay(), todayDay())))), lane:laneOf() || laneHint || S.lanes[0].id, author:me2 || "", created:new Date().toISOString(), on:key});
+        if (UI.notes === "none" || (UI.notes === "others")){ UI.notes = "all"; saveUI(); } }).then(ok=>{ if (ok) composerSubmitted(key, [["sticky-in",raw]], draftPlan); })); }},"Add note"));
+  return quietBox(key, "sticky-in", !ns.length && !hid.length, "Add a note", sadd, h("div",{class:"field stickies quick"}, h("span",{class:"flabel"}, `Notes${ns.length ? " (" + ns.length + ")" : ""}`),
     ns.length ? h("div",{class:"slist"}, ...ns.map(n=>h("div",{class:"snote",style:{"--nc":noteColor(n)}},
       h("div",{class:"st"}, n.text || "(empty)"),
       h("div",{class:"sm"}, n.author ? personName(n.author) : "Someone",
         h("button",{type:"button",class:"linkish nav",onclick:()=>select("note", n.id)},"Edit"),
         (!n.author || n.author === me) ? h("button",{type:"button",class:"linkish",onclick:()=>quickSave("note removed", s=>{ const i = s.notes.findIndex(x=>x.id===n.id); if (i < 0) return NOCHANGE; s.notes.splice(i,1); })},"Remove") : null)))) : null,
     hid.length ? h("p",{class:"hint",id:"notesHidden"}, `${hid.length} more hidden by your view. `, h("button",{type:"button",class:"linkish",id:"notesReveal",onclick:()=>{ revealNotes = key; render(); }},"Show")) : null,
-    h("div",{class:"uadd"}, inp, h("button",{type:"button",class:"btn",id:"sticky-add",onclick:()=>{ const raw = inp.value, v = raw.trim(); if (!v){ inp.focus(); return; }
-      whoAmI(null, me2=>quickSave("note added", s=>{ s.notes.push({id:newId("note"), text:v.slice(0,500), date:dayToIso(nearWeekday(Math.min(startDay() + S.meta.weeks*7 - 3, Math.max(startDay(), todayDay())))), lane:laneOf() || laneHint || S.lanes[0].id, author:me2 || "", created:new Date().toISOString(), on:key});
-        if (UI.notes === "none" || (UI.notes === "others")){ UI.notes = "all"; saveUI(); } }).then(ok=>{ if (ok) composerSubmitted(key, [["sticky-in",raw]], draftPlan); })); }},"Add note")));
+    sadd));
 }
 // After a Today action the row may leave its list: put focus on the same row if it's still there, else the next one.
 function restoreTodayFocus(){

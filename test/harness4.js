@@ -901,6 +901,24 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
       finally { S = JSON.parse(was); render(); }
       return JSON.stringify(out); })()`));
     ok("TL1: every late task bar says late in its accessible name, in Weeks and Days, by person and by workstream", r.length >= 2 && r.every(x=>x.late && x.said), JSON.stringify(r) + ` of ${r.length}: ` + [...new Set(r.map(x=>x.z))].join(", ")); }
+  { // QB: an empty Updates or Notes box is one line until opened; a draft, an earlier open, or an entry keeps it full.
+    ev("render()"); await wait(20);
+    ev(`commit(()=>{ S.bars[0].tasks.push({id:"qb1",label:"QB one",start:S.meta.start,days:1,owners:[],status:"notstarted"},{id:"qb2",label:"QB two",start:S.meta.start,days:1,owners:[],status:"notstarted"}); })`);
+    const tk = "qb1", tk2 = "qb2";
+    ev(`select("task","${tk}")`); await wait(20);
+    const st = () => JSON.parse(ev(`JSON.stringify([...document.querySelectorAll("#side .field")].filter(f=>f.querySelector("#q-upd,#sticky-in")).map(f=>({q:f.classList.contains("quiet"), hid:f.querySelector(".uadd").hidden, open:f.querySelector(".qopen")?.textContent || ""})))`));
+    const a = st();
+    ok("QB1: an empty Updates and Notes box are each one line with an Add button", a.length === 2 && a.every(x=>x.q && x.hid) && a[0].open === "+Add an update" && a[1].open === "+Add a note" && !/No updates yet/.test(d.querySelector("#side").textContent), JSON.stringify(a));
+    ev(`document.querySelector('#side .qopen[data-qopen="q-upd"]')?.click()`); await wait(5);
+    const b1 = st(), f1 = ev("document.activeElement && document.activeElement.id");
+    ev("renderSide()"); await wait(5); const b2 = st();
+    ok("QB2: Add an update opens the box, puts the cursor in it, and it stays open on a redraw", !b1[0].q && !b1[0].hid && f1 === "q-upd" && !b2[0].q && b2[1].q, JSON.stringify([b1, f1, b2]));
+    ev("document.activeElement.blur()"); ok("QB3: S opens an empty Notes box and puts the cursor in it", ev('quickKey("s")') === true && !st()[1].q && ev("document.activeElement && document.activeElement.id") === "sticky-in", JSON.stringify(st()));
+    ev(`composerDrafts.set(composerKey("task:${tk2}","q-upd"), "half-written"); select("task","${tk2}")`); await wait(5);
+    ok("QB4: a box with an unsent draft opens full, with the draft", !st()[0].q && ev(`document.querySelector("#q-upd").value`) === "half-written", JSON.stringify(st()));
+    ev(`composerDrafts.clear(); addUpdate(S, "task:${tk2}", "Started"); renderSide()`); await wait(5);
+    ok("QB5: a box with updates shows them and the add field, not one line", !st()[0].q && d.querySelectorAll("#side .ulog li").length >= 1, JSON.stringify(st()));
+  }
   ok("no runtime errors", w.errs.length===0, w.errs.join(" | "));
   console.log(R.join("\n")); const f=R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length-f}/${R.length} passed`); process.exit(f ? 1 : 0);
 })();
