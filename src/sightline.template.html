@@ -11125,7 +11125,7 @@ function renderSide(){
   const ae = document.activeElement, id = ae?.closest("#side") && ae.id, start = id ? ae.selectionStart : null, end = id ? ae.selectionEnd : null;
   const side = $("#side"), at = sel ? sel.type + ":" + sel.id : null, top = at && at === sideAt ? side.scrollTop : 0;
   renderSide0(); sideExtras(); settleFolds(); foldItemOptions();
-  sideAt = sel ? sel.type + ":" + sel.id : null; if (top && sideAt === at) side.scrollTop = top;
+  sideAt = sel ? sel.type + ":" + sel.id : null; side.scrollTop = sideAt === at ? top : 0;     // set it either way: emptying alone doesn't always reset it
   if (id){ const next = document.getElementById(id); if (next && !next.disabled){ next.focus({preventScroll:true}); if (start != null && typeof next.setSelectionRange === "function") next.setSelectionRange(start, end); } }
   if (pendingDelete){ const a = document.querySelector('#side [data-armed="1"]'); if (a) a.focus({preventScroll:true}); }
 }

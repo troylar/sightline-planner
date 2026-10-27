@@ -28,8 +28,10 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
       ["Weeks by person", "UI.zoom = 'weeks'; UI.zoomN = 0; UI.zoomSp = null; UI.rows = 'people'"], ["Days", "UI.zoom = 'days'; UI.zoomN = 0; UI.zoomSp = null; UI.rows = 'lanes'"],
       ["Days, one initiative's tasks", "UI.zoom = 'days'; UI.zoomN = 0; UI.zoomSp = null; UI.rows = 'lanes'; UI.focus = 'm1'"],
       ["Weeks, one initiative's tasks", "UI.zoom = 'weeks'; UI.zoomN = 0; UI.zoomSp = null; UI.rows = 'lanes'; UI.focus = 'm1'"]];
+    // run.sh runs it in two halves (node harness146.js 1, then 2) so neither nears its time limit on a slow CI machine; no argument runs it all
+    const part = process.argv[2], mine = part === "1" ? views.slice(0, 3) : part === "2" ? views.slice(3) : views;
     let total = 0, keptAll = 0;
-    for (const [name, set] of views){
+    for (const [name, set] of mine){
       ev(`sel = null; ${set}; saveUI(); render()`);
       const items = JSON.parse(ev(`JSON.stringify([...new Set([...document.querySelectorAll("#gantt [data-sel]")].map(e => e.dataset.sel))])`));
       const bad = [], kinds = new Set(); let kept = 0;
@@ -46,6 +48,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     }
     ev("UI.focus = null; saveUI()");
     ok("E2 most of those kept the chart instead of drawing it again", keptAll >= total * 0.75, keptAll + " of " + total);
+    if (part === "1"){ ok("Z no page errors", !w.errs.length, w.errs.join(" | ")); throw "done"; }
     // what still draws in full
     ev("sel = null; UI.zoom = 'weeks'; UI.zoomN = 0; UI.zoomSp = null; UI.rows = 'lanes'; saveUI(); render(); __draws = 0; select('lane', S.lanes[0].id)");
     ok("F1 a kind of item without a kept highlight (a workstream) draws in full", ev("__draws") === 1);
@@ -75,9 +78,10 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     // layout, so this reads the rules; the browser checks are in the PR (scrolled screenshots, find, the printed text).
     const css = [...d.querySelectorAll("style")].map(x => x.textContent).join("\n");
     ok("D1 Days rows draw only near the screen, and print in full", /\.gantt\.days>\.lane\{content-visibility:auto;contain-intrinsic-size:auto \d+px\}/.test(css) && /@media print\{\.gantt\.days>\.lane\{content-visibility:visible\}\}/.test(css));
-    const lazy = [...css.matchAll(/([^{}\n]+)\{[^}]*content-visibility:auto/g)].map(m => m[1].trim()), printed = [...css.matchAll(/@media print\{([^{]+)\{content-visibility:visible\}\}/g)].map(m => m[1].trim());
+    // the selector right before each block that holds content-visibility:auto (a split, not a regex: one regex over the whole stylesheet took seconds)
+    const lazy = css.split("}").filter(r => r.includes("content-visibility:auto")).map(r => { const pre = r.slice(0, r.lastIndexOf("{", r.indexOf("content-visibility:auto"))); return pre.slice(Math.max(pre.lastIndexOf("{"), pre.lastIndexOf("\n")) + 1).trim(); }), printed = [...css.matchAll(/@media print\{([^{]+)\{content-visibility:visible\}\}/g)].map(m => m[1].trim());
     ok("D2 whatever draws only near the screen prints in full, and Weeks isn't among them", lazy.length >= 1 && lazy.every(x => printed.includes(x)) && !lazy.some(x => /:not\(\.days\)|\.gantt>|\.gantt \.lane/.test(x)), JSON.stringify({lazy, printed}));
     ok("Z no page errors", !w.errs.length, w.errs.join(" | "));
-  } catch(e){ ok("harness ran without throwing", false, e.stack); }
+  } catch(e){ if (e !== "done") ok("harness ran without throwing", false, e.stack); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
 })();
