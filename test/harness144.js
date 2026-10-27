@@ -31,7 +31,7 @@ async function open(){
     const fire = (el, type) => { const e = new w.Event(type, {bubbles:true, cancelable:true}); el.dispatchEvent(e); return e; };
     const key = (el, k) => el.dispatchEvent(new w.KeyboardEvent("keydown", {key:k, bubbles:true, cancelable:true}));
     // The page
-    ok("P1 Cards is under Work, next to Sort Jira work", d.querySelector("#snp-work #work-sort").nextElementSibling?.id === "work-cards" && ev("workspaceGroup('plan', 'cards')") === "work");
+    ok("P1 Cards is under Work, next to Sort Jira work", d.querySelector("#snp-work #work-sort").closest(".snrow").nextElementSibling?.querySelector(".snp")?.id === "work-cards" && ev("workspaceGroup('plan', 'cards')") === "work");
     ok("P1 …and Settings has a Cards page for the layout", !!d.querySelector('#snp-settings [data-section="cardlayout"]') && ev("workspaceGroup('plan', 'cardlayout')") === "settings");
     ok("P2 the board draws with no errors", !!d.querySelector("#cardsWs .cvboard") && !J("errs").length, J("errs").join(" | "));
     // Rows: workstreams in plan order; within one, cards group under their initiative, with "Not on an initiative" last.

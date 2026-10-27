@@ -1109,6 +1109,21 @@ body.hasnav{padding-left:var(--navw)}
 .snp .tbadge{margin-left:0}
 .snsub{padding:8px 8px 2px 36px;font-size:11.5px;font-weight:600;color:var(--ink-3)}
 .snfly,.sndot{display:none}
+.snrow{position:relative;display:flex;align-items:center}.snrow>.snp,.snrow>.snk{flex:1;min-width:0}
+.snk{display:flex;align-items:center;gap:8px;width:100%;min-height:32px;padding:5px 30px 5px 12px;border:0;border-radius:7px;background:transparent;font:inherit;font-size:13.5px;font-weight:500;color:var(--ink);text-align:left;cursor:pointer}
+.snk:hover{background:var(--hov)}.snk .snl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.snk .warnc{font-size:11.5px;font-weight:500;color:var(--warn);white-space:nowrap}
+.snk[aria-current="page"]{font-weight:650;background:color-mix(in srgb,var(--accent) 14%,transparent);box-shadow:inset 2px 0 0 var(--accent)}
+.snpins{display:flex;flex-direction:column;gap:1px;margin:0 0 6px;padding-bottom:8px;border-bottom:1px solid var(--rule)}.snpins[hidden]{display:none}
+.snpinx{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:24px;height:24px;display:grid;place-items:center;padding:0;border:0;border-radius:6px;background:transparent;color:var(--ink-3);cursor:pointer;opacity:0}
+.snpinx .ic svg{width:14px;height:14px}.snpinx:hover{background:var(--hov);color:var(--ink)}
+.snrow:hover>.snpinx,.snrow:focus-within>.snpinx{opacity:1}.snpinx.on{color:var(--accent)}.snpinx.on svg{fill:currentColor}.snpages .snpinx.on{opacity:.7}.snpages .snrow:hover>.snpinx.on{opacity:1}
+.snpins>.snsub{padding:2px 12px 4px}
+.snrow:has(.snpinx)>.snp{padding-right:30px}
+.sngroup:not(.open)>.snh .sndot:not([hidden]){display:block;margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--warn)}
+.sngroup:not(.open)>.snh:has(.sndot:not([hidden]))::after{margin-left:8px}
+@media (prefers-reduced-motion:no-preference){.sngroup.open>.snpages{animation:sn-in 140ms var(--ease)}.snk.fresh{animation:sn-pin .6s var(--ease)}
+  @keyframes sn-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  @keyframes sn-pin{0%{background:color-mix(in srgb,var(--accent) 28%,transparent);transform:translateX(-4px)}100%{transform:none}}}
 body.navrail .sidenav{align-items:center;padding:8px 0 16px;overflow:visible}
 body.navrail .snbar{justify-content:center}
 body.navrail .sngroup{position:relative}
@@ -1119,7 +1134,7 @@ body.navrail .sndot:not([hidden]){display:block;position:absolute;top:7px;right:
 body.navrail .snpages{position:absolute;left:calc(100% - 4px);top:-4px;z-index:30;min-width:230px;margin:0;padding:8px;border:1px solid var(--edge);border-radius:10px;background:var(--surface);box-shadow:var(--drawer-shadow)}
 body.navrail .sngroup:hover>.snpages,body.navrail .sngroup:focus-within>.snpages,body.navrail .sngroup.fly>.snpages{display:flex}
 body.navrail .snfly{display:block;padding:2px 10px 6px;font-weight:650;font-size:13px;color:var(--ink)}
-body.navrail .snp{padding-left:10px}body.navrail .snsub{padding-left:10px}
+body.navrail .snpins{display:none}body.navrail .snpinx{display:none}body.navrail .snp{padding-left:10px}body.navrail .snsub{padding-left:10px}
 @media print{.sidenav{display:none}body.hasnav{padding-left:0}}
 /* The planning assistant panel: a connection line, the conversation, a composer, then quiet setup rows. Actions are buttons. */
 .btn.quiet{background:transparent;border-color:transparent;box-shadow:none;color:var(--ink-2)}.btn.quiet:hover:not(:disabled){background:var(--hov);color:var(--ink)}
@@ -1421,6 +1436,7 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
 
 <nav class="sidenav" id="sidenav" aria-label="Main navigation">
   <div class="snbar"><button type="button" class="sntoggle" id="navToggle" aria-pressed="false" aria-label="Collapse the menu" title="Collapse the menu (\)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/></svg></button></div>
+  <div class="snpins" id="snpins" role="group" aria-label="Pinned pages" hidden></div>
   <div class="sngroup" data-group="work">
     <button type="button" class="snh" id="nav-work" data-group="work" aria-expanded="true" aria-controls="snp-work"><svg class="sni" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 11.5l2.2 2.2L15.5 9"/><rect x="4" y="4" width="16" height="16" rx="3.5"/></svg><span class="snl">Work</span><span class="sndot" hidden></span></button>
     <div class="snpages" id="snp-work" role="group" aria-labelledby="nav-work">
@@ -1436,14 +1452,17 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
     <button type="button" class="snh" id="nav-delivery" data-group="delivery" aria-expanded="true" aria-controls="snp-delivery"><svg class="sni" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6.5h9M4 12h14M4 17.5h7"/><circle cx="16.5" cy="6.5" r="1.6"/><circle cx="14.5" cy="17.5" r="1.6"/></svg><span class="snl">Delivery</span><span class="sndot" hidden></span></button>
     <div class="snpages" id="snp-delivery" role="group" aria-labelledby="nav-delivery">
       <span class="snfly" aria-hidden="true">Delivery</span>
+      <span class="snsub">Plan</span>
       <button type="button" class="snp" id="tab-timeline" data-ws="timeline" title="Timeline (2)"><span class="snl">Timeline</span></button>
       <button type="button" class="snp" id="tab-list" data-ws="list" title="List: the plan's work as rows (L)"><span class="snl">List</span></button>
       <button type="button" class="snp" id="tab-people" data-ws="people" title="Team capacity (3)"><span class="snl">Capacity</span></button>
+      <span class="snsub">Review</span>
       <button type="button" class="snp" id="delivery-status" data-section="report"><span class="snl">Status update</span></button>
       <button type="button" class="snp" id="delivery-milestones" data-section="milestones"><span class="snl">Milestones</span></button>
       <button type="button" class="snp" id="delivery-gates" data-section="gates"><span class="snl">Gates</span></button>
       <button type="button" class="snp" id="delivery-decisions" data-section="decisions"><span class="snl">Decisions</span></button>
       <button type="button" class="snp" id="delivery-risks" data-section="risks"><span class="snl">Risks</span></button>
+      <span class="snsub">History</span>
       <button type="button" class="snp" id="delivery-snapshots" data-section="snapshots"><span class="snl">Snapshots</span></button>
       <button type="button" class="snp" id="delivery-activity" data-section="activity"><span class="snl">Activity</span></button>
     </div>
@@ -5541,6 +5560,7 @@ Object.assign(ICON_PATHS, {
   play:'<path d="M7.5 5v14l11-7z"/>',
   link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
   check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  tack:'<path d="M9 3.5h6l-1 5.5 3.5 3.5h-11L10 9z"/><path d="M12 12.5V20.5"/>',
   tiles:'<rect x="3.5" y="5" width="9" height="6" rx="1.5"/><rect x="14.5" y="5" width="6" height="6" rx="1.5"/><rect x="3.5" y="13" width="6" height="6" rx="1.5"/><rect x="11.5" y="13" width="9" height="6" rx="1.5"/>',
 });
 function typeIcon(t){ const ty = String(t).startsWith("block:") ? (S.types||[]).find(x=>x.id === t.slice(6)) : null; return ty ? icon(ty.icon, ty.emoji) : icon(KIND_ICON[t] || "flag"); }
@@ -7177,6 +7197,37 @@ const MAIN_NAV = {nav:$("#sidenav"), plan:$("#ws-plan"), assistant:$("#assistant
 // The menu: pinned open, or a rail of group icons whose pages fly out. Below 900px wide it's always the rail.
 const navRail = () => !!UI.navRail || (typeof innerWidth === "number" && innerWidth > 0 && innerWidth < 900);
 const pageOn = b => b.dataset.section ? UI.ws === "plan" && UI.planTab === b.dataset.section : b.dataset.ws ? UI.ws === b.dataset.ws : false;
+// Pinned pages sit above the groups, in this browser only. Never set: the four pages most people use daily. At most five.
+const PIN_DEFAULT = ["tab-today","tab-standup","tab-timeline","tab-people"], PIN_MAX = 5;
+const navPins = () => (Array.isArray(UI.navPins) ? UI.navPins : PIN_DEFAULT).filter((id, i, a)=>a.indexOf(id) === i && MAIN_NAV.pages.some(b=>b.id === id)).slice(0, PIN_MAX);
+const curPinned = () => { const c = MAIN_NAV.pages.find(pageOn); return !!c && navPins().includes(c.id); };
+let freshPin = "";
+function setPin(id, on){
+  const b = $("#" + id), lbl = b ? b.querySelector(".snl").textContent : "", p = navPins().filter(x=>x !== id);
+  if (on && p.length >= PIN_MAX){ setStatus(`You can pin up to ${PIN_MAX} pages. Unpin one first.`); return; }
+  if (on){ p.push(id); freshPin = id; } UI.navPins = p; saveUI(); renderMainNav();
+  setStatus(on ? `Pinned ${lbl} to the top of the menu.` : `Unpinned ${lbl}. It's still in its group.`); }
+let pinsKey = "";
+function renderPins(current){
+  const box = $("#snpins"), pins = navPins(), cur = current && pins.includes(current.id) ? current.id : "";
+  const shown = sel => [...sel].filter(x=>!x.hidden), hot = MAIN_NAV.groups.map(g=>shown(g.querySelectorAll(".snpages .tbadge, .snpages .warnc")).length > 0);
+  const key = JSON.stringify([navRail(), present, pins, cur, freshPin, hot, MAIN_NAV.groups.map(g=>g.classList.contains("open")),
+    pins.map(id=>[$("#" + id).title, ...shown($("#" + id).querySelectorAll(":scope > .tbadge, :scope > .warnc")).map(x=>x.className + x.title + x.textContent)])]);
+  if (cur) current.removeAttribute("aria-current");      // one current page: the pinned copy
+  if (key === pinsKey) return;     // renders run often; rebuild the menu only when something in it changed
+  pinsKey = key;
+  box.hidden = navRail() || present || !pins.length;
+  box.replaceChildren(...pins.map(id=>{ const b = $("#" + id), lbl = b.querySelector(".snl").textContent;
+    const marks = [...b.querySelectorAll(":scope > .tbadge, :scope > .warnc")].filter(x=>!x.hidden).map(x=>{ const c = x.cloneNode(true); c.removeAttribute("id"); return c; });
+    return h("div",{class:"snrow"}, h("button",{type:"button",class:"snk" + (id === freshPin ? " fresh" : ""),id:"pin-" + id,"data-pin":id,"aria-current":id === cur ? "page" : null,"aria-keyshortcuts":"P",title:(b.title ? b.title + ". " : "") + "P unpins it",onclick:()=>b.click()}, h("span",{class:"snl"}, lbl), ...marks),
+      h("button",{type:"button",class:"snpinx on",tabindex:"-1","aria-pressed":"true",title:`Unpin ${lbl} (P)`,"aria-label":`Unpin ${lbl}`,onclick:()=>setPin(id, false)}, icon("tack"))); }));
+  if (pins.length) box.prepend(h("span",{class:"snsub",id:"snPinnedH"}, "Pinned"));
+  freshPin = "";
+  MAIN_NAV.groups.forEach((g, i)=>{ const hd = g.querySelector(".snh");   // a closed group says when something inside needs you
+    g.querySelector(".sndot").hidden = !hot[i]; if (hot[i] && !g.classList.contains("open")) hd.setAttribute("aria-label", `${hd.querySelector(".snl").textContent}, something here needs attention`); else hd.removeAttribute("aria-label"); });
+  MAIN_NAV.pages.forEach(b=>{ const x = b.parentElement.querySelector(":scope > .snpinx"); if (!x) return; const on = pins.includes(b.id), lbl = b.querySelector(".snl").textContent;
+    x.classList.toggle("on", on); x.setAttribute("aria-pressed", String(on)); x.title = on ? `Unpin ${lbl} (P)` : `Pin ${lbl} to the top (P)`; b.setAttribute("aria-keyshortcuts", "P"); x.setAttribute("aria-label", on ? `Unpin ${lbl}` : `Pin ${lbl} to the top`); });
+}
 function renderMainNav(){
   const group = workspaceGroup();
   if ($("#findRestore").dataset.plan !== S.meta.planId) $("#findRestore").hidden = true;
@@ -7184,11 +7235,13 @@ function renderMainNav(){
   const rail = navRail(), open = UI.navOpen || {};
   MAIN_NAV.nav.hidden = present; document.body.classList.toggle("hasnav", !present); document.body.classList.toggle("navrail", rail);
   const tg = $("#navToggle"), tl = rail ? "Pin the menu open" : "Collapse the menu"; tg.setAttribute("aria-pressed", String(rail)); tg.setAttribute("aria-label", tl); tg.title = tl + " (\\)";
-  MAIN_NAV.groups.forEach(g=>{ const k = g.dataset.group, here = k === group, isOpen = rail ? g.classList.contains("fly") : here || (k in open ? !!open[k] : k !== "settings");
+  const pinnedHere = curPinned();     // groups start closed; the one you're in opens unless its page is pinned
+  MAIN_NAV.groups.forEach(g=>{ const k = g.dataset.group, here = k === group, isOpen = rail ? g.classList.contains("fly") : here && !pinnedHere || (k in open ? !!open[k] : false);
     g.classList.toggle("here", here); g.classList.toggle("open", isOpen); g.querySelector(".snh").setAttribute("aria-expanded", String(isOpen));
-    g.querySelector(".sndot").hidden = ![...g.querySelectorAll(".tbadge")].some(b=>!b.hidden); });
+  });
   let current = null;
   MAIN_NAV.pages.forEach(b=>{ const on = pageOn(b); if (on){ b.setAttribute("aria-current", "page"); current = b; } else b.removeAttribute("aria-current"); });
+  renderPins(current);
   MAIN_NAV.plan.setAttribute("aria-labelledby", current && current.dataset.section ? current.id : "tab-plan");
   if (current && !rail && MAIN_NAV.nav.lastCurrent !== current.id){ MAIN_NAV.nav.lastCurrent = current.id; current.scrollIntoView?.({block:"nearest"}); }
   const a = assistantStatus(), btn = MAIN_NAV.assistant;
@@ -7269,13 +7322,12 @@ function renderWs(){
     hs.replaceChildren(...parts); hs.hidden = !parts.length; }
   const pt = PLAN_TABS.some(x=>x[0]===UI.planTab) ? UI.planTab : jiraDir || JIRA || S.bars.some(b=>(b.epics || []).length) ? "epics" : "milestones";
   const mis = S.milestones.filter(m=>labelMismatch(m,false) || labelMismatch(m,true)).length, hi = S.risks.filter(r=>r.sev==="high").length;
-  const cnt = {epics:null, team:team().length, types:(S.sprints||[]).length, meetings:S.meetings.length, milestones:S.milestones.length, gates:S.gates.length, decisions:S.decisions.length, risks:S.risks.length, calendar:null};
   MAIN_NAV.pages.forEach(b=>{ const k = b.dataset.section; if (!k) return;
-    const extra = [cnt[k] != null ? h("b",{class:"snc"}, String(cnt[k])) : null,
-      k === "milestones" && mis ? h("span",{class:"warnc",title:`${mis} label${mis===1?"":"s"} disagree with the chart`}, "⚠ " + mis) : null,
+    const extra = [k === "milestones" && mis ? h("span",{class:"warnc",title:`${mis} label${mis===1?"":"s"} disagree with the chart`}, "⚠ " + mis) : null,
       k === "risks" && hi ? h("span",{class:"warnc"}, `${hi} high`) : null].filter(Boolean);
     const key = extra.map(x=>x.textContent).join("|"); if (b.dataset.extra === key) return; b.dataset.extra = key;
     b.querySelectorAll(":scope > .snc, :scope > .warnc").forEach(x=>x.remove()); b.append(...extra); });
+  renderPins(MAIN_NAV.pages.find(b=>b.getAttribute("aria-current") === "page" || pageOn(b)));
   document.querySelectorAll("#ws-plan [data-plan]").forEach(sec=>{ sec.hidden = sec.dataset.plan !== pt; });
   // A Settings page's title is its name in the menu, word for word; Delivery and Work pages carry their own.
   { const t = $("#planTitle"), nm = ws === "plan" ? document.querySelector(`#snp-settings [data-section="${CSS.escape(pt)}"] .snl`)?.textContent || "" : "";
@@ -15529,17 +15581,19 @@ function goWorkspaceTab(t){
 function closeNavFly(except){ MAIN_NAV.groups.forEach(g=>{ if (g !== except && g.classList.contains("fly")){ g.classList.remove("fly"); g.classList.remove("open"); g.querySelector(".snh").setAttribute("aria-expanded", "false"); } }); }
 function toggleNavRail(){ UI.navRail = !UI.navRail; closeNavFly(); saveUI(); render(); }
 MAIN_NAV.pages.forEach(b=>{ if (b.dataset.updates) return; b.addEventListener("click", ()=>{ closeNavFly(); goWorkspaceTab(b); }); });
+MAIN_NAV.pages.forEach(b=>{ const row = h("div",{class:"snrow"}); b.replaceWith(row); row.append(b, h("button",{type:"button",class:"snpinx",tabindex:"-1",onclick:e=>{ e.stopPropagation(); setPin(b.id, !navPins().includes(b.id)); }}, icon("tack"))); });
 MAIN_NAV.groups.forEach(g=>g.querySelector(".snh").addEventListener("click", ()=>{
   const k = g.dataset.group;
   if (navRail()){ const on = !g.classList.contains("fly"); closeNavFly(g); g.classList.toggle("fly", on); g.classList.toggle("open", on); g.querySelector(".snh").setAttribute("aria-expanded", String(on)); if (on) g.querySelector(".snp")?.focus(); return; }
-  const isOpen = g.classList.contains("open"); if (k === workspaceGroup() && isOpen) return;    // the group you're in stays open
+  const isOpen = g.classList.contains("open"); if (k === workspaceGroup() && isOpen && !curPinned()) return;    // the group you're in stays open
   UI.navOpen = {...(UI.navOpen || {}), [k]:!isOpen}; saveUI(); renderMainNav(); }));
 $("#navToggle").addEventListener("click", toggleNavRail);
 // Up and down move through the menu; Esc closes a flyout and returns to its icon.
 MAIN_NAV.nav.addEventListener("keydown", e=>{
   if (e.key === "Escape"){ const g = e.target.closest(".sngroup.fly"); if (g){ e.preventDefault(); e.stopPropagation(); closeNavFly(); g.querySelector(".snh").focus(); } return; }
+  if ((e.key === "p" || e.key === "P") && !e.ctrlKey && !e.metaKey && !e.altKey){ const b = e.target.closest(".snp, .snk"); if (b){ e.preventDefault(); e.stopPropagation(); const id = b.dataset.pin || b.id; setPin(id, !navPins().includes(id)); (b.isConnected ? b : $("#" + id))?.focus(); } return; }
   if (!["ArrowDown","ArrowUp","Home","End"].includes(e.key)) return;
-  const all = [...MAIN_NAV.nav.querySelectorAll("button")].filter(b=>b.offsetParent !== null || !b.closest(".snpages") || b.closest(".sngroup.open")), i = all.indexOf(document.activeElement); if (i < 0) return;
+  const all = [...MAIN_NAV.nav.querySelectorAll("button:not(.snpinx)")].filter(b=>!b.closest(".snpins[hidden]")).filter(b=>b.offsetParent !== null || !b.closest(".snpages") || b.closest(".sngroup.open")), i = all.indexOf(document.activeElement); if (i < 0) return;
   e.preventDefault(); const j = e.key === "Home" ? 0 : e.key === "End" ? all.length - 1 : Math.max(0, Math.min(all.length - 1, i + (e.key === "ArrowDown" ? 1 : -1))); all[j].focus(); });
 document.addEventListener("click", e=>{ if (!e.target.closest("#sidenav")) closeNavFly(); });
 addEventListener("resize", (()=>{ let was = navRail(), t = 0; return ()=>{ clearTimeout(t); t = setTimeout(()=>{ if (navRail() !== was){ was = navRail(); render(); } }, 150); }; })());

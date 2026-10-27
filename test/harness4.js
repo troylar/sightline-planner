@@ -259,7 +259,7 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   d.querySelector('#sidenav [data-section="milestones"]').click();
   ok("Delivery lists show one list at a time", !d.querySelector("#ws-plan").hidden && d.querySelector("#ws-timeline").hidden && [...d.querySelectorAll("#ws-plan [data-plan]")].filter(x=>!x.hidden).every(x=>x.dataset.plan==="milestones"));
   d.querySelector('#sidenav [data-section="gates"]').click();
-  ok("Plan nav switches to Gates with a count", !d.querySelector("#sec-gates").hidden && d.querySelector("#sec-milestones").hidden && /Gates\s*\d/.test(d.querySelector('#sidenav [data-section="gates"]').textContent));
+  ok("Plan nav switches to Gates, with no plain count beside it", !d.querySelector("#sec-gates").hidden && d.querySelector("#sec-milestones").hidden && /^Gates$/.test(d.querySelector('#sidenav [data-section="gates"]').textContent.trim()));
   d.querySelector('#sidenav [data-section="calendar"]').click();
   ok("Calendar holds sprints and holidays", [...d.querySelectorAll("#ws-plan [data-plan=calendar]")].every(x=>!x.hidden));
   d.querySelector("#nav-delivery").click(); d.querySelector("#tab-people").click(); ok("Capacity tab shows load", !d.querySelector("#ws-people").hidden && d.querySelector("#ws-timeline").hidden);
