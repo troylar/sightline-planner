@@ -109,6 +109,8 @@ Open the menu at the right of the header (**Choose yourself**, or your initials 
 
 On the Timeline, **View** holds the rows (by workstream, person or epic) and, when the plan has Jira work, which sources to show. The button says what's chosen, for example **View: By person · Jira only**, so a filtered review is never a surprise. R still switches rows.
 
+The sources are **All sources**, **Jira only**, **Jira + mine** and **Added here**. **Added here** shows only work that nothing in Jira tracks: tasks and initiatives with no Jira key, and any initiative that holds such work. Jira-linked items and Jira's stories are hidden; milestones, gates and notes stay. It works on the Timeline and the List. Sprint shows Jira's sprint, so it isn't offered there. While it's on, a banner above the chart says so, in Present too, with **Show everything** to turn it off, and the late count says it covers the whole plan. It's your own choice for this plan in this browser, and saved views never record it.
+
 Today names each due decision's decider; its owners may be different people.
 
 Find reveals a matching milestone, gate or note through the Timeline's filters, folded rows and hidden layers. **Restore previous view** returns to the view you had before opening the result. Filter controls retain keyboard focus when the view updates, and status messages remain visible on narrow screens.
