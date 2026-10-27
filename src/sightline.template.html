@@ -15205,7 +15205,7 @@ function listGroups(m, layout){
   if (layout === "order"){ const st = orderSteps(), groups = new Map(), WAIT = -2;       // waiting and unstaffed rows hold a place; they aren't work
     items.forEach(r=>{ const k = r.b && r.b.kind === "waiting" ? WAIT : st.get(r.type + ":" + r.id) ?? 0; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
     const rank = k => k === WAIT ? 2e9 : k < 0 ? 1e9 : k;
-    return [...groups.keys()].sort((a, b)=>rank(a) - rank(b)).map(k=>({label:k === WAIT ? "Waiting and unstaffed" : k < 0 ? "In a loop: these wait for each other" : k === 0 ? "Step 1: waits for nothing" : k === 1 ? "Step 2: waits for step 1" : `Step ${k + 1}: waits for steps 1 to ${k}`, step:k, rows:groups.get(k).sort(byStart)})); }
+    return [...groups.keys()].sort((a, b)=>rank(a) - rank(b)).map(k=>({label:k === WAIT ? "Waiting and unstaffed" : k < 0 ? "In a loop: these wait for each other" : k === 0 ? "Step 1: waits for nothing" : `Step ${k + 1}: waits for something in step ${k}`, step:k, rows:groups.get(k).sort(byStart)})); }
   if (layout === "lane"){
     // Each workstream in its order, its initiatives as on By initiative; a sub-initiative in another workstream starts at its own top level.
     const depth = b => { let n = 0; for (let p = b.parent && barById(b.parent), seen = new Set(); p && p.lane === b.lane && !seen.has(p.id); p = p.parent && barById(p.parent)){ seen.add(p.id); n++; b = p; } return n; };
