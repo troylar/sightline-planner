@@ -9,6 +9,7 @@ Clearer help when the page doesn't start.
 ### Fixed
 
 - **Check a copy on Windows too** (Start-up). It now gives the command for Windows (Get-FileHash in PowerShell), a Mac and Linux, says to compare with the .sha256 file beside it, and says a mismatch means the file changed on the way over: copy it as a file, not by pasting its text. *Where:* The "Sightline didn't start" message
+- **The whole message, with nothing over it** (Start-up). Only the message shows, so every step is readable. *Where:* The "Sightline didn't start" message
 
 ## 1.145.0 · Oct 27, 2026
 

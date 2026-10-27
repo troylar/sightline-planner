@@ -186,6 +186,9 @@ const byId = (rs, id) => rs.find(r=>r.id === id) || {};
     ok("F1 …and the checksum guidance stays", ps.some(t=>/sha256sum -c sightline\.html\.sha256/.test(t)) && ps.some(t=>/Content Security Policy/.test(t)));
     const chk = bf?.querySelector("#bootfailCheck")?.textContent || "";
     ok("F2 the checksum step works on Windows and a Mac too, and says what a mismatch means", /Get-FileHash sightline\.html/.test(chk) && /shasum -a 256 -c sightline\.html\.sha256/.test(chk) && /changed on the way over/.test(chk) && ps.some(t=>/not by pasting its text/.test(t)), chk);
+    const ow = off.window, rest = [...ow.document.body.children].filter(x=>x.id !== "bootfail");
+    ok("F3 while the message is up, nothing else shows (no menu over it, no toolbar that can't work)", bf && ow.getComputedStyle(bf).display !== "none" && rest.length > 3 && rest.every(x=>ow.getComputedStyle(x).display === "none"), rest.filter(x=>ow.getComputedStyle(x).display !== "none").map(x=>x.id || x.className).join());
+    ok("F3 …and once the code runs, the menu shows as usual", !d.querySelector("#bootfail") && w.getComputedStyle(d.querySelector("#sidenav")).display !== "none");
   } catch(e){ ok("harness ran without throwing", false, e.stack); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
 })();

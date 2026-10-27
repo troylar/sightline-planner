@@ -1370,6 +1370,9 @@ dialog textarea{width:100%;height:50vh;font-family:var(--font-code);font-size:12
   :is(input,select,textarea):focus-visible{outline:2px solid Highlight;outline-offset:1px}
   .snp[aria-current="page"]{outline:2px solid Highlight}
 }
+/* The code removes #bootfail as it starts; while it's still here, the code was blocked and nothing else works */
+body:has(> #bootfail) > :not(#bootfail){display:none !important}
+#bootfail code{white-space:nowrap}
 </style>
 </head>
 <body>

@@ -11,6 +11,14 @@
         "before": "When Sightline didn't start, the page said to check the copy with sha256sum, a command most Windows computers don't have.",
         "now": "It now gives the command for Windows (Get-FileHash in PowerShell), a Mac and Linux, says to compare with the .sha256 file beside it, and says a mismatch means the file changed on the way over: copy it as a file, not by pasting its text.",
         "where": "The \"Sightline didn't start\" message"
+      },
+      {
+        "kind": "fixed",
+        "area": "Start-up",
+        "title": "The whole message, with nothing over it",
+        "before": "When Sightline didn't start, the menu and an inactive toolbar still showed, and the menu covered the start of each line of the message.",
+        "now": "Only the message shows, so every step is readable.",
+        "where": "The \"Sightline didn't start\" message"
       }
     ]
   },
