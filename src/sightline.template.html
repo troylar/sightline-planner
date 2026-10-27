@@ -7345,7 +7345,7 @@ const ACTION_DESC = {
   "task.add":"Add a task to an initiative, with a start, the tasks it starts after, or both.",
   "task.set":"Change one field of a task, such as its label, story, owners or tags.",
   "task.setStatus":"Set a task's status (Jira-linked status comes from Jira).",
-  "task.move":"Move a task to a new start date, or change how many working days it takes.",
+  "task.move":"Move a task to a new start date, or \"after\" what it waits for, or change how many working days it takes.",
   "task.moveTo":"Move a task to another initiative.",
   "task.link":"Make a task start after another task finishes.",
   "task.unlink":"Remove a task's wait on another task.",
@@ -7451,7 +7451,7 @@ function relDay(v, p){ if (typeof v !== "string") return null; if (validIso(v)) 
   return null; }
 // Day arguments said in words become dates before anything checks them, so the review shows the date that will be used.
 const DATE_FIELDS = new Set(["raised","from","until","leaves","escalateBy","due","date","day"]);     // fields a .set action takes as a date
-const dateArg = (A, k, args) => /^(iso|isoOrNull)\??$/.test(A.args[k] || "") || (k === "value" && /\.set$/.test(A.id) && DATE_FIELDS.has(args.field));
+const dateArg = (A, k, args) => (/^(iso|isoOrNull|isoOrAfter)\??$/.test(A.args[k] || "") && args[k] !== "after") || (k === "value" && /\.set$/.test(A.id) && DATE_FIELDS.has(args.field));
 // Why words that look like a day aren't one here, when there's a better reason than the list of forms.
 function relWhy(v){ const t = typeof v === "string" ? v.trim().toLowerCase().replace(/\s+/g, " ") : "";
   return t === "this sprint" ? "today isn't in any sprint in this plan" : t === "next sprint" ? "this plan has no sprint after today" : ""; }
@@ -7467,6 +7467,7 @@ const ACT_ARG = {
   int: v => Number.isInteger(v),
   bool: v => typeof v === "boolean",
   iso: v => validIso(v),
+  isoOrAfter: v => v === "after" || validIso(v),
   isoOrNull: v => v === null || validIso(v),
   keys: v => Array.isArray(v) && v.length <= 500 && v.every(k=>typeof k === "string" && k.length <= 40),
   any: v => v === null || typeof v === "boolean" || ACT_ARG.num(v) || ACT_ARG.str(v) || ACT_ARG.ids(v) || ACT_ARG.who(v),
@@ -7480,8 +7481,8 @@ function actArgsProblem(a, args){
   for (const [k, t] of Object.entries(a.args)){ const opt = t.endsWith("?"), ty = opt ? t.slice(0, -1) : t;
     if (!(k in args) || args[k] === undefined){ if (opt) continue; return `${a.id} needs ${k}.`; }
     if ((ty === "str" || ty === "any") && typeof args[k] === "string" && args[k].length > 4000) return `${k} is up to 4,000 characters.`;
-    if ((ty === "iso" || ty === "isoOrNull") && relWhy(args[k])) return `${k} isn't a date here: ${relWhy(args[k])}.`;
-    if (!ACT_ARG[ty](args[k])) return `${k} isn't a valid ${ty === "iso" || ty === "isoOrNull" ? `date (${REL_HELP})` : ty === "ids" || ty === "keys" ? "list" : ty === "id" ? "id" : ty === "num" || ty === "int" ? "number" : ty === "weights" ? "split ({workstream id: weight})" : "value"}.`; }
+    if ((ty === "iso" || ty === "isoOrNull" || (ty === "isoOrAfter" && args[k] !== "after")) && relWhy(args[k])) return `${k} isn't a date here: ${relWhy(args[k])}.`;
+    if (!ACT_ARG[ty](args[k])) return `${k} isn't a valid ${ty === "isoOrAfter" ? `date (${REL_HELP}), or "after"` : ty === "iso" || ty === "isoOrNull" ? `date (${REL_HELP})` : ty === "ids" || ty === "keys" ? "list" : ty === "id" ? "id" : ty === "num" || ty === "int" ? "number" : ty === "weights" ? "split ({workstream id: weight})" : "value"}.`; }
   return null;
 }
 const actMissing = what => ({code:"invalid", reason:`That ${what} isn't in the plan.`});
@@ -7558,6 +7559,7 @@ function actLine(id, args, p){ const a = args && typeof args === "object" ? args
   if ((id === "initiative.set" || id === "task.set") && a.field === "story") return `${who}: ${String(a.value || "").trim() ? "story (shown below)" : "clear the story"}`;
   const skl = v => (Array.isArray(v) ? v : []).map(x=>`"${((p.skills || []).find(s=>s.id === x) || {label:x}).label}"`).join(", ") || "none";
   if (amHas(AM_TEXT_FIELDS, id) && AM_TEXT_FIELDS[id].includes(a.field)) return `${who}: ${(AM_TEXT_NAME[a.field] || a.field).toLowerCase()} ${String(a.value || "").trim() ? "(shown below)" : "cleared"}`;
+  if (id === "task.move" && a.start === "after") return `Start ${who} the working day after what it waits for` + (a.days !== undefined ? `, taking ${a.days} working day${a.days === 1 ? "" : "s"}` : "");
   if (a.field === "needs" && (id === "initiative.set" || id === "task.set")) return `${who} needs ${skl(a.value)}`;
   if (a.field === "skills" && id === "person.set") return `Skills for ${who}: ${skl(a.value)}`;
   const sk = (p.skills || []).find(s=>s.id === a.id), more = {
@@ -7723,7 +7725,7 @@ defAction("task.add", {scope:"tasks", risk:"routine", done:(p, a)=>{ const f = a
     if (deps.length) t.dependsOn = deps; if (a.rough) t.rough = true;
     b.tasks.push(t); return id; }});
 defAction("task.set", {scope:"tasks", risk:"routine", args:{id:"id", field:"str", value:"any"},
-  cur:(p, a)=>{ const f = actTask(p, a.id); return f && a.field in TASK_SET ? optCur(f.t, a.field) : undefined; },
+  cur:(p, a)=>{ const f = actTask(p, a.id); return !f || !(a.field in TASK_SET) ? undefined : a.field === "rough" ? !!f.t.rough : optCur(f.t, a.field); },
   check:(p, a)=>{ if (!actTask(p, a.id)) return actMissing("task");
     if (a.field === "start" || a.field === "days") return actInvalid("Use task.move to change its dates.");
     if (a.field === "status") return actInvalid("Use task.setStatus to change its status.");
@@ -7742,13 +7744,15 @@ defAction("task.setStatus", {scope:"tasks", risk:"routine", args:{id:"id", statu
   check:(p, a)=>{ const f = actTask(p, a.id); if (!f) return actMissing("task"); if (!STATUS_IDS.includes(a.status)) return actInvalid(`Status is one of ${STATUS_IDS.join(", ")}.`);
     const L = jiraLockOf(f.t); if (L && L.status) return jiraStatusMsg(L); },
   run:(p, a)=>{ const {t} = actTask(p, a.id); if (t.status === a.status) return NOCHANGE; t.status = a.status; }});
-defAction("task.move", {scope:"schedule", risk:"routine", args:{id:"id", start:"iso?", days:"int?"},
+defAction("task.move", {scope:"schedule", risk:"routine", args:{id:"id", start:"isoOrAfter?", days:"int?"},
   cur:(p, a)=>{ const f = actTask(p, a.id); return f ? {start:f.t.start, days:f.t.days} : undefined; },
+  prevAs:(p, a, v)=>{ const f = actTask(p, a.id); return !!f && validIso(v) && v === f.t.start; },          // the start alone, as the card shows it
   check:(p, a)=>{ const f = actTask(p, a.id); if (!f) return actMissing("task"); if (a.start === undefined && a.days === undefined) return actInvalid("Give a start, working days, or both.");
+    if (a.start === "after" && !(f.t.dependsOn || []).some(x=>actTask(p, x))) return actInvalid("It waits for no task, so there's no after. Link it first (task.link), or give a date.");
     if (a.days !== undefined && (a.days < 1 || a.days > 260)) return actInvalid("Working days are from 1 to 260.");
     const L = jiraLockOf(f.t); if (L && L.dates) return jiraDatesMsg(L); },
   run:(p, a)=>{ const {t} = actTask(p, a.id), s0 = t.start, d0 = t.days;
-    if (a.start !== undefined) t.start = taskStart(p, a.start); if (a.days !== undefined) t.days = a.days;
+    if (a.days !== undefined) t.days = a.days; if (a.start !== undefined) t.start = a.start === "after" ? afterStart(p, t.dependsOn, t) : taskStart(p, a.start);
     if (t.start === s0 && t.days === d0) return NOCHANGE; }});
 defAction("task.moveTo", {scope:"tasks", risk:"routine", args:{id:"id", bar:"id"},
   cur:(p, a)=>actTask(p, a.id)?.b.id,
@@ -12936,7 +12940,11 @@ function amCheck0(c00, p){
       if (!now || now === a.at) return null; const on = a.deps.map(d=>t === "bar" ? barById(d) && barTitle(barById(d)) : (taskById(d) || {}).t?.label).filter(Boolean);
       return `${a.name} would start ${fmtDay(isoToDay(now))}, not ${fmtDay(isoToDay(a.at))}: ` + (on.length ? `it waits on ${on.slice(0, 3).join(", ")}${on.length > 3 ? ` and ${on.length - 3} more` : ""}. Change what it waits on, or move that first.` : "the plan's dates or schedule keep it there."); }).filter(Boolean);
     if (undone.length) bad.push(...undone);
-    else if (hit) bad.push(hit); else planMoves(b0, b1).filter(m=>!c.ops.some(o=>o && o.op === "action" && o.args && o.args.id === m.id && /\.move$/.test(o.action))).forEach(m=>notes.push(moveLine(m))); }
+    else if (hit) bad.push(hit); else {
+      c.ops.forEach(o=>{ if (!o || o.op !== "action" || o.action !== "task.move" || !o.args || o.args.start !== "after") return; const id = String(o.args.id || ""), a = asked.get("task:" + id), was = actTask(p, id);
+        if (!a || !was) return; const on = a.deps.map(d=>actTask(after, d)).filter(Boolean).map(f=>`"${String(taskTitle(f.t)).slice(0, 60)}"`);
+        notes.push(`"${String(a.name).slice(0, 60)}" starts ${fmtDay(isoToDay(a.at))}${was.t.start !== a.at ? ` (was ${fmtDay(isoToDay(was.t.start))})` : ""}, the working day after ${on.length > 1 ? "the last of " : ""}${on.slice(0, 3).join(", ")}${on.length > 3 ? ` and ${on.length - 3} more` : ""} finishes.`); });
+      planMoves(b0, b1).filter(m=>!c.ops.some(o=>o && o.op === "action" && o.args && o.args.id === m.id && /\.move$/.test(o.action))).forEach(m=>notes.push(moveLine(m))); } }
   const status = bad.length ? "invalid" : stale.length ? "changed" : todo ? "ready" : "done";
   return {status, reasons:[...bad, ...stale], notes:[...new Set(notes)], lines, dated,
     apply: cand ? s=>{ const t = clone(s); acts.forEach(fn=>fn(t)); for (const k of Object.keys(s)) delete s[k]; Object.assign(s, t); }        // actions can touch any part of the plan
@@ -13194,7 +13202,7 @@ function assistantView(){
       "Descriptions and guidance, for people: guide.set {section, value, prev} (section purpose, scope, breakdown, vocabulary, rules or examples) and guide.setWorkstream {lane, value, prev} write the Planning guide, the same text a workstream's card shows; template.set {kind:'initiative'|'task'|'milestone', value, prev} sets a story template (empty is the built-in one). milestone.set field story, gate.set field description and meeting.set field note (up to 500) take markdown. Say what it is and why, in plain words, from what the plan shows.",
       "Skills: planning.skills is the plan's catalog. skill.add {id, label}, skill.rename {id, label, prev} (keeps the id) and skill.remove {id} (refused while anyone or any work uses it). person.set field skills and initiative.set or task.set field needs take a list of skill ids, up to 20; an empty list clears it. Labels are unique ignoring case. Never infer a skill from a name, a role or past work: ask.",
       "Dates: any date you give (a task's start, a milestone's day, time off, when something was raised, a due date) can be YYYY-MM-DD or a day in words, read against the person's today when they review: today, tomorrow, yesterday, +3d, in 2 weeks, 3 days ago, Friday (the next one), this Friday / next Friday (that day this week / next week), last Friday, next week, next month, this sprint, next sprint. Prefer the words people used, so the review shows which date each became. A task's start moves to its next working day.",
-      "Order without dates: when only the order is known, add each task with after (the tasks it starts after) and no start, in order, so each starts the working day after the last of those finishes. Give days when you know them; otherwise give your best guess and rough: true, so the plan shows the length is a guess. Given both start and after, the later wins. Don't give every task the same placeholder start.",
+      "Order without dates: when only the order is known, add each task with after (the tasks it starts after) and no start, in order, so each starts the working day after the last of those finishes. Give days when you know them; otherwise give your best guess and rough: true, so the plan shows the length is a guess. Given both start and after, the later wins. Don't give every task the same placeholder start. To line up a task already in the plan, task.move with start 'after' (link it first with link.add if it waits for nothing): it keeps its id and links. rough is false when the length isn't a guess; set it with task.set field rough, prev false. Every task has a real start; there's no undated task.",
       "Hints for you: field aiHint on initiative.set, task.set, milestone.set, gate.set, person.set, outcome.set, risk.set and decision.set, plain text up to 500 characters. People see it only under For the assistant. A hint is a preference, never authorization or evidence of ability; anyone who can open the plan can read it, so never write secrets or judgments about people.",
       "Workstreams: workstream.set {id, field:'note'|'color'|'from'|'until', value, prev}, workstream.move {id, index}, workstream.reid {lane, id, prev} and workstream.del {id}. workstream.reid changes a workstream's id (lane, its id now; id, the new one) and every reference with it; its old ids are in was, still accepted from files written before, and never used again. A person always reviews it. workstream.del is refused while anything still points at the workstream (it says what), and a person always reviews it; move its work first with initiative.setLane, and change person.setSplit.",
       "coverage.context counts what the plan doesn't say yet (workstreams without guidance, people without skills, open work without a story or needs, milestones in the next 12 weeks without a story). Mention the gaps that weaken a suggestion and offer to fill them; never guess to cover one.",
@@ -13221,7 +13229,7 @@ function assistantView(){
     initiatives:S.bars.map(b=>({id:b.id, label:barTitle(b), lane:b.lane, start:amWeekIso(S, b.start), weeks:b.span, status:b.status, owners:b.owners || [],
       kind:b.kind,datesFrom:b.datesFrom || "manual",scope:b.scope === "out" ? "out" : "in",...(b.chartName ? {chartName:b.chartName} : {}),...(b.effort ? {effort:clone(b.effort)} : {}),delivers:[...(b.delivers || [])],parked:!!b.parked,dependsOn:[...(b.dependsOn || [])],waitsFor:[...(b.waitsFor || [])],jiraDeps:[...(b.jiraDeps || [])],epics:[...(b.epics || [])],storiesOff:[...(b.storiesOff || [])],...(b.jira ? {jira:b.jira} : {}),
       ...(b.jira || (b.epics || []).length ? {jiraLinked:true} : {}), ...(derived(b, S) ? {datesFromTasks:true} : {}), ...(b.parent ? {parent:b.parent} : {}), ...(b.story ? {story:b.story} : {}), needs:[...(b.needs || [])], ...(b.aiHint ? {aiHint:b.aiHint} : {}),
-      tasks:(b.tasks || []).map(t=>({id:t.id, label:t.label, start:t.start, days:t.days, status:t.status, owners:t.owners || [],dependsOn:[...(t.dependsOn || [])],jiraDeps:[...(t.jiraDeps || [])], ...(t.jira ? {jiraLinked:true,jira:t.jira} : {}), ...(t.story ? {story:t.story} : {}), needs:[...(t.needs || [])], ...(t.aiHint ? {aiHint:t.aiHint} : {})}))})),
+      tasks:(b.tasks || []).map(t=>({id:t.id, label:t.label, start:t.start, days:t.days, rough:!!t.rough, status:t.status, owners:t.owners || [],dependsOn:[...(t.dependsOn || [])],jiraDeps:[...(t.jiraDeps || [])], ...(t.jira ? {jiraLinked:true,jira:t.jira} : {}), ...(t.story ? {story:t.story} : {}), needs:[...(t.needs || [])], ...(t.aiHint ? {aiHint:t.aiHint} : {})}))})),
     jira:{syncedAt:(JIRA && JIRA.generatedAt) || null,searchSyncedAt:(JIRA_ISSUES && JIRA_ISSUES.generatedAt) || null,
       missing:[...(JIRA && JIRA.missing || [])],omitted:0,issues:Object.entries(J).sort((a,b)=>(linked.has(b[0])?1:0)-(linked.has(a[0])?1:0)).map(([key,j])=>({key,
         source:amHas(JIRA && JIRA.issues || {},key) ? "status" : "search",syncedAt:amHas(JIRA && JIRA.issues || {},key) ? JIRA.generatedAt || null : JIRA_ISSUES && JIRA_ISSUES.generatedAt || null,
@@ -13540,7 +13548,7 @@ function analysisGuide(){ const t = cutText(S.meta.title || "this plan", 120).re
     "8. A target such as `2027-Q2` or `2027-H1` is a goal, not a committed date.", "",
     "## What the export holds", "",
     "- `plan`: id, title and revision. `today`: the day the file was written.",
-    "- `initiatives[]`: id, label, lane (a workstream id), start, weeks, status (notstarted, inprogress, done or atrisk), owners (person ids), dependsOn, Jira keys and epics, and `tasks[]` with start, days, status and owners.",
+    "- `initiatives[]`: id, label, lane (a workstream id), start, weeks, status (notstarted, inprogress, done or atrisk), owners (person ids), dependsOn, Jira keys and epics, and `tasks[]` with start, days, rough (true when the length is a guess), status and owners.",
     "- `planning`: people, workstreams, milestones, gates, risks, decisions, capacity, timeboxes and the calendar.",
     "- `deliverables[]`: outcomes and ideas, with their targets.",
     "- `jira.issues[]`: key, summary, status, assignee, points, sprint, epic and parent.",

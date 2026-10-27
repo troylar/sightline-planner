@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.140.0",
+    "date": "2026-10-27",
+    "headline": "Line up existing tasks behind what they wait for",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Assistant",
+        "title": "Move a task to right after what it waits for",
+        "before": "Your assistant could add a task after others, but couldn't move a task that was already in the plan there. It could only guess a date, without your holidays and time off.",
+        "now": "A proposed move can say start after instead of a date. The task starts the working day after the last thing it waits for finishes, skipping weekends, holidays and its owners' time off. It keeps its id and its links.",
+        "where": "Your assistant's proposed changes, in the review panel"
+      },
+      {
+        "kind": "fixed",
+        "area": "Assistant",
+        "title": "Marking existing tasks as guesses no longer conflicts",
+        "before": "A proposed change marking a task's length as a guess was refused as changed since you looked, on every task that wasn't marked yet.",
+        "now": "A task that isn't marked as a guess reads as not a guess, so the change applies.",
+        "where": "Your assistant's proposed changes, in the review panel"
+      }
+    ]
+  },
+  {
     "version": "1.139.0",
     "date": "2026-10-27",
     "headline": "Order without dates",
