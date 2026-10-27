@@ -86,6 +86,16 @@ button:disabled{cursor:default}
 .detail-advanced{border-top:1px solid var(--rule-2);padding-top:9px}
 .detail-advanced > summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--ink-2);padding-bottom:8px}
 .detail-advanced .field{margin-bottom:9px}
+.pfold{border-top:1px solid var(--rule-2)}.pfold+.pfold{border-top-color:var(--rule-2)}
+.pfold>summary{display:flex;align-items:baseline;gap:8px;padding:9px 2px;cursor:pointer;list-style:none;border-radius:6px}
+.pfold>summary::-webkit-details-marker{display:none}
+.pfold>summary::before{content:"";flex:none;align-self:center;width:6px;height:6px;border-right:1.5px solid var(--ink-3);border-bottom:1.5px solid var(--ink-3);transform:rotate(-45deg);transition:transform var(--state) var(--ease);margin-right:2px}
+.pfold[open]>summary::before{transform:rotate(45deg)}
+.pfold>summary:hover .pft{color:var(--ink)}.pfold>summary:focus-visible{outline:2px solid var(--sel);outline-offset:1px}
+.pft{font-size:13px;font-weight:600;color:var(--ink-2)}.pfs{margin-left:auto;font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pfold[open]>summary .pfs{visibility:hidden}
+.pfb{display:flex;flex-direction:column;gap:10px;padding:2px 0 12px}.pfb>.field,.pfb>.row2{margin-bottom:0}
+@media (prefers-reduced-motion:no-preference){.pfold[open]>.pfb{animation:pf-in 140ms var(--ease)}@keyframes pf-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}}
 @media (max-width:700px){.assistant-status{max-width:150px}}
 .grp{display:contents}
 .btn{border:1px solid var(--edge);background:var(--surface);border-radius:8px;box-shadow:var(--lift);padding:5px 10px;font-size:13px;display:inline-flex;align-items:center;gap:5px}
@@ -11099,6 +11109,7 @@ function composerSubmitted(key, entries, plan){
 }
 // Redrawing the panel empties it first, which drops its scroll to the top; the same item keeps its place.
 let sideAt = null;
+let sideAllTasks = "";
 function renderSide(){
   const ae = document.activeElement, id = ae?.closest("#side") && ae.id, start = id ? ae.selectionStart : null, end = id ? ae.selectionEnd : null;
   const side = $("#side"), at = sel ? sel.type + ":" + sel.id : null, top = at && at === sideAt ? side.scrollTop : 0;
@@ -11107,8 +11118,17 @@ function renderSide(){
   if (id){ const next = document.getElementById(id); if (next && !next.disabled){ next.focus({preventScroll:true}); if (start != null && typeof next.setSelectionRange === "function") next.setSelectionRange(start, end); } }
   if (pendingDelete){ const a = document.querySelector('#side [data-armed="1"]'); if (a) a.focus({preventScroll:true}); }
 }
+// A folded part of the details panel. The summary line says what's inside; open or closed is remembered per item type,
+// in this browser. Organize keeps the id it always had.
+const depSum = n => n ? `Waits for ${n}` : "Nothing";
+function fold(type, key, title, sum, ...kids){
+  const list = kids.flat(Infinity).filter(x=>x != null && x !== false); if (!list.length) return null;
+  const k = type + ":" + key, o = UI.sideFold || {}, open = !!o[k];
+  return h("details",{class:"pfold",id:key === "organize" ? "itemOptions" : "fold-" + key,open,ontoggle:e=>{ if (!e.currentTarget.isConnected) return; UI.sideFold = {...(UI.sideFold || {}), [k]:e.currentTarget.open}; saveUI(); }},
+    h("summary",{}, h("span",{class:"pft"}, title), sum ? h("span",{class:"pfs"}, sum) : null), h("div",{class:"pfb"}, ...list));
+}
 function foldItemOptions(){
-  if (!sel || !["bar","task"].includes(sel.type)) return;
+  if (!sel || !["bar","task"].includes(sel.type) || $("#side #itemOptions")) return;
   const side = $("#side"), fieldId = sel.type === "bar" ? "f-parent" : "f-tbar", field0 = side.querySelector("#" + fieldId)?.closest(".field");
   if (!field0) return;
   const key = sel.type + ":" + sel.id, open = UI.itemOptions && UI.itemOptions.key === key && UI.itemOptions.open;
@@ -11261,10 +11281,12 @@ function sideBody(put){
       });
     });
     const r = rollupOf(b), out = tasksOutside(b), hsx = HS();
+    const tAll = (b.tasks||[]).slice().sort((x,y)=>taskSpan(x,hsx).s - taskSpan(y,hsx).s), tMore = tAll.length > 4 && sideAllTasks !== b.id ? tAll.length : 0;   // the first three, then Show all
     const taskList = h("div",{class:"tasklist"},
-      ...(b.tasks||[]).slice().sort((x,y)=>taskSpan(x,hsx).s - taskSpan(y,hsx).s).map(t=>{ const sp = taskSpan(t,hsx);
+      ...(tMore ? tAll.slice(0, 3) : tAll).map(t=>{ const sp = taskSpan(t,hsx);
         return h("button",{type:"button",onclick:()=>select("task",t.id),title:taskTitle(t)}, h("span",{class:"dot "+t.status}), taskTitle(t).slice(0,40), h("span",{class:"dt"}, `${fmtDay(sp.s)}–${fmtDay(sp.e)}`)); }),
-      hasTasks(b) ? null : h("span",{class:"hint",style:{padding:"4px"}},"No tasks yet."));
+      hasTasks(b) ? null : h("span",{class:"hint",style:{padding:"4px"}},"No tasks yet."),
+      tMore ? h("button",{type:"button",class:"linkish",id:"f-alltasks",onclick:()=>{ sideAllTasks = b.id; renderSide(); $("#f-alltasks")?.focus() || $("#side .tasklist button:nth-child(4)")?.focus(); }}, `Show all ${tMore}`) : null);
     put(
       probs.length ? h("div",{class:"msg warn"}, `Starts ${wkDate(b.start)}, before "${probs[0].label}" ends ${endDate(probs[0])}.`) : null,
       !probs.length && depTight(b).length ? h("div",{class:"msg",style:{background:"var(--paper)"}}, `Tight handoff: starts ${depOverlap(b, depTight(b)[0])} working day${depOverlap(b, depTight(b)[0])===1?"":"s"} before "${depTight(b)[0].label}" ends ${endDate(depTight(b)[0])}. Fine if the team can overlap a little.`) : null,
@@ -11277,34 +11299,14 @@ function sideBody(put){
           ...rs.map(x=>h("button",{type:"button",class:"nav",onclick:()=>goTo("risk", x.id)}, h("span",{class:"dot " + (x.sev==="high" ? "atrisk" : "inprogress")}), `Risk (${x.sev}): ${x.text.slice(0,50)}`)),
           ...ds.map(x=>h("button",{type:"button",class:"nav",onclick:()=>goTo("decision", x.id)}, h("span",{class:"dot notstarted"}), `Decision${x.due ? " by " + fmtDay(isoToDay(x.due)) : ""}: ${x.text.slice(0,44)}`)))); })(),
       titleOf(b).from === "plan" ? field("f-label","Title", textIn("f-label", ()=>b.label, v=>act("initiative.set", {id:b.id, field:"label", value:v}), {tag:"textarea", attrs:{rows:"3"}, live:true})) : titleOf(b).from === "stale" ? jiraTitleField(b) : null,
-      field("f-parent","Part of", h("select",{id:"f-parent",onchange:e=>{ const v = e.target.value; commit(()=>act("initiative.setParent", {id:b.id, parent:v})); }},
-        h("option",{value:"",selected:!b.parent},"— Top level —"),
-        ...S.lanes.map(l=>{ const opts = S.bars.filter(x=>x.lane===l.id && x.id!==b.id && !isInside(x.id, b.id)); return opts.length ? h("optgroup",{label:l.name}, ...opts.map(x=>h("option",{value:x.id,selected:b.parent===x.id}, "\u2003".repeat(depthOf(x)) + chartLabel(x).slice(0,48)))) : null; }))),
-      h("div",{class:"nestbtns"},
-        h("button",{class:"btn",type:"button",id:"f-addsub",onclick:()=>createAt("subinitiative", b.id)},"+ Sub-initiative"),
-        h("button",{class:"btn",type:"button",id:"f-indent",disabled:!prevSibling(b),title:prevSibling(b) ? `Put it inside "${chartLabel(prevSibling(b))}"` : "Nothing above it to go inside",onclick:()=>{ const pv = prevSibling(b); if (pv) commit(()=>act("initiative.place", {id:b.id, target:pv.id, zone:"inside"})); }},"→ Indent"),
-        h("button",{class:"btn",type:"button",id:"f-outdent",disabled:!b.parent,title:"Take it out one level",onclick:()=>{ if (b.parent) commit(()=>act("initiative.place", {id:b.id, target:b.parent, zone:"after"})); }},"← Outdent"),
-        h("button",{class:"btn",type:"button",id:"f-up",disabled:!prevSibling(b),"aria-label":"Move up",title:"Move up among its neighbors",onclick:()=>{ const pv = prevSibling(b); if (pv) commit(()=>act("initiative.place", {id:b.id, target:pv.id, zone:"before"})); }},"↑"),
-        h("button",{class:"btn",type:"button",id:"f-down",disabled:!nextSibling(b),"aria-label":"Move down",title:"Move down among its neighbors",onclick:()=>{ const nx = nextSibling(b); if (nx) commit(()=>act("initiative.place", {id:b.id, target:nx.id, zone:"after"})); }},"↓")),
-      hasKids(b) ? h("div",{class:"field"}, h("span",{class:"flabel"},"Inside it"), h("div",{class:"tasklist"}, ...kidsOf(b.id).map(x=>h("button",{type:"button",onclick:()=>select("bar",x.id),title:barTitle(x)}, h("span",{class:"dot "+effStatus(x)}), chartLabel(x).slice(0,40) + (hasKids(x) ? ` (${kidsOf(x.id).length})` : ""), h("span",{class:"dt"}, `${wkDate(x.start)}–${endDate(x)}`))))) : null,
-      field("f-chart", titleOf(b).from === "plan" ? "Chart name (optional)" : "Name on the chart (the plan's, optional)", textIn("f-chart", ()=>b.chartName || "", v=>act("initiative.set", {id:b.id, field:"chartName", value:v}), {attrs:{maxlength:"60", placeholder: suggestChartName(b) ? `e.g. ${suggestChartName(b)}` : "Short name shown on the bar"}})),
-      !b.chartName && suggestChartName(b) ? h("button",{class:"linkish",type:"button",style:{alignSelf:"flex-start",fontSize:"12px"},onclick:()=>{ if (commit(()=>act("initiative.set", {id:b.id, field:"chartName", value:suggestChartName(b)}))) focusSoon("#f-chart"); }}, `Use "${suggestChartName(b)}"`) : null,
       h("div",{class:"row2"},
         h("div",{}, field("f-jira","Jira key", textIn("f-jira", ()=>b.jira, v=>b.jira=v.trim(), {attrs:{placeholder:"PROJ-1234"}})), sideOf(b, "bar") === "jira" ? null : [jiraLink(b.jira), barEpics(b).length ? null : jiraLine(b.jira, b), lockLine(b)]),
         field("f-status", rolls(b) ? (hasKids(b) ? "Status (from what's inside)" : "Status (from tasks)") : "Status", h("select",{id:"f-status",disabled:rolls(b) || !!jiraLockOf(b)?.status,onchange:e=>commit(()=>act("initiative.setStatus", {id:b.id, status:e.target.value}))}, STATUSES.map(([v,t])=>h("option",{value:v,selected:effStatus(b)===v},t))))),
-      epicsField(b), jiraDepsField(b, "bar"),
       rolls(b) ? field("f-owner", hasKids(b) ? "Owner(s) (from what's inside)" : "Owner(s) (from tasks)", h("input",{id:"f-owner",value:effOwner(b),disabled:true}))
                   : assigneeOf(b) ? field("f-owner","Lead (the plan's, optional)", ownerPicker("f-owner", ()=>leadOf(b), v=>act("initiative.set", {id:b.id, field:"owners", value:v}), {outside:true}))
                   : field("f-owner","Owner(s)", ownerPicker("f-owner", ()=>own(b), v=>act("initiative.set", {id:b.id, field:"owners", value:v}), {outside:true})),
-      field("f-lane","Workstream", h("select",{id:"f-lane",onchange:e=>{ const v = e.target.value; commit(()=>act("initiative.setLane", {id:b.id, lane:v})); }}, laneOpts(b.lane))),
-      effortField(b), deliversField(b),
-      hasTasks(b) && !hasKids(b) ? field("f-datesfrom","Dates", h("select",{id:"f-datesfrom",onchange:e=>commit(()=>act("initiative.set", {id:b.id, field:"datesFrom", value:e.target.value}))}, [["manual","Planned (set here)"],["tasks","From tasks (earliest to latest)"]].map(([v,t])=>h("option",{value:v,selected:b.datesFrom===v},t)))) : null,
-      h("div",{class:"row2"},
-        field("f-start","Start (week)", h("input",{id:"f-start",type:"number",step:"0.5",min:"0",max:String(W),value:snap(b.start),disabled:derived(b) || !!jiraLockOf(b)?.dates,onchange:e=>commit(()=>act("initiative.move", {id:b.id, start:num(e.target.value,b.start)}))})),
-        field("f-span","Length (weeks)", h("input",{id:"f-span",type:"number",step:"0.5",min:"0.5",max:String(W),value:snap(b.span),disabled:derived(b) || !!jiraLockOf(b)?.dates,onchange:e=>commit(()=>act("initiative.move", {id:b.id, span:num(e.target.value,b.span)}))}))),
       h("p",{class:"hint mono"}, `${wkDate(b.start)} → ${endDate(b)}` + (hasKids(b) ? " · spans what's inside" : derived(b) ? " · from tasks" : "")),
-      (()=>{ const hol = derived(b) || b.kind === "waiting" ? [] : holidaysIn(nextWork(wkDay(b.start), new Set()), barEndDay(b));
-        return hol.length ? h("p",{class:"hint"}, `${hol.map(x=>(x.name||"Holiday") + " (" + fmtDay(isoToDay(x.date)) + ")").join(", ")} ${hol.length===1?"falls":"fall"} inside, so it ends ${hol.length} working day${hol.length===1?"":"s"} later than a plain ${snap(b.span)}-week block.`) : null; })(),
+      hasKids(b) ? h("div",{class:"field"}, h("span",{class:"flabel"},"Inside it"), h("div",{class:"tasklist"}, ...kidsOf(b.id).map(x=>h("button",{type:"button",onclick:()=>select("bar",x.id),title:barTitle(x)}, h("span",{class:"dot "+effStatus(x)}), chartLabel(x).slice(0,40) + (hasKids(x) ? ` (${kidsOf(x.id).length})` : ""), h("span",{class:"dt"}, `${wkDate(x.start)}–${endDate(x)}`))))) : null,
       h("div",{class:"field"}, h("span",{class:"flabel"},`Tasks (${(b.tasks||[]).length})`, (n => n ? h("span",{class:"hint",id:"f-rough"}, ` · ${n} with a guessed length`) : null)((b.tasks||[]).filter(t=>t.rough).length)), taskList),
       h("div",{class:"row2"},
         h("button",{class:"btn",onclick:()=>addTask(b)},"+ Task"),
@@ -11312,23 +11314,48 @@ function sideBody(put){
       (()=>{ const L = UI.filter.bars || [], on = L.includes(b.id);
         return h("div",{class:"row2"}, h("button",{type:"button",class:"btn",id:"f-only","aria-pressed":String(on),onclick:()=>{ setOnly(b.id, !on); $("#f-only")?.focus(); }},
           on ? (L.length > 1 ? "Stop showing this one" : "Show every initiative") : L.length ? "Also show this" : "Show only this")); })(),
-      field("f-kind","Type", h("select",{id:"f-kind",onchange:e=>commit(()=>act("initiative.set", {id:b.id, field:"kind", value:e.target.value}))}, KINDS.map(([v,t])=>h("option",{value:v,selected:b.kind===v},t)))),
-      h("div",{class:"field"}, h("span",{class:"flabel"},"Starts after these finish"), depBox),
-      (()=>{ const opts = liveBlocks().filter(i=>i.status !== "canceled" || (b.waitsFor||[]).includes(i.id)); if (!opts.length) return null;
-        return h("div",{class:"field"}, h("span",{class:"flabel"},"Waits for process blocks"),
-          h("div",{class:"linkchips"}, ...(b.waitsFor||[]).map(instById).filter(Boolean).map(i=>h("span",{class:"lchip" + (i.status === "canceled" ? " dead" : "")}, `${i.label}${i.sprint ? " · " + i.sprint.name : ""}${i.status === "canceled" ? " (canceled)" : ""}`, h("button",{type:"button",class:"ox","aria-label":"Remove link",onclick:()=>commit(()=>{ b.waitsFor = b.waitsFor.filter(y=>y!==i.id); })},"×"))),
-            h("select",{id:"f-bwaitblk","aria-label":"Add a process block it waits for",onchange:e=>{ const v = e.target.value; if (v) commit(()=>{ const bl = materialize(v); b.waitsFor = [...new Set([...(b.waitsFor||[]), bl.id])]; }); }}, h("option",{value:""},"+ Add…"),
-              ...opts.filter(i=>!(b.waitsFor||[]).includes(i.id)).map(i=>h("option",{value:i.id}, `${i.label} · ${i.sprint ? i.sprint.name : ""} ${fmtDay(i.s)}`))))); })(),
-      S.gates.length ? h("div",{class:"field"}, h("span",{class:"flabel"},"Waits for gates"), h("div",{class:"deps"}, ...S.gates.map(g=>h("label",{},
-        h("input",{type:"checkbox",checked:(b.waitsFor||[]).includes(g.id),onchange:e=>commit(()=>{ b.waitsFor = e.target.checked ? [...new Set([...(b.waitsFor||[]), g.id])] : (b.waitsFor||[]).filter(x=>x!==g.id); })}),
-        `${g.gate || "Untitled gate"}` + (g.date ? ` · ${fmtDay(isoToDay(g.date))}` : " · no date"))))) : null,
-      (()=>{ const L = linksOf("bar", b.id); return L.before.length || L.milestones.length ? h("div",{class:"field"}, h("span",{class:"flabel"},"Followed by"),
-        h("div",{class:"linkchips"}, ...L.before.map(x=>h("button",{type:"button",class:"lchip nav",onclick:()=>select("bar", x.id)}, chartLabel(x))), ...L.milestones.map(m=>h("button",{type:"button",class:"lchip nav",onclick:()=>select("ms", m.id)}, "◆ " + m.what)))) : null; })(),
-      h("label",{class:"fcheck"}, h("input",{type:"checkbox",checked:S.meta.autoSchedule !== false,onchange:e=>commit(s=>{ s.meta.autoSchedule = e.target.checked; })}), " Move linked items automatically (this plan)"),
-      h("div",{class:"row2"},
-        h("button",{class:"btn",onclick:()=>{ const id=newId("bar"); if (commit(s=>{ fitAfter(s, b.start+b.span+b.span); s.bars.push({...clone(b),id,dependsOn:[b.id],start:b.start+b.span,status:"notstarted",jira:"",tasks:[],datesFrom:"manual",chartName:""}); })) select("bar",id); }},"Add next step"),
-        h("button",{class:"btn",onclick:()=>{ const id=newId("ms"); if (commit(s=>s.milestones.push({id,date:"",owners:[],stretch:"",what:"Milestone",dep:"",status:"commit",lane:b.lane,at:snap(b.start+b.span-.3),stretchAt:null}))) select("ms",id); }},"+ Milestone")),
-      h("button",{class:"btn",onclick:()=>del("bar",b.id)},"Delete item"),
+      fold("bar", "schedule", "Schedule", `${snap(b.span)} week${snap(b.span)===1?"":"s"}` + (derived(b) ? " · from tasks" : ""),
+        effortField(b), deliversField(b),
+        hasTasks(b) && !hasKids(b) ? field("f-datesfrom","Dates", h("select",{id:"f-datesfrom",onchange:e=>commit(()=>act("initiative.set", {id:b.id, field:"datesFrom", value:e.target.value}))}, [["manual","Planned (set here)"],["tasks","From tasks (earliest to latest)"]].map(([v,t])=>h("option",{value:v,selected:b.datesFrom===v},t)))) : null,
+        h("div",{class:"row2"},
+          field("f-start","Start (week)", h("input",{id:"f-start",type:"number",step:"0.5",min:"0",max:String(W),value:snap(b.start),disabled:derived(b) || !!jiraLockOf(b)?.dates,onchange:e=>commit(()=>act("initiative.move", {id:b.id, start:num(e.target.value,b.start)}))})),
+          field("f-span","Length (weeks)", h("input",{id:"f-span",type:"number",step:"0.5",min:"0.5",max:String(W),value:snap(b.span),disabled:derived(b) || !!jiraLockOf(b)?.dates,onchange:e=>commit(()=>act("initiative.move", {id:b.id, span:num(e.target.value,b.span)}))}))),
+        (()=>{ const hol = derived(b) || b.kind === "waiting" ? [] : holidaysIn(nextWork(wkDay(b.start), new Set()), barEndDay(b));
+          return hol.length ? h("p",{class:"hint"}, `${hol.map(x=>(x.name||"Holiday") + " (" + fmtDay(isoToDay(x.date)) + ")").join(", ")} ${hol.length===1?"falls":"fall"} inside, so it ends ${hol.length} working day${hol.length===1?"":"s"} later than a plain ${snap(b.span)}-week block.`) : null; })()),
+      fold("bar", "deps", "Waits for", depSum(b.dependsOn.length + (b.waitsFor||[]).length + (b.jiraDeps||[]).length),
+        h("div",{class:"field"}, h("span",{class:"flabel"},"Starts after these finish"), depBox),
+        (()=>{ const opts = liveBlocks().filter(i=>i.status !== "canceled" || (b.waitsFor||[]).includes(i.id)); if (!opts.length) return null;
+          return h("div",{class:"field"}, h("span",{class:"flabel"},"Waits for process blocks"),
+            h("div",{class:"linkchips"}, ...(b.waitsFor||[]).map(instById).filter(Boolean).map(i=>h("span",{class:"lchip" + (i.status === "canceled" ? " dead" : "")}, `${i.label}${i.sprint ? " · " + i.sprint.name : ""}${i.status === "canceled" ? " (canceled)" : ""}`, h("button",{type:"button",class:"ox","aria-label":"Remove link",onclick:()=>commit(()=>{ b.waitsFor = b.waitsFor.filter(y=>y!==i.id); })},"×"))),
+              h("select",{id:"f-bwaitblk","aria-label":"Add a process block it waits for",onchange:e=>{ const v = e.target.value; if (v) commit(()=>{ const bl = materialize(v); b.waitsFor = [...new Set([...(b.waitsFor||[]), bl.id])]; }); }}, h("option",{value:""},"+ Add…"),
+                ...opts.filter(i=>!(b.waitsFor||[]).includes(i.id)).map(i=>h("option",{value:i.id}, `${i.label} · ${i.sprint ? i.sprint.name : ""} ${fmtDay(i.s)}`))))); })(),
+        S.gates.length ? h("div",{class:"field"}, h("span",{class:"flabel"},"Waits for gates"), h("div",{class:"deps"}, ...S.gates.map(g=>h("label",{},
+          h("input",{type:"checkbox",checked:(b.waitsFor||[]).includes(g.id),onchange:e=>commit(()=>{ b.waitsFor = e.target.checked ? [...new Set([...(b.waitsFor||[]), g.id])] : (b.waitsFor||[]).filter(x=>x!==g.id); })}),
+          `${g.gate || "Untitled gate"}` + (g.date ? ` · ${fmtDay(isoToDay(g.date))}` : " · no date"))))) : null,
+        jiraDepsField(b, "bar"),
+        (()=>{ const L = linksOf("bar", b.id); return L.before.length || L.milestones.length ? h("div",{class:"field"}, h("span",{class:"flabel"},"Followed by"),
+          h("div",{class:"linkchips"}, ...L.before.map(x=>h("button",{type:"button",class:"lchip nav",onclick:()=>select("bar", x.id)}, chartLabel(x))), ...L.milestones.map(m=>h("button",{type:"button",class:"lchip nav",onclick:()=>select("ms", m.id)}, "◆ " + m.what)))) : null; })(),
+        h("label",{class:"fcheck"}, h("input",{type:"checkbox",checked:S.meta.autoSchedule !== false,onchange:e=>commit(s=>{ s.meta.autoSchedule = e.target.checked; })}), " Move linked items automatically (this plan)"),
+        h("div",{class:"row2"},
+          h("button",{class:"btn",onclick:()=>{ const id=newId("bar"); if (commit(s=>{ fitAfter(s, b.start+b.span+b.span); s.bars.push({...clone(b),id,dependsOn:[b.id],start:b.start+b.span,status:"notstarted",jira:"",tasks:[],datesFrom:"manual",chartName:""}); })) select("bar",id); }},"Add next step"),
+          h("button",{class:"btn",onclick:()=>{ const id=newId("ms"); if (commit(s=>s.milestones.push({id,date:"",owners:[],stretch:"",what:"Milestone",dep:"",status:"commit",lane:b.lane,at:snap(b.start+b.span-.3),stretchAt:null}))) select("ms",id); }},"+ Milestone"))),
+      fold("bar", "organize", "Organize this initiative", [S.lanes.find(l=>l.id===b.lane)?.name, (KINDS.find(k=>k[0]===b.kind)||[])[1]].filter(Boolean).join(" · "),
+        field("f-lane","Workstream", h("select",{id:"f-lane",onchange:e=>{ const v = e.target.value; commit(()=>act("initiative.setLane", {id:b.id, lane:v})); }}, laneOpts(b.lane))),
+        field("f-kind","Type", h("select",{id:"f-kind",onchange:e=>commit(()=>act("initiative.set", {id:b.id, field:"kind", value:e.target.value}))}, KINDS.map(([v,t])=>h("option",{value:v,selected:b.kind===v},t)))),
+        field("f-chart", titleOf(b).from === "plan" ? "Chart name (optional)" : "Name on the chart (the plan's, optional)", textIn("f-chart", ()=>b.chartName || "", v=>act("initiative.set", {id:b.id, field:"chartName", value:v}), {attrs:{maxlength:"60", placeholder: suggestChartName(b) ? `e.g. ${suggestChartName(b)}` : "Short name shown on the bar"}})),
+        !b.chartName && suggestChartName(b) ? h("button",{class:"linkish",type:"button",style:{alignSelf:"flex-start",fontSize:"12px"},onclick:()=>{ if (commit(()=>act("initiative.set", {id:b.id, field:"chartName", value:suggestChartName(b)}))) focusSoon("#f-chart"); }}, `Use "${suggestChartName(b)}"`) : null,
+        epicsField(b),
+        field("f-parent","Part of", h("select",{id:"f-parent",onchange:e=>{ const v = e.target.value; commit(()=>act("initiative.setParent", {id:b.id, parent:v})); }},
+          h("option",{value:"",selected:!b.parent},"— Top level —"),
+          ...S.lanes.map(l=>{ const opts = S.bars.filter(x=>x.lane===l.id && x.id!==b.id && !isInside(x.id, b.id)); return opts.length ? h("optgroup",{label:l.name}, ...opts.map(x=>h("option",{value:x.id,selected:b.parent===x.id}, "\u2003".repeat(depthOf(x)) + chartLabel(x).slice(0,48)))) : null; }))),
+        h("div",{class:"nestbtns"},
+          h("button",{class:"btn",type:"button",id:"f-addsub",onclick:()=>createAt("subinitiative", b.id)},"+ Sub-initiative"),
+          h("button",{class:"btn",type:"button",id:"f-indent",disabled:!prevSibling(b),title:prevSibling(b) ? `Put it inside "${chartLabel(prevSibling(b))}"` : "Nothing above it to go inside",onclick:()=>{ const pv = prevSibling(b); if (pv) commit(()=>act("initiative.place", {id:b.id, target:pv.id, zone:"inside"})); }},"→ Indent"),
+          h("button",{class:"btn",type:"button",id:"f-outdent",disabled:!b.parent,title:"Take it out one level",onclick:()=>{ if (b.parent) commit(()=>act("initiative.place", {id:b.id, target:b.parent, zone:"after"})); }},"← Outdent"),
+          h("button",{class:"btn",type:"button",id:"f-up",disabled:!prevSibling(b),"aria-label":"Move up",title:"Move up among its neighbors",onclick:()=>{ const pv = prevSibling(b); if (pv) commit(()=>act("initiative.place", {id:b.id, target:pv.id, zone:"before"})); }},"↑"),
+          h("button",{class:"btn",type:"button",id:"f-down",disabled:!nextSibling(b),"aria-label":"Move down",title:"Move down among its neighbors",onclick:()=>{ const nx = nextSibling(b); if (nx) commit(()=>act("initiative.place", {id:b.id, target:nx.id, zone:"after"})); }},"↓"))),
+      fold("bar", "more", "More", "",
+        h("button",{class:"btn",onclick:()=>del("bar",b.id)},"Delete item")),
       h("button",{class:"btn",onclick:()=>{sel=null;render(true);}},"Done"));
   } else if (sel.type==="story"){
     const x = storyByKey(sel.id); if (!x){ sel=null; return; }
@@ -11349,37 +11376,42 @@ function sideBody(put){
       h("p",{class:"hint"}, "In ", h("button",{class:"linkish",onclick:()=>select("bar",b.id)}, chartLabel(b))),
       taskLate(t,hs) ? h("div",{class:"msg bad"}, `Late: ended ${fmtDay(sp.e)} and isn't done.`) : null,
       sl ? h("div",{class:"msg warn"}, `Baseline: end moved ${fmtD(sl)} (working days).`) : null,
-      quickPanel("task:" + t.id), stickies(noteKeysOf(t, "task"), b.lane), jiraDepsField(t, "task"),
+      quickPanel("task:" + t.id), stickies(noteKeysOf(t, "task"), b.lane),
       titleOf(t).from === "plan" ? field("f-tlabel","Task", textIn("f-tlabel", ()=>t.label, v=>act("task.set", {id:t.id, field:"label", value:v}), {live:true})) : titleOf(t).from === "stale" ? jiraTitleField(t) : null,
       h("div",{class:"row2"},
         h("div",{}, field("f-tjira","Jira key", textIn("f-tjira", ()=>t.jira, v=>t.jira=v.trim(), {attrs:{placeholder:"PROJ-1234"}})), sideOf(t, "task") === "jira" ? null : [jiraLink(t.jira), jiraLine(t.jira, t), lockLine(t)]),
         field("f-tstatus","Status", h("select",{id:"f-tstatus",disabled:!!jiraLockOf(t)?.status,onchange:e=>commit(()=>act("task.setStatus", {id:t.id, status:e.target.value}))}, STATUSES.map(([v,x])=>h("option",{value:v,selected:t.status===v},x))))),
       assigneeOf(t) ? field("f-towner","Lead (the plan's, optional)", ownerPicker("f-towner", ()=>leadOf(t), v=>act("task.set", {id:t.id, field:"owners", value:v}), {outside:true}))
         : field("f-towner","Owner(s)", ownerPicker("f-towner", ()=>own(t), v=>act("task.set", {id:t.id, field:"owners", value:v}), {outside:true})),
-      h("div",{class:"row2"},
-        field("f-tstart","Start", h("input",{id:"f-tstart",type:"date",disabled:!!jiraLockOf(t)?.dates,min:S.meta.start,value:dayToIso(sp.s),onchange:e=>commit(()=>validIso(e.target.value) ? act("task.move", {id:t.id, start:e.target.value}) : NOCHANGE)})),
-        field("f-tdays","Working days", h("input",{id:"f-tdays",type:"number",disabled:!!jiraLockOf(t)?.dates,min:"1",max:"260",value:t.days,onchange:e=>commit(()=>act("task.move", {id:t.id, days:clampInt(e.target.value,1,260,t.days)}))}))),
       h("p",{class:"hint mono"}, `${fmtDay(sp.s)} → ${fmtDay(sp.e)} (weekends and holidays skipped)`),
-      h("label",{class:"chk",for:"f-trough"}, h("input",{type:"checkbox",id:"f-trough",checked:!!t.rough,disabled:!!jiraLockOf(t)?.dates,onchange:e=>{ commit(()=>act("task.set", {id:t.id, field:"rough", value:e.target.checked})); $("#f-trough")?.focus(); }}), " Length is a guess"),
       (()=>{ if (!(t.dependsOn || []).length || jiraLockOf(t)?.dates) return null; const c = afterStart(S, t.dependsOn, t); if (!c || isoToDay(c) === sp.s) return null;
         const n = isoToDay(c), day = `${wkName(n)}, ${fmtDay(n)}`, L = t.dependsOn.map(taskById).filter(Boolean), what = L.length === 1 ? `"${taskTitle(L[0].t)}"` : "the last of what it waits for", early = n > sp.s;
         const behind = L.filter(f=>taskLate(f.t));      // its planned finish has passed and it isn't done: don't offer a day built on that finish
         if (behind.length && !early) return h("p",{class:"hint",id:"f-tafter"}, `${behind.length === 1 ? `"${taskTitle(behind[0].t)}" is` : `${behind.length} of what it waits for are`} late, so this can't start until ${behind.length === 1 ? "it's" : "they're"} done.`);
         return h("p",{class:"hint" + (early ? " bad" : ""),id:"f-tafter"}, early ? `Starts before ${what} finishes. The earliest it can start is ${day}. ` : `Could start ${day}, the working day after ${what} finishes. It's set for ${fmtDay(sp.s)} now. `,
           h("button",{type:"button",class:"linkish",id:"f-tafterGo",onclick:()=>{ if (commit(()=>act("task.move", {id:t.id, start:c}))) setStatus(`Starts ${day}, right after ${what}.`); }}, `Start ${fmtDay(n)}`)); })(),
-      h("div",{class:"field"}, h("span",{class:"flabel"},"Starts after these tasks"),
-        (t.dependsOn || []).length ? h("p",{class:"hint",id:"f-tmoves"}, jiraLockOf(t)?.dates ? "Its Jira sprint sets its dates, so it doesn't move when what it waits for runs late. Late work shows as starting too early."
-          : S.meta.autoSchedule === false ? "Automatic moving is off (Settings), so it stays put when what it waits for runs late. It's flagged as starting too early instead."
-          : "Moves later on its own when what it waits for runs late. It never moves earlier on its own.") : null,
-        h("div",{class:"linkchips"}, ...(t.dependsOn||[]).map(id=>{ const x = taskById(id); return x ? h("span",{class:"lchip"}, taskTitle(x.t), h("button",{type:"button",class:"ox","aria-label":"Remove link",onclick:()=>commit(()=>act("task.unlink", {id:t.id, after:id}))},"×")) : null; }),
-          h("select",{id:"f-tdep","aria-label":"Add a task this one waits for",onchange:e=>{ const v = e.target.value; if (!v) return; if (!commit(()=>act("task.link", {id:t.id, after:v}))) e.target.value = ""; }},
-            h("option",{value:""},"+ Add…"), ...S.bars.filter(x=>(x.tasks||[]).length).map(x=>h("optgroup",{label:chartLabel(x)}, ...x.tasks.filter(y=>y.id !== t.id && !(t.dependsOn||[]).includes(y.id)).map(y=>h("option",{value:y.id}, y.label || "Untitled task"))))))),
-      (()=>{ const L = linksOf("task", t.id); return L.before.length ? h("div",{class:"field"}, h("span",{class:"flabel"},"Followed by"), h("div",{class:"linkchips"}, ...L.before.map(x=>h("button",{type:"button",class:"lchip nav",onclick:()=>select("task", x.id)}, taskTitle(x))))) : null; })(),
-      field("f-tbar","Initiative", h("select",{id:"f-tbar",onchange:e=>{ const nb = barById(e.target.value); if (nb && nb !== b) commit(()=>act("task.moveTo", {id:t.id, bar:nb.id})); }}, S.bars.filter(x=>x.kind!=="waiting" || x===b).map(x=>h("option",{value:x.id,selected:x===b}, x.label || "Untitled item")))),
       h("div",{class:"row2"},
         h("button",{class:"btn",onclick:()=>{ const id = newId("task"); if (commit(()=>b.tasks.push({...clone(t), id, start:dayToIso(nextWork(sp.e+1,hs)), status:"notstarted", jira:""}))) select("task",id); }},"Add next task"),
         UI.zoom==="days" && UI.focus===b.id ? null : h("button",{class:"btn nav",onclick:()=>openInitiative(b.id)},"Day view")),
-      h("button",{class:"btn",onclick:()=>del("task",t.id)},"Delete task"),
+      fold("task", "schedule", "Schedule", `${t.days} working day${t.days===1?"":"s"}` + (t.rough ? " (a guess)" : ""),
+        h("div",{class:"row2"},
+          field("f-tstart","Start", h("input",{id:"f-tstart",type:"date",disabled:!!jiraLockOf(t)?.dates,min:S.meta.start,value:dayToIso(sp.s),onchange:e=>commit(()=>validIso(e.target.value) ? act("task.move", {id:t.id, start:e.target.value}) : NOCHANGE)})),
+          field("f-tdays","Working days", h("input",{id:"f-tdays",type:"number",disabled:!!jiraLockOf(t)?.dates,min:"1",max:"260",value:t.days,onchange:e=>commit(()=>act("task.move", {id:t.id, days:clampInt(e.target.value,1,260,t.days)}))}))),
+        h("label",{class:"chk",for:"f-trough"}, h("input",{type:"checkbox",id:"f-trough",checked:!!t.rough,disabled:!!jiraLockOf(t)?.dates,onchange:e=>{ commit(()=>act("task.set", {id:t.id, field:"rough", value:e.target.checked})); $("#f-trough")?.focus(); }}), " Length is a guess")),
+      fold("task", "deps", "Waits for", depSum((t.dependsOn||[]).length + (t.jiraDeps||[]).length),
+        jiraDepsField(t, "task"),
+        h("div",{class:"field"}, h("span",{class:"flabel"},"Starts after these tasks"),
+          (t.dependsOn || []).length ? h("p",{class:"hint",id:"f-tmoves"}, jiraLockOf(t)?.dates ? "Its Jira sprint sets its dates, so it doesn't move when what it waits for runs late. Late work shows as starting too early."
+            : S.meta.autoSchedule === false ? "Automatic moving is off (Settings), so it stays put when what it waits for runs late. It's flagged as starting too early instead."
+            : "Moves later on its own when what it waits for runs late. It never moves earlier on its own.") : null,
+          h("div",{class:"linkchips"}, ...(t.dependsOn||[]).map(id=>{ const x = taskById(id); return x ? h("span",{class:"lchip"}, taskTitle(x.t), h("button",{type:"button",class:"ox","aria-label":"Remove link",onclick:()=>commit(()=>act("task.unlink", {id:t.id, after:id}))},"×")) : null; }),
+            h("select",{id:"f-tdep","aria-label":"Add a task this one waits for",onchange:e=>{ const v = e.target.value; if (!v) return; if (!commit(()=>act("task.link", {id:t.id, after:v}))) e.target.value = ""; }},
+              h("option",{value:""},"+ Add…"), ...S.bars.filter(x=>(x.tasks||[]).length).map(x=>h("optgroup",{label:chartLabel(x)}, ...x.tasks.filter(y=>y.id !== t.id && !(t.dependsOn||[]).includes(y.id)).map(y=>h("option",{value:y.id}, y.label || "Untitled task"))))))),
+        (()=>{ const L = linksOf("task", t.id); return L.before.length ? h("div",{class:"field"}, h("span",{class:"flabel"},"Followed by"), h("div",{class:"linkchips"}, ...L.before.map(x=>h("button",{type:"button",class:"lchip nav",onclick:()=>select("task", x.id)}, taskTitle(x))))) : null; })()),
+      fold("task", "organize", "Move this task", chartLabel(b),
+        field("f-tbar","Initiative", h("select",{id:"f-tbar",onchange:e=>{ const nb = barById(e.target.value); if (nb && nb !== b) commit(()=>act("task.moveTo", {id:t.id, bar:nb.id})); }}, S.bars.filter(x=>x.kind!=="waiting" || x===b).map(x=>h("option",{value:x.id,selected:x===b}, x.label || "Untitled item"))))),
+      fold("task", "more", "More", "",
+        h("button",{class:"btn",onclick:()=>del("task",t.id)},"Delete task")),
       h("button",{class:"btn nav",onclick:()=>select("bar",b.id)},"Back to initiative"));
   } else if (sel.type==="block"){
     const inst = instById(sel.id); if (!inst){ sel = null; return; }
