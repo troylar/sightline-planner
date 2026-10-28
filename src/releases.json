@@ -1,5 +1,35 @@
 [
   {
+    "version": "1.150.0",
+    "date": "2026-10-28",
+    "headline": "Run any action from Find",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Keyboard",
+        "title": "Actions in Find",
+        "before": "Find looked up initiatives, tasks and people. An action you didn't know the key for meant hunting through menus.",
+        "now": "Press Ctrl+K or / and type what you want to do, like \"days\", \"start editing\", \"rows by person\" or \"show only\". Actions come first, each with its shortcut, and only the ones that apply right now are offered. Enter runs it.",
+        "where": "Find, at the top of the page (Ctrl+K or /)"
+      },
+      {
+        "kind": "fixed",
+        "area": "Keyboard",
+        "title": "Shortcuts wait while you type",
+        "before": "A letter typed while an input method was composing, or in some rich text, could run a shortcut.",
+        "now": "Shortcuts stay quiet while you type anywhere, including while an input method is composing.",
+        "where": "Anywhere you type"
+      },
+      {
+        "kind": "improved",
+        "area": "Keyboard",
+        "title": "Every shortcut is in the help",
+        "now": "The keyboard help (?) now lists T and L for Today and List, \\ for the menu, and Ctrl+Shift+Z for redo, which worked before but weren't listed.",
+        "where": "Press ?"
+      }
+    ]
+  },
+  {
     "version": "1.149.1",
     "date": "2026-10-28",
     "headline": "Back and Forward clear the last message",

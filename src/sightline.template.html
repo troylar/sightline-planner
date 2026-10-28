@@ -536,6 +536,8 @@ body.presenting #filterBtn,body.presenting #viewSave{display:none!important}
 .fhit .fi{grid-row:span 2;color:var(--ink-3);text-align:center}
 .fhit .ft{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fhit small{color:var(--ink-3);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fhit kbd{font-weight:600;font-size:inherit;line-height:1;font-family:var(--mono,ui-monospace,monospace);border:1px solid var(--ink-3);border-bottom-width:2px;border-radius:4px;padding:1px 4px;color:var(--ink-2);background:var(--surface)}
+.fhit.fcmd .fi{color:var(--accent)}
 .fhit.on,.fhit:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .flash{animation:flashit 1.6s ease-out}
 @keyframes flashit{0%,40%{box-shadow:0 0 0 3px var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
@@ -1532,7 +1534,7 @@ body:has(> #bootfail) > :not(#bootfail){display:none !important}
     <span class="viewctl">
       <button type="button" class="btn" id="viewBtn" aria-haspopup="menu" aria-expanded="false">All work ▾</button>
       <button type="button" class="btn primary" id="viewSave" hidden title="Save changes to this view">Save</button>
-      <button type="button" class="btn" id="findBtn" aria-haspopup="dialog" aria-expanded="false" title="Find anything (/ or Ctrl+K)">⌕ Find</button>
+      <button type="button" class="btn" id="findBtn" aria-haspopup="dialog" aria-expanded="false" title="Find anything, or an action by name (/ or Ctrl+K)">⌕ Find</button>
       <button type="button" class="btn" id="findRestore" hidden>Restore previous view</button>
       <button type="button" class="btn" id="notesBtn" aria-haspopup="menu" aria-controls="notesMenu" aria-expanded="false" title="Show or hide notes (N)">Notes</button>
       <button type="button" class="btn" id="filterBtn" aria-haspopup="dialog" aria-expanded="false" title="Filter what's shown (F)">Filters</button>
@@ -5651,9 +5653,9 @@ document.addEventListener("keydown", e=>{
 // ================= name, keyboard shortcuts, help =================
 const APP_NAME = "Sightline", APP_TAGLINE = "Your team's work, in plain sight.";
 const SHORTCUTS = [       // [keys (each shown as a key; alternatives joined by "or"), what it does]
-  ["Get around", [[["1","2","3","4","5","6"],"Today, Timeline, People, Settings, Sprint, Roadmap", " "],[["/","Ctrl+K"],"Find anything"],[["W","D"],"Weeks or Days view"],[["R"],"Rows by workstream, person or epic"],[["."],"Jump to today"],[["[","]"],"Earlier / later (Days view), or the previous / next sprint when one is chosen"],[["+","−"],"One sprint fewer or more on screen"],[["Shift+1","Shift+2","Shift+3"],"This sprint, this and the next, or the next three, from the sprint we're in"],[["Shift+0"],"Fit the whole plan"],[["J","K"],"Next / previous item"],[["Z"],"Show only the selected initiative or person, as a chip above the chart (× takes it off)"],[["↑","↓"],"Previous / next item, while its details are open (Timeline and List)"],[["Esc"],"Close whatever is open"]]],
+  ["Get around", [[["1","2","3","4","5","6"],"Today, Timeline, People, Settings, Sprint, Roadmap", " "],[["T","L"],"Today or List"],[["\\"],"Collapse or expand the menu"],[["/","Ctrl+K"],"Find anything, or an action by name"],[["W","D"],"Weeks or Days view"],[["R"],"Rows by workstream, person or epic"],[["."],"Jump to today"],[["[","]"],"Earlier / later (Days view), or the previous / next sprint when one is chosen"],[["+","−"],"One sprint fewer or more on screen"],[["Shift+1","Shift+2","Shift+3"],"This sprint, this and the next, or the next three, from the sprint we're in"],[["Shift+0"],"Fit the whole plan"],[["J","K"],"Next / previous item"],[["Z"],"Show only the selected initiative or person, as a chip above the chart (× takes it off)"],[["↑","↓"],"Previous / next item, while its details are open (Timeline and List)"],[["Esc"],"Close whatever is open"]]],
   ["Update the item you've selected", [[["I"],"In progress"],[["X"],"Done (again: back to in progress)"],[["B"],"Mark blocked"],[["U"],"Write an update"],[["S"],"Stick a note on it"],[["Enter"],"Open it"]]],
-  ["Plan", [[["A"],"Add something (then a letter from the menu)"],[["←","→"],"Move the selected item (with Shift: smaller steps)"],[["Alt+←","Alt+→"],"Make it shorter / longer"],[["Delete"],"Delete it"],[["Ctrl+Z","Ctrl+Y"],"Undo / redo"]]],
+  ["Plan", [[["A"],"Add something (then a letter from the menu)"],[["←","→"],"Move the selected item (with Shift: smaller steps)"],[["Alt+←","Alt+→"],"Make it shorter / longer"],[["Delete"],"Delete it"],[["Ctrl+Z","Ctrl+Y","Ctrl+Shift+Z"],"Undo / redo (either redo key)"]]],
   ["Show and share", [[["F"],"Filters"],[["V"],"Saved views"],[["H"],"Show menu: hide gates, meetings, done work and more, or pin the top rows"],[["G","M"],"Hide or show gates / meetings"],[["Shift+H"],"Show everything you hid"],[["N"],"Show / hide notes"],[["P"],"Present"],[["E"],"Start editing / Done editing (shared file)"],[["Ctrl+S"],"Save"],[["?"],"This help"]]],
 ];
 const HELP = [
@@ -7039,23 +7041,79 @@ function findIndex(){
   liveBlocks().forEach(i=>{ add("block", i.id, i.label, `${i.type.name} · ${i.sprint ? i.sprint.name + " · " : ""}${fmtDay(i.s)}` + (i.status !== "planned" ? " · " + bstatusLabel(i.status).toLowerCase() : "")); out[out.length-1].icon = i.type.icon; out[out.length-1].emoji = i.type.emoji; });
   return out;
 }
+// ---------- Commands: every action you can take from the keyboard, by name ----------
+// Find (/ or Ctrl+K) searches these by name as well as the plan, and shows each one's shortcut, so an action you don't
+// know the key for is a few letters away. when() says whether it applies right now; it's checked again before it runs.
+const CMD_VIEWS = ["timeline","people","list"];
+const selWork = () => sel && ["bar","task"].includes(sel.type) && !present && !tooNew() && workItem(sel.type + ":" + sel.id);
+const selLeaf = () => { const it = selWork(); return !!it && (it.type === "task" || isLeafBar(it.b)); };
+const selStatus = v => selLeaf() && !(jiraLockOf(selWork().obj) || {}).status && selWork().obj.status !== v;   // Jira owns a linked item's status
+const undoable = redo => quickUndoable() ? quickStack(redo ? quickUndone : quickDone).length > 0 : editable() && (redo ? future : past).length > 0;
+const COMMANDS = [
+  {id:"go-today", label:"Go to Today", keys:["T"], run:()=>goWs("today")},
+  {id:"go-timeline", label:"Go to Timeline", keys:["2"], run:()=>goWs("timeline")},
+  {id:"go-list", label:"Go to List", keys:["L"], run:()=>goWs("list")},
+  {id:"go-capacity", label:"Go to Capacity", keys:["3"], run:()=>goWs("people")},
+  {id:"go-sprint", label:"Go to Sprint", keys:["5"], run:()=>goWs("standup")},
+  {id:"go-roadmap", label:"Go to Roadmap", keys:["6"], run:()=>goWs("roadmap")},
+  {id:"go-settings", label:"Go to Settings", keys:["4"], run:()=>goMainGroup("settings")},
+  {id:"weeks", label:"Weeks view", keys:["W"], when:()=>UI.zoom === "days", run:()=>setZoom("weeks")},
+  {id:"days", label:"Days view", keys:["D"], when:()=>UI.zoom !== "days", run:()=>setZoom("days", UI.focus)},
+  {id:"rows-lanes", label:"Rows by workstream", when:()=>UI.ws === "timeline" && UI.rows !== "lanes", run:()=>setRows("lanes")},
+  {id:"rows-people", label:"Rows by person", when:()=>UI.ws === "timeline" && UI.rows !== "people", run:()=>setRows("people")},
+  {id:"rows-epics", label:"Rows by epic", when:()=>UI.ws === "timeline" && UI.rows !== "epics" && hasJiraTree(), run:()=>setRows("epics")},
+  {id:"today", label:"Jump to today", keys:["."], when:()=>UI.ws === "timeline", run:()=>jumpToday()},
+  {id:"filters", label:"Filters", keys:["F"], when:()=>CMD_VIEWS.includes(UI.ws) && !present, run:()=>openFilterPop()},
+  {id:"views", label:"Views: switch or save a view", keys:["V"], when:()=>CMD_VIEWS.includes(UI.ws), run:()=>openViewMenu()},
+  {id:"show-all", label:"Show all work (clear every filter)", when:()=>fActive(), run:()=>{ navStep(); UI.view = null; setFilter(x=>{ Object.assign(x, normFilter({})); }); setStatus("Showing all work. Back puts your filters back."); }},
+  {id:"show-only", label:"Show only the selection", keys:["Z"], when:()=>!!sel && ["bar","task","person"].includes(sel.type), run:()=>sel.type === "task" ? showOnly("bar", taskById(sel.id)?.b.id) : showOnly(sel.type, sel.id)},
+  {id:"gates", get label(){ return (hiddenKinds().includes("gate") ? "Show" : "Hide") + " gates"; }, also:"show hide", keys:["G"], when:()=>CMD_VIEWS.includes(UI.ws), run:()=>toggleKind("gate")},
+  {id:"meetings", get label(){ return (hiddenKinds().includes("meeting") ? "Show" : "Hide") + " meetings"; }, also:"show hide", keys:["M"], when:()=>CMD_VIEWS.includes(UI.ws), run:()=>toggleKind("meeting")},
+  {id:"notes", get label(){ return ((UI.notes || "all") === "none" ? "Show" : "Hide") + " notes"; }, also:"show hide", keys:["N"], run:()=>{ UI.notes = (UI.notes || "all") === "none" ? "all" : "none"; saveUI(); render(); }},
+  {id:"everything", label:"Show every kind of item", keys:["Shift+H"], when:()=>CMD_VIEWS.includes(UI.ws) && hiddenKinds().length > 0, run:()=>showEverything()},
+  {id:"in-progress", label:"Mark the selection in progress", keys:["I"], when:()=>selStatus("inprogress"), run:()=>quickKey("i")},
+  {id:"done", label:"Mark the selection done", keys:["X"], when:()=>selStatus("done"), run:()=>quickKey("x")},
+  {id:"blocked", label:"Mark the selection blocked", keys:["B"], when:selLeaf, run:()=>quickKey("b")},
+  {id:"update", label:"Write an update on the selection", keys:["U"], when:()=>!!selWork(), run:()=>quickKey("u")},
+  {id:"sticky", label:"Add a sticky note to the selection", keys:["S"], when:()=>!!selWork(), run:()=>quickKey("s")},
+  {id:"add", label:"Add an initiative, milestone, gate…", keys:["A"], when:()=>editable(), run:()=>openAddMenu($("#addBtn").getBoundingClientRect(), {})},
+  {id:"edit", label:"Start editing", keys:["E"], when:()=>!!file.handle && !file.holdLock && !present, run:()=>startEditing()},
+  {id:"edit-done", label:"Done editing", keys:["E"], when:()=>!!file.handle && !!file.holdLock && !present, run:()=>doneEditing()},
+  {id:"undo", label:"Undo", keys:["Ctrl+Z"], when:()=>undoable(false), run:()=>undo()},
+  {id:"redo", label:"Redo", keys:["Ctrl+Shift+Z"], when:()=>undoable(true), run:()=>redo()},
+  {id:"save", label:"Save", keys:["Ctrl+S"], run:()=>{ flushEditing(); if (file.handle) save(); else $("#saveJson").click(); }},
+  {id:"present", label:"Present", keys:["P"], when:()=>!present, run:()=>setPresent(true)},
+  {id:"present-off", label:"Stop presenting", keys:["P"], when:()=>present, run:()=>setPresent(false)},
+  {id:"menu", label:"Collapse or expand the menu", keys:["\\"], when:()=>!present, run:()=>toggleNavRail()},
+  {id:"keys", label:"Keyboard shortcuts", keys:["?"], run:()=>openHelp("keys")},
+  {id:"whats-new", label:"What's new in Sightline", run:()=>openReleases()},
+];
+const cmdOn = c => { try { return !c.when || !!c.when(); } catch(e){ return false; } };
+function runCmd(id){ const c = COMMANDS.find(x=>x.id === id); if (!c || !cmdOn(c)){ setStatus("That doesn't apply here right now."); return false; } c.run(); return true; }
+function findCmd(id){ closeFind(); runCmd(id); const a = document.activeElement; if (!a || a === document.body || a.closest("#findPop")) $("#findBtn").focus({preventScroll:true}); }
 const FIND_ICON = {bar:"▬", task:"▭", story:"▭", ms:"◆", gate:"‖", meeting:"▣", note:"✎", person:"●", lane:"≡", decision:"?", risk:"⚠"};
 let findHits = [], findIdx = 0;
 function openFind(){
   closeViewMenu(); closeFilterPop(); closeNotesMenu(); closeAddMenu(false);
   const p = $("#findPop"); p.hidden = false; placePop(p, $("#findBtn")); $("#findBtn").setAttribute("aria-expanded","true");
-  const inp = $("#findIn"); inp.value = ""; renderFind(""); setTimeout(()=>inp.focus(), 0);
+  const inp = $("#findIn"); inp.value = ""; renderFind(""); setTimeout(()=>{ if (!p.hidden) inp.focus(); }, 0);   // not if it closed meanwhile
 }
 function closeFind(){ const p = $("#findPop"); if (p.hidden) return; p.hidden = true; $("#findBtn").setAttribute("aria-expanded","false"); }
 function renderFind(q){
   q = q.trim().toLowerCase(); const list = $("#findList"); list.replaceChildren();
-  if (!q){ findHits = []; list.append(h("p",{class:"hint"},"Type to search every initiative, task, Jira story, milestone, gate, meeting, note, person, workstream, decision and risk. Jira keys work too.")); return; }
-  const words = q.split(/\s+/);
-  findHits = findIndex().filter(x=>words.every(w=>x.hay.includes(w))).sort((a,b)=>(a.text.toLowerCase().startsWith(q) ? 0 : 1) - (b.text.toLowerCase().startsWith(q) ? 0 : 1)).slice(0, 40);
-  findIdx = 0;
+  if (!q){ findHits = []; $("#findIn").removeAttribute("aria-activedescendant"); list.append(h("p",{class:"hint"},"Type to search every initiative, task, Jira story, milestone, gate, meeting, note, person, workstream, decision and risk. Jira keys work too. Actions come up by name, like \"days\" or \"start editing\".")); return; }
+  const words = q.split(/\s+/), first = x => (x.text.toLowerCase().startsWith(q) ? 0 : 1);
+  // actions match the start of their words ("lis" finds Go to List, "s" doesn't), and a short query leaves room for plan items
+  const starts = l => { const lw = l.toLowerCase().split(/[^a-z0-9+]+/); return words.every(w=>lw.some(x=>x.startsWith(w))); };
+  const acts = COMMANDS.filter(c=>cmdOn(c) && starts(c.label + " " + (c.also || ""))).map(c=>({kind:"cmd", id:c.id, text:c.label, keys:c.keys || []})).sort((a,b)=>first(a) - first(b)).slice(0, q.length < 3 ? 3 : 6);
+  findHits = [...acts, ...findIndex().filter(x=>words.every(w=>x.hay.includes(w))).sort((a,b)=>first(a) - first(b)).slice(0, 40)];
+  findIdx = q.length < 3 && findHits.length > acts.length ? acts.length : 0; findHits.length ? $("#findIn").setAttribute("aria-activedescendant", "fhit" + findIdx) : $("#findIn").removeAttribute("aria-activedescendant");
   if (!findHits.length){ list.append(h("p",{class:"hint"}, `Nothing matches "${q}".`)); return; }
-  findHits.forEach((x,i)=>list.append(h("button",{type:"button",role:"option",class:"fhit" + (i===0 ? " on" : ""),"aria-selected":String(i===0),id:"fhit"+i,onclick:()=>{ closeFind(); goTo(x.kind, x.id); }},
-    h("span",{class:"fi"}, x.emoji ? icon(null, x.emoji) : icon(x.icon || KIND_ICON[x.kind] || "flag")), h("span",{class:"ft"}, x.text), h("small",{}, x.sub))));
+  findHits.forEach((x,i)=>list.append(x.kind === "cmd"
+    ? h("button",{type:"button",role:"option",class:"fhit fcmd" + (i===findIdx ? " on" : ""),"aria-selected":String(i===findIdx),id:"fhit"+i,onclick:e=>{ e.stopPropagation(); findCmd(x.id); }},
+      h("span",{class:"fi"}, "›"), h("span",{class:"ft"}, x.text), h("small",{}, x.keys.length ? h("span",{}, "Action · ", ...x.keys.map((k, j)=>[j ? " or " : "", h("kbd",{}, k)]).flat()) : "Action"))
+    : h("button",{type:"button",role:"option",class:"fhit" + (i===findIdx ? " on" : ""),"aria-selected":String(i===findIdx),id:"fhit"+i,onclick:()=>{ closeFind(); goTo(x.kind, x.id); }},
+      h("span",{class:"fi"}, x.emoji ? icon(null, x.emoji) : icon(x.icon || KIND_ICON[x.kind] || "flag")), h("span",{class:"ft"}, x.text), h("small",{}, x.sub))));
 }
 // Show an item: switch to where it lives, unfold what hides it, clear a filter that hides it, select it and scroll to it.
 function goTo(kind, id){
@@ -7133,12 +7191,13 @@ $("#findIn").addEventListener("input", e=>renderFind(e.target.value));
 $("#findIn").addEventListener("keydown", e=>{
   const move = d => { if (!findHits.length) return; findIdx = (findIdx + d + findHits.length) % findHits.length; $("#findList").querySelectorAll(".fhit").forEach((b,i)=>{ b.classList.toggle("on", i===findIdx); b.setAttribute("aria-selected", String(i===findIdx)); }); $("#fhit"+findIdx)?.scrollIntoView({block:"nearest"}); $("#findIn").setAttribute("aria-activedescendant","fhit"+findIdx); };
   if (e.key === "ArrowDown"){ e.preventDefault(); move(1); } else if (e.key === "ArrowUp"){ e.preventDefault(); move(-1); }
-  else if (e.key === "Enter"){ e.preventDefault(); const x = findHits[findIdx]; if (x){ closeFind(); goTo(x.kind, x.id); } }
+  else if (e.key === "Enter"){ if (e.isComposing || e.keyCode === 229) return; e.preventDefault(); const x = findHits[findIdx]; if (x){ if (x.kind === "cmd") findCmd(x.id); else { closeFind(); goTo(x.kind, x.id); } } }
   else if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); closeFind(); $("#findBtn").focus(); }
 });
 document.addEventListener("click", e=>{ if (!$("#findPop").hidden && !e.target.closest("#findPop,#findBtn")) closeFind(); });
 document.addEventListener("keydown", e=>{
-  const typing = e.target.closest?.("input, textarea, select, [contenteditable]");
+  if (e.isComposing || e.keyCode === 229) return;
+  const typing = e.target.closest?.("input, textarea, select, [contenteditable]") || e.target.isContentEditable;
   if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") || (e.key === "/" && !typing && !e.ctrlKey && !e.metaKey && !e.altKey)){ e.preventDefault(); openFind(); }
 });
 // A kind in Filters cycles: off, show only, hide (releases, deliverables and done work: off, hide). Hiding is the per-plan declutter choice.
@@ -15962,7 +16021,7 @@ $("#dDatesOk").onclick = ()=>{ const v = $("#dStart").value; commit(s=>{
   s.meta.sprintWeeks = clampInt($("#dSprint").value,1,8,s.meta.sprintWeeks); s.meta.autoSchedule = $("#dAuto").checked; const jb = $("#dJira").value.trim(); s.meta.jiraBase = /^https?:\/\/\S{3,200}$/i.test(jb) ? jb : ""; }); dd.close(); };
 
 document.addEventListener("keydown", e=>{
-  const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||"") || dlg.open || dd.open || $("#dlgHelp").open || $("#dlgReleases").open;
+  const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||"") || document.activeElement?.isContentEditable || !!document.activeElement?.closest?.('[contenteditable]:not([contenteditable="false"])') || e.isComposing || e.keyCode === 229 || dlg.open || dd.open || $("#dlgHelp").open || $("#dlgReleases").open;
   const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
   if (mod && k==="s"){ e.preventDefault(); flushEditing(); if (file.handle) save(); else $("#saveJson").click(); return; }
   if (typing) return;
