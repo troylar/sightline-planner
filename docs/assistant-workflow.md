@@ -412,7 +412,7 @@ Placements are actions, and they use the same rules as the bulk sort, so a place
 - `jira.notOurs {keys}` hides them from Sort Jira work. Undo, or **Show them again** in Sort Jira work, brings them back.
 - `jira.hide {keys, why?}` keeps Jira items off the plan's views, the plan's own way for each: a story is switched off in its epic's initiative, an epic is parked, and an issue the plan doesn't show is marked not ours. The review says which, and says so when hiding parks an epic. `jira.unhide {keys}` brings them back. `cards.hidden` in the context lists what's hidden and why. Plan work (a Jira task, or an initiative that is one Jira issue) can't be hidden.
 - `cards.set {field, value, prev}` changes the team's card layout on the Cards page: `fields` (an ordered list from `cards.fields`), `density` (`compact`, `normal`, `detailed`) or `width` (`fixed`, `points`).
-- `jira.epicLink {epic, id}` and `jira.epicNew {epic, lane, id?}` place a whole epic, like the epic's **On** menu.
+- `jira.epicLink {epic, id}` and `jira.epicNew {epic, lane, id?}` place a whole epic, like the epic's **On** menu. An epic counts on one initiative: `jira.epicLink` refuses one another initiative holds and a 51st, and moves one that's parked elsewhere.
 
 Each is checked again when it applies, against both Jira files: an issue already where the change puts it counts as done; one placed somewhere else, a target that can't take work any more (parked, waiting, with sub-initiatives), or an epic's stories that changed in Jira make the change wait as changed since, and nothing in it is applied. New initiatives and tasks get ids made from the Jira key (`bar-abc-101`, `task-abc-106`), so a retry can't add them twice.
 

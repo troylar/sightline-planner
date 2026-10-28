@@ -12,7 +12,7 @@ Link an epic from Find.
 
 ### Fixed
 
-- **An epic counts on one initiative** (Jira). The epic box says which initiative already has that epic, and refuses a 51st with the reason. An epic parked on another initiative moves here instead. *Where:* An initiative's details, Organize, Jira epics
+- **An epic counts on one initiative** (Jira). The epic box says which initiative already has that epic, and refuses a 51st with the reason. An epic parked on another initiative moves here instead. A connected assistant's epic links follow the same rules. *Where:* An initiative's details, Organize, Jira epics
 
 ## 1.156.0 · Oct 28, 2026
 

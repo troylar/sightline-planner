@@ -15,8 +15,8 @@
         "kind": "fixed",
         "area": "Jira",
         "title": "An epic counts on one initiative",
-        "before": "Typing an epic's key into a second initiative linked it there too, and a 51st epic was dropped without a word.",
-        "now": "The epic box says which initiative already has that epic, and refuses a 51st with the reason. An epic parked on another initiative moves here instead.",
+        "before": "Typing an epic's key into a second initiative linked it there too. On an initiative with 50 epics, a 51st said Linked but wasn't kept. No earlier link was ever lost: only the new key, which never showed in the list.",
+        "now": "The epic box says which initiative already has that epic, and refuses a 51st with the reason. An epic parked on another initiative moves here instead. A connected assistant's epic links follow the same rules.",
         "where": "An initiative's details, Organize, Jira epics"
       }
     ]

@@ -8626,7 +8626,7 @@ defAction("jira.epicLink", {scope:"jira", risk:"routine", args:{epic:"str", id:"
   done:(p, a)=>{ const b = epicOwner(upKey(a.epic), p.bars); return !!b && b.id === a.id && !b.parked; },
   check:(p, a)=>{ const why = jiraEpicWhy(p, a); if (why) return why; const b = actBar(p, a.id); if (!b) return actMissing("initiative");
     if (!jiraTakes(b, p)) return {code:"stale", reason:`"${String(barTitle(b)).slice(0, 60)}" can't take Jira work: it's parked, waiting, has sub-initiatives, or is one Jira issue itself.`};
-    const own = epicOwner(upKey(a.epic), p.bars); if (own && own.id !== b.id) return {code:"stale", reason:`${upKey(a.epic)} is already on "${String(barTitle(own)).slice(0, 60)}", so it wasn't moved.`};
+    const own = epicOwner(upKey(a.epic), p.bars); if (own && own.id !== b.id && !own.parked) return {code:"stale", reason:`${upKey(a.epic)} is already on "${String(barTitle(own)).slice(0, 60)}", so it wasn't moved.`};   // parked elsewhere: it moves, as in the epic box
     if (!(b.epics || []).includes(upKey(a.epic)) && (b.epics || []).length >= 50) return actInvalid(`"${String(barTitle(b)).slice(0, 60)}" already has 50 epics, the most an initiative holds.`); },
   run:(p, a)=>epicLinkIn(p, upKey(a.epic), a.id)});
 defAction("jira.epicNew", {scope:"jira", risk:"routine", args:{epic:"str", lane:"id", id:"id?"},
