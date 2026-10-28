@@ -1,5 +1,18 @@
 [
   {
+    "version": "1.168.0",
+    "date": "2026-10-28",
+    "headline": "Faster redraws",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Speed",
+        "title": "Faster redraws on big plans",
+        "now": "The page finds its own buttons and panels faster each time it redraws, so changes on a big plan show up sooner. Nothing looks or works differently."
+      }
+    ]
+  },
+  {
     "version": "1.167.0",
     "date": "2026-10-28",
     "headline": "What's hidden, in one line",
