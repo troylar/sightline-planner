@@ -138,7 +138,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ev(`window.HD1 = file.handle; file.handle = {name:"plan.json"}; file.holdLock = null; select("task", "fa"); render(); document.activeElement && document.activeElement.blur();`); await wait(10); key("o"); await wait(20);
     ok("K37 O while you're not editing says to start editing, and Find doesn't offer it", d.activeElement?.id !== "f-towner" && /Start editing/.test($("#status")?.textContent || "") && !acts("owns").includes("Change who owns the selection"), $("#status")?.textContent);
     ev(`closeFind(); file.handle = HD1; select("task", "fa"); UI.ws = "today"; render(); document.activeElement && document.activeElement.blur(); setStatus("");`); await wait(10); key("o"); await wait(20);
-    ok("K38 O on Today, where the row you're on isn't the selection, does nothing", d.activeElement?.id !== "f-towner" && !$("#status")?.textContent);
+    ok("K38 O on Today, where the row you're on isn't the selection, changes nothing and says where O works", d.activeElement?.id !== "f-towner" && /O works on the Timeline and the List/.test($("#status")?.textContent || ""), $("#status")?.textContent);
     ev(`UI.ws = "timeline"; render(); select("task", "fa"); render();`); await wait(10);
     ok("K39 Find offers Change who owns the selection, with its key, and the keyboard help lists O", acts("owner").includes("Change who owns the selection") && (T("SHORTCUTS.flatMap(([g, rows])=>rows.filter(r=>r[0].includes('O')).map(r=>r[1]))") || []).some(x=>/owns/.test(x)), acts("owner").join("|"));
     ev(`closeFind(); sel = null; render();`);
@@ -160,6 +160,19 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     const rf0 = !!$("#q-rf0") || !!$("#q-rf1"); ev(`UI.ws = "today"; sel = null; render();`); await wait(10);
     ev(`window.JL2 = jiraLockOf; window.LO = workItem(${JSON.stringify(LK)}).obj; jiraLockOf = o => o === LO ? {dates:true, status:false, key:"ABC-2"} : JL2(o); render();`); await wait(10);
     ok("K43 Move all on Today leaves out work whose dates come from Jira", n0 > 1 && bulkN() === n0 - 1, [n0, bulkN(), LK].join(" | "));
+    ev(`S.meta.jiraBase = "https://jira.example.com/browse/"; render();`); await wait(10);
+    { const a = [...d.querySelectorAll("#today a.tjira")]; ok("K49 when the plan knows the Jira site, Update it in Jira opens that issue in a new tab", a.length >= 1 && a.every(x=>x.href === "https://jira.example.com/browse/ABC-2" && x.target === "_blank" && /noopener/.test(x.rel)), a.map(x=>x.href).join(" ")); }
+    { const a = d.querySelector("#today a.tjira"), arrow = a && [...a.querySelectorAll("[aria-hidden=true]")].map(x=>x.textContent.trim()).join(), said = a && [...a.childNodes].filter(n=>!(n.nodeType === 1 && n.getAttribute("aria-hidden") === "true")).map(n=>n.textContent).join("").trim();
+      ok("K53 …and a screen reader hears that it opens a new tab, not the arrow", arrow === "↗" && said === "Update it in Jira (opens in a new tab)" && !!a.querySelector(".vh"), JSON.stringify([arrow, said])); }
+    for (const [key, want] of [["../x?y", "https://jira.example.com/browse/..%2Fx%3Fy"], ["ABC-1#top", "https://jira.example.com/browse/ABC-1%23top"]])
+      ok(`K52 an issue key like ${key} stays inside the link's path`, X(`jiraUrl(${JSON.stringify(key)})`) === want, X(`jiraUrl(${JSON.stringify(key)})`));
+    ev(`S.meta.jiraBase = ""; render();`); await wait(10);
+    ok("K50 …and without it, it stays plain text", !d.querySelector("#today a.tjira") && [...d.querySelectorAll("#today .tacts .hint")].some(x=>x.textContent === "Update it in Jira"));
+    for (const bad of ["javascript:alert(1)//", "data:text/html,<b>x</b>", "JaVaScRiPt:alert(1)"]){
+      ev(`{ const P = JSON.parse(JSON.stringify(planOfRecord(S))); P.meta.jiraBase = ${JSON.stringify(bad)}; const N = normalize(P, false); S.meta.jiraBase = N.meta.jiraBase; render(); }`); await wait(10);
+      ok(`K51 a plan whose Jira site is ${bad.split(":")[0]}: never becomes a link`, X("S.meta.jiraBase") === "" && !d.querySelector("#today a.tjira") && ![...d.querySelectorAll("#today a")].some(x=>/^(javascript|data):/i.test(x.getAttribute("href") || "")), X("S.meta.jiraBase"));
+    }
+    ev(`S.meta.jiraBase = ""; render();`);
     ok("K48 …and says how many it leaves out and why", /^1 follows its Jira sprint$/.test($("#today .tbulkw .hint")?.textContent || ""), $("#today .tbulkw")?.textContent);
     ev(`UI.ws = "timeline"; select(${JSON.stringify(LK.split(":")[0])}, ${JSON.stringify(LK.split(":")[1])}); render();`); await wait(10);
     ok("K45 …and its details, which offer to move it when the plan dates it, don't once Jira does", rf0 && !$("#q-rf0") && !$("#q-rf1") && !$("#q-rf5"), String(rf0));
