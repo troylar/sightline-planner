@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.164.0",
+    "date": "2026-10-28",
+    "headline": "The List, by connection",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "List",
+        "title": "By connection",
+        "now": "A new List layout puts each chain of linked work together, in the order it has to happen: what a row waits for comes before it. Chains go by when they start, a chain holding linked work you picked comes first, and work with no links is last. Copy as table keeps the groups.",
+        "where": "List, By connection"
+      }
+    ]
+  },
+  {
     "version": "1.163.0",
     "date": "2026-10-28",
     "headline": "A quieter toolbar",
