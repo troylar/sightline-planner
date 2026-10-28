@@ -1,4 +1,4 @@
-// J and K in a real browser (jsdom has no focus styles or layout): the row they land on on Today and in People load shows
+// J and K in a real browser (jsdom has no focus styles or layout): the row they land on on Today, in People load and on the Roadmap shows
 // where you are with a tint and a 2px outline that stands out 3:1 against the panel, light and dark, and the screen
 // reader hears the position. run.sh runs it when Playwright is installed, and CI always does. By hand: node test/layout-nav.js.
 // Playwright comes from node_modules, or from PLAYWRIGHT=/path/to/node_modules/playwright. The plan is fixtures/sample-plan.json.
@@ -29,14 +29,32 @@ function ringOf(rowSel){
     for (const theme of ["light", "dark"]){
       const page = await b.newPage({viewport:{width:1400, height:800}}); page.on("pageerror", e=>errs.push(String(e)));
       await page.goto("file://" + HTML); await page.evaluate(t=>localStorage.setItem("timeline-planner-theme", t), theme); await page.goto("file://" + HTML); await page.waitForTimeout(300);
-      for (const [ws, rowSel, name] of [["today", "li.trow", "a Today row"], ["people", ".lgrid > .p", "a People load row"]]){
-        await page.evaluate(([FIX, ws])=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); S = normalize(JSON.parse(FIX), false); file.handle = null; sel = null; goWs(ws); render(); document.activeElement && document.activeElement.blur(); }, [FIX, ws]);
+      const ideas = [{id:"dv1", name:"Faster search", stage:"idea"}, {id:"dv2", name:"Shared filters", stage:"idea"}], card = [{id:"dv3", name:"Saved views", target:"2027-Q1"}];
+      for (const [ws, rowSel, name, dvs] of [["today", "li.trow", "a Today row"], ["people", ".lgrid > .lrow", "a People load row"], ["roadmap", "li[data-idea]", "a Roadmap idea", ideas], ["roadmap", ".dvcard", "a Roadmap deliverable", card]]){
+        await page.evaluate(([FIX, ws, dvs])=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); const P = JSON.parse(FIX); if (dvs) P.deliverables = dvs; S = normalize(P, false); file.handle = null; sel = null; goWs(ws); render(); document.activeElement && document.activeElement.blur(); }, [FIX, ws, dvs]);
         await page.waitForTimeout(250); await page.keyboard.press("j"); await page.waitForTimeout(150);
         const r = await page.evaluate(ringOf, rowSel), live = await page.evaluate(()=>document.querySelector("#navLive")?.textContent || "");
         ok(`R1 ${theme}: J on ${name} outlines the whole row, 2px, at 3:1 or better, with a tint`, !!r && r.style === "solid" && r.width >= 2 && r.contrast >= 3 && r.tint, JSON.stringify(r));
         ok(`R2 ${theme}: …and a screen reader hears where it is`, /^1 of \d+: \S/.test(live), live);
         ok(`R3 ${theme}: …and the outline never covers the row's text`, r && r.clear != null && r.clear >= 2, JSON.stringify(r && r.clear));
+        if (ws === "people"){
+          const span = await page.evaluate(()=>{ const a = document.activeElement, g = a && a.closest(".lgrid"), last = a && [...a.querySelectorAll(".c")].pop(); if (!g || !last) return null; const ar = a.getBoundingClientRect(), lr = last.getBoundingClientRect(); return {inside:lr.right <= ar.right + 1 && lr.left >= ar.left, wide:Math.round(ar.width / g.getBoundingClientRect().width * 100)}; });
+          ok(`R4 ${theme}: the People load mark spans the person's whole row of weeks`, !!span && span.inside && span.wide >= 95, JSON.stringify(span));
+          await page.keyboard.press("Enter"); await page.waitForTimeout(150);
+          const opened = await page.evaluate(()=>({sel, ws:UI.ws, first:S.people.find(p=>p.id === sel?.id)?.id === document.querySelector(".lgrid > .lrow")?.dataset.pid}));
+          ok(`R5 ${theme}: Enter on a person there opens their card and stays on Capacity`, opened.sel && opened.sel.type === "person" && opened.first && opened.ws === "people", JSON.stringify(opened));
+        }
+        if (dvs === ideas){
+          const acts = await page.evaluate(()=>{ const li = document.activeElement?.closest("li[data-idea]"), x = li?.querySelector(".ideaacts"); if (!x) return null; const lr = li.getBoundingClientRect(), xr = x.getBoundingClientRect(); return xr.right <= lr.right + 1 && xr.left >= lr.left && xr.top >= lr.top - 1 && xr.bottom <= lr.bottom + 1; });
+          ok(`R6 ${theme}: the idea's mark takes in its quarter buttons too`, acts === true, String(acts));
+        }
       }
+      // Long titles on Today end in an ellipsis, and the whole title is there on hover
+      await page.evaluate(FIX=>{ const P = JSON.parse(FIX); S = normalize(P, false); const t = S.bars.flatMap(b=>b.tasks || [])[0]; if (t) t.title = "A very long task title that keeps going well past the width of its column on Today"; sel = null; goWs("today"); render(); }, FIX);
+      await page.setViewportSize({width:1100, height:800}); await page.waitForTimeout(200);
+      const clip = await page.evaluate(()=>{ const xs = [...document.querySelectorAll("#today li.trow .tname")].filter(x=>x.scrollWidth > x.clientWidth + 1); return {n:xs.length, all:xs.every(x=>{ const cs = getComputedStyle(x); return cs.textOverflow === "ellipsis" && cs.display !== "flex" && x.title === x.textContent; })}; });
+      ok(`R7 ${theme}: a Today title too long for its column ends in an ellipsis and shows in full on hover`, clip.n > 0 && clip.all, JSON.stringify(clip));
+      await page.setViewportSize({width:1400, height:800});
       await page.close();
     }
     ok("no page errors", !errs.length, errs.slice(0, 2).join(" | "));
