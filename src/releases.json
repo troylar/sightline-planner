@@ -1,5 +1,26 @@
 [
   {
+    "version": "1.161.0",
+    "date": "2026-10-28",
+    "headline": "Linked work for several items at once",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Filters",
+        "title": "Pick up to 5 items",
+        "now": "While linked work is shown, select another initiative, task, milestone or gate and click Add to linked work (or use Find) to see what's linked to it too. Each pick gets its own chip, so you can take one off and keep the rest. Show linked work and Show only this initiative now sit together under the title, where you can see them.",
+        "where": "An item's details, Find and the chips above the chart"
+      },
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "The Key explains the dashed outline",
+        "now": "With an item selected, a dashed outline marks what it waits for or what waits for it directly. The Key now says so, and Fit includes a gate tied to the linked work.",
+        "where": "Key, under the chart"
+      }
+    ]
+  },
+  {
     "version": "1.160.0",
     "date": "2026-10-28",
     "headline": "See what's linked to one item",
