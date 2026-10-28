@@ -48,7 +48,7 @@ outcome's ID, leaves the new idea unassigned, and does not turn this into a whol
 The repository contains [roadmap-session-amendments.json](../examples/northstar/roadmap-session-amendments.json),
 a **prepared example**, not a live model response. With the Northstar plan open:
 
-1. Choose **Connect assistant** in the toolbar and expand **Use individual files instead**.
+1. Open the menu under your name (top right), choose **Connect assistant** and expand **Use individual files instead**.
 2. Choose **Connect that file**, then select **examples/northstar/roadmap-session-amendments.json**.
 3. Inspect the two proposals: move **Bring customer context into everyday work** from **Q2 2027** to **Q1 2027**;
    add **Explore offline search** as an unscheduled idea with no owner.
@@ -87,7 +87,7 @@ copied separately.
 
 ## Bring your own assistant
 
-1. Open your own plan and connect a private folder using **Connect assistant → Connect your assistant**.
+1. Open your own plan and connect a private folder using **Connect assistant → Connect your assistant** (in the menu under your name).
 2. Choose **Copy instructions for your assistant**. Paste them into your external coding tool with that folder's location.
 3. Point it at the source checkout's **skills/** folder, or install the individual skill folders where it discovers them.
 4. Start with a small real request. The assistant reads fresh context and writes proposals; you review and apply them here.

@@ -1460,6 +1460,7 @@ body:has(> #bootfail) > :not(#bootfail){display:none !important}
       <button class="btn mebtn" id="meBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="meMenu"><i class="ini" id="meIni" aria-hidden="true"></i><span class="melbl" id="meLbl"></span><span class="wn-dot" hidden></span></button>
       <div class="menu memenu" id="meMenu" role="menu" aria-label="You and this browser" hidden>
         <button type="button" role="menuitem" id="identityBtn" aria-haspopup="menu" title="Choose who you are in this browser">Choose yourself</button>
+        <button type="button" role="menuitem" id="meAssistant" title="Connect your assistant: a private folder it reads the plan from and writes proposed changes to">Connect assistant</button>
         <div class="mh">Text size</div>
         <div class="tsrow" role="group" aria-label="Text size">
           <button type="button" role="menuitem" id="tsDown" aria-label="Smaller text" title="Smaller text">A&minus;</button>
@@ -5808,7 +5809,7 @@ function openPlanningSkills(){
     h("div",{class:"qrow"},zip,install,close), note,
     !window.showDirectoryPicker ? h("p",{class:"hint"},"Unzip the download into your assistant's skills directory. Direct folder installation is available in Chrome or Edge.") : null);
   dialog.addEventListener("cancel", e=>{ if (skillsInstalling) e.preventDefault(); });
-  dialog.addEventListener("close", ()=>{ dialog.remove(); (opener?.isConnected ? opener : document.getElementById("assistantChanges"))?.focus(); });
+  dialog.addEventListener("close", ()=>{ dialog.remove(); (opener?.isConnected && !opener.closest("[hidden]") ? opener : [document.getElementById("assistantChanges"), document.getElementById("meBtn")].find(b=>b && !b.hidden))?.focus(); });
   document.body.append(dialog); dialog.showModal(); (has ? zip : close).focus();
 }
 const REL_KINDS = [["new","New"],["improved","Improved"],["fixed","Fixed"]], REL_PAGE = 40;
@@ -7635,7 +7636,8 @@ function renderMainNav(){
   MAIN_NAV.plan.setAttribute("aria-labelledby", current && current.dataset.section ? current.id : "tab-plan");
   if (current && !rail && MAIN_NAV.nav.lastCurrent !== current.id){ MAIN_NAV.nav.lastCurrent = current.id; current.scrollIntoView?.({block:"nearest"}); }
   const a = assistantStatus(), btn = MAIN_NAV.assistant;
-  btn.hidden = present; btn.textContent = a.connected ? a.paused ? "Assistant paused" : a.error ? "Assistant needs attention" : a.pending ? `Changes (${a.pending})` : "Assistant connected" : "Connect assistant";
+  const idle = !a.connected && !a.pending;            // nothing to show until it's connected: set it up from your name menu
+  btn.hidden = present || idle; $("#meAssistant").hidden = present || !idle; btn.textContent = a.connected ? a.paused ? "Assistant paused" : a.error ? "Assistant needs attention" : a.pending ? `Changes (${a.pending})` : "Assistant connected" : "Connect assistant";
   btn.title = a.label; btn.setAttribute("aria-label", a.pending ? `${a.pending} assistant changes waiting for review` : btn.textContent);
   const identity = $("#identityBtn"), me = meId(), label = me ? `You: ${personName(me)}` : "Choose yourself";
   identity.hidden = present; if (identity.textContent !== label) identity.textContent = label;
@@ -16043,7 +16045,9 @@ MAIN_NAV.nav.addEventListener("keydown", e=>{
   e.preventDefault(); const j = e.key === "Home" ? 0 : e.key === "End" ? all.length - 1 : Math.max(0, Math.min(all.length - 1, i + (e.key === "ArrowDown" ? 1 : -1))); all[j].focus(); });
 document.addEventListener("click", e=>{ if (!e.target.closest("#sidenav")) closeNavFly(); });
 addEventListener("resize", (()=>{ let was = navRail(), t = 0; return ()=>{ clearTimeout(t); t = setTimeout(()=>{ if (navRail() !== was){ was = navRail(); render(); } }, 150); }; })());
-$("#assistantChanges").addEventListener("click",()=>{ sel = {type:"amend",id:"x"}; render(); });
+const openAssistant = () => { sel = {type:"amend",id:"x"}; render(); };
+$("#assistantChanges").addEventListener("click", openAssistant);
+$("#meAssistant").addEventListener("click", openAssistant);
 $("#identityBtn").addEventListener("click",()=>{ closeNotesMenu(); closeFilterPop(); closeMe(); whoAmI($("#meBtn").getBoundingClientRect(), ()=>render(), true, $("#meBtn")); });
 // A small menu under its button: arrow keys move, Escape closes and returns to the button, a click outside closes it.
 function popMenu(btn, pop, opts = {}){
