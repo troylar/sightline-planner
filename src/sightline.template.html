@@ -7192,6 +7192,7 @@ const COMMANDS = [
   {id:"go-today", label:"Go to Today", keys:["T"], run:()=>goWs("today")},
   {id:"go-timeline", label:"Go to Timeline", keys:["2"], run:()=>goWs("timeline")},
   {id:"go-list", label:"Go to List", keys:["L"], run:()=>goWs("list")},
+  {id:"assistant", label:"Connect assistant or review its changes", also:"assistant connect ai companion changes proposals review setup skills", when:()=>!present, run:()=>openAssistant()},
   {id:"go-capacity", label:"Go to Capacity", keys:["3"], run:()=>goWs("people")},
   {id:"go-sprint", label:"Go to Sprint", keys:["5"], run:()=>goWs("standup")},
   {id:"go-roadmap", label:"Go to Roadmap", keys:["6"], run:()=>goWs("roadmap")},
