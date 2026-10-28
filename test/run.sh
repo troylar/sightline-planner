@@ -24,11 +24,43 @@ worktree_check(){   # before, dir
   printf "  %-10s %s\n" "worktree" "WORKTREE CHANGED DURING RUN: the commit or files changed while the suite ran, so these results don't describe either. Run it again."
   fail=1; return 1
 }
+# One suite at a time on this machine, from any worktree or session: suites side by side starve each other's timers.
+# The lock is a directory holding its owner's pid, that process's start time and when it took the lock. A lock whose
+# process is gone, or whose pid now belongs to a process that started at another time, is stale and taken over.
+# tools/release/withlock.sh takes the same lock and sets SIGHTLINE_LOCK_HELD, so a run inside it doesn't wait on itself.
+SUITE_LOCK=${SIGHTLINE_LOCK:-/tmp/sightline-suite.lock}
+proc_start(){ ps -o lstart= -p "$1" 2>/dev/null | sed 's/^ *//; s/ *$//'; }
+lock_stale(){   # owner file -> 0 when nobody alive holds it
+  local pid start
+  if ! { read -r pid; read -r start; } < "$1" 2>/dev/null; then   # no owner yet: being taken, unless that was over a minute ago
+    [[ -n "$(find "$(dirname "$1")" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; return; fi
+  [[ -n "$pid" ]] || return 1
+  kill -0 "$pid" 2>/dev/null || return 0
+  [[ "$(proc_start "$pid")" == "$start" ]] || return 0
+  return 1
+}
+suite_lock(){
+  local said=0 pid since
+  [[ "${SIGHTLINE_LOCK_HELD:-}" == "$SUITE_LOCK" ]] && return 0
+  until mkdir "$SUITE_LOCK" 2>/dev/null; do
+    if lock_stale "$SUITE_LOCK/owner"; then
+      printf "  %-10s %s\n" "lock" "taking over a stale suite lock (pid $(head -1 "$SUITE_LOCK/owner" 2>/dev/null) is gone)"
+      rm -f "$SUITE_LOCK/owner"; rmdir "$SUITE_LOCK" 2>/dev/null && continue   # rmdir, never rm -rf: the path can come from the environment
+      printf "  %-10s %s\n" "lock" "FAILED: $SUITE_LOCK has other files in it, so it was left alone. Check it and remove it by hand."; return 1
+    fi
+    if (( ! said )); then { read -r pid; read -r _; read -r since; } < "$SUITE_LOCK/owner" 2>/dev/null
+      printf "  %-10s %s\n" "lock" "waiting for suite lock held by pid ${pid:-?} since ${since:-just now} ($SUITE_LOCK)"; said=1; fi
+    sleep "${SIGHTLINE_LOCK_POLL:-5}"
+  done
+  printf '%s\n%s\n%s\n' "$$" "$(proc_start $$)" "$(date +%H:%M)" > "$SUITE_LOCK/owner"
+  export SIGHTLINE_LOCK_HELD="$SUITE_LOCK"; trap 'rm -f "$SUITE_LOCK/owner"; rmdir "$SUITE_LOCK"' EXIT
+}
 main(){
   local self before
   self="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
   cd "$(dirname "$self")" || return 1
   fail=0
+  suite_lock || return 1
   before=$(worktree_state ..)
   # Each line: name, seconds allowed, command. They run side by side (SIGHTLINE_JOBS at a time, default one per CPU)
   # and print in this order; one after another they took about 25 minutes on CI.
