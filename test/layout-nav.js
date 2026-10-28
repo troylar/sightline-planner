@@ -5,7 +5,7 @@
 const fs = require("fs"), path = require("path");
 let pw; try { pw = require(process.env.PLAYWRIGHT || "playwright"); } catch(e){ console.log("FAIL  Playwright isn't installed. Run npm ci, then npx playwright install chromium (or set PLAYWRIGHT)."); console.log("\n0/1 passed"); process.exit(1); }
 const HTML = process.env.SIGHTLINE_HTML || path.join(__dirname, "..", "dist", "sightline.html");
-const FIX = fs.readFileSync(path.join(__dirname, "fixtures", "sample-plan.json"), "utf8");
+const FIX = fs.readFileSync(path.join(__dirname, "fixtures", "sample-plan.json"), "utf8"), CARDS = require("./fixtures/cards-plan.js");
 const R = []; const ok = (n, c, x = "") => R.push(`${c ? "PASS" : "FAIL"}  ${n}${x ? "  (" + x + ")" : ""}`);
 setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT"); process.exit(1); }, 90000).unref();
 // The focused row's outline, and its contrast against the nearest opaque background behind the row
@@ -19,6 +19,7 @@ function ringOf(rowSel){
   // the outline's inner edge against where the row's text starts (the outline is drawn inside the row by outline-offset)
   const wk = document.createTreeWalker(row, NodeFilter.SHOW_TEXT, {acceptNode:n=>n.textContent.trim() ? 1 : 3}), tn = wk.nextNode();
   let textLeft = null; if (tn){ const rg = document.createRange(); rg.selectNodeContents(tn); const rs = [...rg.getClientRects()]; textLeft = rs.length ? Math.min(...rs.map(r=>r.left)) : null; }
+  if (textLeft == null){ const f = row.querySelector("input,textarea,select"); if (f) textLeft = f.getBoundingClientRect().left; }   // a row of fields: its first field
   const rr = row.getBoundingClientRect(), inner = rr.left - parseFloat(s.outlineOffset || 0) * (parseFloat(s.outlineOffset) > 0 ? 1 : 0) + Math.max(0, -parseFloat(s.outlineOffset || 0));
   return {width:parseFloat(s.outlineWidth), style:s.outlineStyle, contrast:Math.round((x + .05) / (y + .05) * 10) / 10, tint:rgb(s.backgroundColor)[3] > 0 || s.backgroundColor !== "rgba(0, 0, 0, 0)", clear:textLeft == null ? null : Math.round(textLeft - inner)};
 }
@@ -30,8 +31,11 @@ function ringOf(rowSel){
       const page = await b.newPage({viewport:{width:1400, height:800}}); page.on("pageerror", e=>errs.push(String(e)));
       await page.goto("file://" + HTML); await page.evaluate(t=>localStorage.setItem("timeline-planner-theme", t), theme); await page.goto("file://" + HTML); await page.waitForTimeout(300);
       const ideas = [{id:"dv1", name:"Faster search", stage:"idea"}, {id:"dv2", name:"Shared filters", stage:"idea"}], card = [{id:"dv3", name:"Saved views", target:"2027-Q1"}];
-      for (const [ws, rowSel, name, dvs] of [["today", "li.trow", "a Today row"], ["people", ".lgrid > .lrow", "a People load row"], ["roadmap", "li[data-idea]", "a Roadmap idea", ideas], ["roadmap", ".dvcard", "a Roadmap deliverable", card]]){
-        await page.evaluate(([FIX, ws, dvs])=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); const P = JSON.parse(FIX); if (dvs) P.deliverables = dvs; S = normalize(P, false); file.handle = null; sel = null; goWs(ws); render(); document.activeElement && document.activeElement.blur(); }, [FIX, ws, dvs]);
+      for (const [ws, rowSel, name, dvs, tab] of [["today", "li.trow", "a Today row"], ["people", ".lgrid > .lrow", "a People load row"], ["roadmap", "li[data-idea]", "a Roadmap idea", ideas], ["roadmap", ".dvcard", "a Roadmap deliverable", card], ["plan", "#t-decisions tbody tr", "a Decisions row", null, "decisions"], ["plan", ".cvcard", "a card on Cards", null, "cards"]]){
+        await page.evaluate(([FIX, ws, dvs, tab, CARDS])=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); const P = JSON.parse(FIX); if (dvs) P.deliverables = dvs;
+          if (tab === "decisions") P.decisions = [{id:"dec-a", text:"Pick the search index", state:"open", owners:[]}, {id:"dec-b", text:"Who runs the pilot", state:"open", owners:[]}];
+          S = normalize(P, false); file.handle = null; sel = null; if (tab === "cards"){ (0, eval)(CARDS); UI.cv = {}; UI.cardLayoutBy = {}; UI.cvStatusPick = {}; UI.cvHiddenOpen = false; cardsPlan(); }
+          if (tab) UI.planTab = tab; goWs(ws); render(); document.activeElement && document.activeElement.blur(); }, [FIX, ws, dvs, tab, CARDS]);
         await page.waitForTimeout(250); await page.keyboard.press("j"); await page.waitForTimeout(150);
         const r = await page.evaluate(ringOf, rowSel), live = await page.evaluate(()=>document.querySelector("#navLive")?.textContent || "");
         ok(`R1 ${theme}: J on ${name} outlines the whole row, 2px, at 3:1 or better, with a tint`, !!r && r.style === "solid" && r.width >= 2 && r.contrast >= 3 && r.tint, JSON.stringify(r));
