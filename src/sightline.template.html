@@ -781,6 +781,14 @@ kbd{display:inline-block;min-width:18px;padding:1px 6px;margin:0 2px;border:1px 
 .icb .ic{width:18px;height:18px}
 .icb[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--surface));color:var(--accent)}
 .lchip.dead{text-decoration:line-through;opacity:.7}
+.runway .rwlist{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px}
+.runway li{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;font-size:12.5px}
+.rwopen{min-height:0;margin:0;border:0;background:none;padding:0;font:inherit;color:var(--ink);text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:var(--rule);text-underline-offset:3px}
+.rwopen:hover{text-decoration-color:currentColor}
+.rwmeta{color:var(--ink-3)}
+.rwflag{font-size:11px;line-height:16px;border:1px solid var(--rule);border-radius:999px;padding:0 6px;color:var(--ink-2)}
+.rwflag.bad{border-color:var(--bad);color:var(--bad)}.rwflag.warn{border-color:var(--warn)}
+.rwlast{margin:4px 0;font-size:13px;display:flex;flex-wrap:wrap;gap:2px 6px;align-items:baseline}.rwlast.bad{color:var(--bad)}.rwlast.bad .rwopen{color:inherit}
 #side.floating{position:fixed;top:calc(var(--toph,60px) + var(--wsh,46px) + 10px);right:16px;bottom:16px;width:min(380px,calc(100vw - 32px));overflow:auto;z-index:25;box-shadow:0 10px 32px rgba(0,0,0,.2)}
 body:not(.hasSel) #side.floating{display:none}
 @media (min-width:1100px){body.hasSel:not(.presenting) #ws-today,body.hasSel:not(.presenting) #ws-people,body.hasSel:not(.presenting) #ws-plan,body.hasSel:not(.presenting) #ws-standup,body.hasSel:not(.presenting) #ws-roadmap{margin-right:404px}}
@@ -6426,7 +6434,7 @@ function onlyScope(f = UI.filter){ const ids = f.bars || []; if (!ids.length) re
 // Each direction is walked on its own, so work that only shares a prerequisite doesn't join. An initiative brings what's
 // inside it along; a task or initiative brings the initiatives that hold it, as context, and what those wait for.
 // Links: an initiative's or task's dependsOn, an initiative's gates (waitsFor) and a milestone's initiatives (after).
-function linkedItems(seeds, s = S){
+function linkedItems(seeds, s = S, dir = "both"){   // dir "up": only what the seeds wait for (a milestone's runway)
   const bars = new Map(s.bars.map(b=>[b.id, b])), taskBar = new Map(), gates = new Set((s.gates || []).map(g=>g.id)), up = new Map(), down = new Map(), kids = new Map();
   const edge = (a, b) => { (up.get(a) || up.set(a, []).get(a)).push(b); (down.get(b) || down.set(b, []).get(b)).push(a); };   // a waits for b
   s.bars.forEach(b=>{ if (b.parent && bars.has(b.parent)) (kids.get(b.parent) || kids.set(b.parent, []).get(b.parent)).push(b.id);
@@ -6442,7 +6450,7 @@ function linkedItems(seeds, s = S){
       q.push(...inside(k), ...(edges.get(k) || []));
       if (viaHolders) holders(k).forEach(x=>q.push(...(edges.get(x) || []))); }   // what an initiative waits for, its contents wait for too
     return seen; };
-  const all = new Set([...walk(up, true), ...walk(down, false)]), out = {bars:new Set(), tasks:new Set(), ms:new Set(), gates:new Set(), items:0};
+  const all = new Set(dir === "up" ? walk(up, true) : [...walk(up, true), ...walk(down, false)]), out = {bars:new Set(), tasks:new Set(), ms:new Set(), gates:new Set(), items:0, keys:all};
   all.forEach(k=>{ const i = k.indexOf(":"), t = k.slice(0, i), id = k.slice(i + 1);
     if (t === "bar" && bars.has(id)) out.bars.add(id); else if (t === "task" && taskBar.has(id)){ out.tasks.add(id); out.bars.add(taskBar.get(id)); }
     else if (t === "ms") out.ms.add(id); else if (t === "gate") out.gates.add(id); else return;
@@ -6450,6 +6458,40 @@ function linkedItems(seeds, s = S){
   [...out.bars].forEach(id=>holders("bar:" + id).forEach(x=>out.bars.add(x.slice(4))));   // the rows read as they do unfiltered
   return out; }
 let linkedMemo = null;
+// What has to finish before a milestone: the work it waits for, all the way back, by linkedItems' rules in one direction.
+// Unfinished work first, latest finish first, so the first row is what sets a following milestone's date. Read-only:
+// dates are the plan's, or Jira's sprint (marked), and nothing is moved from here.
+function runwayOf(m){
+  const hs = HS(), today = todayDay(), follows = !!(m.after || []).length, due = m.at == null ? null : atToDay(m.at), rows = [], gates = [];
+  linkedItems([{t:"ms", id:m.id}], S, "up").keys.forEach(k=>{ const i = k.indexOf(":"), t = k.slice(0, i), id = k.slice(i + 1);
+    if (t === "gate"){ const g = gateById(id); if (g) gates.push(g); return; }
+    const x = t === "bar" ? barById(id) : t === "task" ? taskById(id)?.t : null; if (!x) return;
+    const done = (t === "bar" ? effStatus(x) : x.status) === "done", e = t === "bar" ? barEndDay(x) : taskSpan(x, hs).e, lock = jiraLockOf(x);
+    rows.push({t, id, x, e, done, label:t === "bar" ? chartLabel(x) : taskTitle(x), jira:!!(lock && lock.dates), parked:!!x.parked,
+      late:!done && due != null && e > due, overdue:!done && e < today}); });
+  rows.sort((a, b)=>(a.done - b.done) || b.e - a.e || a.label.localeCompare(b.label));
+  return {rows, gates, due, follows};
+}
+const RUNWAY_SHOW = 8;
+function runwayPanel(m){
+  const R = runwayOf(m), head = h("span",{class:"flabel"},"What leads here"), wrap = (...k) => h("div",{class:"field runway",id:"f-mrunway"}, head, ...k);
+  if (!R.rows.length && !R.gates.length) return wrap(h("p",{class:"hint"}, "Nothing is linked to it yet. Add the initiatives it waits for under Done when these finish, and their work shows here."));
+  const days = n => n === 1 ? "1 day" : `${n} days`, open = r => h("button",{type:"button",class:"rwopen",title:"Open it","data-rw":r.t + ":" + r.id,onclick:()=>select(r.t, r.id)}, r.label);
+  const vsDue = r => { if (R.due == null) return ""; const d = r.e - R.due; return d > 0 ? `, ${days(d)} after the milestone` : d < 0 ? `, ${days(-d)} before it` : ", the milestone's date"; };
+  const left = R.rows.filter(r=>!r.done), last = left[0], late = left.filter(r=>r.late).length;
+  const flags = r => [r.jira ? ["Jira's sprint", ""] : null, r.late ? ["After the milestone", "bad"] : null, r.overdue ? ["Overdue", "warn"] : null, r.parked ? ["Switched off", ""] : null]
+    .filter(Boolean).map(([t, c])=>h("span",{class:"rwflag" + (c ? " " + c : "")}, t));
+  return wrap(
+    h("p",{class:"hint",id:"f-mrwsum"}, `${R.rows.length} ${R.rows.length === 1 ? "item leads" : "items lead"} here: ${R.rows.length - left.length} done` + (late ? `, ${late} finishing after the milestone` : "") + "."),
+    last ? h("p",{class:"rwlast" + (last.late ? " bad" : ""),id:"f-mrwlast"}, h("span",null,"Finishes last:"), open(last), h("span",null,`Ends ${listWhen(last.e)}${last.jira ? " (Jira's sprint)" : ""}${vsDue(last)}.`))
+      : h("p",{class:"rwlast",id:"f-mrwlast"}, "All of it is done."),
+    R.follows ? h("p",{class:"hint rwfollow",id:"f-mrwfollow"}, "Its date follows these initiatives, so it moves when they do. Anything still finishing after it, like a task past its initiative's end, is marked.")
+      : R.due == null ? h("p",{class:"hint",id:"f-mrwfollow"}, "It has no date yet, so nothing is measured against it.") : null,
+    left.length > 1 ? h("ul",{class:"rwlist"}, ...left.slice(1, RUNWAY_SHOW + 1).map(r=>h("li",null, open(r),
+      h("span",{class:"rwmeta"}, ["Ends " + listWhen(r.e), listStatus(r.t, r.x).text, listOwners(r.t, r.x).text[0]].join(", ")), ...flags(r)))) : null,
+    left.length > RUNWAY_SHOW + 1 ? h("p",{class:"hint"}, `And ${left.length - RUNWAY_SHOW - 1} more. Show linked work puts all of it on the Timeline.`) : null,
+    R.gates.length ? h("p",{class:"hint"}, `Also waits for ${R.gates.length === 1 ? "the gate" : "the gates"} ${R.gates.map(g=>g.gate).join(", ")}.`) : null);
+}
 // What linked work hides: everything else, unless it's highlighted instead (then the rest is dimmed, see dimUnlinked).
 const linkedHide = (f = UI.filter) => f.linkMode === "highlight" ? null : linkedScope(f);
 function linkedScope(f = UI.filter){ const L = f.linked || []; if (!L.length) return null;
@@ -12027,6 +12069,7 @@ function sideBody(put){
             h("option",{value:""},"+ Add…"), ...S.lanes.map(l=>h("optgroup",{label:l.name}, ...S.bars.filter(x=>x.lane===l.id && !(m.after||[]).includes(x.id)).map(x=>h("option",{value:x.id}, chartLabel(x)))))))),
       field("f-mown","Owner(s)", ownerPicker("f-mown", ()=>own(m), v=>{ m.owners = v; }, {outside:true})),
       field("f-mdep","Depends on", textIn("f-mdep", ()=>m.dep, v=>m.dep=v)),
+      runwayPanel(m),
       present || UI.ws !== "timeline" && UI.ws !== "list" ? null : linkedBtn("ms", m.id),
       h("button",{class:"btn",onclick:()=>del("ms",m.id)},"Delete milestone"),
       h("button",{class:"btn",onclick:()=>{sel=null;render(true);}},"Done"));
