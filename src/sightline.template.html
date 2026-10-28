@@ -6226,7 +6226,7 @@ function applyNav(st){
     if (st.sel && (!st.plan || st.plan === S.meta.planId)){ const i = st.sel.indexOf(":"), t = st.sel.slice(0, i), id = st.sel.slice(i + 1); if (NAV_SEL.includes(t) && navFind(t, id)) sel = {type:t, id}; }
     saveUI(); fitKey = ""; render();
   } finally { navApplying = false; }
-  try { history.replaceState(null, "", "#" + encodeNav(navState())); } catch(e){}
+  try { history.replaceState(history.state, "", "#" + encodeNav(navState())); } catch(e){}
 }
 // A link or Back/Forward with a focus path: the focus sits on top of the link's own filters.
 function applyNavDrill(st){
@@ -6246,9 +6246,45 @@ function syncNav(){
     if (file.handle){ navPending = null; setStatus("That link is for another plan, so nothing was selected here. Open that plan to follow it."); } else return; }         // a different shared plan opened: the link was for another one
   const next = navState(), hash = "#" + encodeNav(next); if (hash === location.hash) return;
   const cur = parseNav(location.hash) || {}, go = cur.ws !== next.ws || (cur.pt || "") !== (next.pt || "") || (cur.sel || "") !== (next.sel || "") || (cur.dr || "") !== (next.dr || "");
-  try { go && cur.ws ? history.pushState(null, "", hash) : history.replaceState(null, "", hash); } catch(e){}
+  try { go && cur.ws ? pushPlace(hash) : history.replaceState(history.state, "", hash); } catch(e){}
 }
-window.addEventListener("popstate", ()=>applyNav(parseNav(location.hash)));
+// Back and Forward keep your place: each step remembers how far you'd scrolled the page, the chart, the details panel and any
+// other area with an id, and going back puts them there again once the page has drawn. Scrolls are noted as they happen
+// (the browser reports them a frame later, so a page drawn for the next step hasn't moved them yet when the step is added);
+// a new step starts from what's on screen. Each step has an id, and its place is kept in memory as well as in the browser's
+// history entry (written a moment after scrolling stops), so going back right after a scroll still keeps it. Never in the
+// address or the plan, so a copied link opens clean.
+let place = {}, placeT = 0, placeHold = false, placeGen = 0, placeId = "";
+const places = new Map(), newPlaceId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+function placeNow(){
+  const p = {"":[Math.round(window.scrollX), Math.round(window.scrollY)]}; let n = 0;
+  for (const el of document.querySelectorAll("[id]")){
+    if (n >= 24) break; if ((el.scrollTop || el.scrollLeft) && el.getClientRects().length){ p[el.id] = [Math.round(el.scrollLeft), Math.round(el.scrollTop)]; n++; } }
+  return p;
+}
+function savePlace(){ clearTimeout(placeT); if (typeof history === "undefined") return; places.set(placeId, place);
+  try { history.replaceState({...(history.state || {}), pid:placeId, place}, ""); } catch(e){} }
+function pushPlace(hash){ savePlace(); placeId = newPlaceId(); history.pushState({pid:placeId}, "", hash); place = placeNow(); places.set(placeId, place); }
+function restorePlace(p, gen){
+  // A page can finish drawing a little later (the details panel, the chart's fit, a long list), so try again for up to a second.
+  const go = () => { let all = true; Object.entries(p).forEach(([id, [x, y]])=>{ const el = id === "" ? document.scrollingElement : document.getElementById(id); if (!el) return;
+      if (id === "") window.scrollTo(x, y); else { el.scrollLeft = x; el.scrollTop = y; }
+      if (Math.abs(el.scrollLeft - x) > 2 || Math.abs(el.scrollTop - y) > 2) all = false; }); return all; };
+  let n = 0; const step = () => { if (gen !== placeGen || !placeHold) return;   // another step was opened, or you scrolled yourself
+    if (go() || ++n > 10){ place = {...p}; places.set(placeId, place); placeHold = false; return; } setTimeout(step, 100); };
+  go(); requestAnimationFrame(step);
+}
+try { history.scrollRestoration = "manual"; placeId = history.state && history.state.pid || newPlaceId(); history.replaceState({...(history.state || {}), pid:placeId}, ""); } catch(e){}
+["wheel", "touchstart", "keydown", "mousedown"].forEach(t=>window.addEventListener(t, ()=>{ placeHold = false; }, {capture:true, passive:true}));   // you scroll yourself: stop putting it back
+document.addEventListener("scroll", e=>{ if (placeHold) return; const t = e.target, el = t === document ? document.scrollingElement : t;
+  if (!el || (t !== document && !t.id)) return; place[t === document ? "" : t.id] = [Math.round(el.scrollLeft), Math.round(el.scrollTop)];
+  if (Object.keys(place).length > 24) delete place[Object.keys(place).find(k=>k)];
+  clearTimeout(placeT); placeT = setTimeout(savePlace, 250); }, {capture:true, passive:true});
+window.addEventListener("popstate", ()=>{
+  clearTimeout(placeT); places.set(placeId, place);                  // the step you left keeps a scroll made just now, in memory
+  placeId = history.state && history.state.pid || newPlaceId(); const p = places.get(placeId) || history.state && history.state.place;
+  const gen = ++placeGen; placeHold = !!p; place = p ? {...p} : {};
+  applyNav(parseNav(location.hash)); if (p) restorePlace(p, gen); });
 const linkHere = () => { const u = location.href; (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(()=>setStatus("Link copied. It opens this place in this plan."), ()=>{ window.prompt("Copy this link:", u); }); };
 // ================= filters (what's shown; calculations always use the whole plan) =================
 const lc = x => String(x||"").trim().toLowerCase();

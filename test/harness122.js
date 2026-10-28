@@ -127,6 +127,11 @@ const w = dom.window, d = w.document, ev = s=>w.eval(s), wait = ms=>new Promise(
     ok("U5 Back returns to the earlier layout", ev("listLayout()") === "start", ev("listLayout()") + " " + w.location.hash);
     w.history.forward(); await wait(60);
     ok("U5 …and Forward to the later one", ev("listLayout()") === "person", ev("listLayout()"));
+    // Back keeps your place: a step's saved scroll stays in its history entry through redraws and in-place updates (jsdom has no
+    // layout, so test/back-place.js checks the scrolling itself).
+    ev(`history.replaceState({place:{"":[0, 200]}}, ""); setListLayout('initiative'); render(); applyNav(parseNav(location.hash))`); await wait(10);
+    ok("U6 updating the address in place keeps the step's saved scroll", JSON.stringify(ev("history.state && history.state.place")) === '{"":[0,200]}', JSON.stringify(ev("history.state")));
+    ok("U6 …and the address never carries it", !/place|200/.test(w.location.hash), w.location.hash);
     ev("setListLayout('initiative'); sel = null; render()"); await wait(10);
     // Keyboard.
     const r0 = rows()[0]; r0.focus();
