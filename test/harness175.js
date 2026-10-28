@@ -38,7 +38,7 @@ const two = `setHiddenKinds(["gate"]); S.bars.find(b=>b.id === "c6").parked = tr
     ok("F9 a redraw keeps it open and keeps focus on Details", !det().hidden && d.activeElement === more());
     more().click(); await wait(5);
     X(`UI.filter.authors = ["nobody"]; render();`); await wait(10);
-    ok("F10 what you chose to hide comes first; what happened on its own after", /^1 kind hidden · \d+ hidden by Added by · 1 initiative parked$/.test(sum()), sum());
+    ok("F10 what you chose to hide comes first; what happened on its own after", /^1 kind hidden · \d+ hidden by the Added by filter · 1 initiative parked$/.test(sum()), sum());
     ok("F11 a new reason updates the line and leaves Details closed", det().hidden && more().getAttribute("aria-expanded") === "false");
     X(`UI.filter.authors = []; render();`); await wait(10);
     det().querySelector("#hsShowAll").click(); await wait(10);

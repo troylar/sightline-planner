@@ -132,13 +132,13 @@ function contrast(sel){
       ok(`L19 1400px ${theme}: the Time button shows a focus ring`, ring.on && ring.ring, JSON.stringify(ring));
       await page.close();
     }
-    // What the Timeline leaves out, three reasons: closed it's one short line and the chart starts higher than open; at
+    // What the Timeline leaves out, three reasons (the Added by filter hides one milestone, so the chart still has work on it): closed it's one short line and the chart starts higher than open; at
     // 900 nothing runs off the side and Details shows a focus ring. The late warning stays in view throughout.
     for (const [w, theme] of [[1400, "light"], [1400, "dark"], [900, "light"], [900, "dark"]]){
       const page = await b.newPage({viewport:{width:w, height:800}}); page.on("pageerror", e=>errs.push(String(e)));
       await page.goto("file://" + HTML); await page.evaluate(t=>{ localStorage.clear(); localStorage.setItem("timeline-planner-theme", t); }, theme); await page.goto("file://" + HTML); await page.waitForTimeout(300);
       await page.evaluate(FIX=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); loadExternal(FIX, "sample"); }, FIX); await page.waitForTimeout(200); await page.keyboard.press("Escape"); await page.waitForTimeout(100);
-      await page.evaluate(()=>{ setHiddenKinds(["gate"]); S.bars.find(x=>x.id === "c6").parked = true; UI.filter.authors = ["nobody"]; render(); }); await page.waitForTimeout(200);
+      await page.evaluate(()=>{ setHiddenKinds(["gate"]); S.bars.find(x=>x.id === "c6").parked = true; S.milestones[0].added = {by:S.people[0].id, at:"2026-10-01T00:00:00Z"}; UI.filter.authors = ["unknown"]; render(); }); await page.waitForTimeout(200);
       const strip = () => page.evaluate(()=>{ const s = document.querySelector("#hiddenStrip"), g = document.querySelector("#gscroll"), late = [...document.querySelectorAll("#banners *")].find(e=>/\d+ late/.test(e.textContent));
         return {h:Math.round(s.getBoundingClientRect().height), chart:Math.round(g.getBoundingClientRect().top), over:document.scrollingElement.scrollWidth - innerWidth, late:!!late && late.getClientRects().length > 0}; });
       const shot = n => page.screenshot({path:path.join(process.env.SHOTS || require("os").tmpdir(), `hidden-${w}-${theme}-${n}.png`)});
