@@ -6475,14 +6475,15 @@ function runwayOf(m){
 const RUNWAY_SHOW = 8;
 function runwayPanel(m){
   const R = runwayOf(m), head = h("span",{class:"flabel"},"What leads here"), wrap = (...k) => h("div",{class:"field runway",id:"f-mrunway"}, head, ...k);
-  if (!R.rows.length && !R.gates.length) return wrap(h("p",{class:"hint"}, "Nothing is linked to it yet. Add the initiatives it waits for under Done when these finish, and their work shows here."));
+  if (!R.rows.length && !R.gates.length) return wrap(h("p",{class:"hint",id:"f-mrwnone"}, (String(m.dep || "").trim() ? "No initiatives are linked yet. Depends on is a note, so nothing in it is counted here. " : "Nothing is linked to it yet. ")
+    + "Add the initiatives it waits for under Done when these finish, and their work shows here."));
   const days = n => n === 1 ? "1 day" : `${n} days`, open = r => h("button",{type:"button",class:"rwopen",title:"Open it","data-rw":r.t + ":" + r.id,onclick:()=>select(r.t, r.id)}, r.label);
   const vsDue = r => { if (R.due == null) return ""; const d = r.e - R.due; return d > 0 ? `, ${days(d)} after the milestone` : d < 0 ? `, ${days(-d)} before it` : ", the milestone's date"; };
-  const left = R.rows.filter(r=>!r.done), last = left[0], late = left.filter(r=>r.late).length;
+  const left = R.rows.filter(r=>!r.done), last = left[0], late = left.filter(r=>r.late).length, over = left.filter(r=>r.overdue).length;
   const flags = r => [r.jira ? ["Jira's sprint", ""] : null, r.late ? ["After the milestone", "bad"] : null, r.overdue ? ["Overdue", "warn"] : null, r.parked ? ["Switched off", ""] : null]
     .filter(Boolean).map(([t, c])=>h("span",{class:"rwflag" + (c ? " " + c : "")}, t));
   return wrap(
-    h("p",{class:"hint",id:"f-mrwsum"}, `${R.rows.length} ${R.rows.length === 1 ? "item leads" : "items lead"} here: ${R.rows.length - left.length} done` + (late ? `, ${late} finishing after the milestone` : "") + "."),
+    h("p",{class:"hint",id:"f-mrwsum"}, `${R.rows.length} ${R.rows.length === 1 ? "item leads" : "items lead"} here: ${R.rows.length - left.length} done` + (over ? `, ${over} overdue` : "") + (late ? `, ${late} finishing after the milestone` : "") + "."),
     last ? h("p",{class:"rwlast" + (last.late ? " bad" : ""),id:"f-mrwlast"}, h("span",null,"Finishes last:"), open(last), h("span",null,`Ends ${listWhen(last.e)}${last.jira ? " (Jira's sprint)" : ""}${vsDue(last)}.`))
       : h("p",{class:"rwlast",id:"f-mrwlast"}, "All of it is done."),
     R.follows ? h("p",{class:"hint rwfollow",id:"f-mrwfollow"}, "Its date follows these initiatives, so it moves when they do. Anything still finishing after it, like a task past its initiative's end, is marked.")
@@ -12070,7 +12071,7 @@ function sideBody(put){
       field("f-mown","Owner(s)", ownerPicker("f-mown", ()=>own(m), v=>{ m.owners = v; }, {outside:true})),
       field("f-mdep","Depends on", textIn("f-mdep", ()=>m.dep, v=>m.dep=v)),
       runwayPanel(m),
-      present || UI.ws !== "timeline" && UI.ws !== "list" ? null : linkedBtn("ms", m.id),
+      present || UI.ws !== "timeline" && UI.ws !== "list" || !(m.after || []).length && !isSeed("ms", m.id) ? null : linkedBtn("ms", m.id),   // nothing linked: it would show the milestone alone
       h("button",{class:"btn",onclick:()=>del("ms",m.id)},"Delete milestone"),
       h("button",{class:"btn",onclick:()=>{sel=null;render(true);}},"Done"));
   } else if (sel.type==="lane"){

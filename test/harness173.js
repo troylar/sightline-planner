@@ -18,15 +18,21 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
   try {
     await wait(150); w.FIX = FIX;
     ev(`askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); S = normalize(JSON.parse(FIX), false); file.handle = null; UI.filter = normFilter({}); UI.ws = "timeline"; render();`);
-    ev(`select("ms", "ms9");`); await wait(10);
+    ev(`window._dep9 = S.milestones.find(m=>m.id === "ms9").dep; S.milestones.find(m=>m.id === "ms9").dep = ""; select("ms", "ms9");`); await wait(10);
     ok("R1 a milestone with nothing linked says so, and how to link it", /Nothing is linked to it yet/.test(txt()) && /Done when these finish/.test(txt()), txt().slice(0, 120));
+    ok("R1b …and offers no Show linked work, which would show the milestone alone", !d.querySelector("#f-linked") && !d.querySelector("#f-linkedOnly"));
+    ev(`S.milestones.find(m=>m.id === "ms9").dep = "Env owner, spend"; render(true);`); await wait(10);
+    ok("R1c with only a Depends on note, it says the note isn't counted, instead of that nothing leads here", /No initiatives are linked yet\. Depends on is a note/.test(txt()) && !/Nothing is linked/.test(txt()), txt().slice(0, 140));
+    ev(`S.milestones.find(m=>m.id === "ms9").dep = window._dep9; render(true);`);
 
     ev(`commit(()=>{ S.milestones.find(m=>m.id === "ms8").after = ["c4"]; }); select("ms", "ms8");`); await wait(10);
     const plan0 = X("JSON.stringify(planOfRecord(S))"), keys = X(`JSON.stringify([...runwayOf(S.milestones.find(m=>m.id === "ms8")).rows.map(r=>r.t + ":" + r.id)])`);
     const got = JSON.parse(keys || "[]");
     ok("R2 it lists the work the milestone waits for, all the way back", ["c4","c3","c1","m3","m2","m1"].every(x=>got.includes("bar:" + x)) && got.length === 6, got.join(","));
     ok("R3 …and nothing that waits on it (c5, c6) or only shares a prerequisite (c2, m4)", !["c5","c6","c2","m4"].some(x=>got.includes("bar:" + x)));
-    ok("R4 the card shows the runway with a count of what leads here", /6 items lead here: 0 done/.test(txt()), txt().slice(0, 140));
+    const over = X(`runwayOf(S.milestones.find(m=>m.id === "ms8")).rows.filter(r=>!r.done && r.e < todayDay()).length`);
+    ok("R4 the card shows the runway with a count of what leads here, and how much is overdue", over > 0 && new RegExp(`6 items lead here: 0 done, ${over} overdue\\.`).test(txt()), over + " overdue; " + txt().slice(0, 140));
+    ok("R4b a milestone with work linked offers Show linked work", !!d.querySelector("#f-linked"));
     const lastId = X(`(()=>{ const r = runwayOf(S.milestones.find(m=>m.id === "ms8")).rows; return r.filter(x=>!x.done).sort((a, b)=>b.e - a.e)[0].id; })()`);
     const lastEl = d.querySelector("#f-mrwlast"), lastBtn = lastEl && lastEl.querySelector("[data-rw]");
     ok("R5 it names what finishes last, with its date, as the cause", !!lastBtn && lastBtn.getAttribute("data-rw") === "bar:" + lastId && /^Finishes last:.+Ends \w{3} \d+/.test(lastEl.textContent), lastEl && lastEl.textContent);
