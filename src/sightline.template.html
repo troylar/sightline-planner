@@ -6094,7 +6094,7 @@ function fillZoomBar(pageable){
     h("button",{class:"btn",type:"button",id:"pgNext","aria-label":cs ? "Next sprint" : "Later",title:cs ? "Next sprint (])" : "Later (])",disabled:!pageable,onclick:()=>viewPage(1)},"›"),
     focus ? null : sep(),
     focus ? null : h("span",{class:"zpresets",role:"group","aria-label":"Show sprints"}, ZOOM_PRESETS.map(([k, t])=>h("button",{type:"button",class:"btn zp","data-preset":String(k),"aria-pressed":String(presetOn(k)),
-      "aria-label":t,title:`${t} (Shift+${k})`,"aria-keyshortcuts":`Shift+${k}`,disabled:!!k && !nowSprint(),onclick:()=>zoomPreset(k)}, k ? String(k) : "Fit"))),
+      "aria-label":t,title:`${t} (${keyLabel("Shift+" + k)})`,"aria-keyshortcuts":`Shift+${k}`,disabled:!!k && !nowSprint(),onclick:()=>zoomPreset(k)}, k ? String(k) : "Fit"))),
     sep(),
     h("button",{class:"btn",type:"button",id:"zoomOut","aria-label":"Zoom out: one more sprint",title:"One more sprint on screen (−)",disabled:!n,onclick:zoomOut},"−"),
     h("span",{class:"vh",id:"zoomLab","aria-live":"polite"}, zoomText()),
@@ -11451,7 +11451,7 @@ function renderSide0(){
   put(h("div",{class:"sidehead"}, h("h3",{}, sideIcon(), titles[sel.type] || "Edit"), NAV_SEL.includes(sel.type) ? h("button",{type:"button",class:"linkish sidelink",id:"sideLink",title:"Copy a link that opens this, in this plan",onclick:linkHere},"Copy link") : null, h("button",{class:"x nav",type:"button","aria-label":"Close panel",title:"Close (Esc)",onclick:()=>{ sel=null; render(true); }},"×")));
   if (sel.type !== "help" && !present && !editable() && file.handle && !file.holdLock) put(h("div",{class:"viewonly"}, (sel.type === "bar" || sel.type === "task") ? "Quick updates below save right away. To change anything else, click " : "View only. Click ", h("b",{},"Start editing"), (sel.type === "bar" || sel.type === "task") ? "." : " in the toolbar to make changes."));
   { const hk = {meeting:"meeting", gate:"gate", block:"process", release:"release", ms:"milestone", deliverable:"deliverable"}[sel.type];
-    if (hk && ["timeline","people","list"].includes(UI.ws)) put(h("div",{class:"sidehide"}, h("button",{type:"button",class:"linkish",id:"sideHideKind",title:"Just for you, in this plan. Show everything (Shift+H) brings them back",
+    if (hk && ["timeline","people","list"].includes(UI.ws)) put(h("div",{class:"sidehide"}, h("button",{type:"button",class:"linkish",id:"sideHideKind",title:keysIn("Just for you, in this plan. Show everything (Shift+H) brings them back"),
       onclick:()=>{ sel = null; setHiddenKinds([...hiddenKinds(), hk], `${kindName(hk)} hidden. Shift+H shows everything`); showToast(`${kindName(hk)} hidden.`, "Show them", ()=>setHiddenKinds(hiddenKinds().filter(x=>x !== hk), `${kindName(hk)} shown`)); }}, `Hide all ${kindName(hk).toLowerCase()}`))); }
   if (sel.type === "amend"){ amendPanel(put); return; }
   if (sel.type === "deliverable"){

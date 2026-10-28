@@ -128,10 +128,13 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
   { const m = new JSDOM(html, {runScripts:"dangerously", pretendToBeVisual:true, url:"https://local.test/", virtualConsole:new VirtualConsole(), beforeParse(w){
-      Object.defineProperty(w.navigator, "platform", {value:"MacIntel"}); w.HTMLCanvasElement.prototype.getContext = ()=>null; w.Element.prototype.scrollIntoView = ()=>{}; w.indexedDB = undefined; }});
+      Object.defineProperty(w.navigator, "platform", {value:"MacIntel"}); w.CSS = w.CSS || {}; w.CSS.escape = s=>s; w.HTMLCanvasElement.prototype.getContext = ()=>null; w.Element.prototype.scrollIntoView = ()=>{}; w.indexedDB = undefined; }});
     await wait(200); const md = m.window.document;
     ok("N24 on a Mac the toolbar's tooltips say ⌘ too: Find, Save and Undo", /\(\/ or ⌘K\)/.test(md.querySelector("#findBtn").title) && /⌘S/.test(md.querySelector("#saveFile").title) && /⌘Z/.test(md.querySelector("#undo").title) && !/Ctrl/.test(md.querySelector("#findBtn").title + md.querySelector("#saveFile").title + md.querySelector("#undo").title), [md.querySelector("#findBtn").title, md.querySelector("#saveFile").title, md.querySelector("#undo").title].join(" | "));
     ok("N25 …while anywhere else they still say Ctrl", /Ctrl\+K/.test(d.querySelector("#findBtn").title) && /Ctrl\+Z/.test(d.querySelector("#undo").title), d.querySelector("#findBtn").title);
+    m.window.FIX = FIX; m.window.eval(`askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); S = normalize(JSON.parse(FIX), false); file.handle = null; goWs("timeline"); render(); select("bar", S.bars[0].id); render();`); await wait(50);
+    const literal = [...md.querySelectorAll("[title]")].map(e=>e.title).filter(t=>/\b(?:Ctrl|Shift|Alt)\+/.test(t));
+    ok("N26 on a Mac no tooltip on the Timeline still spells out Ctrl+, Shift+ or Alt+ (ARIA keeps the standard names)", !literal.length && md.querySelectorAll('[aria-keyshortcuts*="Shift+"]').length > 0, literal.slice(0, 3).join(" | "));
     m.window.close(); }
   console.log(R.join("\n")); const f = R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
 })();
