@@ -5964,7 +5964,8 @@ function quickKey(k){
 }
 // O: put the cursor in the selected item's owner picker (its lead, when Jira assigns it). Owners are a plan edit.
 function openOwners(){
-  if (!sel || !["bar","task"].includes(sel.type) || !CMD_VIEWS.includes(UI.ws)) return false;
+  if (!CMD_VIEWS.includes(UI.ws)){ setStatus("O works on the Timeline and the List: select a task or initiative there, then press O."); return true; }
+  if (!sel || !["bar","task"].includes(sel.type)) return false;
   const it = selWork(); if (!it) return false;
   if (!selLeaf()){ setStatus(`${itemLabel(it)} takes its owners from what's inside it.`); return true; }
   if (!editable()){ setStatus("Start editing (E) to change who owns it."); return true; }
@@ -15141,7 +15142,7 @@ function renderToday(){
     UI.todayFocus = {key: li ? li.dataset.tkey : "", sec: secs.indexOf(sec), idx: li ? [...sec.querySelectorAll("li")].indexOf(li) : 0}; fn(); }}, t);
   const itemRow = (it, meta, actions) => h("li",{class:"trow","data-tkey":it.key},
     h("div",{class:"tmain"}, h("button",{type:"button",class:"linkish tname","data-key":"today:" + it.key,title:itemLabel(it),onclick:()=>goTo(it.type, it.id)}, itemLabel(it)), h("small",{}, where(it))),
-    h("div",{class:"tmeta"}, meta), h("div",{class:"twho"}, who(it)), present ? null : (L => h("div",{class:"tacts"}, ...(L ? actions.filter(a=>a.textContent === "Unblock") : actions), L ? h("span",{class:"hint",title:"Its dates and status come from Jira"}, "Update it in Jira") : null))(jiraLockOf(it.obj)));
+    h("div",{class:"tmeta"}, meta), h("div",{class:"twho"}, who(it)), present ? null : (L => h("div",{class:"tacts"}, ...(L ? actions.filter(a=>a.textContent === "Unblock") : actions), L ? (u => u ? h("a",{class:"hint tjira",href:u,target:"_blank",rel:"noopener noreferrer",title:`Its dates and status come from Jira. Open ${L.key || it.obj.jira} there.`}, "Update it in Jira ↗") : h("span",{class:"hint",title:"Its dates and status come from Jira"}, "Update it in Jira"))(jiraUrl(L.key || it.obj.jira)) : null))(jiraLockOf(it.obj)));
   let quiet = [];
   const section = (ic, title, hint, list, tone, extra, quietName) => { if (!list.length && quietName){ quiet.push(quietName); return null; }
     return h("section",{class:"tsec " + (tone||""),"data-tsec":title},

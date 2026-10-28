@@ -1,5 +1,27 @@
 [
   {
+    "version": "1.155.0",
+    "date": "2026-10-28",
+    "headline": "Update it in Jira takes you there",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Today",
+        "title": "Update it in Jira opens the issue",
+        "now": "On Today, work whose dates come from Jira says Update it in Jira. When the plan knows your Jira site, that's now a link that opens the issue in a new tab.",
+        "where": "Today"
+      },
+      {
+        "kind": "improved",
+        "area": "Keyboard",
+        "title": "O says where it works",
+        "before": "Pressing O outside the Timeline and the List did nothing.",
+        "now": "It says O works on the Timeline and the List, so you know to select something there first.",
+        "where": "Any view other than the Timeline and the List"
+      }
+    ]
+  },
+  {
     "version": "1.154.2",
     "date": "2026-10-28",
     "headline": "Jira's dates hold everywhere",
