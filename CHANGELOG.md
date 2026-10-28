@@ -8,7 +8,7 @@ Move the selection from Find.
 
 ### New
 
-- **A week later, a week earlier, or the next sprint** (Keyboard). With a task or initiative selected on the Timeline or the List, open Find and type week later, week earlier or next sprint. The move is one Undo, and the status line says where it now starts and how many linked items moved with it. Work whose dates come from Jira isn't offered a move. *Where:* Find (/ or Ctrl+K), while editing
+- **A week later, a week earlier, or the next sprint** (Keyboard). With a task or initiative selected on the Timeline or the List, open Find and type week later, week earlier or next sprint. The status line says where it now starts, how many linked items moved with it, and that Ctrl+Z (⌘Z on a Mac) undoes it all. Focus stays on the item, so J, K and another move carry on. Jira-dated work isn't offered a move. *Where:* Find (/ or Ctrl+K), while editing
 
 ## 1.155.0 · Oct 28, 2026
 

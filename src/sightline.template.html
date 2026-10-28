@@ -7097,8 +7097,17 @@ function moveSelTo(day){ const it = selMovable(); if (!it || day == null) return
   const hs = HS(), b0 = starts(), ok = commit(()=>it.type === "task" ? act("task.move", {id:it.id, start:dayToIso(nextWork(Math.max(startDay(), day), hs))}) : act("initiative.move", {id:it.id, start:Math.max(0, (day - startDay())/7)}));
   const w = ok && selWork(); if (!w) return ok;
   const n = [...starts()].filter(([k, v])=>b0.has(k) && b0.get(k) !== v && k !== (it.type === "task" ? "t:" : "b:") + it.id).length;
-  queueMicrotask(()=>setStatus(`${itemLabel(w)} now starts ${fmtDay(selStartDay(w))}.` + (n ? ` ${n} linked item${n === 1 ? "" : "s"} moved with it to keep their order.` : "")));   // after the reschedule's own line
+  queueMicrotask(()=>setStatus(`${itemLabel(w)} now starts ${fmtDay(selStartDay(w))}.` + (n ? ` ${n} linked item${n === 1 ? "" : "s"} moved with it to keep their order.` : "") + ` Undo (${undoKey()}).`));   // after the reschedule's own line
+  focusSel(w.key);   // so J, K and another move carry on from it
   return ok; }
+const undoKey = () => /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "") ? "⌘Z" : "Ctrl+Z";
+// Keyboard focus on the selected item where it's drawn: its bar on the Timeline, its row in the List.
+function focusSel(key){
+  if (UI.ws === "list"){ const row = [...document.querySelectorAll("#listTable tr[data-lk]")].find(r=>r.dataset.lk === "list:" + key); if (!row) return;
+    document.querySelectorAll("#listTable tr[data-lk]").forEach(r=>{ r.tabIndex = -1; }); row.tabIndex = 0; row.focus(); return; }
+  const el = [...document.querySelectorAll("#gantt [data-sel]")].find(e=>e.dataset.sel === key && !e.closest("[hidden]"));
+  if (el){ el.scrollIntoView?.({block:"nearest", inline:"nearest"}); el.focus({preventScroll:true}); }
+}
 const undoable = redo => quickUndoable() ? quickStack(redo ? quickUndone : quickDone).length > 0 : editable() && (redo ? future : past).length > 0;
 const COMMANDS = [
   {id:"go-today", label:"Go to Today", keys:["T"], run:()=>goWs("today")},
