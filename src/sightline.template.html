@@ -15798,8 +15798,11 @@ function listGroups(m, layout){
     items.forEach(r=>{ const k = r.type === "story" ? "bar:" + r.b.id : r.type + ":" + r.id; if (!linked.has(k)){ loose.push(r); return; }
       const c = find(k); if (!groups.has(c)) groups.set(c, []); groups.get(c).push({...r, step:st.get(k) ?? 0}); });
     const rank = x => x < 0 ? 1e9 : x, out = [...groups.values()].map(rows=>{ rows.sort((a, b)=>rank(a.step) - rank(b.step) || byStart(a, b));
-      const first = rows[0], loop = rows.some(r=>r.step < 0), s0 = Math.min(...rows.map(r=>r.s ?? 1e12));
-      return {label:`From ${first.label}` + (loop ? " (includes a loop: some of this waits on itself)" : ""), connection:true, picked:rows.some(picked), s0, rows}; });
+      const loop = rows.some(r=>r.step < 0), s0 = Math.min(...rows.map(r=>r.s ?? 1e12));
+      // Name every starting point: one name alone reads as if the rest of the group comes after it.
+      const roots = rows.filter(r=>r.step === 0 && r.type !== "story").map(r=>r.label), from = roots.length ? roots : [rows[0].label];
+      const named = from.length > 3 ? `${from.length} starting points: ${from[0]}, +${from.length - 1}` : from.length > 1 ? from.slice(0, -1).join(", ") + " and " + from[from.length - 1] : from[0];
+      return {label:`From ${named}` + (loop ? " (includes a loop: some of this waits on itself)" : ""), connection:true, picked:rows.some(picked), s0, rows}; });
     out.sort((a, b)=>(b.picked - a.picked) || a.s0 - b.s0 || a.rows[0].ord - b.rows[0].ord);
     if (loose.length) out.push({label:"No links: waits for nothing, and nothing waits for it", connection:true, rows:loose.sort(byStart)});
     return out;
