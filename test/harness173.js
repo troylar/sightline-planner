@@ -38,7 +38,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("R5 it names what finishes last, with its date, as the cause", !!lastBtn && lastBtn.getAttribute("data-rw") === "bar:" + lastId && /^Finishes last:.+Ends \w{3} \d+/.test(lastEl.textContent), lastEl && lastEl.textContent);
     ok("R6 a milestone whose date follows its initiatives says so", /Its date follows these initiatives/.test((d.querySelector("#f-mrwfollow") || {}).textContent || ""));
     ok("R7 the rest are listed latest finish first, with date, status and owner", (()=>{ const lis = [...box().querySelectorAll("li")]; return lis.length === 5 && lis.every(li=>/Ends \w{3} \d+, [A-Z][a-z]+/.test(li.textContent)); })(), box().querySelectorAll("li").length + " rows");
-    ok("R8 nothing in it edits: only buttons that open an item", !box().querySelector("input,select,textarea") && [...box().querySelectorAll("button")].every(b=>b.classList.contains("rwopen")));
+    ok("R8 nothing in it edits: only buttons that open an item, and Show on the Timeline", !box().querySelector("input,select,textarea") && [...box().querySelectorAll("button")].every(b=>b.classList.contains("rwopen") || b.id === "f-mrwshow"));
 
     ev(`S.milestones.find(m=>m.id === "ms8").at -= 1; render(true);`); await wait(10);   // the date no longer covers c4 (a stale date or a clash)
     ok("R9 work finishing after the milestone's date is marked, and counted", d.querySelector("#f-mrwlast").classList.contains("bad") && /1 finishing after the milestone/.test(txt()) && /days? after the milestone/.test(d.querySelector("#f-mrwlast").textContent), d.querySelector("#f-mrwlast").textContent);

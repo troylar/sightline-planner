@@ -109,6 +109,23 @@ function contrast(sel){
             const fg = f.slice(0, 3).map((v, i)=>bg[i] + (v - bg[i]) * fa), [a, b] = [lum(fg), lum(bg)].sort((x, y)=>y - x); out.push((a + .05) / (b + .05)); }); });
         return {n:out.length, min:Math.round(Math.min(...out) * 100) / 100}; });
       ok(`L15 ${tag}: highlighted, the List's dimmed rows still read at 3:1 or better`, dimC.n > 10 && dimC.min >= 3, JSON.stringify(dimC));
+      // Leads here only, from a milestone's runway: the chip, Highlight instead and the direction toggle keep the strip one line.
+      await page.evaluate(()=>{ UI.filter = normFilter({}); S.milestones.find(m=>m.id === "ms8").after = ["c4"]; UI.ws = "list"; render(); select("ms", "ms8"); render(); document.querySelector("#f-mrwshow").click(); }); await page.waitForTimeout(250);
+      const lh = await page.evaluate(()=>{ const rows = () => { const r = e => e.getBoundingClientRect(), tops = [...document.querySelectorAll("#showStrip button")].filter(e=>e.getClientRects().length).map(e=>Math.round(r(e).top)).sort((x, y)=>x - y);
+          return tops.filter((t, i)=>!i || t - tops[i - 1] > 12).length; };
+        const out = {ws:UI.ws, dir:UI.filter.linkDir, toggle:!!document.querySelector("#showStrip #linkDir"), rows:rows(), over:document.documentElement.scrollWidth > innerWidth + 1};
+        setLinkDir("both"); out.bothRows = rows(); setLinkDir("up");
+        const pane = document.querySelector("#gscroll").getBoundingClientRect(), lab = UI.zoom === "days" ? UI.labelW.days : UI.labelW.weeks, mk = document.querySelector('#gantt [data-sel="ms:ms8"]');
+        const box = mk && mk.getBoundingClientRect(), end = box && Math.min(box.right, box.left + 96); out.card = !!document.querySelector("#f-mrunway");   // the diamond and its date
+        out.ms = box ? [Math.round(box.left), Math.round(end)] : null; out.pane = [Math.round(pane.left + lab), Math.round(pane.right)];
+        out.inView = !!box && box.width > 0 && box.left >= pane.left + lab && end <= pane.right - 32;
+        out.runway = [...document.querySelectorAll('#gantt [data-key^="task:"], #gantt .bar[data-sel], #gantt .tbar[data-sel]')].map(e=>e.getBoundingClientRect()).some(r=>r.width > 0 && r.right > pane.left + lab + 8 && r.left < pane.right); return out; });
+      ok(`L15b ${tag}: Leads here only from a milestone's card: the Timeline, one way, and the chip row stays one line either way`, lh.ws === "timeline" && lh.dir === "up" && lh.toggle && lh.rows === 1 && lh.bothRows === 1 && !lh.over, JSON.stringify(lh));
+      ok(`L15c ${tag}: with the milestone's card open, its diamond and date are inside the chart's visible part with room to spare, and (at 1500, where there's room) the runway is still on screen`, lh.card && lh.inView && (w < 1200 || lh.runway), JSON.stringify({card:lh.card, ms:lh.ms, pane:lh.pane, runway:lh.runway}));
+      if (w === 1500){ await page.screenshot({path:path.join(process.env.SHOTS || require("os").tmpdir(), `leads-here-${theme}.png`), clip:{x:0, y:0, width:w, height:700}});
+        await page.evaluate(()=>{ UI.filter = normFilter({}); render(); select("ms", "ms8"); render(); document.querySelector("#f-mrunway")?.scrollIntoView({block:"center"}); }); await page.waitForTimeout(200);
+        const box = await page.evaluate(()=>{ const r = document.querySelector("#f-mrunway").getBoundingClientRect(); return {x:Math.max(0, r.x - 12), y:Math.max(0, r.y - 12), width:r.width + 24, height:r.height + 24}; });
+        await page.screenshot({path:path.join(process.env.SHOTS || require("os").tmpdir(), `leads-here-card-${theme}.png`), clip:box}); }
       await page.close();
     }
     // The Time button: open at 1400 the toolbar is no taller than with every control always out (1.165.0's one row), and
