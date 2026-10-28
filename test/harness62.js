@@ -54,7 +54,7 @@ async function page(opts = {}){
   await sec(async ()=>{ const {ev} = await page({jira:false});
     ok("S1: team capacity is part of what saves and merges", ev(`(() => { const a = clone(S), b = clone(S); b.meta.capRates = [{from:"2026-09-01", points:10}]; return diffPlans(a, b).some(o=>o.field === "capRates"); })()`));
     // a Save as you go write that fails keeps the edit
-    ev(`localStorage.setItem(SAYG_KEY, "1"); file.handle = {name:"p.json"}; file.holdLock = false; file.baseText = serialize(S, "p.json"); file.baseHash = hashText(file.baseText); S.meta.title = "My edit"; file.dirty = true;
+    ev(`localStorage.setItem(SAYG_KEY, "1"); stopAuto(); startAuto = ()=>{}; file.handle = {name:"p.json"}; file.holdLock = false; file.baseText = serialize(S, "p.json"); file.baseHash = hashText(file.baseText); S.meta.title = "My edit"; file.dirty = true;
       window.qs0 = quickSave; quickSave = () => { S = normalize(JSON.parse(file.baseText), false); return Promise.resolve(false); };`);
     await ev("runSayg()"); await wait(10);
     ok("S2: a failed Save as you go write keeps the edit, still unsaved", ev("S.meta.title") === "My edit" && ev("file.dirty") === true);
