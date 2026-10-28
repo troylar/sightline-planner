@@ -168,7 +168,7 @@ body:not(.canEdit) .bar .h,body:not(.canEdit) .tbar .h{display:none}
 .linkline line{stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4}
 .linktarget{outline:3px solid var(--accent)!important;outline-offset:2px}
 .linked{outline:2px dashed var(--accent);outline-offset:2px}
-.link-dim{opacity:.3;filter:saturate(.35)}tr.link-dim{opacity:.5}.link-dim:hover,.link-dim:focus-visible,.link-dim.selected{opacity:.85;filter:none}
+.link-dim{opacity:.3;filter:saturate(.35)}tr.link-dim{opacity:.7}.link-dim:hover,.link-dim:focus-visible,.link-dim.selected{opacity:.85;filter:none}
 @media (prefers-reduced-motion:no-preference){.link-dim{transition:opacity .18s ease}}
 .legend i.lg-direct{background:transparent;outline:2px dashed var(--accent);outline-offset:-2px}
 .field .deps label,.field label.fcheck,.deps label{display:flex;gap:7px;align-items:flex-start;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:400;color:var(--ink);line-height:1.35;padding:2px 0}
@@ -4259,7 +4259,7 @@ function showStrip(){
     onclick:()=>{ showOff(k, id); focusShown(); }},
     h("span",{class:"sk"}, kind), h("span",{class:"sn"}, name), h("span",{class:"sx","aria-hidden":"true"}, "×"));
   return h("div",{class:"banner info showstrip",id:"showStrip",role:"group","aria-label":"Showing only"},
-    h("span",{class:"slabel"}, "Showing"),
+    h("span",{class:"slabel"}, lk.length && f.linkMode === "highlight" ? "Highlighting" : "Showing"),
     h("span",{class:"schips"}, ...lk.map(x=>h("button",{type:"button",class:"showchip linkchip","data-show":"linked:" + x.t + ":" + x.id,"aria-label":`Stop showing only what's linked to ${linkName(x)}`,title:`Stop showing only what's linked to ${linkName(x)}`,
         onclick:()=>{ linkedOff(x); focusShown(); }}, h("span",{class:"sk"}, "Linked to"), h("span",{class:"sn"}, linkName(x)), h("span",{class:"sx","aria-hidden":"true"}, "×"))),
       lk.length ? h("button",{type:"button",class:"linkish",id:"linkMode","aria-pressed":String(f.linkMode === "highlight"),title:f.linkMode === "highlight" ? "Hide what isn't linked" : "Keep everything on screen and dim what isn't linked",
