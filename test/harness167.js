@@ -191,6 +191,37 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
       else { ev(`window.TB = S.bars.find(b=>isLeafBar(b)); TB.tasks = [{id:"tq1", label:"one", start:dayToIso(nearWeekday(wkDay(TB.start))), days:2, owners:[], status:"notstarted"}, {id:"tq2", label:"two", start:dayToIso(nearWeekday(wkDay(TB.start))), days:2, owners:[], status:"notstarted"}]; window.FT = TB.tasks[0]; jiraLockOf = o => o === FT ? {dates:true, key:"ABC-4"} : JL2(o); window.TS = TB.tasks.map(t=>t.start); shiftTasks(TB, 7);`);
         ok("K47 …and the same for a task inside it", X("FT.start === TS[0] && TB.tasks.slice(1).every((t, i)=>t.start !== TS[i + 1])"), X("JSON.stringify([TS, TB.tasks.map(t=>t.start)])")); } }
     ev(`jiraLockOf = JL2; S = normalize(JSON.parse(FIX), false); sel = null; render();`);
+    // Find moves the selection by a week, or to the next sprint
+    ev(`closeFind(); UI.ws = "timeline"; window.MB = S.bars.find(b=>isLeafBar(b) && !(b.tasks || []).length && !derived(b) && b.start >= 1 && b.start + b.span <= S.meta.weeks - 4); select("bar", MB.id); render(); window.MB0 = MB.start; window.MP = past.length;`); await wait(10);
+    const mv = acts("move the sel");
+    ok("K54 Find offers a week later, a week earlier and the next sprint for a selected initiative", ["Move the selection a week later", "Move the selection a week earlier", "Move the selection to the next sprint"].every(x=>mv.includes(x)), mv.join("|"));
+    ev(`closeFind(); runCmd("week-later");`); await wait(10);
+    ok("K55 …a week later moves it one week, as one undo step, and says where it starts now", X("MB.start") === X("MB0 + 1") && X("past.length") === X("MP + 1") && /now starts/.test($("#status")?.textContent || ""), [X("MB.start"), X("MB0"), $("#status")?.textContent].join(" | "));
+    ok("K59 …the status line ends with how to take it back", /Undo \(Ctrl\+Z\)\.$/.test($("#status")?.textContent || ""), $("#status")?.textContent);
+    ok("K60 …and keyboard focus is on the moved initiative's bar, not the Find button", d.activeElement?.closest?.("#gantt [data-sel]")?.dataset.sel === "bar:" + X("MB.id"), d.activeElement && (d.activeElement.dataset?.sel || d.activeElement.id || d.activeElement.tagName));
+    ev(`undo(); render(); select("bar", MB.id); render(); UI.ws = "list"; render(); select("bar", MB.id); render();`); await wait(10);
+    open("week later"); ev(`findCmd("week-later")`); await wait(20);
+    ok("K61 from Find in the List, focus lands on the moved item's row", d.activeElement?.dataset?.lk === "list:bar:" + X("MB.id"), d.activeElement && (d.activeElement.dataset?.lk || d.activeElement.id || d.activeElement.tagName));
+    ev(`Object.defineProperty(navigator, "platform", {value:"MacIntel", configurable:true});`);
+    ok("K62 on a Mac the Undo key reads ⌘Z", X("undoKey()") === "⌘Z", X("undoKey()"));
+    ev(`delete navigator.platform; UI.ws = "timeline"; render();`);
+    ev(`undo(); render(); select("bar", MB.id); render();`); await wait(10);
+    ok("K55b …and Undo puts it back", X("barById(MB.id).start") === X("MB0"), X("barById(MB.id).start"));
+    ev(`runCmd("next-sprint");`); await wait(10);
+    ok("K56 …the next sprint starts it where the first sprint after its current start begins", X("wkDay(barById(MB.id).start)") === X("sprintRanges().find(r=>r.s > wkDay(MB0)).s"), [X("barById(MB.id).start"), X("MB0")].join(" | "));
+    ev(`undo(); render(); window.MT = S.bars.flatMap(b=>b.tasks || []).find(t=>t.id === "fa") || null;`);
+    ev(`{ const b = S.bars.find(x=>x.id !== MB.id && isLeafBar(x) && !(x.tasks || []).length && x.start >= 1); b.tasks = [{id:"tmv", label:"Moving task", start:dayToIso(nearWeekday(wkDay(b.start))), days:2, owners:[], status:"notstarted"}]; window.TB2 = b.id; render(); select("task", "tmv"); render(); window.TV0 = isoToDay(taskById("tmv").t.start); }`); await wait(10);
+    ev(`runCmd("week-later");`); await wait(10);
+    ok("K57 …and a task moves to the working day a week later", X(`isoToDay(taskById("tmv").t.start)`) === X("nextWork(TV0 + 7, HS())"), [X(`taskById("tmv").t.start`)].join());
+    ev(`window.JL3 = jiraLockOf; window.MB = barById(MB.id); jiraLockOf = o => o === MB ? {dates:true, key:"ABC-5"} : JL3(o); select("bar", MB.id); render();`); await wait(10);
+    const lockedMv = acts("move the sel");
+    ev(`jiraLockOf = JL3; window.HD2 = file.handle; file.handle = {name:"plan.json"}; file.holdLock = null; render();`); await wait(10);
+    const notEditing = acts("move the sel");
+    ev(`file.handle = HD2; select("bar", TB2); render();`); await wait(10);
+    const rolled = acts("move the sel");
+    ev(`select("bar", MB.id); render();`); const openMv = acts("move the sel");
+    ok("K58 …and Find doesn't offer moves for work Jira dates, while you're not editing, or for an initiative dated by its tasks", openMv.length === 3 && !lockedMv.length && !notEditing.length && !rolled.length, [openMv, lockedMv, notEditing, rolled].map(x=>x.join("|")).join(" / "));
+    ev(`closeFind(); S = normalize(JSON.parse(FIX), false); sel = null; render();`);
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
   console.log(R.join("\n")); const f = R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
