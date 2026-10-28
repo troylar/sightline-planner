@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.171.0",
+    "date": "2026-10-28",
+    "headline": "Linked work sideways",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "See what shares a prerequisite",
+        "now": "While linked work is showing, open Linked work beside the chips and choose Work that waits for the same things. It adds the work held up by something your picks wait for, and what's in it, and the status line counts those items on their own. The same menu switches between Both ways and Leads here only, which used to be a separate button. Choose it again, or press Back, to take those items off.",
+        "before": "Show linked work showed what your picks wait for and what waits for them, but not other work held up by the same thing.",
+        "where": "The Linked work menu in the Showing strip, above the chart or the List"
+      }
+    ]
+  },
+  {
     "version": "1.170.3",
     "date": "2026-10-28",
     "headline": "Linked work counts what's shown",

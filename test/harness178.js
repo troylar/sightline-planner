@@ -1,6 +1,6 @@
 // Leads here only: the linked lens in one direction, so a milestone's runway (or an initiative's prerequisites) is what's
 // on the Timeline and nothing that waits on it. From the runway on a milestone's card (Show on the Timeline), the >
-// key, or the toggle beside Highlight instead. A viewer's choice: Back undoes it, it's never in a saved view, and the
+// key, or the Linked work menu beside Highlight instead. A viewer's choice: Back undoes it, it's never in a saved view, and the
 // plan doesn't change. The sample plan's chains (m1 -> m2 -> m3, c1 -> c3 -> c4 <- m3, c4 -> c5 -> c6, and the
 // sideways c2 and m4); every name is invented.
 const {JSDOM, VirtualConsole} = require("jsdom"), fs = require("fs"), path = require("path");
@@ -32,8 +32,11 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
       X("UI.ws") === "timeline" && vis().join() === RUN.join() && JSON.stringify(J("UI.filter.linked")) === JSON.stringify([{t:"ms", id:"ms8"}]), X("UI.ws") + " " + vis().join());
     const rows = J(`runwayOf(S.milestones.find(m=>m.id === "ms8")).rows.filter(r=>r.t === "bar").map(r=>r.id).sort()`);
     ok("H3 …the same items the card lists", Array.isArray(rows) && rows.join() === vis().join(), String(rows));
-    const chip = d.querySelector('#showStrip [data-show="linked:ms:ms8"]'), tg = d.querySelector("#showStrip #linkDir");
-    ok("H4 the chip says Leading to, and the toggle beside Highlight instead is pressed", !!chip && /^Leading to/.test(chip.textContent) && !!tg && tg.getAttribute("aria-pressed") === "true" && !!d.querySelector("#showStrip #linkMode"), (chip && chip.textContent) + " | " + (tg && tg.textContent));
+    const chip = d.querySelector('#showStrip [data-show="linked:ms:ms8"]'), tg = d.querySelector("#showStrip #linkScope");
+    tg && tg.click(); await wait(10); const lmUp = d.querySelector("#linkMenu:not([hidden]) #lmUp");
+    ok("H4 the chip says Leading to, and the Linked work menu beside Highlight instead has Leads here only checked", !!chip && /^Leading to/.test(chip.textContent) && !!lmUp && lmUp.getAttribute("aria-checked") === "true" && d.activeElement === lmUp && tg.getAttribute("aria-expanded") === "true" && !!d.querySelector("#showStrip #linkMode"), (chip && chip.textContent) + " | " + (tg && tg.textContent));
+    lmUp && lmUp.dispatchEvent(new w.KeyboardEvent("keydown", {key:"Escape", bubbles:true, cancelable:true})); await wait(10);
+    ok("H4b Escape closes the menu and goes back to its button, with nothing changed", d.querySelector("#linkMenu").hidden && d.activeElement === d.querySelector("#showStrip #linkScope") && dir() === "up");
     const said = Number((status().match(/what leads to .*: (\d+) items?\./) || [])[1]);
     const drawn = [...new Set([...d.querySelectorAll("#gantt [data-sel]")].map(e=>e.dataset.sel))].filter(k=>/^(bar|task|ms|gate):/.test(k) && k !== "ms:ms8");
     ok("H5 the status line says what leads to it, and its count is what's drawn in the chart", said > 0 && said === drawn.length, `said ${said}, drawn ${drawn.length}: ${status()}`);
@@ -47,8 +50,8 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("H9 > again shows both ways: what waits for it comes back", dir() === "both" && ["c5","c6"].every(x=>vis().includes(x)) && /linked to it/.test(status()), vis().join());
     w.history.back(); await wait(80);
     ok("H10 Back goes back to Leads here only", dir() === "up" && vis().join() === RUN.join(), dir() + " " + vis().join());
-    d.querySelector("#showStrip #linkDir")?.click(); await wait(20);
-    ok("H11 the toggle switches it too, and says what it does next", dir() === "both" && d.querySelector("#showStrip #linkDir")?.textContent === "Leads here only" && d.querySelector("#showStrip #linkDir")?.getAttribute("aria-pressed") === "false", d.querySelector("#showStrip #linkDir")?.textContent);
+    d.querySelector("#showStrip #linkScope")?.click(); await wait(10); d.querySelector("#linkMenu #lmBoth")?.click(); await wait(20);
+    ok("H11 the menu switches it too, closes, and leaves focus on its button", dir() === "both" && d.querySelector("#linkMenu").hidden && d.activeElement === d.querySelector("#showStrip #linkScope"), dir());
     X(`setLinkDir("up"); select("bar", "c2"); render();`); await wait(10);
     await key("C", {code:"KeyC", shift:true});
     const v2 = vis();
