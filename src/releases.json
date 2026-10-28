@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.154.0",
+    "date": "2026-10-28",
+    "headline": "O changes who owns the selection",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Keyboard",
+        "title": "O for owners",
+        "now": "With a task or initiative selected on the Timeline or the List, press O to jump to its owner picker. Type a name and press Enter to add them; Undo takes it back. On a Jira item it sets the plan's lead, never Jira's assignee. Find offers it as Change who owns the selection.",
+        "where": "Timeline and List, while editing"
+      }
+    ]
+  },
+  {
     "version": "1.153.1",
     "date": "2026-10-28",
     "headline": "I and X leave Jira's status alone",

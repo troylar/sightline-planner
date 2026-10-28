@@ -5658,7 +5658,7 @@ document.addEventListener("keydown", e=>{
 const APP_NAME = "Sightline", APP_TAGLINE = "Your team's work, in plain sight.";
 const SHORTCUTS = [       // [keys (each shown as a key; alternatives joined by "or"), what it does]
   ["Get around", [[["1","2","3","4","5","6"],"Today, Timeline, People, Settings, Sprint, Roadmap", " "],[["T","L"],"Today or List"],[["\\"],"Collapse or expand the menu"],[["/","Ctrl+K"],"Find anything, or an action by name"],[["W","D"],"Weeks or Days view"],[["R"],"Rows by workstream, person or epic"],[["."],"Jump to today"],[["[","]"],"Earlier / later (Days view), or the previous / next sprint when one is chosen"],[["+","−"],"One sprint fewer or more on screen"],[["Shift+1","Shift+2","Shift+3"],"This sprint, this and the next, or the next three, from the sprint we're in"],[["Shift+0"],"Fit the whole plan"],[["J","K"],"Next or previous item in this view"],[["Z"],"Show only the selected initiative or person, as a chip above the chart (× takes it off)"],[["↑","↓"],"Previous / next item, while its details are open (Timeline and List)"],[["Esc"],"Close whatever is open"]]],
-  ["Update the item you've selected", [[["I"],"In progress"],[["X"],"Done (again: back to in progress)"],[["B"],"Mark blocked"],[["U"],"Write an update"],[["S"],"Stick a note on it"],[["Enter"],"Open it"]]],
+  ["Update the item you've selected", [[["I"],"In progress"],[["X"],"Done (again: back to in progress)"],[["B"],"Mark blocked"],[["U"],"Write an update"],[["S"],"Stick a note on it"],[["O"],"Change who owns it (while editing)"],[["Enter"],"Open it"]]],
   ["Plan", [[["A"],"Add something (then a letter from the menu)"],[["←","→"],"Move the selected item (with Shift: smaller steps)"],[["Alt+←","Alt+→"],"Make it shorter / longer"],[["Delete"],"Delete it"],[["Ctrl+Z","Ctrl+Y","Ctrl+Shift+Z"],"Undo / redo (either redo key)"]]],
   ["Show and share", [[["F"],"Filters"],[["V"],"Saved views"],[["H"],"Show menu: hide gates, meetings, done work and more, or pin the top rows"],[["G","M"],"Hide or show gates / meetings"],[["Shift+H"],"Show everything you hid"],[["N"],"Show / hide notes"],[["P"],"Present"],[["E"],"Start editing / Done editing (shared file)"],[["Ctrl+S"],"Save"],[["?"],"This help"]]],
 ];
@@ -5961,6 +5961,14 @@ function quickKey(k){
   if (k === "u"){ openBox("q-upd"); return true; }
   if (k === "s"){ openBox("sticky-in"); return true; }
   return false;
+}
+// O: put the cursor in the selected item's owner picker (its lead, when Jira assigns it). Owners are a plan edit.
+function openOwners(){
+  if (!sel || !["bar","task"].includes(sel.type) || !CMD_VIEWS.includes(UI.ws)) return false;
+  const it = selWork(); if (!it) return false;
+  if (!selLeaf()){ setStatus(`${itemLabel(it)} takes its owners from what's inside it.`); return true; }
+  if (!editable()){ setStatus("Start editing (E) to change who owns it."); return true; }
+  focusSoon(it.type === "task" ? "#f-towner" : "#f-owner"); return true;
 }
 // ================= zoom (per-browser view settings, not saved in the file) =================
 const UI = {ws:"timeline", zoom:"weeks", focus:null, collapsed:{}};
@@ -7106,6 +7114,7 @@ const COMMANDS = [
   {id:"blocked", label:"Mark the selection blocked", keys:["B"], when:selLeaf, run:()=>quickKey("b")},
   {id:"update", label:"Write an update on the selection", keys:["U"], when:()=>!!selWork(), run:()=>quickKey("u")},
   {id:"sticky", label:"Add a sticky note to the selection", keys:["S"], when:()=>!!selWork(), run:()=>quickKey("s")},
+  {id:"owners", label:"Change who owns the selection", also:"owner lead assign people", keys:["O"], when:()=>CMD_VIEWS.includes(UI.ws) && selLeaf() && editable(), run:()=>openOwners()},
   {id:"add", label:"Add an initiative, milestone, gate…", keys:["A"], when:()=>editable(), run:()=>openAddMenu($("#addBtn").getBoundingClientRect(), {})},
   {id:"edit", label:"Start editing", keys:["E"], when:()=>!!file.handle && !file.holdLock && !present, run:()=>startEditing()},
   {id:"edit-done", label:"Done editing", keys:["E"], when:()=>!!file.handle && !!file.holdLock && !present, run:()=>doneEditing()},
@@ -16072,6 +16081,7 @@ document.addEventListener("keydown", e=>{
   else if ((e.key === "ArrowDown" || e.key === "ArrowUp") && !mod && !e.altKey && !e.shiftKey && NAV_STOPS[UI.ws] && document.activeElement?.closest?.(NAV_STOPS[UI.ws])){ e.preventDefault(); stepFocus(e.key === "ArrowDown" ? 1 : -1); }
   else if ((k==="j" || k==="k") && !mod && !e.altKey && !e.shiftKey && (["timeline","list"].includes(UI.ws) || NAV_STOPS[UI.ws])){ e.preventDefault(); const d = k === "j" ? 1 : -1; if (!stepFocus(d)) stepItem(d); }
   else if (["i","x","b","u","s"].includes(k) && !mod && !e.altKey && !present && quickKey(k)){ e.preventDefault(); }
+  else if (k==="o" && !mod && !e.altKey && !e.shiftKey && !present && openOwners()){ e.preventDefault(); }
   else if (e.key === "." && !mod){ jumpToday(); }
   else if (k==="z" && !mod && !e.altKey && sel && ["bar","task","person"].includes(sel.type)){ e.preventDefault(); sel.type === "task" ? showOnly("bar", taskById(sel.id)?.b.id) : showOnly(sel.type, sel.id); }
   else if ((e.key === "[" || e.key === "]") && !mod && (UI.zoom === "days" || chosenSprint())){ viewPage(e.key === "]" ? 1 : -1); }
