@@ -10,10 +10,15 @@ const dom = new JSDOM(html,{runScripts:"dangerously",pretendToBeVisual:true,url:
   w.indexedDB=undefined; w.confirm=()=>true; w.alert=m=>{w.lastAlert=m;}; w.prompt=()=>"T"; w.URL.createObjectURL=()=>"blob:x"; w.URL.revokeObjectURL=()=>{}; w.HTMLAnchorElement.prototype.click=function(){};
   w.CSS=w.CSS||{}; w.CSS.escape=s=>s; w.errs=[]; w.addEventListener("error",e=>w.errs.push(e.message)); }});
 const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeout(r,ms));
+// Under a parallel run a fixed few milliseconds can end before the editor is drawn: wait for it, up to two seconds.
+const until=async(what,f,ms=2000)=>{ const t=Date.now(); while(!f() && Date.now()-t<ms) await wait(10); if (!f()) console.log(`(waited ${ms}ms for ${what}; the check below will fail)`); };
 (async()=>{
   await wait(150);
   ev("window.__askWho = askWhoOnStart; askWhoOnStart = ()=>{}");   // tested on its own below
   ev("window.__resched = reschedule; reschedule = ()=>({moved:0})");   // auto-moving is tested on its own below
+  // The 15-second shared-file check runs on real time. On a loaded machine it fired mid-run against the stand-in file
+  // handles below, found no permission, unlinked the "file" and dropped the edit lock, and Present then started in SR9.
+  ev("stopAuto(); startAuto = ()=>{}");
   const st = plan.meta.start;  // a Monday
   const p = JSON.parse(JSON.stringify(plan));
   p.holidays=[{date:"2026-10-12",name:"Columbus Day"}];
@@ -279,7 +284,7 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   ev("UI.planTab='calendar';setWs('plan')");
   ok("weekend holiday flagged and moves nothing", /nothing moved/.test(d.querySelector("#status").textContent) && d.querySelectorAll("#t-holidays .misflag").length===1);
   ev("undo()");
-  d.querySelector("#addHoliday").click(); await wait(5);
+  d.querySelector("#addHoliday").click(); await until("the new holiday row to take focus", ()=>d.activeElement && /^hol-/.test(d.activeElement.id));
   ok("+ Holiday focuses the new row and reports", d.activeElement && /^hol-/.test(d.activeElement.id) && /Added a holiday on/.test(d.querySelector("#status").textContent));
   ev("undo();setWs('timeline')");
   // --- holidays take working days from initiatives too ---
@@ -300,11 +305,11 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   // --- step 3: add on the chart ---
   ev(`loadExternal(${JSON.stringify(JSON.stringify(p))},"t")`); await wait(30); ev("setZoom('weeks'); sel=null; render()");
   const nms = ev("S.milestones.length");
-  ev(`createAt("milestone", S.lanes[0].id, isoToDay("2026-10-14"))`); await wait(5);
+  ev(`createAt("milestone", S.lanes[0].id, isoToDay("2026-10-14"))`); await until("the new milestone's editor", ()=>d.activeElement && d.activeElement.id==="f-mwhat");
   ok("create milestone at a day opens it", ev("S.milestones.length")===nms+1 && ev("sel.type")==="ms" && ev("dayToIso(nearWeekday(atToDay(S.milestones.find(m=>m.id===sel.id).at)))")==="2026-10-14" && ev("S.milestones.find(m=>m.id===sel.id).date")==="" && d.activeElement.id==="f-mwhat");
   ev("undo()");
   const ng = ev("S.gates.length");
-  ev(`createAt("gate", null, isoToDay("2026-10-17"))`); await wait(5);
+  ev(`createAt("gate", null, isoToDay("2026-10-17"))`); await until("the new gate's editor (#f-gdate)", ()=>d.querySelector("#f-gdate") && d.activeElement && d.activeElement.id==="f-gname");
   ok("create gate snaps weekend to Friday and opens the gate editor", ev("S.gates.length")===ng+1 && ev("gateById(sel.id).date")==="2026-10-16" && !!d.querySelector("#f-gdate") && d.activeElement.id==="f-gname");
   const gd = d.querySelector("#f-gdate"); gd.value="2026-10-21"; gd.dispatchEvent(new w.Event("change",{bubbles:true}));
   ok("gate date picker updates date and label", ev("gateById(sel.id).date")==="2026-10-21" && ev("gateById(sel.id).neededBy")==="Oct 21");
@@ -596,7 +601,7 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   const laneN = ev("S.lanes[0].id");
   ev(`createAt("note", "${laneN}", isoToDay("2026-10-07"))`); await wait(15);
   ok("first note asks who you are", !d.querySelector("#addMenu").hidden && /Which one are you/.test(d.querySelector("#addMenu").textContent));
-  [...d.querySelectorAll("#addMenu button")].find(x=>/Avery/.test(x.textContent)).click(); await wait(10);
+  [...d.querySelectorAll("#addMenu button")].find(x=>/Avery/.test(x.textContent)).click(); await until("the new note's text box", ()=>d.activeElement && d.activeElement.id==="f-ntext");
   ok("note created by you, opens for typing", ev("S.notes.length")===1 && ev("personName(S.notes[0].author)")==="Avery" && ev("sel.type")==="note" && d.activeElement.id==="f-ntext");
   ok("you're remembered (and named on the edit lock)", ev("meId()")===ev("S.notes[0].author") && ev("myName()")==="Avery");
   const noteTa = d.querySelector("#f-ntext"); noteTa.value = "Confirm scope with the boss"; noteTa.dispatchEvent(new w.Event("input",{bubbles:true})); noteTa.dispatchEvent(new w.Event("change",{bubbles:true}));
