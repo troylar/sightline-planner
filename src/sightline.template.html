@@ -5753,7 +5753,7 @@ const HELP = [
       h("li",{}, "Undo covers your own changes since you opened the plan (not teammates').")),
     h("p",{class:"hint"},"OneDrive sync can be delayed, especially offline. Sightline checks the local synced file, not upload completion. If you find a conflict copy, use File → Review another copy to compare and preserve both before deciding. Never assume the newer timestamp contains all work.")]],
   ["keys", "Keyboard shortcuts", ()=>[h("label",{class:"kcheck"}, h("input",{type:"checkbox",id:"charKeys",checked:UI.charKeys !== false,onchange:e=>{ UI.charKeys = e.target.checked; saveUI(); setStatus(UI.charKeys ? "Single-key shortcuts are on." : "Single-key shortcuts are off. Find (Ctrl+K) and keys with Ctrl still work."); }}),
-      " Single-key shortcuts", h("span",{class:"hint"}, keysIn(" On in this browser unless you switch them off. Off, a letter, digit or symbol does nothing, which helps with screen readers and speech input. Find (Ctrl+K) and keys with Ctrl always work."))),
+      " Single-key shortcuts", h("span",{class:"hint"}, keysIn(` On in this browser unless you switch them off. Off, a letter, digit or symbol does nothing, which helps with screen readers and speech input. Find (Ctrl+K) and keys with ${isMac() ? "⌘" : "Ctrl"} always work.`))),
     ...SHORTCUTS.map(([group, rows])=>h("section",{class:"kgroup"}, h("h3",{}, group),
     h("table",{class:"ktable"}, h("tbody",{}, ...rows.map(([keys, what, joiner])=>h("tr",{}, h("td",{}, ...keys.flatMap((k,i)=>[i ? h("span",{class:"kor"}, joiner || "or") : null, h("kbd",{}, keyLabel(k))]).filter(Boolean)), h("td",{}, what)))))))]],
 ];
