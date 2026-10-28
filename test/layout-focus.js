@@ -34,8 +34,17 @@ const crumb = () => { const c = document.querySelector("#drillPath .crumb.here")
       const c2 = await page.evaluate(crumb), row = await page.evaluate(()=>{ const r = document.querySelector("#drillPath").getBoundingClientRect(); return {w:Math.round(r.width), sw:document.querySelector("#drillPath").scrollWidth, cw:document.querySelector("#drillPath").clientWidth}; });
       ok(`L3 ${tag}: a name too long for the row is cut with an ellipsis, and the row doesn't overflow`, c2 && c2.clipped && c2.ell === "ellipsis" && row.sw <= row.cw + 1, JSON.stringify([c2 && {clipped:c2.clipped}, row]));
       await page.evaluate(A=>{ focusOn("person", A); UI.drill.rest = true; drillApply(); }, A); await page.waitForTimeout(150);
-      const dim = await page.evaluate(()=>[...document.querySelectorAll('#gantt [data-sel^="task:"]')].map(e=>({id:e.dataset.sel, o:getComputedStyle(e).opacity})));
-      ok(`L4 ${tag}: with teammates' work on, the teammate's task is dimmed and the person's isn't`, dim.some(x=>x.id === "task:fb" && +x.o < 0.6) && dim.some(x=>x.id === "task:fa" && +x.o === 1), JSON.stringify(dim));
+      // Dimmed is a quiet fill, not see-through: the teammate's name still reads at 4.5:1 or better (light and dark).
+      const dim = await page.evaluate(()=>{
+        const rgb = c => { const n = (c.match(/[\d.]+/g) || []).map(Number); return /^color\(srgb/.test(c) ? n.map((v, i)=>i < 3 ? v * 255 : v) : n; }, lum = ([r, g, b]) => [r, g, b].map(v=>{ v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }).reduce((a, v, i)=>a + v * [.2126, .7152, .0722][i], 0);
+        const over = (top, el) => { const t = rgb(top); if (t.length < 4 || t[3] >= 1) return t.slice(0, 3); let p = el.parentElement, under = [255, 255, 255];
+          while (p){ const c = rgb(getComputedStyle(p).backgroundColor); if (c.length === 3 || (c.length === 4 && c[3] > 0)){ under = over(getComputedStyle(p).backgroundColor, p); break; } p = p.parentElement; }
+          return t.slice(0, 3).map((v, i)=>v * t[3] + under[i] * (1 - t[3])); };
+        return [...document.querySelectorAll('#gantt [data-sel^="task:"]')].map(e=>{ const nm = e.querySelector(".nm"), bg = over(getComputedStyle(e).backgroundColor, e), fg = rgb(getComputedStyle(nm).color).slice(0, 3);
+          const [a, b] = [lum(fg), lum(bg)].sort((x, y)=>y - x); return {id:e.dataset.sel, dim:e.classList.contains("dimmed"), o:+getComputedStyle(e).opacity, cr:Math.round((a + .05) / (b + .05) * 10) / 10, bg:getComputedStyle(e).backgroundColor}; }); });
+      const fb = dim.find(x=>x.id === "task:fb"), fa = dim.find(x=>x.id === "task:fa");
+      ok(`L4 ${tag}: with teammates' work on, the teammate's task is dimmed and the person's isn't`, fb && fb.dim && fa && !fa.dim && fb.bg !== fa.bg, JSON.stringify(dim));
+      ok(`L5 ${tag}: a dimmed teammate's name still reads at 4.5:1 or better`, fb && fb.o === 1 && fb.cr >= 4.5, JSON.stringify(fb));
       if (w === 1500) await page.screenshot({path:path.join(process.env.SHOTS || require("os").tmpdir(), `focus-after-${theme}.png`)});
       await page.close();
     }
