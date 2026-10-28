@@ -1,5 +1,34 @@
 [
   {
+    "version": "1.152.0",
+    "date": "2026-10-28",
+    "headline": "J and K on the Roadmap, and arrows on Today, Sprint and Capacity",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Keyboard",
+        "title": "J and K on the Roadmap",
+        "now": "J and K move through the Roadmap's deliverables and ideas. Enter opens the one you're on.",
+        "where": "Roadmap"
+      },
+      {
+        "kind": "improved",
+        "area": "Keyboard",
+        "title": "Up and Down follow J and K",
+        "now": "Once you're on a row on Today, Sprint, Capacity or the Roadmap, the Up and Down arrows move to the next or previous one. From anywhere else on the page they scroll as usual.",
+        "where": "Today, Sprint, Capacity and Roadmap"
+      },
+      {
+        "kind": "fixed",
+        "area": "Keyboard",
+        "title": "The row mark stays clear of text",
+        "before": "The outline on the row you moved to could cover the first letter of its text.",
+        "now": "The outline sits clear of the text on Today rows and People load names.",
+        "where": "Today and Capacity"
+      }
+    ]
+  },
+  {
     "version": "1.151.0",
     "date": "2026-10-28",
     "headline": "J and K move through the view you're in",

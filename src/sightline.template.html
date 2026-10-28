@@ -657,6 +657,7 @@ textarea.celltext{field-sizing:content;min-height:0;width:100%;resize:none;font:
 /* J / K land on a row: the whole row shows where you are, like the List */
 .trow:focus-visible,.trow:has(.tname:focus-visible),.lgrid>.p:focus-visible{background:color-mix(in srgb,var(--accent) 10%,transparent);outline:2px solid var(--accent);outline-offset:-2px;border-radius:6px}
 .trow:has(.tname:focus-visible) .tname:focus-visible{outline:none}
+.trow:focus-visible,.trow:has(.tname:focus-visible){padding-inline:6px;margin-inline:-6px}.lgrid>.p:focus-visible{outline-offset:0}
 @media (max-width:700px){.trow{grid-template-columns:1fr auto}.tmeta{grid-column:1/-1}.tacts{grid-column:1/-1;justify-content:flex-start}}
 .nbadge{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:12px;height:12px;margin:0 3px;padding:0 2px;border-radius:1px;background:#ffe97a;border-left:2px solid var(--nc,#e3c200);color:#4a3b00;font-size:9px;font-weight:700;line-height:12px;box-shadow:1px 1px 2px rgba(0,0,0,.35);cursor:pointer;transform:rotate(-4deg);font-style:normal}
 .nmrow{display:flex;align-items:center;min-width:0}
@@ -5932,10 +5933,10 @@ function stepItem(dir){
 }
 // J / K on Today, Sprint and Capacity: move keyboard focus through what's drawn, in page order, without opening anything
 // (Enter does that). Timeline and List select as they go (stepItem).
-const NAV_STOPS = {today:"#today li.trow", standup:"#standupWs .sucard[data-card]", people:"#ws-people tr[data-fc], #load .lgrid > .p"};
+const NAV_STOPS = {today:"#today li.trow", standup:"#standupWs .sucard[data-card]", people:"#ws-people tr[data-fc], #load .lgrid > .p", roadmap:"#roadmapWs .dvcard[data-dv], #roadmapWs li[data-idea]"};
 function stepFocus(dir){
   const q = NAV_STOPS[UI.ws]; if (!q) return false;
-  const stops = [...document.querySelectorAll(q)].filter(el=>!el.closest("[hidden]")).map(row=>({row, el:row.matches("button,a") ? row : row.querySelector("button.tname, a.tname, .tname button, td button, a") || row}));
+  const stops = [...document.querySelectorAll(q)].filter(el=>!el.closest("[hidden]")).map(row=>({row, el:row.matches("button,a") ? row : row.querySelector("button.tname, a.tname, .tname button, button.dvidea, td button, a") || row}));
   if (!stops.length) return true;
   const a = document.activeElement; let i = a ? stops.findIndex(x=>x.row === a || x.row.contains(a)) : -1;
   const n = i < 0 ? (dir > 0 ? 0 : stops.length - 1) : Math.min(stops.length - 1, Math.max(0, i + dir));
@@ -16065,6 +16066,7 @@ document.addEventListener("keydown", e=>{
   else if (e.key === "\\" && !mod && !e.altKey && !present){ e.preventDefault(); toggleNavRail(); }
   else if (k==="t" && !mod && !e.altKey){ goWs("today"); }
   else if (k==="l" && !mod && !e.altKey){ goWs("list"); }
+  else if ((e.key === "ArrowDown" || e.key === "ArrowUp") && !mod && !e.altKey && !e.shiftKey && NAV_STOPS[UI.ws] && document.activeElement?.closest?.(NAV_STOPS[UI.ws])){ e.preventDefault(); stepFocus(e.key === "ArrowDown" ? 1 : -1); }
   else if ((k==="j" || k==="k") && !mod && !e.altKey && !e.shiftKey && (["timeline","list"].includes(UI.ws) || NAV_STOPS[UI.ws])){ e.preventDefault(); const d = k === "j" ? 1 : -1; if (!stepFocus(d)) stepItem(d); }
   else if (["i","x","b","u","s"].includes(k) && !mod && !e.altKey && !present && quickKey(k)){ e.preventDefault(); }
   else if (e.key === "." && !mod){ jumpToday(); }

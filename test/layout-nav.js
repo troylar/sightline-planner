@@ -16,7 +16,11 @@ function ringOf(rowSel){
   const s = getComputedStyle(row); let p = row.parentElement, bg = [255, 255, 255];
   while (p){ const c = rgb(getComputedStyle(p).backgroundColor); if (c.length === 3 || (c.length === 4 && c[3] >= 1)){ bg = c.slice(0, 3); break; } p = p.parentElement; }
   const [x, y] = [lum(rgb(s.outlineColor).slice(0, 3)), lum(bg)].sort((m, n)=>n - m);
-  return {width:parseFloat(s.outlineWidth), style:s.outlineStyle, contrast:Math.round((x + .05) / (y + .05) * 10) / 10, tint:rgb(s.backgroundColor)[3] > 0 || s.backgroundColor !== "rgba(0, 0, 0, 0)"};
+  // the outline's inner edge against where the row's text starts (the outline is drawn inside the row by outline-offset)
+  const wk = document.createTreeWalker(row, NodeFilter.SHOW_TEXT, {acceptNode:n=>n.textContent.trim() ? 1 : 3}), tn = wk.nextNode();
+  let textLeft = null; if (tn){ const rg = document.createRange(); rg.selectNodeContents(tn); const rs = [...rg.getClientRects()]; textLeft = rs.length ? Math.min(...rs.map(r=>r.left)) : null; }
+  const rr = row.getBoundingClientRect(), inner = rr.left - parseFloat(s.outlineOffset || 0) * (parseFloat(s.outlineOffset) > 0 ? 1 : 0) + Math.max(0, -parseFloat(s.outlineOffset || 0));
+  return {width:parseFloat(s.outlineWidth), style:s.outlineStyle, contrast:Math.round((x + .05) / (y + .05) * 10) / 10, tint:rgb(s.backgroundColor)[3] > 0 || s.backgroundColor !== "rgba(0, 0, 0, 0)", clear:textLeft == null ? null : Math.round(textLeft - inner)};
 }
 (async()=>{
   const b = await pw.chromium.launch();
@@ -31,6 +35,7 @@ function ringOf(rowSel){
         const r = await page.evaluate(ringOf, rowSel), live = await page.evaluate(()=>document.querySelector("#navLive")?.textContent || "");
         ok(`R1 ${theme}: J on ${name} outlines the whole row, 2px, at 3:1 or better, with a tint`, !!r && r.style === "solid" && r.width >= 2 && r.contrast >= 3 && r.tint, JSON.stringify(r));
         ok(`R2 ${theme}: …and a screen reader hears where it is`, /^1 of \d+: \S/.test(live), live);
+        ok(`R3 ${theme}: …and the outline never covers the row's text`, r && r.clear != null && r.clear >= 2, JSON.stringify(r && r.clear));
       }
       await page.close();
     }
