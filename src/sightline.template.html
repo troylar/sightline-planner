@@ -7103,7 +7103,9 @@ function renderFind(q){
   q = q.trim().toLowerCase(); const list = $("#findList"); list.replaceChildren();
   if (!q){ findHits = []; $("#findIn").removeAttribute("aria-activedescendant"); list.append(h("p",{class:"hint"},"Type to search every initiative, task, Jira story, milestone, gate, meeting, note, person, workstream, decision and risk. Jira keys work too. Actions come up by name, like \"days\" or \"start editing\".")); return; }
   const words = q.split(/\s+/), first = x => (x.text.toLowerCase().startsWith(q) ? 0 : 1);
-  const acts = COMMANDS.filter(c=>cmdOn(c) && words.every(w=>c.label.toLowerCase().includes(w))).map(c=>({kind:"cmd", id:c.id, text:c.label, keys:c.keys || []})).sort((a,b)=>first(a) - first(b)).slice(0, 6);
+  // actions match the start of their words ("lis" finds Go to List, "s" doesn't), and a short query leaves room for plan items
+  const starts = l => { const lw = l.toLowerCase().split(/[^a-z0-9+]+/); return words.every(w=>lw.some(x=>x.startsWith(w))); };
+  const acts = COMMANDS.filter(c=>cmdOn(c) && starts(c.label)).map(c=>({kind:"cmd", id:c.id, text:c.label, keys:c.keys || []})).sort((a,b)=>first(a) - first(b)).slice(0, q.length < 3 ? 3 : 6);
   findHits = [...acts, ...findIndex().filter(x=>words.every(w=>x.hay.includes(w))).sort((a,b)=>first(a) - first(b)).slice(0, 40)];
   findIdx = 0; findHits.length ? $("#findIn").setAttribute("aria-activedescendant", "fhit0") : $("#findIn").removeAttribute("aria-activedescendant");
   if (!findHits.length){ list.append(h("p",{class:"hint"}, `Nothing matches "${q}".`)); return; }

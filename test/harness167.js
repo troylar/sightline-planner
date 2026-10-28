@@ -101,6 +101,10 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ev(`closeFind(); document.activeElement && document.activeElement.blur()`); key("/", {isComposing:true}); await wait(10);
     ok("K23 / while composing doesn't open Find", $("#findPop").hidden);
     ok("K24 the row commands don't claim R, which steps through groupings instead", T(`COMMANDS.filter(c=>/^rows-/.test(c.id)).every(c=>!(c.keys || []).length)`) === true);
+    ev(`sel = null; render();`);
+    ok("K25 actions match the start of a word: \"lis\" offers Go to List, \"s\" doesn't", acts("lis").includes("Go to List") && !acts("s").includes("Go to List"), [acts("lis").join("|"), acts("s").join("|")].join(" / "));
+    ok("K26 a one- or two-letter search offers at most three actions, so plan items stay in view", acts("s").length <= 3 && acts("sh").length <= 3 && open("s").some(b=>!b.classList.contains("fcmd")), acts("s").join("|"));
+    ev(`closeFind()`);
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
   console.log(R.join("\n")); const f = R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
