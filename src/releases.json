@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.151.0",
+    "date": "2026-10-28",
+    "headline": "J and K move through the view you're in",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Keyboard",
+        "title": "J and K stay in the view you're in",
+        "before": "J and K always jumped to the Timeline first.",
+        "now": "J and K move to the next or previous item where you are. On the Timeline and List they select it; on Today, Sprint and Capacity they move focus, and Enter opens it. They go on from the item you're on, stop at either end, and a screen reader hears where you are, like 4 of 12.",
+        "where": "Today, Timeline, List, Sprint and Capacity"
+      },
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "J and K on rows by person",
+        "before": "With rows by person, J and K could pick an item that didn't exist and skip the rest.",
+        "now": "J and K reach each item on rows by person, including a task shared by two people, once on each of their rows.",
+        "where": "Timeline, View: by person"
+      }
+    ]
+  },
+  {
     "version": "1.150.0",
     "date": "2026-10-28",
     "headline": "Run any action from Find",
