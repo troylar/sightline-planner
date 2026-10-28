@@ -109,6 +109,17 @@ function contrast(sel){
             const fg = f.slice(0, 3).map((v, i)=>bg[i] + (v - bg[i]) * fa), [a, b] = [lum(fg), lum(bg)].sort((x, y)=>y - x); out.push((a + .05) / (b + .05)); }); });
         return {n:out.length, min:Math.round(Math.min(...out) * 100) / 100}; });
       ok(`L15 ${tag}: highlighted, the List's dimmed rows still read at 3:1 or better`, dimC.n > 10 && dimC.min >= 3, JSON.stringify(dimC));
+      // Leads here only, from a milestone's runway: the chip, Highlight instead and the direction toggle keep the strip one line.
+      await page.evaluate(()=>{ UI.filter = normFilter({}); S.milestones.find(m=>m.id === "ms8").after = ["c4"]; UI.ws = "list"; render(); select("ms", "ms8"); render(); document.querySelector("#f-mrwshow").click(); }); await page.waitForTimeout(250);
+      const lh = await page.evaluate(()=>{ const rows = () => { const r = e => e.getBoundingClientRect(), tops = [...document.querySelectorAll("#showStrip button")].filter(e=>e.getClientRects().length).map(e=>Math.round(r(e).top)).sort((x, y)=>x - y);
+          return tops.filter((t, i)=>!i || t - tops[i - 1] > 12).length; };
+        const out = {ws:UI.ws, dir:UI.filter.linkDir, toggle:!!document.querySelector("#showStrip #linkDir"), rows:rows(), over:document.documentElement.scrollWidth > innerWidth + 1};
+        setLinkDir("both"); out.bothRows = rows(); setLinkDir("up"); return out; });
+      ok(`L15b ${tag}: Leads here only from a milestone's card: the Timeline, one way, and the chip row stays one line either way`, lh.ws === "timeline" && lh.dir === "up" && lh.toggle && lh.rows === 1 && lh.bothRows === 1 && !lh.over, JSON.stringify(lh));
+      if (w === 1500){ await page.screenshot({path:path.join(process.env.SHOTS || require("os").tmpdir(), `leads-here-${theme}.png`), clip:{x:0, y:0, width:w, height:700}});
+        await page.evaluate(()=>{ UI.filter = normFilter({}); render(); select("ms", "ms8"); render(); document.querySelector("#f-mrunway")?.scrollIntoView({block:"center"}); }); await page.waitForTimeout(200);
+        const box = await page.evaluate(()=>{ const r = document.querySelector("#f-mrunway").getBoundingClientRect(); return {x:Math.max(0, r.x - 12), y:Math.max(0, r.y - 12), width:r.width + 24, height:r.height + 24}; });
+        await page.screenshot({path:path.join(process.env.SHOTS || require("os").tmpdir(), `leads-here-card-${theme}.png`), clip:box}); }
       await page.close();
     }
     // The Time button: open at 1400 the toolbar is no taller than with every control always out (1.165.0's one row), and

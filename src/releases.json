@@ -1,5 +1,27 @@
 [
   {
+    "version": "1.170.0",
+    "date": "2026-10-28",
+    "headline": "See only what leads to a milestone",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Leads here only",
+        "now": "Show only what leads to the work you picked: everything it waits for, all the way back, and nothing that waits on it. Click Show on the Timeline under What leads here on a milestone's card, press > with an item selected, or click Leads here only beside the linked work chips. Both ways switches back, and Back undoes either.",
+        "before": "Linked work always showed both what an item waits for and what waits on it.",
+        "where": "A milestone's card, What leads here; or the chips above the Timeline while linked work is showing"
+      },
+      {
+        "kind": "new",
+        "area": "Keyboard",
+        "title": "The > key",
+        "now": "With an item selected, > shows what leads to it on the Timeline. While linked work is showing, > switches between only what leads there and both ways. < still goes to What leads here on a milestone's card.",
+        "where": "Press ? for the full list"
+      }
+    ]
+  },
+  {
     "version": "1.169.0",
     "date": "2026-10-28",
     "headline": "Many more keyboard shortcuts",
