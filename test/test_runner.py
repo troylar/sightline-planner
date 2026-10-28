@@ -77,6 +77,40 @@ payload = "import time; print('1/1 passed', flush=True); time.sleep(5)" if "run_
 result = exercise(payload, "1")
 ok("a timeout after a passing summary still fails and is identified", result.returncode != 0 and "timed out" in result.stdout and "1/1 passed" in result.stdout, result.stdout[-500:])
 
+# One suite at a time on the machine: a lock held by a live process makes a run wait and say who holds it; a lock whose
+# process is gone, or whose pid now belongs to a process started at another time, is taken over; the lock goes at exit.
+if "suite_lock(){" in SOURCE:
+    with tempfile.TemporaryDirectory() as temporary:
+        lock = pathlib.Path(temporary) / "suite.lock"
+        holder = subprocess.Popen(["sleep", "30"])
+        try:
+            start = subprocess.run(["ps", "-o", "lstart=", "-p", str(holder.pid)], capture_output=True, text=True).stdout.strip()
+            def take(owner, held=""):
+                if lock.exists():
+                    subprocess.run(["rm", "-rf", str(lock)])
+                if owner is not None:
+                    lock.mkdir(); (lock / "owner").write_text(owner)
+                env = dict(os.environ, SIGHTLINE_LOCK=str(lock), SIGHTLINE_LOCK_POLL="0.2", SIGHTLINE_LOCK_HELD=held)
+                probe = 'source "$1"; suite_lock; echo GOT; head -1 "$SIGHTLINE_LOCK/owner"'
+                try:
+                    return subprocess.run(["bash", "-c", probe, "runner-test", str(RUNNER)], capture_output=True, text=True, env=env, timeout=2)
+                except subprocess.TimeoutExpired as e:
+                    return subprocess.CompletedProcess(e.cmd, 124, (e.stdout or b"").decode() if isinstance(e.stdout, bytes) else (e.stdout or ""), "")
+            r = take(f"{holder.pid}\n{start}\n01:23\n")
+            ok("a run waits while a live process holds the suite lock, and says who and since when", "GOT" not in r.stdout and f"held by pid {holder.pid} since 01:23" in r.stdout, r.stdout + r.stderr)
+            r = take("999999\nMon Jan  1 00:00:00 2001\n01:23\n")
+            ok("a lock whose process is gone is taken over", "GOT" in r.stdout and "stale" in r.stdout, r.stdout + r.stderr)
+            r = take(f"{holder.pid}\nMon Jan  1 00:00:00 2001\n01:23\n")
+            ok("a lock whose pid was reused by a newer process is taken over", "GOT" in r.stdout, r.stdout + r.stderr)
+            r = take(f"{holder.pid}\n{start}\n01:23\n", held=str(lock))
+            ok("a run inside withlock.sh, which already holds the lock, doesn't wait on it", "GOT" in r.stdout, r.stdout + r.stderr)
+            r = take(None)
+            ok("a free lock is taken, stamped with the run's pid, and gone when the run ends", "GOT" in r.stdout and r.stdout.split()[-1].isdigit() and not lock.exists(), r.stdout + r.stderr)
+        finally:
+            holder.kill(); holder.wait()
+else:
+    ok("the runner takes a machine-wide suite lock", False, "run.sh has no suite_lock")
+
 # Skipped browser suites: a failure unless SIGHTLINE_NO_BROWSER=1 says the skip is on purpose, and said either way.
 def browser(no_browser: str) -> subprocess.CompletedProcess[str]:
     env = dict(os.environ, CI="", PLAYWRIGHT="/nonexistent/playwright", SIGHTLINE_NO_BROWSER=no_browser)
