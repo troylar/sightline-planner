@@ -142,6 +142,15 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ev(`UI.ws = "timeline"; render(); select("task", "fa"); render();`); await wait(10);
     ok("K39 Find offers Change who owns the selection, with its key, and the keyboard help lists O", acts("owner").includes("Change who owns the selection") && (T("SHORTCUTS.flatMap(([g, rows])=>rows.filter(r=>r[0].includes('O')).map(r=>r[1]))") || []).some(x=>/owns/.test(x)), acts("owner").join("|"));
     ev(`closeFind(); sel = null; render();`);
+    // The arrow keys move an item only where dragging could: never one whose dates come from Jira
+    ev(`window.JL1 = jiraLockOf; window.LB = S.bars.find(b=>isLeafBar(b) && !b.tasks?.length); jiraLockOf = o => (o === LB || o === taskById("fa").t) ? {dates:true, key:"ABC-1"} : JL1(o); window.P0 = past.length; window.B0 = [LB.start, LB.span].join(); window.T0 = [taskById("fa").t.start, taskById("fa").t.days].join(); setStatus("");`);
+    ev(`const E = (k, alt) => ({key:k, altKey:!!alt, shiftKey:false, preventDefault(){}}); keyNudge(E("ArrowRight"), "bar", LB.id); keyNudge(E("ArrowLeft", true), "bar", LB.id);`); await wait(10);
+    ok("K40 Right or Alt+Left on an initiative whose dates come from Jira moves nothing and adds nothing to undo, and says why", X("[LB.start, LB.span].join()") === X("B0") && X("past.length") === X("P0") && /Jira/.test($("#status")?.textContent || ""), [X("[LB.start, LB.span].join()"), X("B0"), X("past.length - P0"), $("#status")?.textContent].join(" | "));
+    ev(`setStatus(""); const E = (k, alt) => ({key:k, altKey:!!alt, shiftKey:false, preventDefault(){}}); taskKey(E("ArrowRight"), "fa"); taskKey(E("ArrowLeft", true), "fa");`); await wait(10);
+    ok("K41 …and the same for a task", X(`[taskById("fa").t.start, taskById("fa").t.days].join()`) === X("T0") && X("past.length") === X("P0") && /Jira/.test($("#status")?.textContent || ""), [X(`[taskById("fa").t.start, taskById("fa").t.days].join()`), X("T0"), X("past.length - P0")].join(" | "));
+    ev(`jiraLockOf = JL1; const E = k => ({key:k, altKey:false, shiftKey:false, preventDefault(){}}); keyNudge(E("ArrowRight"), "bar", LB.id);`); await wait(10);
+    ok("K42 …while one the plan dates still moves", X("[LB.start, LB.span].join()") !== X("B0"), [X("[LB.start, LB.span].join()"), X("B0")].join(" | "));
+    ev(`undo(); sel = null; render();`);
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
   console.log(R.join("\n")); const f = R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

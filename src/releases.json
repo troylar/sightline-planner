@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.154.1",
+    "date": "2026-10-28",
+    "headline": "The arrow keys leave Jira's dates alone",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Keyboard",
+        "title": "Arrow keys respect Jira's dates",
+        "before": "Left or Right on an item whose dates come from its Jira sprint saved a move the chart then hid, and really moved the plan's items that wait on it.",
+        "now": "The arrow keys leave it where it is and say to change its sprint in Jira, as dragging does. Nothing ever reached Jira. If you used them on a Jira item before, look in Activity for items that moved with it and set their dates back; Undo only works in the same session. If you later unlink such an item, check its dates.",
+        "where": "Timeline, a selected initiative or task linked to Jira"
+      }
+    ]
+  },
+  {
     "version": "1.154.0",
     "date": "2026-10-28",
     "headline": "O changes who owns the selection",

@@ -10420,6 +10420,7 @@ function taskKey(e, tid){
   if (e.key==="Delete"||e.key==="Backspace"){ e.preventDefault(); del("task",tid); return; }
   if (e.key!=="ArrowLeft" && e.key!=="ArrowRight") return;
   e.preventDefault();
+  { const L = jiraLockOf(taskById(tid)?.t); if (L && L.dates){ jiraLockedMsg(L); return; } }   // as dragging does
   const dir = e.key==="ArrowRight" ? 1 : -1;
   commit(()=>{ const {t} = taskById(tid), hs = HS();
     if (e.altKey){ t.days = Math.max(1, t.days + dir); return; }
@@ -10577,6 +10578,7 @@ function keyNudge(e,type,id,stretch){
   if (e.key==="Delete"||e.key==="Backspace"){ e.preventDefault(); del(type,id); return; }
   if (e.key!=="ArrowLeft" && e.key!=="ArrowRight") return;
   e.preventDefault();
+  { const L = type === "bar" ? jiraLockOf(barById(id)) : null; if (L && L.dates){ jiraLockedMsg(L); return; } }   // as dragging does
   const d = (e.key==="ArrowRight"?1:-1) * (e.shiftKey?0.1:0.5), W = S.meta.weeks;
   commit(()=>{
     if (type==="bar"){ const b = barById(id); if (derived(b)) shiftBar(b, e.key==="ArrowRight" ? 7 : -7); else if (e.altKey) b.span = Math.max(.5, Math.min(W-b.start, snap(b.span+d))); else b.start = Math.max(0, Math.min(W-b.span, snap(b.start+d))); }
