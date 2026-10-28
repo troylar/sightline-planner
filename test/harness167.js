@@ -151,6 +151,32 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ev(`jiraLockOf = JL1; const E = k => ({key:k, altKey:false, shiftKey:false, preventDefault(){}}); keyNudge(E("ArrowRight"), "bar", LB.id);`); await wait(10);
     ok("K42 …while one the plan dates still moves", X("[LB.start, LB.span].join()") !== X("B0"), [X("[LB.start, LB.span].join()"), X("B0")].join(" | "));
     ev(`undo(); sel = null; render();`);
+    // Every other way of moving work leaves an item Jira dates where its sprint puts it
+    ev(`S = normalize(JSON.parse(FIX), false); sel = null; UI.ws = "today"; render();`); await wait(10);
+    const lateKeys = () => [...d.querySelectorAll("#today li.trow[data-tkey]")].map(r=>r.dataset.tkey).filter(k=>X(`!!workItem(${JSON.stringify(k)}) && workItem(${JSON.stringify(k)}).obj.status !== "done"`));
+    const bulkN = () => +(($("#today .tbulk")?.textContent || "").match(/\d+/) || [0])[0];
+    const keys = lateKeys(), n0 = bulkN(), LK = keys.find(k=>k.startsWith("bar:")) || keys[0];
+    ev(`UI.ws = "timeline"; select(${JSON.stringify(LK.split(":")[0])}, ${JSON.stringify(LK.split(":")[1])}); render();`); await wait(10);
+    const rf0 = !!$("#q-rf0") || !!$("#q-rf1"); ev(`UI.ws = "today"; sel = null; render();`); await wait(10);
+    ev(`window.JL2 = jiraLockOf; window.LO = workItem(${JSON.stringify(LK)}).obj; jiraLockOf = o => o === LO ? {dates:true, status:false, key:"ABC-2"} : JL2(o); render();`); await wait(10);
+    ok("K43 Move all on Today leaves out work whose dates come from Jira", n0 > 1 && bulkN() === n0 - 1, [n0, bulkN(), LK].join(" | "));
+    ev(`UI.ws = "timeline"; select(${JSON.stringify(LK.split(":")[0])}, ${JSON.stringify(LK.split(":")[1])}); render();`); await wait(10);
+    ok("K45 …and its details, which offer to move it when the plan dates it, don't once Jira does", rf0 && !$("#q-rf0") && !$("#q-rf1") && !$("#q-rf5"), String(rf0));
+    const snap = X(`JSON.stringify([LO.start, LO.span, LO.days])`);
+    ok("K44 …and moving late work never moves it, even when Jira doesn't set its status", X(`reforecast(${JSON.stringify(LK)}, 3)`) === false && X(`JSON.stringify([LO.start, LO.span, LO.days])`) === snap);
+    // a holder moved with its contents: a Jira-dated initiative inside stays put, the rest moves
+    ev(`{ const xs = S.bars.filter(b=>isLeafBar(b) && !(b.tasks || []).length && !b.parent); if (xs.length >= 3){ xs[1].parent = xs[0].id; xs[2].parent = xs[0].id; xs[1].lane = xs[2].lane = xs[0].lane; rollup(S); window.HB = xs[0]; } }`);
+    const hasHolder = X("!!HB");
+    if (hasHolder){
+      ev(`window.KIDS = descendantsOf(HB.id).filter(x=>!derived(x)); window.FX = KIDS[0]; jiraLockOf = o => o === FX ? {dates:true, key:"ABC-3"} : JL2(o); window.ST = KIDS.map(x=>x.start); shiftBar(HB, 7);`);
+      ok("K46 moving a holder moves what's inside it but not an initiative its Jira sprint dates", X("FX.start === ST[0] && KIDS.slice(1).every((x, i)=>x.start === ST[i + 1] + 1)"), X("JSON.stringify([ST, KIDS.map(x=>x.start)])"));
+    } else ok("K46 the fixture has a holder with two dated initiatives inside", false);
+    { const T = X(`(()=>{ const b = S.bars.find(b=>b.tasks && b.tasks.length >= 2); if (!b) return null; window.TB = b; return b.id; })()`);
+      if (T){ ev(`window.FT = TB.tasks[0]; jiraLockOf = o => o === FT ? {dates:true, key:"ABC-4"} : JL2(o); window.TS = TB.tasks.map(t=>t.start); shiftTasks(TB, 7);`);
+        ok("K47 …and the same for a task inside it", X("FT.start === TS[0] && TB.tasks.slice(1).every((t, i)=>t.start !== TS[i + 1])"), X("JSON.stringify([TS, TB.tasks.map(t=>t.start)])")); }
+      else { ev(`window.TB = S.bars.find(b=>isLeafBar(b)); TB.tasks = [{id:"tq1", label:"one", start:dayToIso(nearWeekday(wkDay(TB.start))), days:2, owners:[], status:"notstarted"}, {id:"tq2", label:"two", start:dayToIso(nearWeekday(wkDay(TB.start))), days:2, owners:[], status:"notstarted"}]; window.FT = TB.tasks[0]; jiraLockOf = o => o === FT ? {dates:true, key:"ABC-4"} : JL2(o); window.TS = TB.tasks.map(t=>t.start); shiftTasks(TB, 7);`);
+        ok("K47 …and the same for a task inside it", X("FT.start === TS[0] && TB.tasks.slice(1).every((t, i)=>t.start !== TS[i + 1])"), X("JSON.stringify([TS, TB.tasks.map(t=>t.start)])")); } }
+    ev(`jiraLockOf = JL2; S = normalize(JSON.parse(FIX), false); sel = null; render();`);
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
   console.log(R.join("\n")); const f = R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

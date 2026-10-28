@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.154.2",
+    "date": "2026-10-28",
+    "headline": "Jira's dates hold everywhere",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Today",
+        "title": "Move all and Start today skip Jira's dates",
+        "before": "Move all on Today, and the Start today and +1 week buttons in an item's details, could move work whose dates come from its Jira sprint. The chart hid the move, but it was saved, and work waiting on it could really move.",
+        "now": "Move all counts and moves only work the plan dates, and those buttons don't appear on work Jira dates. Nothing ever reached Jira. If you unlink such an item, check its dates.",
+        "where": "Today, and an item's details"
+      },
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Moving an initiative leaves Jira's work inside it in place",
+        "before": "Moving an initiative also moved anything inside it whose dates come from Jira.",
+        "now": "What the plan dates moves with it; what Jira dates stays in its sprint.",
+        "where": "Timeline, initiatives with others inside them"
+      },
+      {
+        "kind": "fixed",
+        "area": "Assistant",
+        "title": "A change can't set what Jira owns right after linking it",
+        "before": "An assistant change that linked an epic and then set the same initiative's status or dates was accepted.",
+        "now": "It's refused with the reason, as it is for an initiative that was already linked.",
+        "where": "Assistant changes you review"
+      }
+    ]
+  },
+  {
     "version": "1.154.1",
     "date": "2026-10-28",
     "headline": "The arrow keys leave Jira's dates alone",
