@@ -105,6 +105,18 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("K25 actions match the start of a word: \"lis\" offers Go to List, \"s\" doesn't", acts("lis").includes("Go to List") && !acts("s").includes("Go to List"), [acts("lis").join("|"), acts("s").join("|")].join(" / "));
     ok("K26 a one- or two-letter search offers at most three actions, so plan items stay in view", acts("s").length <= 3 && acts("sh").length <= 3 && open("s").some(b=>!b.classList.contains("fcmd")), acts("s").join("|"));
     ev(`closeFind()`);
+    const enter = () => $("#findIn").dispatchEvent(new w.KeyboardEvent("keydown", {key:"Enter", bubbles:true}));
+    ev(`UI.filter = normFilter({}); sel = null; render();`);
+    const f0 = JSON.stringify(T("UI.filter")); open("s"); const hl = $("#findList .fhit.on"); enter(); await wait(20);
+    ok("K27 a one-letter search highlights the first plan item, so Enter opens it and leaves the filters alone", !!hl && !hl.classList.contains("fcmd") && !!X("sel") && JSON.stringify(T("UI.filter")) === f0, [hl && hl.textContent, JSON.stringify(T("sel"))].join(" "));
+    ev(`UI.filter = normFilter({}); render(); select("bar", "m2");`); await wait(10);
+    open("show"); enter(); await wait(20);
+    ok("K28 from three letters on, the first action is highlighted: show + Enter shows only the selection", T("UI.filter.bars")?.join() === "m2", JSON.stringify(T("UI.filter.bars")));
+    ev(`UI.filter = normFilter({}); sel = null; setHiddenQuiet([]); UI.notes = "all"; render();`);
+    const g1 = acts("gates"); ev(`setHiddenQuiet(["gate"]); UI.notes = "none"; render();`); const g2 = acts("gates"), n2 = acts("notes");
+    ok("K29 the toggles say what they'll do now: Hide gates while shown, Show gates while hidden, and Show notes while notes are off", g1.includes("Hide gates") && g2.includes("Show gates") && n2.includes("Show notes"), [g1, g2, n2].map(x=>x.join("|")).join(" / "));
+    ok("K30 either word finds a toggle: hide finds Show gates, show finds it too", acts("hide gat").includes("Show gates") && acts("show gat").includes("Show gates"), acts("hide gat").join("|"));
+    ev(`setHiddenQuiet([]); UI.notes = "all"; saveUI(); closeFind(); render();`);
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
   console.log(R.join("\n")); const f = R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

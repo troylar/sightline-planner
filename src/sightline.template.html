@@ -536,7 +536,7 @@ body.presenting #filterBtn,body.presenting #viewSave{display:none!important}
 .fhit .fi{grid-row:span 2;color:var(--ink-3);text-align:center}
 .fhit .ft{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fhit small{color:var(--ink-3);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fhit kbd{font-weight:600;font-size:10.5px;line-height:1;font-family:var(--mono,ui-monospace,monospace);border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:1px 4px;color:var(--ink-2);background:var(--surface)}
+.fhit kbd{font-weight:600;font-size:inherit;line-height:1;font-family:var(--mono,ui-monospace,monospace);border:1px solid var(--ink-3);border-bottom-width:2px;border-radius:4px;padding:1px 4px;color:var(--ink-2);background:var(--surface)}
 .fhit.fcmd .fi{color:var(--accent)}
 .fhit.on,.fhit:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .flash{animation:flashit 1.6s ease-out}
@@ -7067,9 +7067,9 @@ const COMMANDS = [
   {id:"views", label:"Views: switch or save a view", keys:["V"], when:()=>CMD_VIEWS.includes(UI.ws), run:()=>openViewMenu()},
   {id:"show-all", label:"Show all work (clear every filter)", when:()=>fActive(), run:()=>{ navStep(); UI.view = null; setFilter(x=>{ Object.assign(x, normFilter({})); }); setStatus("Showing all work. Back puts your filters back."); }},
   {id:"show-only", label:"Show only the selection", keys:["Z"], when:()=>!!sel && ["bar","task","person"].includes(sel.type), run:()=>sel.type === "task" ? showOnly("bar", taskById(sel.id)?.b.id) : showOnly(sel.type, sel.id)},
-  {id:"gates", label:"Show or hide gates", keys:["G"], when:()=>CMD_VIEWS.includes(UI.ws), run:()=>toggleKind("gate")},
-  {id:"meetings", label:"Show or hide meetings", keys:["M"], when:()=>CMD_VIEWS.includes(UI.ws), run:()=>toggleKind("meeting")},
-  {id:"notes", label:"Show or hide notes", keys:["N"], run:()=>{ UI.notes = (UI.notes || "all") === "none" ? "all" : "none"; saveUI(); render(); }},
+  {id:"gates", get label(){ return (hiddenKinds().includes("gate") ? "Show" : "Hide") + " gates"; }, also:"show hide", keys:["G"], when:()=>CMD_VIEWS.includes(UI.ws), run:()=>toggleKind("gate")},
+  {id:"meetings", get label(){ return (hiddenKinds().includes("meeting") ? "Show" : "Hide") + " meetings"; }, also:"show hide", keys:["M"], when:()=>CMD_VIEWS.includes(UI.ws), run:()=>toggleKind("meeting")},
+  {id:"notes", get label(){ return ((UI.notes || "all") === "none" ? "Show" : "Hide") + " notes"; }, also:"show hide", keys:["N"], run:()=>{ UI.notes = (UI.notes || "all") === "none" ? "all" : "none"; saveUI(); render(); }},
   {id:"everything", label:"Show every kind of item", keys:["Shift+H"], when:()=>CMD_VIEWS.includes(UI.ws) && hiddenKinds().length > 0, run:()=>showEverything()},
   {id:"in-progress", label:"Mark the selection in progress", keys:["I"], when:()=>selStatus("inprogress"), run:()=>quickKey("i")},
   {id:"done", label:"Mark the selection done", keys:["X"], when:()=>selStatus("done"), run:()=>quickKey("x")},
@@ -7105,14 +7105,14 @@ function renderFind(q){
   const words = q.split(/\s+/), first = x => (x.text.toLowerCase().startsWith(q) ? 0 : 1);
   // actions match the start of their words ("lis" finds Go to List, "s" doesn't), and a short query leaves room for plan items
   const starts = l => { const lw = l.toLowerCase().split(/[^a-z0-9+]+/); return words.every(w=>lw.some(x=>x.startsWith(w))); };
-  const acts = COMMANDS.filter(c=>cmdOn(c) && starts(c.label)).map(c=>({kind:"cmd", id:c.id, text:c.label, keys:c.keys || []})).sort((a,b)=>first(a) - first(b)).slice(0, q.length < 3 ? 3 : 6);
+  const acts = COMMANDS.filter(c=>cmdOn(c) && starts(c.label + " " + (c.also || ""))).map(c=>({kind:"cmd", id:c.id, text:c.label, keys:c.keys || []})).sort((a,b)=>first(a) - first(b)).slice(0, q.length < 3 ? 3 : 6);
   findHits = [...acts, ...findIndex().filter(x=>words.every(w=>x.hay.includes(w))).sort((a,b)=>first(a) - first(b)).slice(0, 40)];
-  findIdx = 0; findHits.length ? $("#findIn").setAttribute("aria-activedescendant", "fhit0") : $("#findIn").removeAttribute("aria-activedescendant");
+  findIdx = q.length < 3 && findHits.length > acts.length ? acts.length : 0; findHits.length ? $("#findIn").setAttribute("aria-activedescendant", "fhit" + findIdx) : $("#findIn").removeAttribute("aria-activedescendant");
   if (!findHits.length){ list.append(h("p",{class:"hint"}, `Nothing matches "${q}".`)); return; }
   findHits.forEach((x,i)=>list.append(x.kind === "cmd"
-    ? h("button",{type:"button",role:"option",class:"fhit fcmd" + (i===0 ? " on" : ""),"aria-selected":String(i===0),id:"fhit"+i,onclick:e=>{ e.stopPropagation(); findCmd(x.id); }},
+    ? h("button",{type:"button",role:"option",class:"fhit fcmd" + (i===findIdx ? " on" : ""),"aria-selected":String(i===findIdx),id:"fhit"+i,onclick:e=>{ e.stopPropagation(); findCmd(x.id); }},
       h("span",{class:"fi"}, "›"), h("span",{class:"ft"}, x.text), h("small",{}, x.keys.length ? h("span",{}, "Action · ", ...x.keys.map((k, j)=>[j ? " or " : "", h("kbd",{}, k)]).flat()) : "Action"))
-    : h("button",{type:"button",role:"option",class:"fhit" + (i===0 ? " on" : ""),"aria-selected":String(i===0),id:"fhit"+i,onclick:()=>{ closeFind(); goTo(x.kind, x.id); }},
+    : h("button",{type:"button",role:"option",class:"fhit" + (i===findIdx ? " on" : ""),"aria-selected":String(i===findIdx),id:"fhit"+i,onclick:()=>{ closeFind(); goTo(x.kind, x.id); }},
       h("span",{class:"fi"}, x.emoji ? icon(null, x.emoji) : icon(x.icon || KIND_ICON[x.kind] || "flag")), h("span",{class:"ft"}, x.text), h("small",{}, x.sub))));
 }
 // Show an item: switch to where it lives, unfold what hides it, clear a filter that hides it, select it and scroll to it.
