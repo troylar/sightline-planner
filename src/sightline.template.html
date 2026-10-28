@@ -657,7 +657,7 @@ textarea.celltext{field-sizing:content;min-height:0;width:100%;resize:none;font:
 /* J / K land on a row: the whole row shows where you are, like the List */
 .trow:focus-visible,.trow:has(.tname:focus-visible),.lgrid>.lrow:focus-visible,.rmideas li:has(.dvidea:focus-visible),.dvcard:focus-visible{background:color-mix(in srgb,var(--accent) 10%,transparent);outline:2px solid var(--accent);outline-offset:-2px;border-radius:6px}
 .trow:has(.tname:focus-visible) .tname:focus-visible,.rmideas li:has(.dvidea:focus-visible) .dvidea:focus-visible{outline:none}
-.trow:focus-visible,.trow:has(.tname:focus-visible),.rmideas li:has(.dvidea:focus-visible){padding-inline:6px;margin-inline:-6px}.trow .tname{display:block;max-width:100%}
+.trow:focus-visible,.trow:has(.tname:focus-visible){padding-inline:6px;margin-inline:-6px}.rmideas li:has(.dvidea:focus-visible){padding:4px 8px;margin:-4px -8px}.trow .tname{display:block;max-width:100%}
 @media (max-width:700px){.trow{grid-template-columns:1fr auto}.tmeta{grid-column:1/-1}.tacts{grid-column:1/-1;justify-content:flex-start}}
 .nbadge{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:12px;height:12px;margin:0 3px;padding:0 2px;border-radius:1px;background:#ffe97a;border-left:2px solid var(--nc,#e3c200);color:#4a3b00;font-size:9px;font-weight:700;line-height:12px;box-shadow:1px 1px 2px rgba(0,0,0,.35);cursor:pointer;transform:rotate(-4deg);font-style:normal}
 .nmrow{display:flex;align-items:center;min-width:0}
@@ -5955,7 +5955,8 @@ function quickKey(k){
   const leaf = it.type === "task" || isLeafBar(it.b);
   const act = (what, fn) => whoAmI(null, ()=>quickSave(what, s=>{ const w = workItem(key); if (!w) return NOCHANGE; return fn(w, s); }));
   if ((k === "i" || k === "x") && leaf){ const v = k === "i" ? "inprogress" : (it.obj.status === "done" ? "inprogress" : "done");
-    act(`${itemLabel(it)}: ${v === "done" ? "done" : "in progress"}`, w=>{ if (w.obj.status === v) return NOCHANGE; w.obj.status = v; }); return true; }
+    if (jiraLockOf(it.obj)?.status){ setStatus(`${itemLabel(it)} gets its status from Jira. Update it in Jira.`); return true; }
+    act(`${itemLabel(it)}: ${v === "done" ? "done" : "in progress"}`, w=>{ if (w.obj.status === v || jiraLockOf(w.obj)?.status) return NOCHANGE; w.obj.status = v; }); return true; }
   if (k === "b" && leaf){ const d0 = document.querySelector("#side .qblock"); if (d0){ d0.open = true; $("#q-breason")?.focus(); } else if (isBlocked(it.obj)) $("#q-unblock")?.focus(); return true; }
   if (k === "u"){ openBox("q-upd"); return true; }
   if (k === "s"){ openBox("sticky-in"); return true; }

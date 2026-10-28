@@ -1,5 +1,27 @@
 [
   {
+    "version": "1.153.1",
+    "date": "2026-10-28",
+    "headline": "I and X leave Jira's status alone",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Keyboard",
+        "title": "I and X respect Jira",
+        "before": "On an item whose status comes from Jira, I or X still saved an update to the shared plan that Jira's status then overrode.",
+        "now": "I and X leave it unchanged, save nothing, and say the status comes from Jira. B for Blocked still works. Nothing ever reached Jira. A status saved this way before stays hidden behind Jira's while the item is linked; if you unlink it, check its status.",
+        "where": "Any selected task or initiative linked to Jira"
+      },
+      {
+        "kind": "fixed",
+        "area": "Keyboard",
+        "title": "More room in the Roadmap idea mark",
+        "now": "The outline around the idea you moved to sits clear of its quarter buttons and the Drop link.",
+        "where": "Roadmap"
+      }
+    ]
+  },
+  {
     "version": "1.153.0",
     "date": "2026-10-28",
     "headline": "The same \"you are here\" mark in every view, and Enter on a person",

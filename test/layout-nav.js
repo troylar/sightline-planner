@@ -45,8 +45,11 @@ function ringOf(rowSel){
           ok(`R5 ${theme}: Enter on a person there opens their card and stays on Capacity`, opened.sel && opened.sel.type === "person" && opened.first && opened.ws === "people", JSON.stringify(opened));
         }
         if (dvs === ideas){
-          const acts = await page.evaluate(()=>{ const li = document.activeElement?.closest("li[data-idea]"), x = li?.querySelector(".ideaacts"); if (!x) return null; const lr = li.getBoundingClientRect(), xr = x.getBoundingClientRect(); return xr.right <= lr.right + 1 && xr.left >= lr.left && xr.top >= lr.top - 1 && xr.bottom <= lr.bottom + 1; });
-          ok(`R6 ${theme}: the idea's mark takes in its quarter buttons too`, acts === true, String(acts));
+          const acts = await page.evaluate(()=>{ const li = document.activeElement?.closest("li[data-idea]"), x = li?.querySelector(".ideaacts"); if (!x) return null; const lr = li.getBoundingClientRect(), xr = x.getBoundingClientRect(), cs = getComputedStyle(li);
+            const inner = lr.right + Math.min(0, parseFloat(cs.outlineOffset) || 0), last = Math.max(...[...li.querySelectorAll("button,a,select")].map(e=>e.getBoundingClientRect().right));
+            const o = -Math.min(0, parseFloat(cs.outlineOffset) || 0), bs = [...li.querySelectorAll("button,a,select")].map(e=>e.getBoundingClientRect());
+            return {inside:xr.right <= lr.right + 1 && xr.left >= lr.left && xr.top >= lr.top - 1 && xr.bottom <= lr.bottom + 1, clearRight:Math.round(inner - last), clearY:Math.round(Math.min(...bs.map(r=>Math.min(r.top - (lr.top + o), (lr.bottom - o) - r.bottom))))}; });
+          ok(`R6 ${theme}: the idea's mark takes in its quarter buttons too, clear of them on the right, top and bottom`, !!acts && acts.inside && acts.clearRight >= 5 && acts.clearY >= 2, JSON.stringify(acts));
         }
       }
       // Long titles on Today end in an ellipsis, and the whole title is there on hover
