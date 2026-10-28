@@ -125,6 +125,17 @@ function contrast(sel){
         out.runway = [...document.querySelectorAll('#gantt [data-key^="task:"], #gantt .bar[data-sel], #gantt .tbar[data-sel]')].map(e=>e.getBoundingClientRect()).some(r=>r.width > 0 && r.right > pane.left + lab + 8 && r.left < pane.right); return out; });
       ok(`L15b ${tag}: Leads here only from a milestone's card: the Timeline, one way, and the chip row stays one line either way`, lh.ws === "timeline" && lh.dir === "up" && lh.toggle && lh.rows === 1 && lh.bothRows === 1 && !lh.over, JSON.stringify(lh));
       ok(`L15c ${tag}: with the milestone's card open, its diamond and date are inside the chart's visible part with room to spare, and (at 1500, where there's room) the runway is still on screen`, lh.card && lh.inView && (w < 1200 || lh.runway), JSON.stringify({card:lh.card, ms:lh.ms, pane:lh.pane, runway:lh.runway}));
+      // The List's Status stays on one line in every layout ("Not started" used to wrap and double each row's height),
+      // and the column stays narrow: one status label's width, not a share of the table.
+      await page.evaluate(()=>{ UI.filter = normFilter({}); sel = null; UI.ws = "list"; render(); }); const lst = {};
+      for (const lay of ["lane", "start", "person"]){ await page.evaluate(lay=>setListLayout(lay), lay); await page.waitForTimeout(120);
+        lst[lay] = await page.evaluate(()=>{ const t = document.querySelector("#listTable"), wrap = t.closest(".lwrap") || t.parentElement;
+          const ds = [...t.querySelectorAll("tbody td.lst>div:first-child")], two = ds.filter(d=>d.getBoundingClientRect().height > (parseFloat(getComputedStyle(d).lineHeight) || 18) * 1.5);
+          const th = t.querySelector('thead th[data-col="status"]');
+          return {n:ds.length, two:two.length, w:th ? Math.round(th.getBoundingClientRect().width) : 0}; }); }
+      await page.evaluate(()=>{ UI.ws = "timeline"; render(); });
+      ok(`L15d ${tag}: the List's Status stays on one line in every layout, in a narrow column`, Object.values(lst).every(x=>x.n > 10 && !x.two && x.w > 0 && x.w <= 160), JSON.stringify(lst));
+      await page.evaluate(()=>{ UI.filter = normFilter({}); S.milestones.find(m=>m.id === "ms8").after = ["c4"]; render(); select("ms", "ms8"); render(); document.querySelector("#f-mrwshow").click(); }); await page.waitForTimeout(250);
       if (w === 1500){ await page.screenshot({path:path.join(process.env.SHOTS || require("os").tmpdir(), `leads-here-${theme}.png`), clip:{x:0, y:0, width:w, height:700}});
         await page.evaluate(()=>{ UI.filter = normFilter({}); render(); select("ms", "ms8"); render(); document.querySelector("#f-mrunway")?.scrollIntoView({block:"center"}); }); await page.waitForTimeout(200);
         const box = await page.evaluate(()=>{ const r = document.querySelector("#f-mrunway").getBoundingClientRect(); return {x:Math.max(0, r.x - 12), y:Math.max(0, r.y - 12), width:r.width + 24, height:r.height + 24}; });

@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.170.1",
+    "date": "2026-10-28",
+    "headline": "List status on one line",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "List",
+        "title": "Status stays on one line",
+        "now": "In the List, a status like Not started or In progress stays on one line, so rows keep their height and the other columns make room.",
+        "before": "On a laptop-width window, the Status column wrapped to two lines and doubled every row's height.",
+        "where": "The List, Status column"
+      }
+    ]
+  },
+  {
     "version": "1.170.0",
     "date": "2026-10-28",
     "headline": "See only what leads to a milestone",
