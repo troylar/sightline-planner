@@ -1602,6 +1602,7 @@ body:has(> #bootfail) > :not(#bootfail){display:none !important}
 <div class="menu viewmenu" id="viewMenu" role="menu" aria-label="Views" hidden></div>
 <div class="menu filterpop" id="filterPop" role="dialog" aria-label="Filters" hidden></div>
 <div class="menu viewmenu" id="notesMenu" role="menu" aria-label="Notes" hidden></div>
+<div class="menu viewmenu" id="linkMenu" role="menu" aria-label="Linked work" hidden></div>
 <div class="menu viewmenu showmenu" id="showMenu" role="menu" aria-label="Show" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
@@ -2154,13 +2155,13 @@ function normFilter(f){
   return {bars:list(f.bars,null,100), tags:list(f.tags,null,100), hideTags:list(f.hideTags,null,100), labels:list(f.labels,null,100), hideLabels:list(f.hideLabels,null,100), authors:list(f.authors,null,100), people:list(f.people,null,100), lanes:list(f.lanes,null,100), status:list(f.status, [...STATUSES.map(x=>x[0]), "blocked"]), mstatus:list(f.mstatus, MSTATUS), kinds:list(f.kinds, FILTER_KINDS.map(x=>x[0])),
     range: type === "custom" ? {type, from: validIso(r.from) ? r.from : "", to: validIso(r.to) ? r.to : ""} : {type}, showEmpty: f.showEmpty === true,
     linked: (Array.isArray(f.linked) ? f.linked : []).filter(x=>x && LINK_TYPES.includes(x.t) && str(x.id)).map(x=>({t:x.t, id:str(x.id).slice(0, 60)})).filter((x, i, a)=>a.findIndex(y=>y.t === x.t && y.id === x.id) === i).slice(0, 5),
-    linkMode: f.linkMode === "highlight" ? "highlight" : "only", linkDir: f.linkDir === "up" ? "up" : "both"};
+    linkMode: f.linkMode === "highlight" ? "highlight" : "only", linkDir: f.linkDir === "up" ? "up" : "both", linkSide: f.linkSide === true};
 }
 const LINK_TYPES = ["bar","task","ms","gate"];
 const LW_DEFAULT = {weeks:160, days:220};
 const normLW = v => { v = v && typeof v === "object" ? v : {}; const c = x => Number.isFinite(Number(x)) ? Math.round(Math.min(480, Math.max(120, Number(x)))) : null; return {weeks:c(v.weeks) ?? LW_DEFAULT.weeks, days:c(v.days) ?? LW_DEFAULT.days}; };
 function normViewDef(v){ v = v && typeof v === "object" ? v : {}; const zoom = v.zoom === "days" ? "days" : "weeks";
-  return {filter:{...normFilter(v.filter), linked:[], linkMode:"only", linkDir:"both"}, zoom, dayZoom: zoom === "days" && Number.isInteger(v.dayZoom) && v.dayZoom >= 0 && v.dayZoom < 6 ? v.dayZoom : null, ...(Number.isInteger(v.zoomN) && v.zoomN >= 0 && v.zoomN <= 200 ? {zoomN:v.zoomN} : {}), ws: v.ws === "people" ? "people" : "timeline",
+  return {filter:{...normFilter(v.filter), linked:[], linkMode:"only", linkDir:"both", linkSide:false}, zoom, dayZoom: zoom === "days" && Number.isInteger(v.dayZoom) && v.dayZoom >= 0 && v.dayZoom < 6 ? v.dayZoom : null, ...(Number.isInteger(v.zoomN) && v.zoomN >= 0 && v.zoomN <= 200 ? {zoomN:v.zoomN} : {}), ws: v.ws === "people" ? "people" : "timeline",
     rows: ["people","epics"].includes(v.rows) ? v.rows : "lanes", labelW: normLW(v.labelW), notes: NOTE_MODES.some(x=>x[0]===v.notes) ? v.notes : "all", ...(v.layer === "jira" || v.layer === "mine" ? {layer:v.layer} : {}), ...(normKinds(v.hide).length ? {hide:normKinds(v.hide)} : {})}; }
 const normViews = arr => (Array.isArray(arr) ? arr : []).filter(v=>v && typeof v === "object").slice(0,50);
 function checkShape(obj){
@@ -4275,7 +4276,7 @@ function viewStrips(){ return [showStrip(), hereOnly() ? h("div",{class:"banner 
 // Showing: what you narrowed to, one chip per initiative or person, each taken off with a click. Show all work clears
 // every filter. Each of these is a step Back undoes.
 function showStrip(){
-  const f = UI.filter, bars = (f.bars || []).filter(id=>barById(id)), ppl = (f.people || []).filter(id=>personById(id)), lk = (f.linked || []).filter(x=>linkTarget(x)); if (!bars.length && !ppl.length && !lk.length) return null;
+  const f = UI.filter, bars = (f.bars || []).filter(id=>barById(id)), ppl = (f.people || []).filter(id=>personById(id)), lk = (f.linked || []).filter(x=>linkTarget(x)); if (!lk.length) closeLinkMenu(); if (!bars.length && !ppl.length && !lk.length) return null;
   const rest = fCount(normFilter({...clone(f), bars:[], people:[], linked:[]}));
   const chip = (k, id, kind, name) => h("button",{type:"button",class:"showchip","data-show":k + ":" + id,"aria-label":`Stop showing only ${name}`,title:`Stop showing only ${name}`,
     onclick:()=>{ showOff(k, id); focusShown(); }},
@@ -4286,8 +4287,8 @@ function showStrip(){
         onclick:()=>{ linkedOff(x); focusShown(); }}, h("span",{class:"sk"}, f.linkDir === "up" ? "Leading to" : "Linked to"), h("span",{class:"sn"}, linkName(x)), h("span",{class:"sx","aria-hidden":"true"}, "×"))),
       lk.length ? h("button",{type:"button",class:"linkish",id:"linkMode","aria-pressed":String(f.linkMode === "highlight"),title:f.linkMode === "highlight" ? "Hide what isn't linked" : "Keep everything on screen and dim what isn't linked",
         onclick:()=>{ setLinkMode(f.linkMode === "highlight" ? "only" : "highlight"); focusShown(); }}, f.linkMode === "highlight" ? "Hide the rest" : "Highlight instead") : null,
-      lk.length ? h("button",{type:"button",class:"linkish",id:"linkDir","aria-pressed":String(f.linkDir === "up"),title:keysIn(f.linkDir === "up" ? "Show what's linked both ways again: what it waits for and what waits for it (>)" : "Show only what leads to the picks: what they wait for, all the way back (>)"),
-        onclick:()=>{ setLinkDir(f.linkDir === "up" ? "both" : "up"); focusShown(); }}, f.linkDir === "up" ? "Both ways" : "Leads here only") : null,
+      lk.length ? h("button",{type:"button",class:"linkish",id:"linkScope","aria-haspopup":"menu","aria-expanded":"false","aria-controls":"linkMenu",title:keysIn("Choose what's shown: both ways, only what leads to the picks, or also work that waits for the same things (> switches the direction)"),
+        onclick:e=>{ e.stopPropagation(); $("#linkMenu").hidden ? openLinkMenu() : closeLinkMenu(true); }}, "Linked work", h("span",{"aria-hidden":"true"}, " ▾")) : null,
       ...bars.map(id=>chip("bar", id, "Initiative", chartLabel(barById(id)))), ...ppl.map(id=>chip("person", id, "Person", personName(id))),
       rest ? h("button",{type:"button",class:"linkish",id:"showMore",onclick:e=>{ e.stopPropagation(); openFilterPop(); }}, `and ${rest} more filter${rest === 1 ? "" : "s"}`) : null),
     h("button",{type:"button",class:"linkish",id:"showAll",onclick:()=>{ navStep(); UI.view = null; setFilter(x=>{ Object.assign(x, normFilter({})); }); setStatus("Showing all work. Back puts your filters back."); showSay("Showing all work."); focusShown(); }}, "Show all work"),
@@ -6464,7 +6465,8 @@ function onlyScope(f = UI.filter){ const ids = f.bars || []; if (!ids.length) re
 // Each direction is walked on its own, so work that only shares a prerequisite doesn't join. An initiative brings what's
 // inside it along; a task or initiative brings the initiatives that hold it, as context, and what those wait for.
 // Links: an initiative's or task's dependsOn, an initiative's gates (waitsFor) and a milestone's initiatives (after).
-function linkedItems(seeds, s = S, dir = "both"){   // dir "up": only what the seeds wait for (a milestone's runway)
+// side: also what shares a prerequisite with a seed (waits for something it waits for directly), and its contents; never with "up".
+function linkedItems(seeds, s = S, dir = "both", side = false){   // dir "up": only what the seeds wait for (a milestone's runway)
   const bars = new Map(s.bars.map(b=>[b.id, b])), taskBar = new Map(), gates = new Set((s.gates || []).map(g=>g.id)), up = new Map(), down = new Map(), kids = new Map();
   const edge = (a, b) => { (up.get(a) || up.set(a, []).get(a)).push(b); (down.get(b) || down.set(b, []).get(b)).push(a); };   // a waits for b
   s.bars.forEach(b=>{ if (b.parent && bars.has(b.parent)) (kids.get(b.parent) || kids.set(b.parent, []).get(b.parent)).push(b.id);
@@ -6480,7 +6482,11 @@ function linkedItems(seeds, s = S, dir = "both"){   // dir "up": only what the s
       q.push(...inside(k), ...(edges.get(k) || []));
       if (viaHolders) holders(k).forEach(x=>q.push(...(edges.get(x) || []))); }   // what an initiative waits for, its contents wait for too
     return seen; };
-  const all = new Set(dir === "up" ? walk(up, true) : [...walk(up, true), ...walk(down, false)]), out = {bars:new Set(), tasks:new Set(), ms:new Set(), gates:new Set(), items:0, keys:all};
+  const all = new Set(dir === "up" ? walk(up, true) : [...walk(up, true), ...walk(down, false)]), sides = new Set(), out = {bars:new Set(), tasks:new Set(), ms:new Set(), gates:new Set(), items:0, keys:all, side:sides};
+  if (side && dir !== "up") seeds.forEach(x=>{ const k = x.t + ":" + x.id;
+    [k, ...holders(k)].forEach(a=>(up.get(a) || []).forEach(p=>(down.get(p) || []).forEach(sib=>{ const q = [sib];
+      while (q.length){ const c = q.pop(); if (all.has(c) || sides.has(c)) continue; sides.add(c); q.push(...inside(c)); } }))); });
+  sides.forEach(k=>all.add(k));
   all.forEach(k=>{ const i = k.indexOf(":"), t = k.slice(0, i), id = k.slice(i + 1);
     if (t === "bar" && bars.has(id)) out.bars.add(id); else if (t === "task" && taskBar.has(id)){ out.tasks.add(id); out.bars.add(taskBar.get(id)); }
     else if (t === "ms") out.ms.add(id); else if (t === "gate") out.gates.add(id); else return;
@@ -6528,8 +6534,8 @@ function runwayPanel(m){
 // What linked work hides: everything else, unless it's highlighted instead (then the rest is dimmed, see dimUnlinked).
 const linkedHide = (f = UI.filter) => f.linkMode === "highlight" ? null : linkedScope(f);
 function linkedScope(f = UI.filter){ const L = f.linked || []; if (!L.length) return null;
-  const dir = f.linkDir === "up" ? "up" : "both", key = dir + JSON.stringify(L); if (linkedMemo && linkedMemo.key === key && linkedMemo.S === S && linkedMemo.bars === S.bars) return linkedMemo.set;
-  linkedMemo = {key, S, bars:S.bars, set:linkedItems(L, S, dir)}; return linkedMemo.set; }
+  const dir = f.linkDir === "up" ? "up" : "both", side = dir === "both" && f.linkSide === true, key = dir + side + JSON.stringify(L); if (linkedMemo && linkedMemo.key === key && linkedMemo.S === S && linkedMemo.bars === S.bars) return linkedMemo.set;
+  linkedMemo = {key, S, bars:S.bars, set:linkedItems(L, S, dir, side)}; return linkedMemo.set; }
 function barVisible(b, f = UI.filter, R = fRangeDays(f)){
   if (b.parked) return false;                          // switched off in the Jira tab: kept, not shown
   if (hidKind(b.kind) || (hidKind("done") && effStatus(b) === "done")) return false;   // hidden to declutter: hide wins
@@ -7299,6 +7305,8 @@ const COMMANDS = [
   {id:"linked-only", label:"Hide what isn't linked", keys:["Shift+Z"], also:"linked only hide rest", when:()=>linkSeeds().length > 0 && UI.filter.linkMode === "highlight", run:()=>{ setLinkMode("only"); focusShown(); }},
   {id:"leads-here", label:"Show only what leads to the linked picks", keys:[">"], also:"linked leads here runway upstream waits one way direction", when:()=>linkSeeds().length > 0 && UI.filter.linkDir !== "up", run:()=>{ setLinkDir("up"); focusShown(); }},
   {id:"linked-both", label:"Show linked work both ways again", keys:[">"], also:"linked both ways direction downstream", when:()=>linkSeeds().length > 0 && UI.filter.linkDir === "up", run:()=>{ setLinkDir("both"); focusShown(); }},
+  {id:"linked-side", label:"Linked work: also show work that waits for the same things", also:"linked sideways siblings same prerequisite shares waits for the same", when:()=>linkSeeds().length > 0 && !(UI.filter.linkDir !== "up" && UI.filter.linkSide), run:()=>{ setLinkSide(true); focusShown(); }},
+  {id:"linked-side-off", label:"Linked work: stop showing work that waits for the same things", also:"linked sideways siblings same prerequisite", when:()=>linkSeeds().length > 0 && UI.filter.linkDir !== "up" && UI.filter.linkSide === true, run:()=>{ setLinkSide(false); focusShown(); }},
   {id:"leads-here-sel", label:"Show what leads to the selection on the Timeline", keys:[">"], also:"runway leads here timeline milestone waits upstream", when:()=>!linkSeeds().length && !!sel && LINK_TYPES.includes(sel.type) && !!linkTarget({t:sel.type, id:sel.id}), run:()=>{ leadsHere(sel.type, sel.id); focusShown(); }},
   {id:"linked-remove", label:"Take the selection off linked work", keys:["Shift+X"], also:"linked remove pick", when:()=>CMD_VIEWS.includes(UI.ws) && !!sel && isSeed(sel.type, sel.id), run:()=>{ linkedOff({t:sel.type, id:sel.id}); focusShown(); }},
   {id:"week-later", label:"Move the selection a week later", keys:["}"], also:"push slip delay", when:()=>!!selMovable(), run:()=>moveSelTo(selStartDay(selMovable()) + 7)},
@@ -7539,26 +7547,29 @@ function linkCount(f = UI.filter){ const L = linkedScope(f); if (!L) return null
     if (t === "task"){ const o = taskById(id); return !!o && lane(o.b) && barVisible(o.b, g, R) && (!tf || taskVisible(o.t, g, R)); }
     if (t === "ms"){ const m = S.milestones.find(x=>x.id === id); return !!m && msVisible(m, g, R); }
     const x = gates.get(id), at = x && x.day != null ? dayToAt(x.day) : null; return at != null && at >= 0 && at <= S.meta.weeks && gateVisible(x, g, R); };   // as the gates row: dated, in the plan
-  const out = {shown:0, hidden:0, elsewhere:0, picksHidden:[]}, seeds = linkSeeds(), isPick = k => seeds.some(x=>x.t + ":" + x.id === k);
+  const out = {shown:0, side:0, hidden:0, elsewhere:0, picksHidden:[]}, seeds = linkSeeds(), isPick = k => seeds.some(x=>x.t + ":" + x.id === k);
   L.keys.forEach(k=>{ const i = k.indexOf(":"), t = k.slice(0, i), id = k.slice(i + 1); if (!["bar", "task", "ms", "gate"].includes(t)) return;
     if (list && (t === "ms" || t === "gate")){ if (!isPick(k)) out.elsewhere++; return; }
-    const on = drawn(t, id); if (isPick(k)){ if (!on) out.picksHidden.push({t, id}); return; } on ? out.shown++ : out.hidden++; });
+    const on = drawn(t, id); if (isPick(k)){ if (!on) out.picksHidden.push({t, id}); return; } if (!on) out.hidden++; else if (L.side.has(k)) out.side++; else out.shown++; });
   return out; }
-function linkSay(){ const seeds = linkSeeds(); if (!seeds.length) return; const C = linkCount() || {shown:0, hidden:0, elsewhere:0, picksHidden:[]}, one = seeds.length === 1, names = one ? linkName(seeds[0]) : `${seeds.length} picked items`;
+function linkSay(){ const seeds = linkSeeds(); if (!seeds.length) return; const C = linkCount() || {shown:0, side:0, hidden:0, elsewhere:0, picksHidden:[]}, one = seeds.length === 1, names = one ? linkName(seeds[0]) : `${seeds.length} picked items`;
   const n = C.shown, it = one ? "it" : "them", hl = UI.filter.linkMode === "highlight", verb = hl ? "Highlighting" : "Showing", rest = hl ? "Take a chip off, or press Back, to undim the rest." : "Take a chip off, or press Back, to see the rest.";
-  const s = n === 1 ? "" : "s", alone = `${one ? "it's" : "they're"} ${hl ? "highlighted" : "shown"} on ${one ? "its" : "their"} own`, up = UI.filter.linkDir === "up";
-  const hid = C.hidden ? `${C.hidden} ${n ? "more " : ""}${C.hidden === 1 ? "is" : "are"} hidden by your filters` : "";
-  const main = n ? (up ? `${verb} what leads to ${names}: ${n} item${s}` : `${verb} ${names} and the ${n} item${s} linked to ${it}`) + (hid ? `; ${hid}` : "") + "."
+  const s = n === 1 ? "" : "s", alone = `${one ? "it's" : "they're"} ${hl ? "highlighted" : "shown"} on ${one ? "its" : "their"} own`, up = UI.filter.linkDir === "up", sideOn = !up && UI.filter.linkSide === true, sd = C.side;
+  const share = `share${sd === 1 ? "s" : ""} a prerequisite`;
+  const hid = C.hidden ? `${C.hidden} ${n || sd ? "more " : ""}${C.hidden === 1 ? "is" : "are"} hidden by your filters` : "";
+  const main = n ? (up ? `${verb} what leads to ${names}: ${n} item${s}` : `${verb} ${names} and the ${n} item${s} linked to ${it}`) + (sd ? `, plus ${sd} that ${share}` : "") + (hid ? `; ${hid}` : "") + "."
+    : sd ? `${verb} ${names} and the ${sd} item${sd === 1 ? "" : "s"} that ${share} with ${it}` + (hid ? `; ${hid}` : "") + "."
     : hid ? `Nothing ${up ? "that leads to" : "linked to"} ${names} is shown: ${hid}.`
     : C.elsewhere ? `${verb} ${names}.` : up ? `Nothing leads to ${names} yet, so ${alone}.` : `Nothing is linked to ${names} yet, so ${alone}.`;
   const tl = C.elsewhere ? ` ${C.elsewhere} linked milestone${C.elsewhere === 1 ? " or gate is" : "s and gates are"} on the Timeline; the List shows work.` : "";
   const ph = C.picksHidden.length ? ` ${C.picksHidden.length === seeds.length && one ? linkName(seeds[0]) : C.picksHidden.map(linkName).join(", ")} ${C.picksHidden.length === 1 ? "is" : "are"} hidden by your filters.` : "";
-  const say = `${main}${tl}${ph} ${rest}`;
+  const none = sideOn && !(linkedScope() || {side:new Set()}).side.size ? ` Nothing else shares a prerequisite with ${it}.` : "";
+  const say = `${main}${none}${tl}${ph} ${rest}`;
   setStatus(say); showSay(say); }
 // Take one pick off (or all, with no x). The zoom comes back when the last one goes.
 function linkedOff(x){ const have = linkSeeds(), left = x ? have.filter(y=>!(y.t === x.t && y.id === x.id)) : []; navStep();
   if (!left.length && linkZoom){ const z = linkZoom; linkZoom = null; UI.zoomN = z.n; UI.zoomSp = z.sp; delete UI.zoomPreset; if (z.p != null) UI.zoomPreset = z.p; fitKey = ""; sprintKey = ""; }
-  setFilter(f=>{ f.linked = left; if (!left.length){ f.linkMode = "only"; f.linkDir = "both"; } });
+  setFilter(f=>{ f.linked = left; if (!left.length){ f.linkMode = "only"; f.linkDir = "both"; f.linkSide = false; } });
   if (left.length) linkSay(); else showSay(have.length === 1 ? `No longer showing only what's linked to ${linkName(have[0])}.` : "Showing all work."); }
 // On an item's card: Show linked work, or, while picks are shown, add it to them or take it off.
 function linkedBtn(t, id){
@@ -7575,7 +7586,25 @@ function linkedBtn(t, id){
 // Only these (hide the rest) or Highlight (dim it). A viewer's choice, kept with the picks; Back undoes it.
 function setLinkMode(mode){ if (!linkSeeds().length || UI.filter.linkMode === mode) return; navStep(); setFilter(f=>{ f.linkMode = mode; }); linkSay(); }
 // Both ways, or only what leads to the picks (what they wait for, all the way back). Kept with the picks, never in a saved view.
-function setLinkDir(dir){ if (!linkSeeds().length || UI.filter.linkDir === dir) return; navStep(); setFilter(f=>{ f.linkDir = dir; }); linkSay(); if (dir === "up") seedInView(); }
+// Both ways, or only what leads to the picks (what they wait for, all the way back); and, both ways, also what shares a
+// prerequisite with them (side). One step for Back. Kept with the picks, never in a saved view. Leads here only keeps
+// side as it was, unused, so Both ways brings it back.
+function setLinkScope(dir, side){ if (!linkSeeds().length) return; side = dir === "up" ? UI.filter.linkSide === true : side === true;
+  if (UI.filter.linkDir === dir && (UI.filter.linkSide === true) === side) return;
+  navStep(); setFilter(f=>{ f.linkDir = dir; f.linkSide = side; }); linkSay(); if (dir === "up") seedInView(); }
+const setLinkDir = dir => setLinkScope(dir, UI.filter.linkSide === true), setLinkSide = on => setLinkScope("both", on);
+// The Linked work menu in the Showing strip: the direction, and work that waits for the same things.
+function openLinkMenu(){ const b = $("#linkScope"); if (!b) return; closeViewMenu(); closeFilterPop(); closeNotesMenu(); closeAddMenu(false);
+  const m = $("#linkMenu"), f = UI.filter, up = f.linkDir === "up", side = !up && f.linkSide === true;
+  const pick = (dir, sd) => { closeLinkMenu(); setLinkScope(dir, sd); $("#linkScope")?.focus(); };
+  const item = (role, on, id, label, run) => h("button",{type:"button",role,"aria-checked":String(on),class:"vname",id,onclick:run}, label), one = linkSeeds().length === 1;
+  m.replaceChildren(h("div",{class:"mh"},"Show"),
+    item("menuitemradio", !up, "lmBoth", one ? "Both ways: what it waits for and what waits for it" : "Both ways: what they wait for and what waits for them", ()=>pick("both", f.linkSide === true)),
+    item("menuitemradio", up, "lmUp", one ? "Leads here only: what it waits for, all the way back" : "Leads here only: what they wait for, all the way back", ()=>pick("up")),
+    h("div",{class:"mh"},"Also"),
+    item("menuitemcheckbox", side, "lmSide", "Work that waits for the same things", ()=>pick("both", !side)));
+  placePop(m, b); b.setAttribute("aria-expanded","true"); (m.querySelector('[aria-checked="true"]') || m.querySelector("button")).focus(); }
+function closeLinkMenu(refocus){ const m = $("#linkMenu"); if (!m || m.hidden) return; m.hidden = true; $("#linkScope")?.setAttribute("aria-expanded","false"); if (refocus) $("#linkScope")?.focus(); }
 // The runway on the Timeline: the item alone, and only what leads to it.
 // The page switch and the picks are one step, so Back goes straight to where you were.
 function leadsHere(t, id){ const moved = UI.ws !== "timeline"; if (moved){ UI.ws = "timeline"; saveUI(); }
@@ -16233,6 +16262,12 @@ $("#notesMenu").addEventListener("keydown", e=>{
   if (e.key === "ArrowDown"){ e.preventDefault(); items[(i+1) % items.length]?.focus(); } else if (e.key === "ArrowUp"){ e.preventDefault(); items[(i-1+items.length) % items.length]?.focus(); }
 });
 document.addEventListener("click", e=>{ if (!$("#notesMenu").hidden && !e.target.closest("#notesMenu,#notesBtn")) closeNotesMenu(); });
+$("#linkMenu").addEventListener("keydown", e=>{
+  if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); closeLinkMenu(true); return; }
+  const items = [...$("#linkMenu").querySelectorAll("button")], i = items.indexOf(document.activeElement);
+  if (e.key === "ArrowDown"){ e.preventDefault(); items[(i+1) % items.length]?.focus(); } else if (e.key === "ArrowUp"){ e.preventDefault(); items[(i-1+items.length) % items.length]?.focus(); }
+});
+document.addEventListener("click", e=>{ if (!$("#linkMenu").hidden && !e.target.closest("#linkMenu,#linkScope")) closeLinkMenu(); });
 $("#showBtn").onclick = e=>{ e.stopPropagation(); $("#showMenu").hidden ? openShowMenu() : closeShowMenu(true); };
 $("#showMenu").addEventListener("keydown", e=>{
   if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); closeShowMenu(true); return; }
