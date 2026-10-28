@@ -115,8 +115,26 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("N20 J works on Risks too", at() === d.querySelector("#t-risks tbody tr") && /^1 of 1: /.test(live()), live());
     ev(`UI.planTab = "details"; render();`); await wait(20); at()?.blur?.(); const ae = at(); key("j"); await wait(15);
     ok("N21 a Plan page without rows to step through takes no J", at() === ae && X("UI.ws") === "plan", at()?.tagName);
+    ev(`if (!HTMLDialogElement.prototype.showModal) HTMLDialogElement.prototype.showModal = function(){ this.setAttribute("open", ""); }; if (!HTMLDialogElement.prototype.close) HTMLDialogElement.prototype.close = function(){ this.removeAttribute("open"); }; goWs("timeline"); render(); openHelp("keys");`); await wait(20);
+    const caps = () => [...d.querySelectorAll(".ktable kbd")].map(k=>k.textContent);
+    const pcCaps = caps(); ev(`document.querySelectorAll("dialog[open]").forEach(x=>x.close()); Object.defineProperty(navigator, "platform", {value:"MacIntel", configurable:true}); openHelp("keys");`); await wait(20);
+    const macCaps = caps();
+    ok("N22 on a Mac the keyboard help shows ⌘, ⇧ and ⌥ where it says Ctrl, Shift and Alt elsewhere", pcCaps.includes("Ctrl+K") && macCaps.includes("⌘K") && !macCaps.some(k=>/Ctrl\+|Shift\+|Alt\+/.test(k)) && macCaps.includes("⌥←") && macCaps.length === pcCaps.length, macCaps.filter(k=>/[⌘⇧⌥]|\+/.test(k)).join(" "));
+    ev(`document.querySelectorAll("dialog[open]").forEach(x=>x.close()); openFind(); renderFind("save");`); await wait(10);
+    const undoCap = [...d.querySelectorAll("#findList .fhit.fcmd")].find(b=>/^Save$/.test(b.querySelector(".ft")?.textContent || ""))?.querySelector("kbd")?.textContent;
+    ev(`closeFind(); delete navigator.platform;`);
+    ok("N23 …and so does Find next to an action", undoCap === "⌘S", String(undoCap));
     ok("N13 the keyboard help says J and K work in this view", (T("SHORTCUTS.flatMap(([g, rows])=>rows.filter(r=>r[0].includes('J')).map(r=>r[1]))") || []).some(x=>/in this view/.test(x)));
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
+  { const m = new JSDOM(html, {runScripts:"dangerously", pretendToBeVisual:true, url:"https://local.test/", virtualConsole:new VirtualConsole(), beforeParse(w){
+      Object.defineProperty(w.navigator, "platform", {value:"MacIntel"}); w.CSS = w.CSS || {}; w.CSS.escape = s=>s; w.HTMLCanvasElement.prototype.getContext = ()=>null; w.Element.prototype.scrollIntoView = ()=>{}; w.indexedDB = undefined; }});
+    await wait(200); const md = m.window.document;
+    ok("N24 on a Mac the toolbar's tooltips say ⌘ too: Find, Save and Undo", /\(\/ or ⌘K\)/.test(md.querySelector("#findBtn").title) && /⌘S/.test(md.querySelector("#saveFile").title) && /⌘Z/.test(md.querySelector("#undo").title) && !/Ctrl/.test(md.querySelector("#findBtn").title + md.querySelector("#saveFile").title + md.querySelector("#undo").title), [md.querySelector("#findBtn").title, md.querySelector("#saveFile").title, md.querySelector("#undo").title].join(" | "));
+    ok("N25 …while anywhere else they still say Ctrl", /Ctrl\+K/.test(d.querySelector("#findBtn").title) && /Ctrl\+Z/.test(d.querySelector("#undo").title), d.querySelector("#findBtn").title);
+    m.window.FIX = FIX; m.window.eval(`askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); S = normalize(JSON.parse(FIX), false); file.handle = null; goWs("timeline"); render(); select("bar", S.bars[0].id); render();`); await wait(50);
+    const literal = [...md.querySelectorAll("[title]")].map(e=>e.title).filter(t=>/\b(?:Ctrl|Shift|Alt)\+/.test(t));
+    ok("N26 on a Mac no tooltip on the Timeline still spells out Ctrl+, Shift+ or Alt+ (ARIA keeps the standard names)", !literal.length && md.querySelectorAll('[aria-keyshortcuts*="Shift+"]').length > 0, literal.slice(0, 3).join(" | "));
+    m.window.close(); }
   console.log(R.join("\n")); const f = R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
 })();

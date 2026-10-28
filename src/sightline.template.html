@@ -5697,7 +5697,7 @@ const HELP = [
     h("p",{}, "Holidays (Settings → Work calendar) and each person's time off (Delivery → Capacity) are skipped when counting working days. ", h("b",{},"Set baseline"), " (Delivery → Snapshots) before a review; afterwards moved items show how far they slipped.")]],
   ["views", "Views and finding", ()=>[
     h("ul",{}, h("li",{}, h("b",{},"Weeks / Days"), " (W, D): the big picture, or day by day with tasks."), h("li",{}, h("b",{},"By workstream / By person / By epic"), " (R): rows per workstream, per person with their load, or per Jira epic, nested."),
-      h("li",{}, h("b",{},"Find"), " (/ or Ctrl+K): any item, person, meeting, note or Jira key. It unfolds and un-filters what's hiding the result."),
+      h("li",{}, h("b",{},"Find"), keysIn(" (/ or Ctrl+K): any item, person, meeting, note or Jira key. It unfolds and un-filters what's hiding the result.")),
       h("li",{}, h("b",{},"Filters"), " (F): by person, workstream, status (including Blocked), kind, dates. ", h("b",{},"Views"), " (V) save a filter and layout, for you or the team."),
       h("li",{}, h("b",{},"Show"), " (H): hide gates, releases, deliverables, meetings, process blocks, milestones or done work, just for you in this plan. ", h("b",{},"Focus"), " hides meetings, process and done work; G and M toggle gates and meetings; Shift+H shows everything. ", h("b",{},"Pin the top rows"), " keeps them in view while you scroll."),
       h("li",{}, h("b",{},"Notes"), " (N): show all, only yours, only others', or hide them."), h("li",{}, h("b",{},"Present"), " (P): a clean, read-only view for reviews."),
@@ -5710,7 +5710,7 @@ const HELP = [
       h("li",{}, "Undo covers your own changes since you opened the plan (not teammates').")),
     h("p",{class:"hint"},"OneDrive sync can be delayed, especially offline. Sightline checks the local synced file, not upload completion. If you find a conflict copy, use File → Review another copy to compare and preserve both before deciding. Never assume the newer timestamp contains all work.")]],
   ["keys", "Keyboard shortcuts", ()=>SHORTCUTS.map(([group, rows])=>h("section",{class:"kgroup"}, h("h3",{}, group),
-    h("table",{class:"ktable"}, h("tbody",{}, ...rows.map(([keys, what, joiner])=>h("tr",{}, h("td",{}, ...keys.flatMap((k,i)=>[i ? h("span",{class:"kor"}, joiner || "or") : null, h("kbd",{}, k)]).filter(Boolean)), h("td",{}, what)))))))],
+    h("table",{class:"ktable"}, h("tbody",{}, ...rows.map(([keys, what, joiner])=>h("tr",{}, h("td",{}, ...keys.flatMap((k,i)=>[i ? h("span",{class:"kor"}, joiner || "or") : null, h("kbd",{}, keyLabel(k))]).filter(Boolean)), h("td",{}, what)))))))],
 ];
 // ================= What's new: release notes =================
 // src/releases.json is validated and embedded by build.sh, newest first. The app's version is the newest release.
@@ -6094,7 +6094,7 @@ function fillZoomBar(pageable){
     h("button",{class:"btn",type:"button",id:"pgNext","aria-label":cs ? "Next sprint" : "Later",title:cs ? "Next sprint (])" : "Later (])",disabled:!pageable,onclick:()=>viewPage(1)},"›"),
     focus ? null : sep(),
     focus ? null : h("span",{class:"zpresets",role:"group","aria-label":"Show sprints"}, ZOOM_PRESETS.map(([k, t])=>h("button",{type:"button",class:"btn zp","data-preset":String(k),"aria-pressed":String(presetOn(k)),
-      "aria-label":t,title:`${t} (Shift+${k})`,"aria-keyshortcuts":`Shift+${k}`,disabled:!!k && !nowSprint(),onclick:()=>zoomPreset(k)}, k ? String(k) : "Fit"))),
+      "aria-label":t,title:`${t} (${keyLabel("Shift+" + k)})`,"aria-keyshortcuts":`Shift+${k}`,disabled:!!k && !nowSprint(),onclick:()=>zoomPreset(k)}, k ? String(k) : "Fit"))),
     sep(),
     h("button",{class:"btn",type:"button",id:"zoomOut","aria-label":"Zoom out: one more sprint",title:"One more sprint on screen (−)",disabled:!n,onclick:zoomOut},"−"),
     h("span",{class:"vh",id:"zoomLab","aria-live":"polite"}, zoomText()),
@@ -7110,7 +7110,15 @@ function moveSelTo(day){ const it = selMovable(); if (!it || day == null) return
   queueMicrotask(()=>setStatus(`${itemLabel(w)} now starts ${fmtDay(selStartDay(w))}.` + (n ? ` ${n} linked item${n === 1 ? "" : "s"} moved with it to keep their order.` : "") + ` Undo (${undoKey()}).`));   // after the reschedule's own line
   focusSel(w.key);   // so J, K and another move carry on from it
   return ok; }
-const undoKey = () => /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "") ? "⌘Z" : "Ctrl+Z";
+const isMac = () => /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "");
+// A shortcut the way this keyboard labels it: on a Mac, Ctrl is ⌘, Shift ⇧ and Alt ⌥, in Apple's order (⌥⇧⌘), with no plus signs.
+const MAC_MOD = {Alt:"⌥", Shift:"⇧", Ctrl:"⌘"};
+const keyLabel = k => { const parts = String(k).split("+"), key = parts.pop() || "+", mods = parts.filter(m=>m in MAC_MOD);
+  if (!isMac() || !mods.length || mods.length !== parts.length) return String(k);
+  return Object.keys(MAC_MOD).filter(m=>mods.includes(m)).map(m=>MAC_MOD[m]).join("") + key; };
+// The same, for every shortcut written inside a sentence ("Undo (Ctrl+Z)").
+const keysIn = t => String(t).replace(/\b(?:(?:Ctrl|Shift|Alt)\+)+(?:[A-Za-z0-9]\b|Enter|Delete|[←→↑↓])/g, keyLabel);
+const undoKey = () => keyLabel("Ctrl+Z");
 // Keyboard focus on the selected item where it's drawn: its bar on the Timeline, its row in the List.
 function focusSel(key){
   if (UI.ws === "list"){ const row = [...document.querySelectorAll("#listTable tr[data-lk]")].find(r=>r.dataset.lk === "list:" + key); if (!row) return;
@@ -7186,7 +7194,7 @@ function renderFind(q){
   if (!findHits.length){ list.append(h("p",{class:"hint"}, `Nothing matches "${q}".`)); return; }
   findHits.forEach((x,i)=>list.append(x.kind === "cmd"
     ? h("button",{type:"button",role:"option",class:"fhit fcmd" + (i===findIdx ? " on" : ""),"aria-selected":String(i===findIdx),id:"fhit"+i,onclick:e=>{ e.stopPropagation(); findCmd(x.id); }},
-      h("span",{class:"fi"}, "›"), h("span",{class:"ft"}, x.text), h("small",{}, x.keys.length ? h("span",{}, "Action · ", ...x.keys.map((k, j)=>[j ? " or " : "", h("kbd",{}, k)]).flat()) : "Action"))
+      h("span",{class:"fi"}, "›"), h("span",{class:"ft"}, x.text), h("small",{}, x.keys.length ? h("span",{}, "Action · ", ...x.keys.map((k, j)=>[j ? " or " : "", h("kbd",{}, keyLabel(k))]).flat()) : "Action"))
     : h("button",{type:"button",role:"option",class:"fhit" + (i===findIdx ? " on" : ""),"aria-selected":String(i===findIdx),id:"fhit"+i,onclick:()=>{ closeFind(); goTo(x.kind, x.id); }},
       h("span",{class:"fi"}, x.emoji ? icon(null, x.emoji) : icon(x.icon || KIND_ICON[x.kind] || "flag")), h("span",{class:"ft"}, x.text), h("small",{}, x.sub))));
 }
@@ -7631,8 +7639,8 @@ function renderDerived(editStateCurrent = false){ if (UI.view && !activeView()) 
   relaneUI(); { const c = cleanFilter(UI.filter); if (c.lanes.join() !== UI.filter.lanes.join() || c.people.length !== UI.filter.people.length || c.bars.length !== (UI.filter.bars || []).length){ UI.filter = c; saveUI(); } } renderViewBar(); renderWs(); if (wantLoad) renderLoad(); if (UI.ws === "timeline") markJiraLocks(); drawBanners(); if (!editStateCurrent){ updateUndo(); updateFileUI(); } }
 function updateUndo(){
   if (quickUndoable()){ const u = quickStack(quickDone).at(-1), r = quickStack(quickUndone).at(-1);
-    $("#undo").disabled = !u; $("#redo").disabled = !r; $("#undo").title = u ? `Undo ${u.what} (Ctrl+Z)` : "Undo (Ctrl+Z)"; $("#redo").title = r ? `Redo ${r.what}` : "Redo"; return; }
-  $("#undo").disabled = !past.length || !editable(); $("#redo").disabled = !future.length || !editable(); $("#undo").title = "Undo (Ctrl+Z)"; $("#redo").title = "Redo"; }
+    $("#undo").disabled = !u; $("#redo").disabled = !r; $("#undo").title = keysIn(u ? `Undo ${u.what} (Ctrl+Z)` : "Undo (Ctrl+Z)"); $("#redo").title = r ? `Redo ${r.what}` : "Redo"; return; }
+  $("#undo").disabled = !past.length || !editable(); $("#redo").disabled = !future.length || !editable(); $("#undo").title = keysIn("Undo (Ctrl+Z)"); $("#redo").title = "Redo"; }
 function applyReadonly(){
   const ro = !editable();
   document.body.classList.toggle("readonly", present || locked);
@@ -11443,7 +11451,7 @@ function renderSide0(){
   put(h("div",{class:"sidehead"}, h("h3",{}, sideIcon(), titles[sel.type] || "Edit"), NAV_SEL.includes(sel.type) ? h("button",{type:"button",class:"linkish sidelink",id:"sideLink",title:"Copy a link that opens this, in this plan",onclick:linkHere},"Copy link") : null, h("button",{class:"x nav",type:"button","aria-label":"Close panel",title:"Close (Esc)",onclick:()=>{ sel=null; render(true); }},"×")));
   if (sel.type !== "help" && !present && !editable() && file.handle && !file.holdLock) put(h("div",{class:"viewonly"}, (sel.type === "bar" || sel.type === "task") ? "Quick updates below save right away. To change anything else, click " : "View only. Click ", h("b",{},"Start editing"), (sel.type === "bar" || sel.type === "task") ? "." : " in the toolbar to make changes."));
   { const hk = {meeting:"meeting", gate:"gate", block:"process", release:"release", ms:"milestone", deliverable:"deliverable"}[sel.type];
-    if (hk && ["timeline","people","list"].includes(UI.ws)) put(h("div",{class:"sidehide"}, h("button",{type:"button",class:"linkish",id:"sideHideKind",title:"Just for you, in this plan. Show everything (Shift+H) brings them back",
+    if (hk && ["timeline","people","list"].includes(UI.ws)) put(h("div",{class:"sidehide"}, h("button",{type:"button",class:"linkish",id:"sideHideKind",title:keysIn("Just for you, in this plan. Show everything (Shift+H) brings them back"),
       onclick:()=>{ sel = null; setHiddenKinds([...hiddenKinds(), hk], `${kindName(hk)} hidden. Shift+H shows everything`); showToast(`${kindName(hk)} hidden.`, "Show them", ()=>setHiddenKinds(hiddenKinds().filter(x=>x !== hk), `${kindName(hk)} shown`)); }}, `Hide all ${kindName(hk).toLowerCase()}`))); }
   if (sel.type === "amend"){ amendPanel(put); return; }
   if (sel.type === "deliverable"){
@@ -11531,7 +11539,7 @@ function renderSide0(){
       h("p",{class:"hint"},"Drag a bar to move it, drag its edges to resize, or drop it on another workstream. Hold Shift for fine steps."),
       h("p",{class:"hint"},"Double-click an empty spot in a workstream to add an initiative. Click a bar, milestone or workstream name to open it. The key under the chart explains the bar styles."),
       h("p",{class:"hint"},"Days view (D): each initiative's tasks by working day. To see one initiative by itself, double-click it, or select it and press Show only this initiative (Z). The chip above the chart takes it off again. Tasks roll up into their initiative: progress, status, owners, and optionally its dates."),
-      h("p",{class:"hint"},"Keyboard: Tab to an item, Enter to open it, ← → to move, Alt + ← → to resize, Delete to remove, Ctrl+Z to undo. W and D switch views, + and − zoom the Days view, P presents, ? opens this help, Esc closes the panel."),
+      h("p",{class:"hint"},keysIn("Keyboard: Tab to an item, Enter to open it, ← → to move, Alt + ← → to resize, Delete to remove, Ctrl+Z to undo. W and D switch views, + and − zoom the Days view, P presents, ? opens this help, Esc closes the panel.")),
       h("p",{class:"hint"},"Set baseline (Delivery, then Snapshots) before a review. Afterwards, moved items show a dashed outline and how far they slipped."),
       h("p",{class:"hint"}, FS_OK ? "Sharing: File → Open shared plan picks a JSON or YAML file in your OneDrive folder (or Save as a new shared plan creates one). Click Start editing so teammates see you're editing, Save as you go (Ctrl+S; each save keeps your lock for 30 minutes), then Done editing. Refresh or Auto pulls teammates' saves. If a conflict still happens, you choose which version wins and the other is downloaded as a backup." : "Use Edge or Chrome to share a plan file on OneDrive. Here, use File → Open a copy and Download."));
     return;
@@ -15848,6 +15856,7 @@ document.querySelectorAll("[data-add]").forEach(b=>b.addEventListener("click",()
 
 // ================= toolbar wiring =================
 function flushEditing(){ const a = document.activeElement; if (a && /INPUT|TEXTAREA/.test(a.tagName)) a.blur(); }
+["#undo","#redo","#saveFile","#findBtn"].forEach(q=>{ const el = $(q); if (el) el.title = keysIn(el.title); });   // the page's own tooltips, in this keyboard's labels
 $("#startWith").onclick = ()=>openStartWith();
 $("#saveJson").onclick = ()=>download(JSON.stringify(portablePlan(planOfRecord(S)), null, 2)+"\n", `${slug()}-${stamp()}.json`, "application/json");
 $("#saveYaml").onclick = ()=>download(jsyaml.dump(portablePlan(planOfRecord(S)), {lineWidth:120, noRefs:true}), `${slug()}-${stamp()}.yaml`, "text/yaml");

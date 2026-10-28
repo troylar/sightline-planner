@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.159.0",
+    "date": "2026-10-28",
+    "headline": "Mac keys, shown as a Mac shows them",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Keyboard",
+        "title": "⌘, ⇧ and ⌥ on a Mac",
+        "now": "On a Mac, shortcuts read the way your keyboard is labeled: ⌘K for Find, ⌘S to save, ⇧⌘Z to redo and ⌥← to shorten. You'll see it in the keyboard help (?), next to actions in Find, in the toolbar's tooltips and in the status line's Undo hint. Other computers still show Ctrl, Shift and Alt.",
+        "where": "Keyboard help (?), Find and the toolbar"
+      }
+    ]
+  },
+  {
     "version": "1.158.0",
     "date": "2026-10-28",
     "headline": "J and K on the Plan pages",
