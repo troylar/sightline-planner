@@ -5972,6 +5972,12 @@ function openOwners(){
   const q = it.type === "task" ? "#f-towner" : "#f-owner";
   focusSoon(q); return true;
 }
+// Find's "link an epic": the cursor in the selected initiative's epic box, its fold opened.
+function openEpicLink(){
+  if (!CMD_VIEWS.includes(UI.ws) || sel?.type !== "bar" || !barById(sel.id)){ setStatus("Select an initiative on the Timeline or the List, then link an epic from Find."); return true; }
+  if (!editable() || present){ setStatus("Start editing (E) to link an epic."); return true; }
+  focusSoon("#f-epic-add"); return true;
+}
 // ================= zoom (per-browser view settings, not saved in the file) =================
 const UI = {ws:"timeline", zoom:"weeks", focus:null, collapsed:{}};
 try { Object.assign(UI, JSON.parse(localStorage.getItem("timeline-planner-ui") || "{}")); } catch(e){}
@@ -7137,6 +7143,7 @@ const COMMANDS = [
   {id:"update", label:"Write an update on the selection", keys:["U"], when:()=>!!selWork(), run:()=>quickKey("u")},
   {id:"sticky", label:"Add a sticky note to the selection", keys:["S"], when:()=>!!selWork(), run:()=>quickKey("s")},
   {id:"owners", label:"Change who owns the selection", also:"owner lead assign people", keys:["O"], when:()=>CMD_VIEWS.includes(UI.ws) && selLeaf() && editable(), run:()=>openOwners()},
+  {id:"link-epic", label:"Link a Jira epic to the selected initiative", also:"jira epic stories count", when:()=>CMD_VIEWS.includes(UI.ws) && sel?.type === "bar" && !!barById(sel.id) && editable() && !present, run:()=>openEpicLink()},
   {id:"week-later", label:"Move the selection a week later", also:"push slip delay", when:()=>!!selMovable(), run:()=>moveSelTo(selStartDay(selMovable()) + 7)},
   {id:"week-earlier", label:"Move the selection a week earlier", also:"pull sooner", when:()=>!!selMovable(), run:()=>moveSelTo(selStartDay(selMovable()) - 7)},
   {id:"next-sprint", label:"Move the selection to the next sprint", also:"push slip", when:()=>{ const it = selMovable(); return !!it && nextSprintDay(it) != null; }, run:()=>moveSelTo(nextSprintDay(selMovable()))},
@@ -8619,7 +8626,7 @@ defAction("jira.epicLink", {scope:"jira", risk:"routine", args:{epic:"str", id:"
   done:(p, a)=>{ const b = epicOwner(upKey(a.epic), p.bars); return !!b && b.id === a.id && !b.parked; },
   check:(p, a)=>{ const why = jiraEpicWhy(p, a); if (why) return why; const b = actBar(p, a.id); if (!b) return actMissing("initiative");
     if (!jiraTakes(b, p)) return {code:"stale", reason:`"${String(barTitle(b)).slice(0, 60)}" can't take Jira work: it's parked, waiting, has sub-initiatives, or is one Jira issue itself.`};
-    const own = epicOwner(upKey(a.epic), p.bars); if (own && own.id !== b.id) return {code:"stale", reason:`${upKey(a.epic)} is already on "${String(barTitle(own)).slice(0, 60)}", so it wasn't moved.`};
+    const own = epicOwner(upKey(a.epic), p.bars); if (own && own.id !== b.id && !own.parked) return {code:"stale", reason:`${upKey(a.epic)} is already on "${String(barTitle(own)).slice(0, 60)}", so it wasn't moved.`};   // parked elsewhere: it moves, as in the epic box
     if (!(b.epics || []).includes(upKey(a.epic)) && (b.epics || []).length >= 50) return actInvalid(`"${String(barTitle(b)).slice(0, 60)}" already has 50 epics, the most an initiative holds.`); },
   run:(p, a)=>epicLinkIn(p, upKey(a.epic), a.id)});
 defAction("jira.epicNew", {scope:"jira", risk:"routine", args:{epic:"str", lane:"id", id:"id?"},
@@ -15353,7 +15360,9 @@ function epicsField(b){
   const can = editable() && !present, ks = barEpics(b), r = epicRollup(b);
   const addIn = h("input",{id:"f-epic-add",placeholder:"Epic key, e.g. ABC-10","aria-label":"Add a Jira epic",onkeydown:e=>{ if (e.key === "Enter"){ e.preventDefault(); add(); } }});
   const add = () => { const k = addIn.value.trim().toUpperCase(); if (!JKEY.test(k)){ setStatus("That isn't a Jira key. It looks like ABC-10."); addIn.focus(); return; }
-    if (!commit(()=>{ if ((b.epics || []).includes(k)) return NOCHANGE; b.epics = [...(b.epics || []), k].slice(0,50); })) return;
+    const own = epicOwner(k, S.bars); if (own && own.id !== b.id && !own.parked){ setStatus(`${k} is already on ${barTitle(own)}. An epic counts on one initiative: unlink it there first.`); addIn.focus(); return; }
+    if (!(b.epics || []).includes(k) && (b.epics || []).length >= 50){ setStatus("This initiative already has 50 epics, the most one holds."); addIn.focus(); return; }
+    if (!commit(s=>epicLinkIn(s, k, b.id))) return;   // a parked epic moves here, as the Jira panel's Link does
     setStatus(JIRA ? `Linked ${k}. Its stories are counted on the next sync.` : `Linked ${k}. Connect the Jira status file to see its stories.`); focusSoon("#f-epic-add"); };
   const row = k => { const j = jiraOf(k), rr = epicCounts(k, new Set(b.storiesOff || [])), own = (b.epics || []).includes(k);
     return h("li",{class:"epicrow"}, h("span",{class:"ek"}, jiraUrl(k) ? h("a",{class:"jlink",href:jiraUrl(k),target:"_blank",rel:"noopener noreferrer",title:`Open ${k} in Jira`}, k) : k), h("span",{class:"es"}, j ? j.summary : JIRA && JIRA.missing.includes(k) ? "Not found in Jira" : ""),
