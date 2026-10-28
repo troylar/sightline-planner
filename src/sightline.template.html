@@ -1290,7 +1290,7 @@ dialog.capdlg{width:min(560px,92vw)}.capdlg form{display:flex;flex-direction:col
 @media (max-width:1499px){ #wsright #layoutLbl{display:none} #wsright .vsum{margin-left:0} }   /* "View:" goes first when room is short; the button's label keeps it */
 .timectl{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}.timebody{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}
 .timectl.open,.timectl.open .timebody{display:contents}.timectl.open .timetxt{display:none}.timectl.open .timesum{padding-left:8px;padding-right:8px}.timectl.open .timesum::after{margin:0 0 0 0}
-.timectl.open .zbar .sprpick select{max-width:86px}
+.timectl.open .zbar .sprpick select{max-width:86px}.timectl.open .zsep{display:none}   /* open, the row needs every pixel: the gaps still group them */
 .timectl[hidden],.timebody[hidden]{display:none}
 .timesum{white-space:nowrap;max-width:min(360px,60vw);overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .timesum::after{content:"";display:inline-block;width:6px;height:6px;margin:0 2px 2px 8px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
@@ -7604,6 +7604,7 @@ function renderViewBar(){
   ["viewBtn","filterBtn","showBtn"].forEach(id=>$("#" + id).hidden = !filtered);
   { const hk = hiddenKinds().length; $("#showBtn").replaceChildren(...["Show", hk ? h("span",{class:"fcount"}, `${hk} hidden`) : null, UI.pinTop ? h("span",{class:"nmode"}, " · pinned") : null].filter(Boolean)); $("#showBtn").classList.toggle("factive", hk > 0); }
   $("#scopeLine").textContent = UI.ws === "roadmap" ? "Whole plan · Roadmap" : UI.ws === "plan" ? `Whole plan · ${(PLAN_TABS.find(([k])=>k === UI.planTab) || ["","Settings"])[1]}` : filtered ? scopeText() : "";
+  $("#scopeLine").title = $("#scopeLine").textContent;   // it takes only the leftover room, so a cut line can still be read whole
   { const mode = UI.notes || "all", nb = $("#notesBtn");
     nb.replaceChildren(...["✎ Notes", mode === "all" ? null : h("span",{class:"nmode"}, mode === "none" ? " hidden" : mode === "mine" ? " mine" : " others'")].filter(Boolean));
     nb.classList.toggle("factive", mode !== "all"); nb.hidden = !["timeline","people","standup","today"].includes(UI.ws); }

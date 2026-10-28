@@ -121,11 +121,12 @@ function contrast(sel){
         const tops = [...wr.querySelectorAll("button,select")].filter(e=>e.getClientRects().length).map(e=>r(e).top).sort((a, z)=>a - z);
         const rows = tops.filter((t, i)=>!i || t - tops[i - 1] > 12).length;   // a group's padding nudges its buttons a few pixels: same row
         return {h:Math.round(r(w).height), rows, sameRow:Math.abs(r(sl).top + r(sl).height / 2 - (r(wr).top + r(wr).height / 2)) < 12,
-          whole:[sl, ...sl.querySelectorAll("*")].every(x=>x.scrollWidth <= x.clientWidth + 1)}; });
+          whole:[sl, ...sl.querySelectorAll("*")].every(x=>x.scrollWidth <= x.clientWidth + 1), titled:!!sl.textContent && sl.title === sl.textContent}; });
       const shut = await bar(); await page.click("#timeSummary"); await page.waitForTimeout(150); const open = await bar();
       ok(`L16 1400px ${theme}: closed, the toolbar is one row`, shut.rows === 1 && shut.h <= 44, JSON.stringify(shut));
       ok(`L17 1400px ${theme}: open, the time controls fit the same one row, no taller than before`, open.rows === 1 && open.h <= 44 && open.h <= shut.h, JSON.stringify(open));
       ok(`L18 1400px ${theme}: open, the status text keeps its row and isn't cut`, open.sameRow && open.whole, JSON.stringify(open));
+      ok(`L18b 1400px ${theme}: the status text's full words are in its tooltip, so a wider font that cuts it never hides them`, shut.titled && open.titled, JSON.stringify([shut.titled, open.titled]));
       await page.focus("#timeSummary"); await page.keyboard.press("Tab"); await page.keyboard.press("Shift+Tab");
       const ring = await page.evaluate(()=>{ const a = document.activeElement, s = getComputedStyle(a); return {on:a.id === "timeSummary", ring:s.outlineStyle !== "none" && parseFloat(s.outlineWidth) >= 2}; });
       ok(`L19 1400px ${theme}: the Time button shows a focus ring`, ring.on && ring.ring, JSON.stringify(ring));
