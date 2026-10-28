@@ -8,7 +8,7 @@ J and K on the Plan pages.
 
 ### Improved
 
-- **Step through decisions, risks and cards** (Keyboard). On Milestones, Gates, Decisions and Risks, J and K (or the arrows, once you're on a row) step through the rows and read each one out, and Enter puts the cursor in its first field. On Cards they step through the cards, landing on the card itself rather than its Jira link. While you're moving a card with M, they leave it alone. *Where:* Plan pages and Cards
+- **Step through decisions, risks and cards** (Keyboard). On Milestones, Gates, Decisions and Risks, J and K (or the arrows, once you're on a row) step through the rows and read each one out, and Enter puts the cursor in its first field. On Cards they step through the cards, marking the whole card and bringing it into view, never stopping on its Jira link. While you're moving a card with M, they leave it alone. *Where:* Plan pages and Cards
 
 ## 1.157.1 · Oct 28, 2026
 

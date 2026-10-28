@@ -15,7 +15,7 @@ async function open(){
     const RealDate = w.Date, now = new RealDate("2026-10-07T14:00:00").getTime();
     w.Date = class extends RealDate {constructor(...a){ a.length ? super(...a) : super(now); } static now(){ return now; }};
     w.HTMLDialogElement.prototype.showModal = function(){ this.open = true; }; w.HTMLDialogElement.prototype.close = function(){ this.open = false; };
-    w.indexedDB = undefined; w.confirm = ()=>true; w.alert = ()=>{ w.alerted = true; }; w.prompt = ()=>"T"; w.Element.prototype.scrollIntoView = ()=>{};
+    w.indexedDB = undefined; w.confirm = ()=>true; w.alert = ()=>{ w.alerted = true; }; w.prompt = ()=>"T"; w.Element.prototype.scrollIntoView = function(){ w.lastScrolled = this; };
     w.HTMLCanvasElement.prototype.getContext = ()=>null; w.CSS = w.CSS || {}; w.CSS.escape = s=>s; w.errs = []; w.addEventListener("error", e=>w.errs.push(e.message)); }});
   const w = dom.window, d = w.document, ev = s=>w.eval(s);
   await wait(150); w.FIX = FIX; ev(CARDS);
@@ -176,6 +176,7 @@ async function open(){
     { d.activeElement?.blur?.(); const cards = [...d.querySelectorAll("#cardsWs .cvcard[data-card]")], live = () => d.querySelector("#navLive")?.textContent || "";
       key(d.body, "j"); const f1 = d.activeElement; key(f1, "j"); const f2 = d.activeElement;
       ok("K7 J on Cards focuses each card's title in turn, never its Jira link, and says where you are", f1?.matches(".cvt") && f1.closest(".cvcard") === cards[0] && f2?.matches(".cvt") && f2.closest(".cvcard") === cards[1] && /^2 of \d+: /.test(live()), [f1?.className, f2?.className, live()].join(" | "));
+      ok("K10 …and brings the whole card into view, not just its title", ev("window.lastScrolled") === cards[1], ev("window.lastScrolled")?.className);
       key(f2, "ArrowUp");
       ok("K8 …and the up arrow goes back, with the plan unchanged", d.activeElement?.closest(".cvcard") === cards[0] && ev("JSON.stringify(planOfRecord(S))") === snap, d.activeElement?.className);
       key(d.activeElement, "m"); const lifted = d.activeElement; key(lifted, "j");
