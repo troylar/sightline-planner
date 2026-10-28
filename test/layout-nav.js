@@ -58,6 +58,13 @@ function ringOf(rowSel){
       const clip = await page.evaluate(()=>{ const xs = [...document.querySelectorAll("#today li.trow .tname")].filter(x=>x.scrollWidth > x.clientWidth + 1); return {n:xs.length, all:xs.every(x=>{ const cs = getComputedStyle(x); return cs.textOverflow === "ellipsis" && cs.display !== "flex" && x.title === x.textContent; })}; });
       ok(`R7 ${theme}: a Today title too long for its column ends in an ellipsis and shows in full on hover`, clip.n > 0 && clip.all, JSON.stringify(clip));
       await page.setViewportSize({width:1400, height:800});
+      // O on a selected initiative: its owner picker has the cursor, and the names it offers are on screen
+      await page.setViewportSize({width:1300, height:760});
+      await page.evaluate(FIX=>{ S = normalize(JSON.parse(FIX), false); goWs("timeline"); render(); select("bar", S.bars.find(b=>isLeafBar(b)).id); render(); document.activeElement && document.activeElement.blur(); }, FIX);
+      await page.waitForTimeout(200); await page.keyboard.press("o"); await page.waitForTimeout(150); await page.keyboard.type("a"); await page.waitForTimeout(200);
+      const pick = await page.evaluate(()=>{ const a = document.activeElement, l = document.querySelector("#f-owner-list"); if (!l || l.hidden) return {id:a && a.id, list:false}; const r = l.getBoundingClientRect(); return {id:a.id, list:true, bottom:Math.round(r.bottom), vh:innerHeight}; });
+      ok(`R8 ${theme}: O puts the cursor in the owner picker, and the names it offers fit on screen`, pick.id === "f-owner" && pick.list && pick.bottom <= pick.vh, JSON.stringify(pick));
+      await page.setViewportSize({width:1400, height:800});
       await page.close();
     }
     ok("no page errors", !errs.length, errs.slice(0, 2).join(" | "));

@@ -5968,7 +5968,8 @@ function openOwners(){
   const it = selWork(); if (!it) return false;
   if (!selLeaf()){ setStatus(`${itemLabel(it)} takes its owners from what's inside it.`); return true; }
   if (!editable()){ setStatus("Start editing (E) to change who owns it."); return true; }
-  focusSoon(it.type === "task" ? "#f-towner" : "#f-owner"); return true;
+  const q = it.type === "task" ? "#f-towner" : "#f-owner";
+  focusSoon(q); return true;
 }
 // ================= zoom (per-browser view settings, not saved in the file) =================
 const UI = {ws:"timeline", zoom:"weeks", focus:null, collapsed:{}};
@@ -11010,6 +11011,7 @@ function ownerPicker(id, getIds, setIds, opts = {}){
     if (q && !S.people.some(pp=>lc(pp.name) === q)) items.push(h("button",{type:"button",role:"option",id:`${id}-oadd`,tabindex:"-1","aria-selected":String(!items.length),class:"oopt add" + (items.length ? "" : " act"),onmousedown:e=>e.preventDefault(),onclick:()=>addNew(inp.value)}, opts.external ? `+ Add "${inp.value.trim()}" as an outside owner` : `+ Add "${inp.value.trim()}" to the team`));
     if (q && opts.outside && !opts.external && !S.people.some(pp=>lc(pp.name) === q)) items.push(h("button",{type:"button",role:"option",id:`${id}-oaddx`,tabindex:"-1","aria-selected":"false",class:"oopt add",onmousedown:e=>e.preventDefault(),onclick:()=>addNew(inp.value, true)}, `+ Add "${inp.value.trim()}" as an outside owner (a team or vendor)`));
     list.replaceChildren(...items); list.hidden = !items.length || document.activeElement !== inp; inp.setAttribute("aria-expanded", String(!list.hidden));
+    if (!list.hidden) list.scrollIntoView?.({block:"nearest"});   // the names it offers, on screen
     const act = list.querySelector(".act"); if (act && !list.hidden) inp.setAttribute("aria-activedescendant", act.id); else inp.removeAttribute("aria-activedescendant");
   };
   inp.addEventListener("input", refresh); inp.addEventListener("focus", refresh);

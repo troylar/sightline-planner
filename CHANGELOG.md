@@ -10,6 +10,10 @@ O changes who owns the selection.
 
 - **O for owners** (Keyboard). With a task or initiative selected on the Timeline or the List, press O to jump to its owner picker. Type a name and press Enter to add them; Undo takes it back. On a Jira item it sets the plan's lead, never Jira's assignee. Find offers it as Change who owns the selection. *Where:* Timeline and List, while editing
 
+### Fixed
+
+- **The owner picker's names stay in view** (Details). The list scrolls into view as it opens. *Where:* Owner fields in the details panel
+
 ## 1.153.1 · Oct 28, 2026
 
 I and X leave Jira's status alone.
