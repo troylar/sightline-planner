@@ -117,6 +117,14 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("K29 the toggles say what they'll do now: Hide gates while shown, Show gates while hidden, and Show notes while notes are off", g1.includes("Hide gates") && g2.includes("Show gates") && n2.includes("Show notes"), [g1, g2, n2].map(x=>x.join("|")).join(" / "));
     ok("K30 either word finds a toggle: hide finds Show gates, show finds it too", acts("hide gat").includes("Show gates") && acts("show gat").includes("Show gates"), acts("hide gat").join("|"));
     ev(`setHiddenQuiet([]); UI.notes = "all"; saveUI(); closeFind(); render();`);
+    // I and X are refused, not written, when Jira owns the item's status: nothing is saved or logged for Jira to undo
+    ev(`window.JL0 = jiraLockOf; jiraLockOf = o => o === taskById("fa").t ? {status:true} : JL0(o); window.QS0 = quickSave; window.QSN = 0; quickSave = (...a)=>{ QSN++; return QS0(...a); };
+      taskById("fa").t.status = "inprogress"; select("task", "fa"); render(); document.activeElement && document.activeElement.blur();`); await wait(10);
+    key("x"); await wait(20);
+    ok("K31 X on an item whose status Jira owns changes nothing and saves nothing, and says why", X(`taskById("fa").t.status`) === "inprogress" && X("QSN") === 0 && /from Jira/.test($("#status")?.textContent || ""), [X(`taskById("fa").t.status`), X("QSN"), $("#status")?.textContent].join(" | "));
+    ev(`taskById("fa").t.status = "todo"; render(); select("task", "fa");`); await wait(10); key("i"); await wait(20);
+    ok("K32 …and I the same", X(`taskById("fa").t.status`) === "todo" && X("QSN") === 0, [X(`taskById("fa").t.status`), X("QSN")].join(" | "));
+    ev(`jiraLockOf = JL0; quickSave = QS0; taskById("fa").t.status = "inprogress"; sel = null; render();`);
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
   console.log(R.join("\n")); const f = R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
