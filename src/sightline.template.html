@@ -7088,6 +7088,17 @@ const CMD_VIEWS = ["timeline","people","list"];
 const selWork = () => sel && ["bar","task"].includes(sel.type) && !present && !tooNew() && workItem(sel.type + ":" + sel.id);
 const selLeaf = () => { const it = selWork(); return !!it && (it.type === "task" || isLeafBar(it.b)); };
 const selStatus = v => selLeaf() && !(jiraLockOf(selWork().obj) || {}).status && selWork().obj.status !== v;   // Jira owns a linked item's status
+// Find: move the selection a week, or to where the next sprint starts, through the same checks as its details
+const selMovable = () => { const it = CMD_VIEWS.includes(UI.ws) && selLeaf() && editable() && selWork(); return it && !jiraFixed(it.obj) && !(it.type === "bar" && derived(it.b)) ? it : null; };
+const selStartDay = it => it.type === "task" ? isoToDay(it.t.start) : wkDay(it.b.start);
+const nextSprintDay = it => { const d = selStartDay(it), r = sprintRanges().find(x=>x.s > d); return r ? r.s : null; };
+function moveSelTo(day){ const it = selMovable(); if (!it || day == null) return false;
+  const starts = () => new Map(S.bars.flatMap(b=>[...(derived(b) ? [] : [["b:" + b.id, b.start]]), ...(b.tasks || []).map(t=>["t:" + t.id, t.start])]));
+  const hs = HS(), b0 = starts(), ok = commit(()=>it.type === "task" ? act("task.move", {id:it.id, start:dayToIso(nextWork(Math.max(startDay(), day), hs))}) : act("initiative.move", {id:it.id, start:Math.max(0, (day - startDay())/7)}));
+  const w = ok && selWork(); if (!w) return ok;
+  const n = [...starts()].filter(([k, v])=>b0.has(k) && b0.get(k) !== v && k !== (it.type === "task" ? "t:" : "b:") + it.id).length;
+  queueMicrotask(()=>setStatus(`${itemLabel(w)} now starts ${fmtDay(selStartDay(w))}.` + (n ? ` ${n} linked item${n === 1 ? "" : "s"} moved with it to keep their order.` : "")));   // after the reschedule's own line
+  return ok; }
 const undoable = redo => quickUndoable() ? quickStack(redo ? quickUndone : quickDone).length > 0 : editable() && (redo ? future : past).length > 0;
 const COMMANDS = [
   {id:"go-today", label:"Go to Today", keys:["T"], run:()=>goWs("today")},
@@ -7117,6 +7128,9 @@ const COMMANDS = [
   {id:"update", label:"Write an update on the selection", keys:["U"], when:()=>!!selWork(), run:()=>quickKey("u")},
   {id:"sticky", label:"Add a sticky note to the selection", keys:["S"], when:()=>!!selWork(), run:()=>quickKey("s")},
   {id:"owners", label:"Change who owns the selection", also:"owner lead assign people", keys:["O"], when:()=>CMD_VIEWS.includes(UI.ws) && selLeaf() && editable(), run:()=>openOwners()},
+  {id:"week-later", label:"Move the selection a week later", also:"push slip delay", when:()=>!!selMovable(), run:()=>moveSelTo(selStartDay(selMovable()) + 7)},
+  {id:"week-earlier", label:"Move the selection a week earlier", also:"pull sooner", when:()=>!!selMovable(), run:()=>moveSelTo(selStartDay(selMovable()) - 7)},
+  {id:"next-sprint", label:"Move the selection to the next sprint", also:"push slip", when:()=>{ const it = selMovable(); return !!it && nextSprintDay(it) != null; }, run:()=>moveSelTo(nextSprintDay(selMovable()))},
   {id:"add", label:"Add an initiative, milestone, gate…", keys:["A"], when:()=>editable(), run:()=>openAddMenu($("#addBtn").getBoundingClientRect(), {})},
   {id:"edit", label:"Start editing", keys:["E"], when:()=>!!file.handle && !file.holdLock && !present, run:()=>startEditing()},
   {id:"edit-done", label:"Done editing", keys:["E"], when:()=>!!file.handle && !!file.holdLock && !present, run:()=>doneEditing()},

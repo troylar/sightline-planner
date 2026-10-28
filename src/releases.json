@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.156.0",
+    "date": "2026-10-28",
+    "headline": "Move the selection from Find",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Keyboard",
+        "title": "A week later, a week earlier, or the next sprint",
+        "now": "With a task or initiative selected on the Timeline or the List, open Find and type week later, week earlier or next sprint. The move is one Undo, and the status line says where it now starts and how many linked items moved with it. Work whose dates come from Jira isn't offered a move.",
+        "where": "Find (/ or Ctrl+K), while editing"
+      }
+    ]
+  },
+  {
     "version": "1.155.0",
     "date": "2026-10-28",
     "headline": "Update it in Jira takes you there",
