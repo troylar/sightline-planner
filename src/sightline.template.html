@@ -3624,7 +3624,7 @@ function adopt(hd, interactive){
     if (!(await kvSet("handle", hd))) setStatus(`Opened ${hd.name}, but this browser won't remember it next time.`);
     if (!kept) offerDraftRecovery(hd.name, file.baseHash, text);
     if (file.holdLock) startHeartbeat();                // this tab was editing before a refresh: carry on
-    render(); setStatus(conflict ? `Reconnected ${hd.name}. Your edits are kept; review the file conflict before saving.` : kept ? withMergeNote(`Reconnected ${hd.name}; your unsaved edits are kept.`) : file.holdLock ? `Still editing ${hd.name}. Save as you go; click Done editing when finished.` : `Opened ${hd.name}` + (S.meta.revision ? ` · revision ${S.meta.revision}` : "")); setTimeout(askWhoOnStart, 50);
+    render(); setStatus(conflict ? `Reconnected ${hd.name}. Your edits are kept; review the file conflict before saving.` : kept ? withMergeNote(`Reconnected ${hd.name}; your unsaved edits are kept.`) : file.holdLock ? `Still editing ${hd.name}. Save as you go; click Done editing when finished.` : `Opened ${hd.name}` + (S.meta.revision ? ` · revision ${S.meta.revision}` : "")); setTimeout(()=>askWhoOnStart(), 50);
     if ($("#auto").checked) startAuto();
     return true;
   });
@@ -9431,7 +9431,7 @@ function emptyPlan(){
         !file.handle && window.showSaveFilePicker ? h("button",{type:"button",class:"btn",onclick:()=>newSharedPlan()}, "Save as a shared plan…") : null, true)));
 }
 function welcome(){
-  const local = ()=>{ UI.noWelcome = true; saveUI(); render(); setTimeout(askWhoOnStart, 50); };
+  const local = ()=>{ UI.noWelcome = true; saveUI(); render(); setTimeout(()=>askWhoOnStart(), 50); };
   return h("div",{class:"welcome"},
     h("h2",{},"Welcome to Sightline"),
     h("p",{class:"tagline"}, APP_TAGLINE),
@@ -15807,7 +15807,7 @@ function loadExternal(text, source){
     if (file.dirty) backup(S,"mine");
     if (file.handle){ stopAuto(); stopHeartbeat(); await kvDel("handle"); file.handle = null; file.dirty = false; file.baseText = null; file.holdLock = false; file.gen++; try { localStorage.removeItem(STORE_DRAFT); } catch(e){} clearBanner("lock"); clearBanner("remote"); }
     pushHistory(); S = plan; jiraShadow.clear(); sel = null; locked = false; clearBanner("link");
-    flushPersist(); render(); setStatus(`Loaded ${source} (this browser only; File → Save as a new shared plan to share it)`); setTimeout(askWhoOnStart, 50);
+    flushPersist(); render(); setStatus(`Loaded ${source} (this browser only; File → Save as a new shared plan to share it)`); setTimeout(()=>askWhoOnStart(), 50);
   });
   return true;
 }
@@ -16021,7 +16021,7 @@ async function newSharedPlan(){
     return true;
   });
   if (!ok && file.handle === previousHandle && file.gen === previousGen && file.handle && $("#auto").checked) startAuto();
-  if (ok){ setStatus(`Plan saved to local file ${hd.name}. OneDrive sync is managed separately. Click Start editing to make changes.`); setTimeout(askWhoOnStart, 50); }
+  if (ok){ setStatus(`Plan saved to local file ${hd.name}. OneDrive sync is managed separately. Click Start editing to make changes.`); setTimeout(()=>askWhoOnStart(), 50); }
 }
 $("#newShared").onclick = ()=>newSharedPlan();
 $("#link").onclick = ()=>pickFile();
@@ -16110,7 +16110,7 @@ function loadLocal(){
     else { showReconnect(hd); setStatus("Waiting for you to reconnect the linked file"); }
   } else {
     locked = false; loadLocal(); render();
-    setStatus(FS_OK ? "" : ""); setTimeout(askWhoOnStart, 50);
+    setStatus(FS_OK ? "" : ""); setTimeout(()=>askWhoOnStart(), 50);
   }
   announceRelease();
 })();
