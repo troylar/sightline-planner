@@ -81,6 +81,24 @@ function contrast(sel){
       ok(`L10 ${tag}: chips that match nothing say so and offer Show all work`, !!none && g2.shown && g2.text.startsWith(`${none} has no work on "`) && g2.all && !g2.go, JSON.stringify([none, g2]));
       await page.evaluate(()=>document.querySelector("#showGapAll")?.click()); await page.waitForTimeout(150);
       ok(`L11 ${tag}: Show all work there clears the chips, and the note is gone`, await page.evaluate(()=>!document.querySelector("#showStrip") && !fActive()), "");
+      // An initiative with tasks: with a person chip too, Days draws only that person's tasks, and the note's dates are theirs
+      const T = await page.evaluate(A=>{ const B = S.people.find(p=>p.name === "Blake").id, b = S.bars.find(x=>x.id === "m2"), st = nearWeekday(wkDay(b.start));
+        b.tasks = [{id:"fa", label:"Avery builds the adapter", start:dayToIso(st), days:4, owners:[A], status:"inprogress"}, {id:"fb", label:"Blake tests it", start:dayToIso(st + 7), days:5, owners:[B], status:"notstarted"}];
+        UI.filter = normFilter({}); UI.zoomN = 0; render(); showOnly("bar", "m2"); showOnly("person", A); setZoom("days");
+        const sp = taskSpan(taskById("fa").t, HS()); return {s:sp.s, e:sp.e, want:`Their work is ${sp.s === sp.e ? fmtDay(sp.s) : fmtDay(sp.s) + " – " + fmtDay(sp.e)}.`}; }, A); await page.waitForTimeout(150);
+      await page.evaluate(()=>{ const sc = $("#gscroll"); sc.scrollLeft = sc.scrollWidth; }); await page.waitForTimeout(200);
+      const n3 = await gap();
+      ok(`L12 ${tag}: with an initiative and a person, the note gives that person's task dates, not the initiative's`, n3.shown && n3.text.includes(T.want), JSON.stringify([T.want, n3.text]));
+      await page.evaluate(()=>document.querySelector("#showGapGo")?.click()); await page.waitForTimeout(250);
+      const drawn = () => page.evaluate(()=>{ const sc = $("#gscroll").getBoundingClientRect(), seen = k => { const el = document.querySelector(`#gantt [data-key="task:${k}"]`); if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.right > sc.left && r.left < sc.right; };
+        return {fa:seen("fa"), fb:!!document.querySelector('#gantt [data-key="task:fb"]')}; });
+      const d1 = await drawn();
+      ok(`L13 ${tag}: after Go to it, Days shows the person's task on screen and not a teammate's`, d1.fa && !d1.fb, JSON.stringify(d1));
+      if (w === 1500){ await page.evaluate(()=>document.activeElement && document.activeElement.blur()); await page.waitForTimeout(50);
+        await page.screenshot({path:path.join(process.env.SHOTS || require("os").tmpdir(), `chips-tasks-${theme}.png`), clip:{x:0, y:0, width:w, height:600}}); }
+      await page.evaluate(A=>showOff("person", A), A); await page.waitForTimeout(150);
+      const d2 = await page.evaluate(()=>({fa:!!document.querySelector('#gantt [data-key="task:fa"]'), fb:!!document.querySelector('#gantt [data-key="task:fb"]')}));
+      ok(`L14 ${tag}: the initiative chip alone draws all its tasks`, d2.fa && d2.fb, JSON.stringify(d2));
       await page.close();
     }
     ok("no page errors", !errs.length, errs.slice(0, 2).join(" | "));
