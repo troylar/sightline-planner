@@ -8,7 +8,7 @@ See what's linked to one item.
 
 ### New
 
-- **Show linked work** (Filters). Select an initiative, task, milestone or gate and click Show linked work, or use Find. You'll see that item, everything it waits for all the way back and everything that waits on it all the way on, with nothing else in the way. A chip above the chart says what it's linked to; take it off, or press Back, to see the rest. The List shows the same work. *Where:* An item's details, Find, Timeline and List
+- **Show linked work** (Filters). Select an initiative, task, milestone or gate and click Show linked work, or use Find. You'll see that item, everything it waits for all the way back and everything that waits on it all the way on, with nothing else in the way, and the Timeline fits to all of it. A chip says what it's linked to; take it off, or press Back, to see the rest at your old zoom. The List shows the same work. *Where:* An item's details, Find, Timeline and List
 
 ## 1.159.0 · Oct 28, 2026
 

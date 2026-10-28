@@ -23,7 +23,8 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
         window.GV = () => gateItems().filter(g=>gateVisible(g)).map(g=>g.id).sort();`);
     const plan0 = X("JSON.stringify(planOfRecord(S))"), all0 = J("VIS()");
 
-    ev(`select("bar", "c3"); render();`); await wait(10);
+    ev(`zoomPreset(2); render(); select("bar", "c3"); render();`); await wait(10);
+    const z0 = X("zoomN()"), sp0 = X("UI.zoomSp");
     const btn = d.querySelector("#f-linked");
     ok("L1 an initiative's details offer Show linked work", !!btn && /Show linked work/.test(btn.textContent), btn && btn.textContent);
     btn.click(); await wait(20);
@@ -33,6 +34,12 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("L4 …the milestone that waits on the linked work shows, and a gate only something downstream waits for doesn't (that's sideways)", J("MSV()").join() === "ms6" && J("GV()").join() === "", J("MSV()").join() + " / " + J("GV()").join());
     const chip = d.querySelector('#showStrip [data-show="linked:bar:c3"]');
     ok("L5 one chip above the chart says what it's linked to, and the status line counts the items", !!chip && /Linked to/.test(chip.textContent) && /Showing .* and the \d+ items linked to it/.test(d.querySelector("#showLive")?.textContent || "") && /Showing .* and the \d+ items linked to it/.test(d.querySelector("#status")?.textContent || ""), (chip && chip.textContent) + " | " + (d.querySelector("#showLive")?.textContent || ""));
+    // What the status line counts is what's drawn: every linked item has its own mark in the chart, and the view is at Fit.
+    const said = Number(((d.querySelector("#status")?.textContent || "").match(/the (\d+) items? linked/) || [])[1]);
+    const drawn = [...new Set([...d.querySelectorAll("#gantt [data-sel]")].map(e=>e.dataset.sel))].filter(k=>/^(bar|task|ms|gate):/.test(k) && k !== "bar:c3");
+    ok("L16 the count in the status line is the number of linked items drawn in the chart", z0 > 0 && said > 0 && said === drawn.length, `said ${said}, drawn ${drawn.join(",")}`);
+    ok("L17 …because it switches to Fit, so all of them are on screen", X("zoomN()") === 0, String(X("zoomN()")));
+    ok("L18 the late line says it counts the whole plan", /late in the whole plan/.test(d.querySelector(".banner.warn")?.textContent || ""), (d.querySelector(".banner.warn")?.textContent || "").slice(0, 80));
     ok("L6 picking linked work changes nothing in the plan", X("JSON.stringify(planOfRecord(S))") === plan0);
 
     ev(`select("ms", "ms6"); render(); showLinked("ms", "ms6");`); await wait(20);
@@ -46,10 +53,14 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("L8 from a task: its own chain of tasks shows, its siblings with no link don't, and its initiative holds the row", tv.join() === "ta,tb" && J("VIS()").includes("c3") && J("VIS()").includes("c1"), tv.join() + " / " + J("VIS()").join(","));
 
     d.querySelector('#showStrip .linkchip')?.click(); await wait(20);
-    ok("L9 the chip's × shows everything again", J("VIS()").join() === all0.join() && !d.querySelector("#showStrip .linkchip"), J("VIS()").length + " of " + all0.length);
+    ok("L9 the chip's × shows everything again, at the zoom and sprint you had", J("VIS()").join() === all0.join() && !d.querySelector("#showStrip .linkchip") && X("zoomN()") === z0 && !!sp0 && X("UI.zoomSp") === sp0, J("VIS()").length + " of " + all0.length);
     ev(`showLinked("bar", "c3");`); await wait(30); w.history.back(); await wait(80);
     ok("L10 …and so does Back", !(J("UI.filter.linked") || []).length, JSON.stringify(J("UI.filter.linked")));
 
+    ev(`showLinked("bar", "c2");`); await wait(20); const c2a = J("VIS()");
+    ev(`commit(()=>{ S.bars.find(b=>b.id === "c2").dependsOn = []; });`); await wait(20);
+    ok("L19 an edit to a link redraws the linked work (c2 stops waiting for c1, so c1 goes)", c2a.includes("c1") && !J("VIS()").includes("c1"), c2a.join(",") + " / " + J("VIS()").join(","));
+    ev(`linkedOff(); undo();`); await wait(20);
     ev(`S.bars.find(b=>b.id === "c1").dependsOn = ["c6"]; dropJiraMemos(); render();`);   // a loop
     const loop = X(`(()=>{ const L = linkedItems([{t:"bar", id:"c3"}]); return [...L.bars].sort().join(); })()`);
     ok("L11 a loop of links ends, with every item once", !!loop && loop.split(",").length === new Set(loop.split(",")).size, loop);
