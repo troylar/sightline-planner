@@ -5701,10 +5701,10 @@ document.addEventListener("keydown", e=>{
 // ================= name, keyboard shortcuts, help =================
 const APP_NAME = "Sightline", APP_TAGLINE = "Your team's work, in plain sight.";
 const SHORTCUTS = [       // [keys (each shown as a key; alternatives joined by "or"), what it does]
-  ["Get around", [[["1","2","3","4","5","6"],"Today, Timeline, People, Settings, Sprint, Roadmap", " "],[["T","L"],"Today or List"],[["\\"],"Collapse or expand the menu"],[["/","Ctrl+K"],"Find anything, or an action by name"],[["W","D"],"Weeks or Days view"],[["R"],"Rows by workstream, person or epic"],[["."],"Jump to today"],[["[","]"],"Earlier / later (Days view), or the previous / next sprint when one is chosen"],[["+","−"],"One sprint fewer or more on screen"],[["Shift+1","Shift+2","Shift+3"],"This sprint, this and the next, or the next three, from the sprint we're in"],[["Shift+0"],"Fit the whole plan"],[["J","K"],"Next or previous item in this view"],[["Z"],"Show only the selected initiative or person, as a chip above the chart (× takes it off)"],[["↑","↓"],"Previous / next item, while its details are open (Timeline and List)"],[["Esc"],"Close whatever is open"]]],
-  ["Update the item you've selected", [[["I"],"In progress"],[["X"],"Done (again: back to in progress)"],[["B"],"Mark blocked"],[["U"],"Write an update"],[["S"],"Stick a note on it"],[["O"],"Change who owns it (while editing)"],[["Enter"],"Open it"]]],
+  ["Get around", [[["1","2","3","4","5","6"],"Today, Timeline, People, Settings, Sprint, Roadmap", " "],[["T","L"],"Today or List"],[["\\"],"Collapse or expand the menu"],[["/","Ctrl+K"],"Find anything, or an action by name"],[["W","D"],"Weeks or Days view"],[["R"],"Rows by workstream, person or epic"],[["Shift+W","Shift+O","Shift+E"],"Rows by workstream, by person, by epic", " / "],[["Shift+T",";"],"Open or close the time controls (Timeline)"],[["."],"Jump to today"],[["[","]"],"Earlier / later (Days view), or the previous / next sprint when one is chosen"],[["+","−"],"One sprint fewer or more on screen"],[["Shift+1","Shift+2","Shift+3"],"This sprint, this and the next, or the next three, from the sprint we're in"],[["Shift+0"],"Fit the whole plan"],[["J","K"],"Next or previous item in this view"],[["Z"],"Show only the selected initiative or person, as a chip above the chart (× takes it off)"],[["↑","↓"],"Previous / next item, while its details are open (Timeline and List)"],[["Esc"],"Close whatever is open"]]],
+  ["Update the item you've selected", [[["I"],"In progress"],[["X"],"Done (again: back to in progress)"],[["B"],"Mark blocked"],[["U"],"Write an update"],[["S"],"Stick a note on it"],[["O"],"Change who owns it (while editing)"],[["Shift+N"],"Move it to the next sprint"],[["{","}"],"Move it a week earlier / later", " / "],[["Shift+J"],"Link a Jira epic (an initiative, while editing)"],[["Enter"],"Open it"]]],
   ["Plan", [[["A"],"Add something (then a letter from the menu)"],[["←","→"],"Move the selected item (with Shift: smaller steps)"],[["Alt+←","Alt+→"],"Make it shorter / longer"],[["Delete"],"Delete it"],[["Ctrl+Z","Ctrl+Y","Ctrl+Shift+Z"],"Undo / redo (either redo key)"]]],
-  ["Show and share", [[["F"],"Filters"],[["V"],"Saved views"],[["H"],"Show menu: hide gates, meetings, done work and more, or pin the top rows"],[["G","M"],"Hide or show gates / meetings"],[["Shift+H"],"Show everything you hid"],[["N"],"Show / hide notes"],[["P"],"Present"],[["E"],"Start editing / Done editing (shared file)"],[["Ctrl+S"],"Save"],[["?"],"This help"]]],
+  ["Show and share", [[["F"],"Filters"],[["V"],"Saved views"],[["H"],"Show menu: hide gates, meetings, done work and more, or pin the top rows"],[["G","M"],"Hide or show gates / meetings"],[["Shift+H"],"Show everything you hid"],[["C"],"Show only what's linked to the selection (again: show it all)"],[["Shift+C","Shift+X"],"Add the selection to linked work / take it off", " / "],[["Shift+Z"],"Linked work: highlight it, or hide the rest"],[["0"],"Show all work (clears every filter; Back puts them back)"],[["Shift+D"],"Details of what's hidden"],[["Shift+L","<"],"What leads to the selected milestone"],[["Shift+A"],"Connect assistant or review its changes"],[["Shift+U"],"What's new"],[["N"],"Show / hide notes"],[["P"],"Present"],[["E"],"Start editing / Done editing (shared file)"],[["Ctrl+S"],"Save"],[["?"],"This help"]]],
 ];
 const HELP = [
   ["start", "Getting started", ()=>[
@@ -5752,8 +5752,10 @@ const HELP = [
       h("li",{}, "If the file can't be saved cleanly, you get a choice, and the other version is downloaded as a backup. Nothing is thrown away silently."),
       h("li",{}, "Undo covers your own changes since you opened the plan (not teammates').")),
     h("p",{class:"hint"},"OneDrive sync can be delayed, especially offline. Sightline checks the local synced file, not upload completion. If you find a conflict copy, use File → Review another copy to compare and preserve both before deciding. Never assume the newer timestamp contains all work.")]],
-  ["keys", "Keyboard shortcuts", ()=>SHORTCUTS.map(([group, rows])=>h("section",{class:"kgroup"}, h("h3",{}, group),
-    h("table",{class:"ktable"}, h("tbody",{}, ...rows.map(([keys, what, joiner])=>h("tr",{}, h("td",{}, ...keys.flatMap((k,i)=>[i ? h("span",{class:"kor"}, joiner || "or") : null, h("kbd",{}, keyLabel(k))]).filter(Boolean)), h("td",{}, what)))))))],
+  ["keys", "Keyboard shortcuts", ()=>[h("label",{class:"kcheck"}, h("input",{type:"checkbox",id:"charKeys",checked:UI.charKeys !== false,onchange:e=>{ UI.charKeys = e.target.checked; saveUI(); setStatus(UI.charKeys ? "Single-key shortcuts are on." : "Single-key shortcuts are off. Find (Ctrl+K) and keys with Ctrl still work."); }}),
+      " Single-key shortcuts", h("span",{class:"hint"}, keysIn(" On in this browser unless you switch them off. Off, a letter, digit or symbol does nothing, which helps with screen readers and speech input. Find (Ctrl+K) and keys with Ctrl always work."))),
+    ...SHORTCUTS.map(([group, rows])=>h("section",{class:"kgroup"}, h("h3",{}, group),
+    h("table",{class:"ktable"}, h("tbody",{}, ...rows.map(([keys, what, joiner])=>h("tr",{}, h("td",{}, ...keys.flatMap((k,i)=>[i ? h("span",{class:"kor"}, joiner || "or") : null, h("kbd",{}, keyLabel(k))]).filter(Boolean)), h("td",{}, what)))))))]],
 ];
 // ================= What's new: release notes =================
 // src/releases.json is validated and embedded by build.sh, newest first. The app's version is the newest release.
@@ -6030,7 +6032,7 @@ const UI = {ws:"timeline", zoom:"weeks", focus:null, collapsed:{}};
 try { Object.assign(UI, JSON.parse(localStorage.getItem("timeline-planner-ui") || "{}")); } catch(e){}
 if (!["today","timeline","list","people","plan","standup","roadmap","settings"].includes(UI.ws)) UI.ws = "timeline";
 UI.rmHorizon = UI.rmHorizon === "long" ? "long" : "four";
-UI.filter = normFilter(UI.filter); UI.pinTop = UI.pinTop === true; UI.timeOpen = UI.timeOpen === true; UI.hiddenOpen = UI.hiddenOpen === true; UI.labelW = normLW(UI.labelW); UI.notes = ["all","mine","others","none"].includes(UI.notes) ? UI.notes : "all"; UI.rows = ["people","epics"].includes(UI.rows) ? UI.rows : "lanes"; if (!UI.epicOpen || typeof UI.epicOpen !== "object") UI.epicOpen = {};
+UI.filter = normFilter(UI.filter); UI.pinTop = UI.pinTop === true; UI.timeOpen = UI.timeOpen === true; UI.charKeys = UI.charKeys !== false; UI.hiddenOpen = UI.hiddenOpen === true; UI.labelW = normLW(UI.labelW); UI.notes = ["all","mine","others","none"].includes(UI.notes) ? UI.notes : "all"; UI.rows = ["people","epics"].includes(UI.rows) ? UI.rows : "lanes"; if (!UI.epicOpen || typeof UI.epicOpen !== "object") UI.epicOpen = {};
 UI.view = UI.view && typeof UI.view === "object" && ["team","personal"].includes(UI.view.src) ? {src:UI.view.src, id:str(UI.view.id)} : null;
 // A Focus saved by 1.147 in this browser opens as the same Show only filters, in the zoom it was over.
 function fromFocus(d){ const f = normFilter(d && d.base && d.base.filter || {});
@@ -7260,20 +7262,20 @@ const COMMANDS = [
   {id:"go-today", label:"Go to Today", keys:["T"], run:()=>goWs("today")},
   {id:"go-timeline", label:"Go to Timeline", keys:["2"], run:()=>goWs("timeline")},
   {id:"go-list", label:"Go to List", keys:["L"], run:()=>goWs("list")},
-  {id:"assistant", label:"Connect assistant or review its changes", also:"assistant connect ai companion changes proposals review setup skills", when:()=>!present, run:()=>openAssistant()},
+  {id:"assistant", label:"Connect assistant or review its changes", keys:["Shift+A"], also:"assistant connect ai companion changes proposals review setup skills", when:()=>!present, run:()=>openAssistant()},
   {id:"go-capacity", label:"Go to Capacity", keys:["3"], run:()=>goWs("people")},
   {id:"go-sprint", label:"Go to Sprint", keys:["5"], run:()=>goWs("standup")},
   {id:"go-roadmap", label:"Go to Roadmap", keys:["6"], run:()=>goWs("roadmap")},
   {id:"go-settings", label:"Go to Settings", keys:["4"], run:()=>goMainGroup("settings")},
   {id:"weeks", label:"Weeks view", keys:["W"], when:()=>UI.zoom === "days", run:()=>setZoom("weeks")},
   {id:"days", label:"Days view", keys:["D"], when:()=>UI.zoom !== "days", run:()=>setZoom("days", UI.focus)},
-  {id:"rows-lanes", label:"Rows by workstream", when:()=>UI.ws === "timeline" && UI.rows !== "lanes", run:()=>setRows("lanes")},
-  {id:"rows-people", label:"Rows by person", when:()=>UI.ws === "timeline" && UI.rows !== "people", run:()=>setRows("people")},
-  {id:"rows-epics", label:"Rows by epic", when:()=>UI.ws === "timeline" && UI.rows !== "epics" && hasJiraTree(), run:()=>setRows("epics")},
+  {id:"rows-lanes", label:"Rows by workstream", keys:["Shift+W"], when:()=>UI.ws === "timeline" && UI.rows !== "lanes", run:()=>setRows("lanes")},
+  {id:"rows-people", label:"Rows by person", keys:["Shift+O"], when:()=>UI.ws === "timeline" && UI.rows !== "people", run:()=>setRows("people")},
+  {id:"rows-epics", label:"Rows by epic", keys:["Shift+E"], when:()=>UI.ws === "timeline" && UI.rows !== "epics" && hasJiraTree(), run:()=>setRows("epics")},
   {id:"today", label:"Jump to today", keys:["."], when:()=>UI.ws === "timeline", run:()=>jumpToday()},
   {id:"filters", label:"Filters", keys:["F"], when:()=>CMD_VIEWS.includes(UI.ws) && !present, run:()=>openFilterPop()},
   {id:"views", label:"Views: switch or save a view", keys:["V"], when:()=>CMD_VIEWS.includes(UI.ws), run:()=>openViewMenu()},
-  {id:"show-all", label:"Show all work (clear every filter)", when:()=>fActive(), run:()=>{ navStep(); UI.view = null; setFilter(x=>{ Object.assign(x, normFilter({})); }); setStatus("Showing all work. Back puts your filters back."); }},
+  {id:"show-all", label:"Show all work (clear every filter)", keys:["0"], when:()=>fActive(), run:()=>{ navStep(); UI.view = null; setFilter(x=>{ Object.assign(x, normFilter({})); }); setStatus("Showing all work. Back puts your filters back."); }},
   {id:"show-only", label:"Show only the selection", keys:["Z"], when:()=>!!sel && ["bar","task","person"].includes(sel.type), run:()=>sel.type === "task" ? showOnly("bar", taskById(sel.id)?.b.id) : showOnly(sel.type, sel.id)},
   {id:"gates", get label(){ return (hiddenKinds().includes("gate") ? "Show" : "Hide") + " gates"; }, also:"show hide", keys:["G"], when:()=>CMD_VIEWS.includes(UI.ws), run:()=>toggleKind("gate")},
   {id:"meetings", get label(){ return (hiddenKinds().includes("meeting") ? "Show" : "Hide") + " meetings"; }, also:"show hide", keys:["M"], when:()=>CMD_VIEWS.includes(UI.ws), run:()=>toggleKind("meeting")},
@@ -7285,15 +7287,15 @@ const COMMANDS = [
   {id:"update", label:"Write an update on the selection", keys:["U"], when:()=>!!selWork(), run:()=>quickKey("u")},
   {id:"sticky", label:"Add a sticky note to the selection", keys:["S"], when:()=>!!selWork(), run:()=>quickKey("s")},
   {id:"owners", label:"Change who owns the selection", also:"owner lead assign people", keys:["O"], when:()=>CMD_VIEWS.includes(UI.ws) && selLeaf() && editable(), run:()=>openOwners()},
-  {id:"link-epic", label:"Link a Jira epic to the selected initiative", also:"jira epic stories count", when:()=>CMD_VIEWS.includes(UI.ws) && sel?.type === "bar" && !!barById(sel.id) && editable() && !present, run:()=>openEpicLink()},
-  {id:"linked", label:"Show only what's linked to the selection", also:"linked dependencies depends waits path upstream downstream", when:()=>CMD_VIEWS.includes(UI.ws) && !!sel && LINK_TYPES.includes(sel.type) && !!linkTarget({t:sel.type, id:sel.id}), run:()=>{ showLinked(sel.type, sel.id); focusShown(); }},
-  {id:"linked-add", label:"Add the selection to linked work", also:"linked pick another more add", when:()=>CMD_VIEWS.includes(UI.ws) && !!sel && LINK_TYPES.includes(sel.type) && linkSeeds().length > 0 && linkSeeds().length < LINK_MAX && !isSeed(sel.type, sel.id) && !!linkTarget({t:sel.type, id:sel.id}), run:()=>{ showLinked(sel.type, sel.id, true); focusShown(); }},
-  {id:"linked-highlight", label:"Highlight linked work, dimming the rest", also:"linked highlight dim emphasize", when:()=>linkSeeds().length > 0 && UI.filter.linkMode !== "highlight", run:()=>{ setLinkMode("highlight"); focusShown(); }},
-  {id:"linked-only", label:"Hide what isn't linked", also:"linked only hide rest", when:()=>linkSeeds().length > 0 && UI.filter.linkMode === "highlight", run:()=>{ setLinkMode("only"); focusShown(); }},
-  {id:"linked-remove", label:"Take the selection off linked work", also:"linked remove pick", when:()=>CMD_VIEWS.includes(UI.ws) && !!sel && isSeed(sel.type, sel.id), run:()=>{ linkedOff({t:sel.type, id:sel.id}); focusShown(); }},
-  {id:"week-later", label:"Move the selection a week later", also:"push slip delay", when:()=>!!selMovable(), run:()=>moveSelTo(selStartDay(selMovable()) + 7)},
-  {id:"week-earlier", label:"Move the selection a week earlier", also:"pull sooner", when:()=>!!selMovable(), run:()=>moveSelTo(selStartDay(selMovable()) - 7)},
-  {id:"next-sprint", label:"Move the selection to the next sprint", also:"push slip", when:()=>{ const it = selMovable(); return !!it && nextSprintDay(it) != null; }, run:()=>moveSelTo(nextSprintDay(selMovable()))},
+  {id:"link-epic", label:"Link a Jira epic to the selected initiative", keys:["Shift+J"], also:"jira epic stories count", when:()=>CMD_VIEWS.includes(UI.ws) && sel?.type === "bar" && !!barById(sel.id) && editable() && !present, run:()=>openEpicLink()},
+  {id:"linked", label:"Show only what's linked to the selection", keys:["C"], also:"linked dependencies depends waits path upstream downstream", when:()=>CMD_VIEWS.includes(UI.ws) && !!sel && LINK_TYPES.includes(sel.type) && !!linkTarget({t:sel.type, id:sel.id}), run:()=>{ showLinked(sel.type, sel.id); focusShown(); }},
+  {id:"linked-add", label:"Add the selection to linked work", keys:["Shift+C"], also:"linked pick another more add", when:()=>CMD_VIEWS.includes(UI.ws) && !!sel && LINK_TYPES.includes(sel.type) && linkSeeds().length > 0 && linkSeeds().length < LINK_MAX && !isSeed(sel.type, sel.id) && !!linkTarget({t:sel.type, id:sel.id}), run:()=>{ showLinked(sel.type, sel.id, true); focusShown(); }},
+  {id:"linked-highlight", label:"Highlight linked work, dimming the rest", keys:["Shift+Z"], also:"linked highlight dim emphasize", when:()=>linkSeeds().length > 0 && UI.filter.linkMode !== "highlight", run:()=>{ setLinkMode("highlight"); focusShown(); }},
+  {id:"linked-only", label:"Hide what isn't linked", keys:["Shift+Z"], also:"linked only hide rest", when:()=>linkSeeds().length > 0 && UI.filter.linkMode === "highlight", run:()=>{ setLinkMode("only"); focusShown(); }},
+  {id:"linked-remove", label:"Take the selection off linked work", keys:["Shift+X"], also:"linked remove pick", when:()=>CMD_VIEWS.includes(UI.ws) && !!sel && isSeed(sel.type, sel.id), run:()=>{ linkedOff({t:sel.type, id:sel.id}); focusShown(); }},
+  {id:"week-later", label:"Move the selection a week later", keys:["}"], also:"push slip delay", when:()=>!!selMovable(), run:()=>moveSelTo(selStartDay(selMovable()) + 7)},
+  {id:"week-earlier", label:"Move the selection a week earlier", keys:["{"], also:"pull sooner", when:()=>!!selMovable(), run:()=>moveSelTo(selStartDay(selMovable()) - 7)},
+  {id:"next-sprint", label:"Move the selection to the next sprint", keys:["Shift+N"], also:"push slip", when:()=>{ const it = selMovable(); return !!it && nextSprintDay(it) != null; }, run:()=>moveSelTo(nextSprintDay(selMovable()))},
   {id:"add", label:"Add an initiative, milestone, gate…", keys:["A"], when:()=>editable(), run:()=>openAddMenu($("#addBtn").getBoundingClientRect(), {})},
   {id:"edit", label:"Start editing", keys:["E"], when:()=>!!file.handle && !file.holdLock && !present, run:()=>startEditing()},
   {id:"edit-done", label:"Done editing", keys:["E"], when:()=>!!file.handle && !!file.holdLock && !present, run:()=>doneEditing()},
@@ -7304,7 +7306,10 @@ const COMMANDS = [
   {id:"present-off", label:"Stop presenting", keys:["P"], when:()=>present, run:()=>setPresent(false)},
   {id:"menu", label:"Collapse or expand the menu", keys:["\\"], when:()=>!present, run:()=>toggleNavRail()},
   {id:"keys", label:"Keyboard shortcuts", keys:["?"], run:()=>openHelp("keys")},
-  {id:"whats-new", label:"What's new in Sightline", run:()=>openReleases()},
+  {id:"whats-new", label:"What's new in Sightline", keys:["Shift+U"], run:()=>openReleases()},
+  {id:"time-controls", label:"Open or close the time controls", keys:["Shift+T"], also:"time zoom sprint weeks days range", when:()=>UI.ws === "timeline", run:()=>timeKey()},
+  {id:"hidden-details", label:"Details of what's hidden", keys:["Shift+D"], also:"hidden parked filtered why missing", when:()=>!!$("#hsMore") && !$("#hiddenStrip").hidden, run:()=>hiddenDetailsKey()},
+  {id:"milestone-runway", label:"What leads to the selected milestone", keys:["Shift+L"], also:"runway leads here waits path milestone", when:()=>sel?.type === "ms", run:()=>showRunway()},
 ];
 const cmdOn = c => { try { return !c.when || !!c.when(); } catch(e){ return false; } };
 function runCmd(id){ const c = COMMANDS.find(x=>x.id === id); if (!c || !cmdOn(c)){ setStatus("That doesn't apply here right now."); return false; } c.run(); return true; }
@@ -7416,7 +7421,7 @@ document.addEventListener("click", e=>{ if (!$("#findPop").hidden && !e.target.c
 document.addEventListener("keydown", e=>{
   if (e.isComposing || e.keyCode === 229) return;
   const typing = e.target.closest?.("input, textarea, select, [contenteditable]") || e.target.isContentEditable;
-  if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") || (e.key === "/" && !typing && !e.ctrlKey && !e.metaKey && !e.altKey)){ e.preventDefault(); openFind(); }
+  if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") || (e.key === "/" && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && UI.charKeys !== false)){ e.preventDefault(); openFind(); }
 });
 // A kind in Filters cycles: off, show only, hide (releases, deliverables and done work: off, hide). Hiding is the per-plan declutter choice.
 function kindChip(v, label){
@@ -7519,12 +7524,12 @@ function linkedOff(x){ const have = linkSeeds(), left = x ? have.filter(y=>!(y.t
 function linkedBtn(t, id){
   const have = linkSeeds(), mine = isSeed(t, id);
   if (mine && have.length === 1) return null;
-  if (mine) return h("button",{type:"button",class:"btn nav",id:"f-linked",title:"Stop showing what's linked to this one; the other picks stay",onclick:()=>{ linkedOff({t, id}); focusShown(); }}, "Remove from linked work");
-  const show = h("button",{type:"button",class:"btn nav",id:have.length ? "f-linkedOnly" : "f-linked",title:"Show only this and what's linked to it: what it waits for, all the way back, and what waits for it",
+  if (mine) return h("button",{type:"button",class:"btn nav",id:"f-linked",title:keysIn("Stop showing what's linked to this one; the other picks stay (Shift+X)"),onclick:()=>{ linkedOff({t, id}); focusShown(); }}, "Remove from linked work");
+  const show = h("button",{type:"button",class:"btn nav",id:have.length ? "f-linkedOnly" : "f-linked",title:"Show only this and what's linked to it: what it waits for, all the way back, and what waits for it (C)",
     onclick:()=>{ showLinked(t, id); focusShown(); }}, have.length ? "Show only its linked work" : "Show linked work");
   if (!have.length) return show;
   const full = have.length >= LINK_MAX;
-  return [h("button",{type:"button",class:"btn nav",id:"f-linked",disabled:full,title:full ? `You can pick up to ${LINK_MAX} items` : "Add this and what's linked to it to what's shown",
+  return [h("button",{type:"button",class:"btn nav",id:"f-linked",disabled:full,title:full ? `You can pick up to ${LINK_MAX} items` : keysIn("Add this and what's linked to it to what's shown (Shift+C)"),
     onclick:()=>{ showLinked(t, id, true); focusShown(); }}, "Add to linked work"), show];
 }
 // Only these (hide the rest) or Highlight (dim it). A viewer's choice, kept with the picks; Back undoes it.
@@ -16334,12 +16339,41 @@ $("#dDatesOk").onclick = ()=>{ const v = $("#dStart").value; commit(s=>{
   }
   s.meta.sprintWeeks = clampInt($("#dSprint").value,1,8,s.meta.sprintWeeks); s.meta.autoSchedule = $("#dAuto").checked; const jb = $("#dJira").value.trim(); s.meta.jiraBase = /^https?:\/\/\S{3,200}$/i.test(jb) ? jb : ""; }); dd.close(); };
 
+// Keys added in 1.169.0. Shift + a letter is matched on the Shift key and the physical key, never the letter's case, so
+// Caps Lock ("C" without Shift) is still the plain letter. A key that's taken here answers even when its action doesn't
+// apply, rather than falling through to what Shift + that letter used to repeat. Moves are edits: Jira-dated work refuses
+// with dragging's message, Present and a held key do nothing.
+function moreKeys(e){
+  const L = /^Key[A-Z]$/.test(e.code || "") ? e.code.slice(3).toLowerCase() : !e.code && /^[A-Za-z]$/.test(e.key) ? e.key.toLowerCase() : "", k = e.key;
+  const move = id => { if (e.repeat || present) return true; const it = selWork(), J = it && selLeaf() && jiraLockOf(it.obj);
+    if (J && J.dates){ jiraLockedMsg(J); return true; } runCmd(id); return true; };
+  if (e.shiftKey && L){
+    const shift = {t:()=>timeKey(), l:()=>showRunway(), d:()=>hiddenDetailsKey(), z:()=>runCmd(UI.filter.linkMode === "highlight" ? "linked-only" : "linked-highlight"),
+      x:()=>runCmd("linked-remove"), w:()=>runCmd("rows-lanes"), o:()=>runCmd("rows-people"), e:()=>runCmd("rows-epics"), a:()=>runCmd("assistant"),
+      u:()=>runCmd("whats-new"), n:()=>move("next-sprint"), c:()=>runCmd("linked-add"), j:()=>runCmd("link-epic")}[L];
+    if (shift){ shift(); return true; }
+    return false; }
+  if (e.shiftKey && /^[A-Za-z]$/.test(k)) return false;
+  if (k === "c" || k === "C"){ if (linkSeeds().length && !(sel && LINK_TYPES.includes(sel.type) && !isSeed(sel.type, sel.id))){ linkedOff(); focusShown(); } else runCmd("linked"); return true; }
+  if (k === "0" && !e.shiftKey){ if (!CMD_VIEWS.includes(UI.ws)) return false; if (fActive()) runCmd("show-all"); else setStatus("Nothing is filtered: all work is showing."); return true; }
+  if (k === "{" || k === "}") return move(k === "}" ? "week-later" : "week-earlier");
+  if (k === "<"){ showRunway(); return true; }
+  if (k === ";"){ timeKey(); return true; }
+  return false;
+}
+function timeKey(){ if (UI.ws !== "timeline"){ setStatus("The time controls are on the Timeline."); return; } setTimeOpen(!UI.timeOpen); $("#timeSummary")?.focus(); }
+function hiddenDetailsKey(){ const b = $("#hsMore"); if (!b || $("#hiddenStrip").hidden){ setStatus("Nothing needs Details: the Timeline shows one reason or none."); return; } b.click(); $("#hsMore")?.focus(); }
+function showRunway(){ const f = sel && sel.type === "ms" ? $("#f-mrunway") : null; if (!f){ setStatus("Select a milestone to see what leads to it."); return; }
+  const fold = f.closest("details.pfold"); if (fold && !fold.open) fold.open = true;
+  f.scrollIntoView?.({block:"nearest"}); const b = f.querySelector(".rwopen"); if (b) b.focus(); else { f.tabIndex = -1; f.focus(); } }
 document.addEventListener("keydown", e=>{
   const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||"") || document.activeElement?.isContentEditable || !!document.activeElement?.closest?.('[contenteditable]:not([contenteditable="false"])') || e.isComposing || e.keyCode === 229 || dlg.open || dd.open || $("#dlgHelp").open || $("#dlgReleases").open;
   const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
   if (mod && k==="s"){ e.preventDefault(); flushEditing(); if (file.handle) save(); else $("#saveJson").click(); return; }
   if (typing) return;
   if (e.key !== "Escape" && e.target && e.target.closest && e.target.closest(".menu")) return;   // keys inside menus belong to the menu
+  if (!mod && !e.altKey && e.key.length === 1 && UI.charKeys === false) return;   // single-key shortcuts switched off (Keyboard shortcuts page)
+  if (!mod && !e.altKey && moreKeys(e)){ e.preventDefault(); return; }
   if (mod && k==="z"){ e.preventDefault(); e.shiftKey ? redo() : undo(); }
   else if (mod && k==="y"){ e.preventDefault(); redo(); }
   else if (k==="p" && !mod && !e.altKey){ setPresent(!present); }
