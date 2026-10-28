@@ -201,7 +201,17 @@ main(){
     "package 30 node test_package.js"
     "bundled-skills 60 node harness-bundled-skills.js"
   )
-  local jobs=${SIGHTLINE_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)} dir spec name
+  local jobs=${SIGHTLINE_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)} dir spec name i=0 k=1 n=1 mine=()
+  # SIGHTLINE_SHARD=k/n runs every n-th line starting at line k, and the browser checks only in the last shard, so CI can
+  # split the suite across machines. Every shard together runs every line once.
+  if [[ -n "${SIGHTLINE_SHARD:-}" ]]; then
+    if [[ ! "$SIGHTLINE_SHARD" =~ ^([0-9]+)/([0-9]+)$ ]] || (( BASH_REMATCH[1] < 1 || BASH_REMATCH[1] > BASH_REMATCH[2] )); then
+      echo "SIGHTLINE_SHARD must be k/n with 1 <= k <= n, not '$SIGHTLINE_SHARD'" >&2; return 1
+    fi
+    k=${BASH_REMATCH[1]} n=${BASH_REMATCH[2]}
+  fi
+  for spec in "${specs[@]}"; do (( i++ % n == k - 1 )) && mine+=("$spec"); done
+  specs=("${mine[@]}")
   dir=$(mktemp -d) || return 1
   printf '%s\n' "${specs[@]}" | RUN_OUT=$dir xargs -P "$jobs" -L 1 bash "$self" --one
   for spec in "${specs[@]}"; do
@@ -210,7 +220,7 @@ main(){
     [[ "$(cat "$dir/$name.rc" 2>/dev/null)" == 0 ]] || fail=1
   done
   rm -rf "$dir"
-  browser_checks
+  (( k == n )) && browser_checks
   return "$fail"
 }
 # Layout in a real browser (jsdom has no layout). CI installs Chromium and must run them. Elsewhere they run when Playwright
