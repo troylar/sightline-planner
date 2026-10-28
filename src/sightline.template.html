@@ -7516,9 +7516,19 @@ function showLinked(t, id, add, dir, mode){
   navStep(); setFilter(f=>{ f.linked = add ? [...have, x] : [x]; f.bars = []; f.linkDir = d; f.linkMode = m; });
   if (UI.ws === "timeline" && zoomN()){ if (!linkZoom) linkZoom = {n:UI.zoomN, sp:UI.zoomSp, p:UI.zoomPreset}; setZoomN(0); }   // Fit, so all of it is on screen
   linkSay();
-  if (UI.ws === "timeline"){ const w = fitSpan(); if (w && Number.isFinite(w.a)) scrollViewTo(Math.max(startDay(), w.a)); }
+  if (UI.ws === "timeline"){ const w = fitSpan(); if (w && Number.isFinite(w.a)) scrollViewTo(Math.max(startDay(), w.a)); if (d === "up") seedInView(); }
   return true;
 }
+// Leads here only ends at the picks, so when Fit can't show the whole span (days keep a minimum width, and the card
+// takes room), each pick's own marker stays on screen with a margin, rather than the start of the span: a milestone's
+// diamond and the start of its label, where its date is (the rest of the name can run under the card; making room
+// for all of it would push the runway itself off screen).
+function seedInView(){ const sc = UI.ws === "timeline" && $("#gscroll"); if (!sc) return;
+  const P = sc.getBoundingClientRect(), lab = UI.zoom === "days" ? UI.labelW.days : UI.labelW.weeks, left = P.left + lab + 16, right = P.right - 40;
+  const g = $("#gantt"), R = !g ? [] : linkSeeds().map(x=>[...g.querySelectorAll(`[data-sel="${CSS.escape(x.t + ":" + x.id)}"]`)].map(e=>{ const r = e.getBoundingClientRect(); return x.t === "ms" ? {left:r.left, right:Math.min(r.right, r.left + 96), width:r.width} : r; })
+    .filter(r=>r.width > 0).sort((a, b)=>b.right - a.right)[0]).filter(Boolean); if (!R.length) return;   // the marker, not a row's name in the label column
+  const far = Math.max(...R.map(r=>r.right)); if (far <= right) return;
+  sc.scrollLeft += Math.max(0, Math.min(far - right, Math.min(...R.map(r=>r.left)) - left)); }
 // What the status line says: the picks by name and how many other items are linked to them (what's drawn, less the picks).
 function linkSay(){ const seeds = linkSeeds(); if (!seeds.length) return; const L = linkedScope(), one = seeds.length === 1, names = one ? linkName(seeds[0]) : `${seeds.length} picked items`;
   const n = L ? L.items - seeds.length : 0, it = one ? "it" : "them", hl = UI.filter.linkMode === "highlight", verb = hl ? "Highlighting" : "Showing", rest = hl ? "Take a chip off, or press Back, to undim the rest." : "Take a chip off, or press Back, to see the rest.";
@@ -7546,7 +7556,7 @@ function linkedBtn(t, id){
 // Only these (hide the rest) or Highlight (dim it). A viewer's choice, kept with the picks; Back undoes it.
 function setLinkMode(mode){ if (!linkSeeds().length || UI.filter.linkMode === mode) return; navStep(); setFilter(f=>{ f.linkMode = mode; }); linkSay(); }
 // Both ways, or only what leads to the picks (what they wait for, all the way back). Kept with the picks, never in a saved view.
-function setLinkDir(dir){ if (!linkSeeds().length || UI.filter.linkDir === dir) return; navStep(); setFilter(f=>{ f.linkDir = dir; }); linkSay(); }
+function setLinkDir(dir){ if (!linkSeeds().length || UI.filter.linkDir === dir) return; navStep(); setFilter(f=>{ f.linkDir = dir; }); linkSay(); if (dir === "up") seedInView(); }
 // The runway on the Timeline: the item alone, and only what leads to it.
 // The page switch and the picks are one step, so Back goes straight to where you were.
 function leadsHere(t, id){ const moved = UI.ws !== "timeline"; if (moved){ UI.ws = "timeline"; saveUI(); }
