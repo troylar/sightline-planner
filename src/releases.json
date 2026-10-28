@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.157.1",
+    "date": "2026-10-28",
+    "headline": "The assistant's check knows where each epic is",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Assistant",
+        "title": "Epic links are checked before they reach the page",
+        "before": "A connected assistant's check passed a link for an epic another initiative already held. The page then refused it, with a reason, when you went to apply it.",
+        "now": "The assistant's check refuses it up front and names where the epic is, so the change it proposes is one the page will take. An epic that's parked, or already where the change puts it, still passes.",
+        "where": "Connect assistant, the assistant's check"
+      }
+    ]
+  },
+  {
     "version": "1.157.0",
     "date": "2026-10-28",
     "headline": "Link an epic from Find",

@@ -178,20 +178,24 @@ const byId = (rs, id) => rs.find(r=>r.id === id) || {};
     ok("Z2 the reason is kept on the change, as one line", ev("AM.file && AM.file.changes[0].reason") === "one line");
 
     // ---- the helper check accepts and rejects what the page does ----
-    { ev("clearTimeout(assistantExportTimer)"); await ev("assistantExport()");
-      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sl-sort-")); fs.writeFileSync(path.join(tmp, "sightline-assistant-view.json"), dir.files.get("sightline-assistant-view.json").text);
+    { const OT = ev(`(()=>{ const id = S.bars.find(b=>b.id !== "r2" && jiraTakes(b, S) && !(b.epics || []).length).id; S.bars.find(b=>b.id === id).epics = ["ABC-30"]; dropJiraMemos(); return id; })()`), OL = ev(`barById(${JSON.stringify(OT)}).lane`);
+      ev("clearTimeout(assistantExportTimer)"); await ev("assistantExport()");
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sl-sort-")); fs.writeFileSync(path.join(tmp, "sightline-assistant-view.json"), JSON.stringify({...JSON.parse(dir.files.get("sightline-assistant-view.json").text), jiraSort:JSON.parse(ev("JSON.stringify(assistantSortPile())"))}));   // the sort list as the page has it now
       const cases = [["ok", F.act("jira.toWorkstream", {keys:["ABC-101"], lane:"int"}), true], ["group", F.act("jira.toWorkstream", {keys:F.GROUP, lane:"rag", epic:"ABC-20"}), true],
         ["lane", F.act("jira.toWorkstream", {keys:["ABC-101"], lane:"nowhere"}), false], ["key", F.act("jira.notOurs", {keys:["ZZZ-9"]}), false],
         ["bar", F.act("jira.toInitiative", {keys:["ABC-101"], id:"n1"}), ev("jiraTakes(barById('n1'), S)")], ["epic", F.act("jira.epicNew", {epic:"ABC-20", lane:"rag"}), true],
         ["here", F.act("jira.toWorkstream", {keys:["ABC-2"], lane:"int"}), true], ["there", F.act("jira.toWorkstream", {keys:["ABC-2"], lane:"chat"}), false],
         ["padded", F.act("jira.notOurs", {keys:[" abc-101 "]}), true], ["feature", F.act("jira.epicNew", {epic:"ABC-31", lane:"int"}), false],
-        ["many", F.act("jira.notOurs", {keys:Array.from({length:101}, (_, i)=>"ABC-" + (3001 + i))}), false]];
+        ["many", F.act("jira.notOurs", {keys:Array.from({length:101}, (_, i)=>"ABC-" + (3001 + i))}), false],
+        ["held", F.act("jira.epicLink", {epic:"ABC-30", id:"r2"}), false], ["heldNew", F.act("jira.epicNew", {epic:"ABC-30", lane:OL === "int" ? "rag" : "int"}), false],
+        ["heldHere", F.act("jira.epicLink", {epic:"ABC-30", id:OT}), true], ["heldNewHere", F.act("jira.epicNew", {epic:"ABC-30", lane:OL}), true]];
       const verdicts = cases.map(([id, op, want])=>{ const b = {kind:"sightline-amendments", version:1, planId:ev("S.meta.planId"), batchId:"h-" + id, createdAt:"2026-09-30T09:00:00Z", basedOn:{planRevision:ev("S.meta.revision || 0")}, changes:[{id, summary:id, ops:[op]}]};
         fs.writeFileSync(path.join(tmp, "b.json"), JSON.stringify(b)); const o = spawnSync("python3", [APP, "check", tmp, path.join(tmp, "b.json"), "--json"], {encoding:"utf8"});          // the order the guide writes it
         let out = null; try { out = JSON.parse(o.stdout); } catch(e){}
         const pageOk = JSON.parse(ev(`JSON.stringify((r => r.ok)(runAction(clone(S), ${JSON.stringify(op.action)}, ${JSON.stringify(op.args)})))`));
         return {id, want, helper:o.status === 0 && !!out && out.ok === true, json:!!out, pageOk, raw:(o.stdout || o.stderr).slice(0, 200)}; });
       ok("K1 the helper check accepts and rejects the same placements as the page", verdicts.every(v=>v.helper === v.want && v.pageOk === v.want), JSON.stringify(verdicts.filter(v=>v.helper !== v.want || v.pageOk !== v.want)));
+      ok("K3 the helper refuses an epic another initiative holds, and passes one already where the change puts it", verdicts.filter(v=>v.id.startsWith("held")).length === 4 && verdicts.filter(v=>v.id.startsWith("held")).every(v=>v.helper === v.want && v.pageOk === v.want), JSON.stringify(verdicts.filter(v=>v.id.startsWith("held")).map(v=>[v.id, v.want, v.helper, v.pageOk, v.raw.slice(0, 120)])));
       ok("K2 the helper takes --json after the command, as the guide writes it, and answers in JSON", verdicts.every(v=>v.json), JSON.stringify(verdicts.filter(v=>!v.json).map(v=>v.raw)));
       fs.rmSync(tmp, {recursive:true, force:true}); }
     ok("Z3 no page errors", !w.errs.length, w.errs.join(" | "));
