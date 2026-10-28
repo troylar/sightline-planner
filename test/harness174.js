@@ -44,12 +44,13 @@ async function open(prep){
 
     btn().click(); await wait(10);
     ok("T12 the button opens them, and says it's open", !body().hidden && btn().getAttribute("aria-expanded") === "true");
+    ok("T12b open, it shrinks to its chevron and a screen reader hears what it does", btn().getAttribute("aria-label") === "Hide the time controls" && d.querySelector("#timeControls").classList.contains("open"));
     ok("T13 open is remembered in this browser, not in the plan", JSON.parse(w.localStorage.getItem("timeline-planner-ui") || "{}").timeOpen === true && X("JSON.stringify(planOfRecord(S))") === plan0);
     X(`UI.ws = "list"; render();`); await wait(20);
     ok("T14 it's only on the Timeline", d.querySelector("#timeControls").hidden);
     X(`UI.ws = "timeline"; render();`); await wait(20);
     btn().click(); await wait(10);
-    ok("T15 and it closes again", body().hidden && btn().getAttribute("aria-expanded") === "false");
+    ok("T15 and it closes again, saying what's on screen", body().hidden && btn().getAttribute("aria-expanded") === "false" && !btn().hasAttribute("aria-label") && /^Time: /.test(say()));
     ok("T16 nothing in the plan changed", X("JSON.stringify(planOfRecord(S))") === plan0);
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
 

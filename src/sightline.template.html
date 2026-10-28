@@ -1288,7 +1288,10 @@ dialog.capdlg{width:min(560px,92vw)}.capdlg form{display:flex;flex-direction:col
 .lremove{border-top:1px solid var(--rule-2);padding-top:10px;display:flex;flex-direction:column;gap:8px}.lrm-opt{display:flex;flex-direction:column;gap:4px}.lrm-opt .qrow{flex-wrap:wrap}
 .wkcorner{flex-direction:column;align-items:flex-start;justify-content:flex-end}.zbar{display:inline-flex;flex-wrap:nowrap;align-items:center;gap:3px;white-space:nowrap}.zbar[hidden]{display:none}.zbar .btn{min-width:26px;padding-left:6px;padding-right:6px;justify-content:center}.zbar .vh{position:absolute}
 @media (max-width:1499px){ #wsright #layoutLbl{display:none} #wsright .vsum{margin-left:0} }   /* "View:" goes first when room is short; the button's label keeps it */
-.timectl{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}.timectl[hidden],.timebody[hidden]{display:none}.timebody{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}
+.timectl{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}.timebody{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}
+.timectl.open,.timectl.open .timebody{display:contents}.timectl.open .timetxt{display:none}.timectl.open .timesum{padding-left:8px;padding-right:8px}.timectl.open .timesum::after{margin:0 0 0 0}
+.timectl.open .zbar .sprpick select{max-width:86px}
+.timectl[hidden],.timebody[hidden]{display:none}
 .timesum{white-space:nowrap;max-width:min(360px,60vw);overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .timesum::after{content:"";display:inline-block;width:6px;height:6px;margin:0 2px 2px 8px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
 .timesum[aria-expanded="true"]::after{transform:rotate(45deg)}
@@ -1572,7 +1575,7 @@ body:has(> #bootfail) > :not(#bootfail){display:none !important}
     <span class="seg" role="group" aria-labelledby="layerH" id="layerSeg"><button type="button" id="lyAll" aria-pressed="true" title="Everything, from Jira and added here by anyone">All sources</button><button type="button" id="lyJira" aria-pressed="false" title="Only what comes from Jira">Jira only</button><button type="button" id="lyMine" aria-pressed="false" title="Jira's work, plus what you added (not teammates' additions)">Jira + mine</button><button type="button" id="lyHere" aria-pressed="false" title="Only work added here, that nothing in Jira tracks">Added here</button></span>
       </div>
     </div>
-    <span class="timectl" id="timeControls"><button type="button" class="btn timesum" id="timeSummary" aria-expanded="false" aria-controls="timeBody" title="Weeks or days, which sprints are on screen, and zoom">Time</button><span class="timebody" id="timeBody" hidden>
+    <span class="timectl" id="timeControls"><button type="button" class="btn timesum" id="timeSummary" aria-expanded="false" aria-controls="timeBody" title="Weeks or days, which sprints are on screen, and zoom"><span class="timetxt" id="timeText">Time</span></button><span class="timebody" id="timeBody" hidden>
       <span class="seg" role="group" aria-label="Zoom" id="zoomSeg"><button type="button" id="zWeeks" aria-pressed="true" title="Initiatives by week (W)">Weeks</button><button type="button" id="zDays" aria-pressed="false" title="Tasks by working day (D)">Days</button></span>
       <span class="zbar" role="group" aria-label="Sprints on screen" id="zoomBar"></span>
     </span></span>
@@ -6196,12 +6199,15 @@ function updatePager(){ laneScrollCheck(); showGap(); const r = $("#pgRange"), t
 // The time controls fold behind one button that says what's on screen: "Time: Weeks · S2 (Oct 19 – Oct 30)". Open or
 // closed is this browser's choice (closed the first time); every control, shortcut and Find action works either way.
 function timeSay(){
-  const b = $("#timeSummary"); if (!b) return; const cs = chosenSprint(), n = zoomN(), sw = sprintWindow(), v = !sw && visibleDays();
+  const b = $("#timeText"); if (!b) return; const cs = chosenSprint(), n = zoomN(), sw = sprintWindow(), v = !sw && visibleDays();
   const range = sw ? ` (${fmtDay(sw.a)} – ${fmtDay(sw.z)})` : v ? ` (${fmtDay(v[0])} – ${fmtDay(v[1])})` : "", sp = cs && (cs.sp.name || "Sprint");
   const what = cs ? (n === 1 ? sp : `${zoomText()} from ${sp}`) + range : (n ? zoomText() : "Fit") + range;
   const t = `Time: ${UI.zoom === "days" ? "Days" : "Weeks"} · ${what}`; if (b.textContent !== t) b.textContent = t; }
 function setTimeOpen(open){ UI.timeOpen = !!open; saveUI(); showTimeOpen(); }
-function showTimeOpen(){ const b = $("#timeSummary"), body = $("#timeBody"); if (!b || !body) return; body.hidden = !UI.timeOpen; b.setAttribute("aria-expanded", String(UI.timeOpen)); }
+// Open, the controls say it all: the button shrinks to its chevron and they take their old places on the toolbar's row.
+function showTimeOpen(){ const b = $("#timeSummary"), body = $("#timeBody"); if (!b || !body) return; body.hidden = !UI.timeOpen; b.setAttribute("aria-expanded", String(UI.timeOpen));
+  $("#timeControls").classList.toggle("open", UI.timeOpen); if (UI.timeOpen){ b.setAttribute("aria-label", "Hide the time controls"); b.title = "Hide the time controls"; }
+  else { b.removeAttribute("aria-label"); b.title = "Weeks or days, which sprints are on screen, and zoom"; } }
 let pagerRaf = 0;
 function watchPager(){ const sc = $("#gscroll"); if (!sc || sc.dataset.pager) return; sc.dataset.pager = "1"; sc.addEventListener("scroll", ()=>{ cancelAnimationFrame(pagerRaf); pagerRaf = requestAnimationFrame(updatePager); }, {passive:true}); }
 function dayPage(dir){
