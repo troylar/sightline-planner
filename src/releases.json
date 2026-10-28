@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.166.0",
+    "date": "2026-10-28",
+    "headline": "A quieter Timeline toolbar",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Timeline",
+        "title": "Time controls behind one button",
+        "now": "Weeks and Days, the sprint picker, the arrows, the presets and zoom now sit behind one Time button that says what's on screen, like \"Time: Weeks · S2 (Oct 19 – Oct 30)\". Click it to open them; your browser remembers if you leave them open. Shortcuts and Find work either way, and warnings like the late count stay in view.",
+        "before": "Every time control was always on the toolbar, next to View, Filters and Show.",
+        "where": "Timeline toolbar, Time"
+      }
+    ]
+  },
+  {
     "version": "1.165.0",
     "date": "2026-10-28",
     "headline": "A milestone's runway",
