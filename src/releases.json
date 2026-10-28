@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.170.2",
+    "date": "2026-10-28",
+    "headline": "Long names in the List",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "List",
+        "title": "Long names wrap in the List",
+        "now": "A long initiative name wraps onto more lines in the List, so the table fits the window.",
+        "before": "When an initiative had tasks, a long name stayed on one line and the whole List had to be scrolled sideways.",
+        "where": "The List, Item column"
+      }
+    ]
+  },
+  {
     "version": "1.170.1",
     "date": "2026-10-28",
     "headline": "List status on one line",
