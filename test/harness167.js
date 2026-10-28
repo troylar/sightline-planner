@@ -164,6 +164,11 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     { const a = [...d.querySelectorAll("#today a.tjira")]; ok("K49 when the plan knows the Jira site, Update it in Jira opens that issue in a new tab", a.length >= 1 && a.every(x=>x.href === "https://jira.example.com/browse/ABC-2" && x.target === "_blank" && /noopener/.test(x.rel)), a.map(x=>x.href).join(" ")); }
     ev(`S.meta.jiraBase = ""; render();`); await wait(10);
     ok("K50 …and without it, it stays plain text", !d.querySelector("#today a.tjira") && [...d.querySelectorAll("#today .tacts .hint")].some(x=>x.textContent === "Update it in Jira"));
+    for (const bad of ["javascript:alert(1)//", "data:text/html,<b>x</b>", "JaVaScRiPt:alert(1)"]){
+      ev(`{ const P = JSON.parse(JSON.stringify(planOfRecord(S))); P.meta.jiraBase = ${JSON.stringify(bad)}; const N = normalize(P, false); S.meta.jiraBase = N.meta.jiraBase; render(); }`); await wait(10);
+      ok(`K51 a plan whose Jira site is ${bad.split(":")[0]}: never becomes a link`, X("S.meta.jiraBase") === "" && !d.querySelector("#today a.tjira") && ![...d.querySelectorAll("#today a")].some(x=>/^(javascript|data):/i.test(x.getAttribute("href") || "")), X("S.meta.jiraBase"));
+    }
+    ev(`S.meta.jiraBase = ""; render();`);
     ok("K48 …and says how many it leaves out and why", /^1 follows its Jira sprint$/.test($("#today .tbulkw .hint")?.textContent || ""), $("#today .tbulkw")?.textContent);
     ev(`UI.ws = "timeline"; select(${JSON.stringify(LK.split(":")[0])}, ${JSON.stringify(LK.split(":")[1])}); render();`); await wait(10);
     ok("K45 …and its details, which offer to move it when the plan dates it, don't once Jira does", rf0 && !$("#q-rf0") && !$("#q-rf1") && !$("#q-rf5"), String(rf0));
