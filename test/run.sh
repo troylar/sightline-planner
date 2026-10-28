@@ -45,21 +45,22 @@ suite_lock(){
   until mkdir "$SUITE_LOCK" 2>/dev/null; do
     if lock_stale "$SUITE_LOCK/owner"; then
       printf "  %-10s %s\n" "lock" "taking over a stale suite lock (pid $(head -1 "$SUITE_LOCK/owner" 2>/dev/null) is gone)"
-      rm -rf "$SUITE_LOCK"; continue
+      rm -f "$SUITE_LOCK/owner"; rmdir "$SUITE_LOCK" 2>/dev/null && continue   # rmdir, never rm -rf: the path can come from the environment
+      printf "  %-10s %s\n" "lock" "FAILED: $SUITE_LOCK has other files in it, so it was left alone. Check it and remove it by hand."; return 1
     fi
     if (( ! said )); then { read -r pid; read -r _; read -r since; } < "$SUITE_LOCK/owner" 2>/dev/null
       printf "  %-10s %s\n" "lock" "waiting for suite lock held by pid ${pid:-?} since ${since:-just now} ($SUITE_LOCK)"; said=1; fi
     sleep "${SIGHTLINE_LOCK_POLL:-5}"
   done
   printf '%s\n%s\n%s\n' "$$" "$(proc_start $$)" "$(date +%H:%M)" > "$SUITE_LOCK/owner"
-  export SIGHTLINE_LOCK_HELD="$SUITE_LOCK"; trap 'rm -rf "$SUITE_LOCK"' EXIT
+  export SIGHTLINE_LOCK_HELD="$SUITE_LOCK"; trap 'rm -f "$SUITE_LOCK/owner"; rmdir "$SUITE_LOCK"' EXIT
 }
 main(){
   local self before
   self="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
   cd "$(dirname "$self")" || return 1
   fail=0
-  suite_lock
+  suite_lock || return 1
   before=$(worktree_state ..)
   # Each line: name, seconds allowed, command. They run side by side (SIGHTLINE_JOBS at a time, default one per CPU)
   # and print in this order; one after another they took about 25 minutes on CI.

@@ -104,6 +104,11 @@ if "suite_lock(){" in SOURCE:
             ok("a lock whose pid was reused by a newer process is taken over", "GOT" in r.stdout, r.stdout + r.stderr)
             r = take(f"{holder.pid}\n{start}\n01:23\n", held=str(lock))
             ok("a run inside withlock.sh, which already holds the lock, doesn't wait on it", "GOT" in r.stdout, r.stdout + r.stderr)
+            lock.mkdir(exist_ok=True); (lock / "owner").write_text("999999\nMon Jan  1 00:00:00 2001\n01:23\n"); (lock / "keep.txt").write_text("x")
+            env = dict(os.environ, SIGHTLINE_LOCK=str(lock), SIGHTLINE_LOCK_POLL="0.2", SIGHTLINE_LOCK_HELD="")
+            r = subprocess.run(["bash", "-c", 'source "$1"; suite_lock && echo GOT', "runner-test", str(RUNNER)], capture_output=True, text=True, env=env, timeout=5)
+            ok("a stale lock with anything else in it is left alone, and the run fails saying so", "GOT" not in r.stdout and r.returncode != 0 and "other files" in r.stdout and (lock / "keep.txt").exists(), r.stdout + r.stderr)
+            (lock / "keep.txt").unlink()
             r = take(None)
             ok("a free lock is taken, stamped with the run's pid, and gone when the run ends", "GOT" in r.stdout and r.stdout.split()[-1].isdigit() and not lock.exists(), r.stdout + r.stderr)
         finally:
