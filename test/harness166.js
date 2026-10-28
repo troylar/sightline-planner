@@ -117,6 +117,10 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("R5 Show all work clears the filters and leaves rows and what Show hides as they were, so Back puts it all back", !X("fActive()") && X("UI.rows") === "people" && T("hiddenKinds()")?.join() === "meeting", X("UI.rows") + " " + JSON.stringify(T("hiddenKinds()")));
     ev(`UI.rows = "lanes"; setHiddenQuiet([]); render();`);
     ok("R6 the shortcut help no longer promises a focus to step out of", !/focus/i.test(X("JSON.stringify(SHORTCUTS)") || $("#legend")?.textContent || d.body.textContent.match(/Close whatever is open[^"]*/)?.[0] || ""), (d.body.textContent.match(/Close whatever is open[^.]{0,40}/) || [""])[0]);
+    ev(`setStatus(""); UI.filter = normFilter({}); render(); showOnly("bar", "m2");`); await wait(10);
+    ok("R7 Show only says it once on screen (the strip) and tells a screen reader in the hidden live region", !/Showing only/.test($("#status")?.textContent || "") && /Showing only/.test($("#showLive")?.textContent || "") && !!$("#showStrip"), [$("#status")?.textContent, $("#showLive")?.textContent]);
+    ev(`showOff("bar", "m2");`); await wait(10);
+    ok("R8 taking the chip off tells a screen reader, without a line on screen", !/showing only/i.test($("#status")?.textContent || "") && /No longer showing only/.test($("#showLive")?.textContent || ""), [$("#status")?.textContent, $("#showLive")?.textContent]);
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
 

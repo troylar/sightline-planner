@@ -7181,12 +7181,12 @@ function showOnly(k, id){
   const b = k === "bar" ? barById(id) : null, pp = k === "person" ? personById(id) : null; if (!b && !pp) return false;
   const key = k === "bar" ? "bars" : "people"; if (JSON.stringify(UI.filter[key] || []) === JSON.stringify([id])) return true;
   navStep(); setFilter(x=>{ x[key] = [id]; });
-  const name = b ? chartLabel(b) : personName(id); setStatus(`Showing only ${b ? `"${name}"` : `${name}'s work`}. Take the chip off, or press Back, to see the rest.`); showSay(`Showing only ${name}.`);
+  showSay(`Showing only ${b ? chartLabel(b) : personName(id) + "'s work"}. Take the chip off, or press Back, to see the rest.`);   // the strip says it on screen
   if (UI.ws === "timeline"){ const w = fitSpan(); if (w && Number.isFinite(w.a)) scrollViewTo(Math.max(startDay(), w.a)); }
   return true;
 }
 function showOff(k, id){ const key = k === "bar" ? "bars" : "people"; navStep(); setFilter(x=>{ x[key] = (x[key] || []).filter(v=>v !== id); });
-  setStatus(k === "bar" ? `No longer showing only "${chartLabel(barById(id))}".` : `No longer showing only ${personName(id)}'s work.`); }
+  showSay(k === "bar" ? `No longer showing only ${chartLabel(barById(id))}.` : `No longer showing only ${personName(id)}'s work.`); }
 // The button on an initiative's or person's card; gone while it's the only one shown.
 function showOnlyBtn(k, id){
   if (JSON.stringify(UI.filter[k === "bar" ? "bars" : "people"] || []) === JSON.stringify([id])) return null;
