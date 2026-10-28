@@ -8,7 +8,7 @@
         "kind": "improved",
         "area": "Assistant",
         "title": "Connect assistant moves to your name menu",
-        "now": "Until an assistant is connected, Connect assistant waits in the menu under your name instead of the toolbar. Once one is connected, the toolbar shows its state as before: Assistant connected, paused, needs attention, or the changes waiting for your review.",
+        "now": "Until an assistant is connected, Connect assistant waits in the menu under your name instead of the toolbar, and typing \"assistant\" in Find opens it too. Once one is connected, the toolbar shows its state as before: Assistant connected, paused, needs attention, or the changes waiting for your review.",
         "where": "The menu under your name, top right"
       }
     ]

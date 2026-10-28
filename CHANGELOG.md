@@ -8,7 +8,7 @@ A quieter toolbar.
 
 ### Improved
 
-- **Connect assistant moves to your name menu** (Assistant). Until an assistant is connected, Connect assistant waits in the menu under your name instead of the toolbar. Once one is connected, the toolbar shows its state as before: Assistant connected, paused, needs attention, or the changes waiting for your review. *Where:* The menu under your name, top right
+- **Connect assistant moves to your name menu** (Assistant). Until an assistant is connected, Connect assistant waits in the menu under your name instead of the toolbar, and typing "assistant" in Find opens it too. Once one is connected, the toolbar shows its state as before: Assistant connected, paused, needs attention, or the changes waiting for your review. *Where:* The menu under your name, top right
 
 ## 1.162.0 · Oct 28, 2026
 

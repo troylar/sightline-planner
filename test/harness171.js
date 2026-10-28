@@ -32,6 +32,12 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ev(`sel = null; AM = null; present = true; render();`); await wait(10);
     ok("A8 Present shows neither", !shown($("#assistantChanges")) && !shown($("#meAssistant")));
     ev(`present = false; render();`); await wait(10);
+    for (const q of ["assistant", "connect"]){ ev(`sel = null; render(); openFind(); renderFind(${JSON.stringify(q)});`); await wait(10);
+      const hits = [...d.querySelectorAll("#findList .fhit.fcmd .ft")].map(x=>x.textContent);
+      ok(`A10 typing "${q}" in Find offers Connect assistant`, hits.includes("Connect assistant or review its changes"), hits.join(" | ")); }
+    ev(`findCmd("assistant");`); await wait(20);
+    ok("A11 …and it opens the same assistant panel", X("sel && sel.type") === "amend");
+    ev(`sel = null; render();`);
     ok("A9 nothing in the plan changed", X("JSON.stringify(planOfRecord(S))") === plan0);
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
