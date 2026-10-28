@@ -1,5 +1,26 @@
 [
   {
+    "version": "1.162.0",
+    "date": "2026-10-28",
+    "headline": "Highlight linked work",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Filters",
+        "title": "Highlight instead of hide",
+        "now": "While linked work is shown, click Highlight instead next to the chips (or use Find). Everything stays on the Timeline and in the List, and what isn't linked is dimmed. Dimmed work still works: hover, click or tab to it. Hide the rest switches back, and Back undoes either.",
+        "where": "The chips above the chart, Find, Timeline and List"
+      },
+      {
+        "kind": "improved",
+        "area": "Filters",
+        "title": "A shorter line for several picks",
+        "now": "With two or more picks, the status line counts them (Showing 3 picked items and the 10 linked to them) instead of repeating every title. The chips name them.",
+        "where": "Status line"
+      }
+    ]
+  },
+  {
     "version": "1.161.0",
     "date": "2026-10-28",
     "headline": "Linked work for several items at once",

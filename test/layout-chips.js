@@ -99,6 +99,16 @@ function contrast(sel){
       await page.evaluate(A=>showOff("person", A), A); await page.waitForTimeout(150);
       const d2 = await page.evaluate(()=>({fa:!!document.querySelector('#gantt [data-key="task:fa"]'), fb:!!document.querySelector('#gantt [data-key="task:fb"]')}));
       ok(`L14 ${tag}: the initiative chip alone draws all its tasks`, d2.fa && d2.fb, JSON.stringify(d2));
+      // Highlight in the List: a dimmed row is still readable, 3:1 or better for every cell's text against the page.
+      await page.evaluate(()=>{ UI.filter = normFilter({}); showLinked("bar", "c3"); setLinkMode("highlight"); UI.ws = "list"; sel = null; render(); }); await page.waitForTimeout(200);
+      const dimC = await page.evaluate(()=>{ const P = c => (c.match(/[\d.]+/g) || []).map(Number);
+        const lum = c => c.map(v=>{ v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }).reduce((a, v, i)=>a + v * [.2126, .7152, .0722][i], 0);
+        const bgOf = el => { for (let e = el; e; e = e.parentElement){ const c = P(getComputedStyle(e).backgroundColor); if (c.length === 3 || c[3] > .9) return c.slice(0, 3); } return [255, 255, 255]; };
+        const out = []; document.querySelectorAll("#listTable tr.link-dim").forEach(tr=>{ const op = Number(getComputedStyle(tr).opacity);
+          tr.querySelectorAll("td").forEach(td=>{ if (!td.textContent.trim()) return; const t = td.querySelector("a,button,span") || td, f = P(getComputedStyle(t).color), bg = bgOf(td), fa = (f.length > 3 ? f[3] : 1) * op;
+            const fg = f.slice(0, 3).map((v, i)=>bg[i] + (v - bg[i]) * fa), [a, b] = [lum(fg), lum(bg)].sort((x, y)=>y - x); out.push((a + .05) / (b + .05)); }); });
+        return {n:out.length, min:Math.round(Math.min(...out) * 100) / 100}; });
+      ok(`L15 ${tag}: highlighted, the List's dimmed rows still read at 3:1 or better`, dimC.n > 10 && dimC.min >= 3, JSON.stringify(dimC));
       await page.close();
     }
     ok("no page errors", !errs.length, errs.slice(0, 2).join(" | "));

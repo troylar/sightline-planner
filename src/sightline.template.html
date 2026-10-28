@@ -168,6 +168,8 @@ body:not(.canEdit) .bar .h,body:not(.canEdit) .tbar .h{display:none}
 .linkline line{stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4}
 .linktarget{outline:3px solid var(--accent)!important;outline-offset:2px}
 .linked{outline:2px dashed var(--accent);outline-offset:2px}
+.link-dim{opacity:.3;filter:saturate(.35)}tr.link-dim{opacity:.7}.link-dim:hover,.link-dim:focus-visible,.link-dim.selected{opacity:.85;filter:none}
+@media (prefers-reduced-motion:no-preference){.link-dim{transition:opacity .18s ease}}
 .legend i.lg-direct{background:transparent;outline:2px dashed var(--accent);outline-offset:-2px}
 .field .deps label,.field label.fcheck,.deps label{display:flex;gap:7px;align-items:flex-start;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:400;color:var(--ink);line-height:1.35;padding:2px 0}
 .field .deps label input,.deps label input,label.fcheck input{margin-top:2px;flex:none;width:auto!important;min-width:0}
@@ -2129,13 +2131,14 @@ function normFilter(f){
   const r = f.range && typeof f.range === "object" ? f.range : {}, type = RANGES.some(x=>x[0]===r.type) ? r.type : "all";
   return {bars:list(f.bars,null,100), tags:list(f.tags,null,100), hideTags:list(f.hideTags,null,100), labels:list(f.labels,null,100), hideLabels:list(f.hideLabels,null,100), authors:list(f.authors,null,100), people:list(f.people,null,100), lanes:list(f.lanes,null,100), status:list(f.status, [...STATUSES.map(x=>x[0]), "blocked"]), mstatus:list(f.mstatus, MSTATUS), kinds:list(f.kinds, FILTER_KINDS.map(x=>x[0])),
     range: type === "custom" ? {type, from: validIso(r.from) ? r.from : "", to: validIso(r.to) ? r.to : ""} : {type}, showEmpty: f.showEmpty === true,
-    linked: (Array.isArray(f.linked) ? f.linked : []).filter(x=>x && LINK_TYPES.includes(x.t) && str(x.id)).map(x=>({t:x.t, id:str(x.id).slice(0, 60)})).filter((x, i, a)=>a.findIndex(y=>y.t === x.t && y.id === x.id) === i).slice(0, 5)};
+    linked: (Array.isArray(f.linked) ? f.linked : []).filter(x=>x && LINK_TYPES.includes(x.t) && str(x.id)).map(x=>({t:x.t, id:str(x.id).slice(0, 60)})).filter((x, i, a)=>a.findIndex(y=>y.t === x.t && y.id === x.id) === i).slice(0, 5),
+    linkMode: f.linkMode === "highlight" ? "highlight" : "only"};
 }
 const LINK_TYPES = ["bar","task","ms","gate"];
 const LW_DEFAULT = {weeks:160, days:220};
 const normLW = v => { v = v && typeof v === "object" ? v : {}; const c = x => Number.isFinite(Number(x)) ? Math.round(Math.min(480, Math.max(120, Number(x)))) : null; return {weeks:c(v.weeks) ?? LW_DEFAULT.weeks, days:c(v.days) ?? LW_DEFAULT.days}; };
 function normViewDef(v){ v = v && typeof v === "object" ? v : {}; const zoom = v.zoom === "days" ? "days" : "weeks";
-  return {filter:{...normFilter(v.filter), linked:[]}, zoom, dayZoom: zoom === "days" && Number.isInteger(v.dayZoom) && v.dayZoom >= 0 && v.dayZoom < 6 ? v.dayZoom : null, ...(Number.isInteger(v.zoomN) && v.zoomN >= 0 && v.zoomN <= 200 ? {zoomN:v.zoomN} : {}), ws: v.ws === "people" ? "people" : "timeline",
+  return {filter:{...normFilter(v.filter), linked:[], linkMode:"only"}, zoom, dayZoom: zoom === "days" && Number.isInteger(v.dayZoom) && v.dayZoom >= 0 && v.dayZoom < 6 ? v.dayZoom : null, ...(Number.isInteger(v.zoomN) && v.zoomN >= 0 && v.zoomN <= 200 ? {zoomN:v.zoomN} : {}), ws: v.ws === "people" ? "people" : "timeline",
     rows: ["people","epics"].includes(v.rows) ? v.rows : "lanes", labelW: normLW(v.labelW), notes: NOTE_MODES.some(x=>x[0]===v.notes) ? v.notes : "all", ...(v.layer === "jira" || v.layer === "mine" ? {layer:v.layer} : {}), ...(normKinds(v.hide).length ? {hide:normKinds(v.hide)} : {})}; }
 const normViews = arr => (Array.isArray(arr) ? arr : []).filter(v=>v && typeof v === "object").slice(0,50);
 function checkShape(obj){
@@ -2614,6 +2617,16 @@ function startLink(e, type, id){
   const up = ev=>{ document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up); svg.hidden = true;
     const t = linkDrag.over; linkDrag = null; if (t){ t.classList.remove("linktarget"); makeLink(type, id, t.dataset.peekType, t.dataset.peekId); } };
   document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
+}
+// Highlight: what isn't linked to the picks stays on screen, dimmed, and still works (click, keys, hover). A story goes with
+// its initiative; a marker for several gates dims only when none of them is linked.
+function dimUnlinked(){
+  const f = UI.filter, L = f.linkMode === "highlight" ? linkedScope(f) : null;
+  document.querySelectorAll(".link-dim").forEach(el=>el.classList.remove("link-dim")); if (!L) return;
+  const has = (t, id) => t === "bar" ? L.bars.has(id) : t === "task" ? L.tasks.has(id) : t === "ms" ? L.ms.has(id) : t === "gate" ? L.gates.has(id) : t === "story" ? L.bars.has(storyIndex().byKey.get(id)?.b?.id) : true;
+  document.querySelectorAll("#gantt [data-peek-type][data-peek-id]").forEach(el=>{ if (!has(el.dataset.peekType, el.dataset.peekId)) el.classList.add("link-dim"); });
+  document.querySelectorAll("#gantt [data-gates]").forEach(el=>{ if (!el.dataset.gates.split(" ").some(id=>L.gates.has(id))) el.classList.add("link-dim"); });   // a group: dim only when none of it is linked
+  document.querySelectorAll("#listTable tr[data-lk]").forEach(r=>{ const m = /^list:([a-z]+):(.+)$/.exec(r.dataset.lk); if (m && LINK_TYPES.concat("story").includes(m[1]) && !has(m[1], m[2])) r.classList.add("link-dim"); });
 }
 function decorateLinks(){
   const g = $("#gantt"); if (!g) return;
@@ -4246,9 +4259,11 @@ function showStrip(){
     onclick:()=>{ showOff(k, id); focusShown(); }},
     h("span",{class:"sk"}, kind), h("span",{class:"sn"}, name), h("span",{class:"sx","aria-hidden":"true"}, "×"));
   return h("div",{class:"banner info showstrip",id:"showStrip",role:"group","aria-label":"Showing only"},
-    h("span",{class:"slabel"}, "Showing"),
+    h("span",{class:"slabel"}, lk.length && f.linkMode === "highlight" ? "Highlighting" : "Showing"),
     h("span",{class:"schips"}, ...lk.map(x=>h("button",{type:"button",class:"showchip linkchip","data-show":"linked:" + x.t + ":" + x.id,"aria-label":`Stop showing only what's linked to ${linkName(x)}`,title:`Stop showing only what's linked to ${linkName(x)}`,
         onclick:()=>{ linkedOff(x); focusShown(); }}, h("span",{class:"sk"}, "Linked to"), h("span",{class:"sn"}, linkName(x)), h("span",{class:"sx","aria-hidden":"true"}, "×"))),
+      lk.length ? h("button",{type:"button",class:"linkish",id:"linkMode","aria-pressed":String(f.linkMode === "highlight"),title:f.linkMode === "highlight" ? "Hide what isn't linked" : "Keep everything on screen and dim what isn't linked",
+        onclick:()=>{ setLinkMode(f.linkMode === "highlight" ? "only" : "highlight"); focusShown(); }}, f.linkMode === "highlight" ? "Hide the rest" : "Highlight instead") : null,
       ...bars.map(id=>chip("bar", id, "Initiative", chartLabel(barById(id)))), ...ppl.map(id=>chip("person", id, "Person", personName(id))),
       rest ? h("button",{type:"button",class:"linkish",id:"showMore",onclick:e=>{ e.stopPropagation(); openFilterPop(); }}, `and ${rest} more filter${rest === 1 ? "" : "s"}`) : null),
     h("button",{type:"button",class:"linkish",id:"showAll",onclick:()=>{ navStep(); UI.view = null; setFilter(x=>{ Object.assign(x, normFilter({})); }); setStatus("Showing all work. Back puts your filters back."); showSay("Showing all work."); focusShown(); }}, "Show all work"),
@@ -6014,16 +6029,16 @@ function openInitiative(id){ setZoom("days", id); }
 const sprintLen = () => { const w = (S.sprints || []).map(x=>x.weeks).sort((a, b)=>a - b); return w[Math.floor(w.length / 2)] || S.meta.sprintWeeks || 2; };
 let noteMemo = null;                       // notes by item within one draw (noteIndex); render and commit drop it
 let fitMemo = null;                        // fitSpan within one draw (the zoom asks it many times); render and commit drop it
-function fitSpan(){ if (fitMemo) return fitMemo; return fitMemo = fitSpan0(); }
-function fitSpan0(){                      // the days the shown work covers: its first start to its last end, inside the plan
-  const f = UI.filter, R = fRangeDays(f), hs = HS(), tf = tasksFiltered(f), spans = []; let a = Infinity, z = -Infinity; const add = (x, y) => { if (x < a) a = x; if (y > z) z = y; spans.push([x, y]); };
+function fitSpan(){ if (fitMemo) return fitMemo; const f = UI.filter; return fitMemo = fitSpan0(f.linkMode === "highlight" && linkedScope(f) ? {...f, linkMode:"only"} : f); }   // highlighted: fit the linked work
+function fitSpan0(f = UI.filter){         // the days the shown work covers: its first start to its last end, inside the plan
+  const R = fRangeDays(f), hs = HS(), tf = tasksFiltered(f), spans = []; let a = Infinity, z = -Infinity; const add = (x, y) => { if (x < a) a = x; if (y > z) z = y; spans.push([x, y]); };
   S.bars.forEach(b=>{ if (b.parked || !barVisible(b, f, R)) return;
     if (!hasTasks(b) || !tf) add(wkDay(b.start), barEndDay(b));
     (b.tasks || []).forEach(t=>{ if (taskVisible(t, f, R)){ const sp = taskSpan(t, hs); add(sp.s, sp.e); } });
     storiesOf(b).forEach(x=>{ if (x.drawn && storyVisible(x, f, R)) add(x.s, x.e); }); });
   S.milestones.forEach(m=>{ if (m.at != null && msVisible(m, f, R)){ const d = atToDay(m.at); add(d, d); } });
-  if (!fActive(f)){ gateItems().forEach(g=>{ if (g.day != null) add(g.day, g.day); }); releasesInPlan().forEach(r=>{ const d = isoToDay(r.date); add(d, d); }); }
-  else if (linkedScope(f)) gateItems().forEach(g=>{ if (g.day != null && gateVisible(g, f, R)) add(g.day, g.day); });   // a linked gate is part of what's shown   // gates and releases, when nothing's filtered
+  if (!fActive(f)){ gateItems().forEach(g=>{ if (g.day != null) add(g.day, g.day); }); releasesInPlan().forEach(r=>{ const d = isoToDay(r.date); add(d, d); }); }   // gates and releases, when nothing's filtered
+  else if (linkedScope(f)) gateItems().forEach(g=>{ if (g.day != null && gateVisible(g, f, R)) add(g.day, g.day); });   // a linked gate is part of what's shown
   if (!isFinite(a)) return {a:startDay(), z:planEndDay(), spans, none:true};
   if (R){ a = Math.max(a, R[0]); z = Math.min(z, R[1]); }
   return {a: Math.max(startDay(), mondayOf(a)), z: Math.max(startDay(), Math.min(planEndDay(), z)), spans, a0:a, z0:z};
@@ -6245,7 +6260,7 @@ function render(keepChart){
   document.documentElement.style.setProperty("--toph", $(".top").offsetHeight + "px");
   $("#legend").classList.toggle("days", UI.zoom === "days"); $("#legend").classList.toggle("shelves", shelvesOn());
   $("#help").setAttribute("aria-pressed", String(!!sel && sel.type === "help")); renderTables(); renderDerived();
-  applyReadonly(); if (UI.ws === "timeline") decorateLinks(); restore(key);
+  applyReadonly(); if (UI.ws === "timeline") decorateLinks(); dimUnlinked(); restore(key);
   syncNav();
   assistantScheduleExport();
   chartAt = UI.ws === "timeline" ? chartState() : null; chartSel = sel && {type:sel.type, id:sel.id};
@@ -6392,7 +6407,7 @@ const statusHit = (x, st, f) => f.status.includes(st) || (f.status.includes("blo
 function taskVisible(t, f = UI.filter, R = fRangeDays(f)){
   if (hidKind("done") && t.status === "done") return false;
   if (tagHides(t, "task", f)) return false;
-  { const L = linkedScope(f); if (L && !L.tasks.has(t.id)) return false; }
+  { const L = linkedHide(f); if (L && !L.tasks.has(t.id)) return false; }
   if (viewNarrowed() && sideOf(t, "task") === "plan" && viewHidesPlan(t)) return false;
   if (hereOnly() && sideOf(t, "task") === "jira") return false;
   if (f.status.length && !statusHit(t, t.status, f)) return false;
@@ -6434,6 +6449,8 @@ function linkedItems(seeds, s = S){
   [...out.bars].forEach(id=>holders("bar:" + id).forEach(x=>out.bars.add(x.slice(4))));   // the rows read as they do unfiltered
   return out; }
 let linkedMemo = null;
+// What linked work hides: everything else, unless it's highlighted instead (then the rest is dimmed, see dimUnlinked).
+const linkedHide = (f = UI.filter) => f.linkMode === "highlight" ? null : linkedScope(f);
 function linkedScope(f = UI.filter){ const L = f.linked || []; if (!L.length) return null;
   const key = JSON.stringify(L); if (linkedMemo && linkedMemo.key === key && linkedMemo.S === S && linkedMemo.bars === S.bars) return linkedMemo.set;
   linkedMemo = {key, S, bars:S.bars, set:linkedItems(L)}; return linkedMemo.set; }
@@ -6444,7 +6461,7 @@ function barVisible(b, f = UI.filter, R = fRangeDays(f)){
   if (hereOnly() && b.kind !== "waiting" && !untracked(b, "bar") && !(b.tasks || []).some(t=>sideOf(t, "task") === "plan" && taskVisible(t, f, R)) && !kidsOf(b.id).some(k=>barVisible(k, f, R))) return false;   // Jira's, unless it holds work added here
   if (!fActive(f)) return true;
   { const only = onlyScope(f); if (only && !only.has(b.id)) return false; }
-  { const L = linkedScope(f); if (L && !L.bars.has(b.id)) return false; }
+  { const L = linkedHide(f); if (L && !L.bars.has(b.id)) return false; }
   if (hasKids(b) && !hasTasks(b) && kidsOf(b.id).some(x=>barVisible(x, f, R))) return true;   // a holder shows when something inside it does (or on its own terms below)
   if (f.lanes.length && !f.lanes.includes(b.lane)) return false;
   if (f.kinds.length && !f.kinds.includes(b.kind)) return false;
@@ -6457,14 +6474,14 @@ function barVisible(b, f = UI.filter, R = fRangeDays(f)){
   if (f.people.length && !peopleMatch(peopleOf(b), f)) return false;
   return true;
 }
-const tasksFiltered = (f = UI.filter) => viewNarrowed() || (f.linked || []).length > 0 || hidKind("done") || (fActive(f) && (f.people.length || f.status.length || f.range.type !== "all" || (f.tags || []).length || (f.hideTags || []).length || (f.labels || []).length || (f.hideLabels || []).length));
+const tasksFiltered = (f = UI.filter) => viewNarrowed() || ((f.linked || []).length > 0 && f.linkMode !== "highlight") || hidKind("done") || (fActive(f) && (f.people.length || f.status.length || f.range.type !== "all" || (f.tags || []).length || (f.hideTags || []).length || (f.labels || []).length || (f.hideLabels || []).length));
 function msVisible(m, f = UI.filter, R = fRangeDays(f)){
   if (viewNarrowed() && viewHidesPlan(m)) return false;
   if (hidKind("milestone")) return false;
   if (!fActive(f)) return true;
   if (f.kinds.length && !f.kinds.includes("milestone")) return false;
   { const only = onlyScope(f); if (only && !(m.after || []).some(id=>only.has(id))) return false; }      // only milestones done when a shown initiative is
-  { const L = linkedScope(f); if (L && !L.ms.has(m.id)) return false; }
+  { const L = linkedHide(f); if (L && !L.ms.has(m.id)) return false; }
   if (f.lanes.length && !f.lanes.includes(m.lane)) return false;
   if (f.mstatus.length && !f.mstatus.includes(m.status)) return false;
   if (tagHides(m, "ms", f)) return false;
@@ -6476,7 +6493,7 @@ function gateVisible(g, f = UI.filter, R = fRangeDays(f)){       // g from gateI
   if (hidKind("gate")) return false;
   if (!fActive(f)) return true;
   if (f.kinds.length && !f.kinds.includes("gate")) return false;
-  { const L = linkedScope(f); if (L){ if (!L.gates.has(g.id)) return false; } else if ((f.bars || []).length) return false; }   // a gate shows when it's linked to what's picked
+  { const L = linkedHide(f); if (L){ if (!L.gates.has(g.id)) return false; } else if ((f.bars || []).length) return false; }   // a gate shows when it's linked to what's picked
   if (f.people.length && !peopleMatch(own(g.x), f)) return false;
   return g.day == null || !R || (g.day >= R[0] && g.day <= R[1]);
 }
@@ -7201,6 +7218,8 @@ const COMMANDS = [
   {id:"link-epic", label:"Link a Jira epic to the selected initiative", also:"jira epic stories count", when:()=>CMD_VIEWS.includes(UI.ws) && sel?.type === "bar" && !!barById(sel.id) && editable() && !present, run:()=>openEpicLink()},
   {id:"linked", label:"Show only what's linked to the selection", also:"linked dependencies depends waits path upstream downstream", when:()=>CMD_VIEWS.includes(UI.ws) && !!sel && LINK_TYPES.includes(sel.type) && !!linkTarget({t:sel.type, id:sel.id}), run:()=>{ showLinked(sel.type, sel.id); focusShown(); }},
   {id:"linked-add", label:"Add the selection to linked work", also:"linked pick another more add", when:()=>CMD_VIEWS.includes(UI.ws) && !!sel && LINK_TYPES.includes(sel.type) && linkSeeds().length > 0 && linkSeeds().length < LINK_MAX && !isSeed(sel.type, sel.id) && !!linkTarget({t:sel.type, id:sel.id}), run:()=>{ showLinked(sel.type, sel.id, true); focusShown(); }},
+  {id:"linked-highlight", label:"Highlight linked work, dimming the rest", also:"linked highlight dim emphasize", when:()=>linkSeeds().length > 0 && UI.filter.linkMode !== "highlight", run:()=>{ setLinkMode("highlight"); focusShown(); }},
+  {id:"linked-only", label:"Hide what isn't linked", also:"linked only hide rest", when:()=>linkSeeds().length > 0 && UI.filter.linkMode === "highlight", run:()=>{ setLinkMode("only"); focusShown(); }},
   {id:"linked-remove", label:"Take the selection off linked work", also:"linked remove pick", when:()=>CMD_VIEWS.includes(UI.ws) && !!sel && isSeed(sel.type, sel.id), run:()=>{ linkedOff({t:sel.type, id:sel.id}); focusShown(); }},
   {id:"week-later", label:"Move the selection a week later", also:"push slip delay", when:()=>!!selMovable(), run:()=>moveSelTo(selStartDay(selMovable()) + 7)},
   {id:"week-earlier", label:"Move the selection a week earlier", also:"pull sooner", when:()=>!!selMovable(), run:()=>moveSelTo(selStartDay(selMovable()) - 7)},
@@ -7403,7 +7422,6 @@ let linkZoom = null;                     // the zoom before Show linked work swi
 const LINK_MAX = 5;
 const linkSeeds = () => (UI.filter.linked || []).filter(x=>linkTarget(x));
 const isSeed = (t, id) => linkSeeds().some(x=>x.t === t && x.id === id);
-const nameList = a => a.length < 3 ? a.join(" and ") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
 // add: keep the picks you have and add this one (up to LINK_MAX); otherwise this one takes their place.
 function showLinked(t, id, add){
   const x = {t, id}; if (!linkTarget(x)) return false;
@@ -7418,14 +7436,14 @@ function showLinked(t, id, add){
   return true;
 }
 // What the status line says: the picks by name and how many other items are linked to them (what's drawn, less the picks).
-function linkSay(){ const seeds = linkSeeds(); if (!seeds.length) return; const L = linkedScope(), names = nameList(seeds.map(linkName));
-  const n = L ? L.items - seeds.length : 0, it = seeds.length === 1 ? "it" : "them";
-  const say = n ? `Showing ${names} and the ${n} item${n === 1 ? "" : "s"} linked to ${it}. Take a chip off, or press Back, to see the rest.` : `Nothing is linked to ${names} yet, so ${seeds.length === 1 ? "it's" : "they're"} shown on ${seeds.length === 1 ? "its" : "their"} own. Take a chip off, or press Back, to see the rest.`;
+function linkSay(){ const seeds = linkSeeds(); if (!seeds.length) return; const L = linkedScope(), one = seeds.length === 1, names = one ? linkName(seeds[0]) : `${seeds.length} picked items`;
+  const n = L ? L.items - seeds.length : 0, it = one ? "it" : "them", hl = UI.filter.linkMode === "highlight", verb = hl ? "Highlighting" : "Showing", rest = hl ? "Take a chip off, or press Back, to undim the rest." : "Take a chip off, or press Back, to see the rest.";
+  const say = n ? `${verb} ${names} and the ${n} item${n === 1 ? "" : "s"} linked to ${it}. ${rest}` : `Nothing is linked to ${names} yet, so ${one ? "it's" : "they're"} ${hl ? "highlighted" : "shown"} on ${one ? "its" : "their"} own. ${rest}`;
   setStatus(say); showSay(say); }
 // Take one pick off (or all, with no x). The zoom comes back when the last one goes.
 function linkedOff(x){ const have = linkSeeds(), left = x ? have.filter(y=>!(y.t === x.t && y.id === x.id)) : []; navStep();
   if (!left.length && linkZoom){ const z = linkZoom; linkZoom = null; UI.zoomN = z.n; UI.zoomSp = z.sp; delete UI.zoomPreset; if (z.p != null) UI.zoomPreset = z.p; fitKey = ""; sprintKey = ""; }
-  setFilter(f=>{ f.linked = left; });
+  setFilter(f=>{ f.linked = left; if (!left.length) f.linkMode = "only"; });
   if (left.length) linkSay(); else showSay(have.length === 1 ? `No longer showing only what's linked to ${linkName(have[0])}.` : "Showing all work."); }
 // On an item's card: Show linked work, or, while picks are shown, add it to them or take it off.
 function linkedBtn(t, id){
@@ -7439,6 +7457,8 @@ function linkedBtn(t, id){
   return [h("button",{type:"button",class:"btn nav",id:"f-linked",disabled:full,title:full ? `You can pick up to ${LINK_MAX} items` : "Add this and what's linked to it to what's shown",
     onclick:()=>{ showLinked(t, id, true); focusShown(); }}, "Add to linked work"), show];
 }
+// Only these (hide the rest) or Highlight (dim it). A viewer's choice, kept with the picks; Back undoes it.
+function setLinkMode(mode){ if (!linkSeeds().length || UI.filter.linkMode === mode) return; navStep(); setFilter(f=>{ f.linkMode = mode; }); linkSay(); }
 const viewActs = (...kids) => kids.flat().some(Boolean) ? h("div",{class:"viewacts"}, ...kids.flat().filter(Boolean)) : null;
 // The button on an initiative's or person's card; gone while it's the only one shown.
 function showOnlyBtn(k, id){
@@ -9236,7 +9256,7 @@ function renderGantt(){
       const gp = packRows(grps.map(x=>({id:x.key, a:x.at, z:x.at + wk(textWB(x.text) + 26)})), x=>x.a, x=>x.z);
       const track = h("div",{class:"track",style:{height:(10 + Math.max(1,gp.count)*22)+"px",minHeight:"34px"},"data-add":"gates",ondblclick:e=>{ if (!e.target.closest(".flag,.insbtn")) createAt("gate", null, dayFromEvent(e)); }});
       track.append(h("div",{class:"grid",style:{backgroundImage:`repeating-linear-gradient(to right, transparent 0, transparent calc(${100/W}% - 1px), var(--rule-2) calc(${100/W}% - 1px), var(--rule-2) ${100/W}%)`}}));
-      grps.forEach(x=>track.append(h("button",{type:"button","data-peek-type":x.gates.length === 1 ? "gate" : null,"data-peek-id":x.gates.length === 1 ? x.gates[0].id : null,title:x.gates.length > 1 ? x.title : null,"aria-haspopup":x.gates.length > 1 ? "menu" : null,
+      grps.forEach(x=>track.append(h("button",{type:"button","data-peek-type":x.gates.length === 1 ? "gate" : null,"data-peek-id":x.gates.length === 1 ? x.gates[0].id : null,"data-gates":x.gates.length > 1 ? x.gates.map(g=>g.id).join(" ") : null,title:x.gates.length > 1 ? x.title : null,"aria-haspopup":x.gates.length > 1 ? "menu" : null,
         "aria-label":(x.gates.length > 1 ? `${x.gates.length} gates needed ${fmtDay(x.day)}. ` : "") + x.title.replace(/\n+/g,". "),style:{left:`${x.at/W*100}%`,top:(6+gp.pos.get(x.key)*22)+"px"},onpointerdown:x.gates.length === 1 ? e=>markerDrag(e, day=>moveGate(x.gates[0].id, day)) : null,onclick:e=>{ if (dragJustEnded) return; openGroup(x, e.currentTarget); },class:"flag gate" + (x.selected ? " selected" : "")}, h("span",{class:"fl-t"}, x.text))));
       g.append(h("div",{class:"lane gaterow"}, gateLabelCell(all, gs.length, false), track));
     } }
