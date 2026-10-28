@@ -24,7 +24,8 @@ const key = (w, el, k, o = {}) => el.dispatchEvent(new w.KeyboardEvent("keydown"
     ok("A2 then it shows your initials, and names you to a screen reader", d.querySelector("#meIni").textContent === p0("initials") && mb.getAttribute("aria-label").startsWith(`You: ${p0("name")}`) && !d.querySelector("#meLbl").textContent);
     mb.click(); await wait(5);
     ok("A3 it opens as a menu, focus on its first item", !menu.hidden && mb.getAttribute("aria-expanded") === "true" && d.activeElement === d.querySelector("#identityBtn"));
-    key(w, d.activeElement, "ArrowDown"); ok("A3 …arrow keys move through it", d.activeElement === d.querySelector("#tsDown"));
+    key(w, d.activeElement, "ArrowDown"); ok("A3 …arrow keys move through it (Connect assistant comes next while none is connected)", d.activeElement === d.querySelector("#meAssistant"));
+    key(w, d.activeElement, "ArrowDown"); ok("A3 …then on to text size", d.activeElement === d.querySelector("#tsDown"));
     key(w, d.activeElement, "Escape"); ok("A3 …and Escape closes it, back on the button", menu.hidden && d.activeElement === mb && mb.getAttribute("aria-expanded") === "false");
     mb.click(); await wait(5); d.body.click(); ok("A3 …so does a click elsewhere", menu.hidden);
     mb.click(); await wait(5); d.querySelector("#help").click(); await wait(5);

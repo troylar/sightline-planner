@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.163.0",
+    "date": "2026-10-28",
+    "headline": "A quieter toolbar",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Assistant",
+        "title": "Connect assistant moves to your name menu",
+        "now": "Until an assistant is connected, Connect assistant waits in the menu under your name instead of the toolbar, and typing \"assistant\" in Find opens it too. Once one is connected, the toolbar shows its state as before: Assistant connected, paused, needs attention, or the changes waiting for your review.",
+        "where": "The menu under your name, top right"
+      }
+    ]
+  },
+  {
     "version": "1.162.0",
     "date": "2026-10-28",
     "headline": "Highlight linked work",

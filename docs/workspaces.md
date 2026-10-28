@@ -129,7 +129,7 @@ With a task or initiative selected on the Timeline or the List, **O** puts the c
 
 Unsent notes, quick updates and blocker explanations stay with their plan and item during this session when details redraw. They clear after successful submission. They are temporary browser-session drafts; submit the text before closing the page. Saving other plan edits does not submit a composer draft.
 
-Use **Connect assistant** in the toolbar to set up the [private assistant folder](assistant-workflow.md). Proposed changes wait for your review. Common initiative and task updates remain visible; open **Organize this initiative** or **Move this task** for structural changes.
+Use **Connect assistant**, in the menu under your name, to set up the [private assistant folder](assistant-workflow.md). Once an assistant is connected, the toolbar shows its state, and proposed changes wait there for your review. Common initiative and task updates remain visible; open **Organize this initiative** or **Move this task** for structural changes.
 
 The details panel shows what you need first: warnings, quick status, updates, notes, the title, status, owner,
 dates and an initiative's first three tasks (**Show all** lists the rest). The rest folds into **Story** (when none is

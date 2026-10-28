@@ -12,7 +12,7 @@ Check [build availability](availability.md) before using version-specific instru
 ## Analyze with any assistant
 
 To ask questions about the plan, without changing it, any assistant will do: GitHub Copilot, ChatGPT, Claude,
-Gemini or your company's own. Open **Connect assistant**, then **Analyze with any assistant** (since 1.130.0):
+Gemini or your company's own. Open **Connect assistant** (in the menu under your name, top right, until an assistant is connected; then the assistant button in the toolbar), then **Analyze with any assistant** (since 1.130.0):
 
 - **Copy analysis instructions** copies read-only instructions that name each Sightline file, what it holds, who owns
   which facts (Jira owns its issues, the team owns what it added) and how to read dates, estimates and coverage.
@@ -29,7 +29,7 @@ The instructions are read-only. To have an assistant propose changes, use the pr
 
 ## Use an external assistant
 
-Choose **Connect assistant** in the toolbar (or **Changes** when proposals are waiting), then choose **Connect your assistant**. In Edge or Chrome, select a private folder that your local assistant can read and write. Keep the team plan in OneDrive if needed. Use a separate private assistant folder for each person, device and plan, with one active Sightline tab writing to it. Sightline remembers the connection in this browser; a later visit may require **Reconnect**.
+Open the menu under your name (top right) and choose **Connect assistant**. Once an assistant is connected, the toolbar shows its state instead (**Assistant connected**, or **Changes** when proposals are waiting). Then choose **Connect your assistant**. In Edge or Chrome, select a private folder that your local assistant can read and write. Keep the team plan in OneDrive if needed. Use a separate private assistant folder for each person, device and plan, with one active Sightline tab writing to it. Sightline remembers the connection in this browser; a later visit may require **Reconnect**.
 
 Choose **Copy instructions for your assistant**, then paste them into your assistant with the folder location and your request:
 
