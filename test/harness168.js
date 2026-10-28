@@ -90,6 +90,17 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ev(`document.activeElement && document.activeElement.blur(); setPresent(true); sel = null; render();`); await wait(20); key("j"); await wait(20);
     ok("N12 in Present, J still moves through the chart and the plan is unchanged", !!X("sel") && X("JSON.stringify(S)") === plan0, JSON.stringify(T("sel")));
     ev(`setPresent(false)`);
+    // Arrows on Today once you're on a row; from the page itself they leave the page's scrolling alone
+    ev(`sel = null; goWs("today"); render(); document.activeElement && document.activeElement.blur();`); await wait(20);
+    key("ArrowDown"); await wait(10);
+    const bodyArrow = !d.activeElement?.closest?.("#today li.trow");
+    key("j"); await wait(10); key("ArrowDown"); await wait(15);
+    ok("N14 on Today, Down moves to the next row once you're on one", /^2 of /.test(live()) && !!at()?.closest?.("#today li.trow"), live());
+    ok("N15 …and with nothing focused, Down doesn't grab a row (the page scrolls as usual)", bodyArrow);
+    // Roadmap: J moves through deliverables and ideas, opening nothing
+    ev(`S.deliverables = [{id:"dv1", name:"Faster search", stage:"idea"}, {id:"dv2", name:"Shared filters", stage:"idea"}]; S = normalize(JSON.parse(JSON.stringify(S)), false); sel = null; goWs("roadmap"); render(); document.activeElement && document.activeElement.blur();`); await wait(20);
+    const rm = d.querySelectorAll("#roadmapWs .dvcard[data-dv], #roadmapWs li[data-idea]").length; key("j"); await wait(15);
+    ok("N16 J on the Roadmap stays there and focuses its first deliverable or idea, opening nothing", X("UI.ws") === "roadmap" && rm >= 2 && !!at()?.closest?.("#roadmapWs [data-dv], #roadmapWs li[data-idea]") && /^1 of /.test(live()) && !X("sel"), [rm, live(), JSON.stringify(T("sel"))].join(" "));
     ok("N13 the keyboard help says J and K work in this view", (T("SHORTCUTS.flatMap(([g, rows])=>rows.filter(r=>r[0].includes('J')).map(r=>r[1]))") || []).some(x=>/in this view/.test(x)));
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
