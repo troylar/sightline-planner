@@ -9,7 +9,7 @@
         "area": "Keyboard",
         "title": "I and X respect Jira",
         "before": "On an item whose status comes from Jira, I or X still saved an update to the shared plan that Jira's status then overrode.",
-        "now": "I and X leave it unchanged, save nothing, and say the status comes from Jira. B for Blocked still works.",
+        "now": "I and X leave it unchanged, save nothing, and say the status comes from Jira. B for Blocked still works. Nothing ever reached Jira. A status saved this way before stays hidden behind Jira's while the item is linked; if you unlink it, check its status.",
         "where": "Any selected task or initiative linked to Jira"
       },
       {
