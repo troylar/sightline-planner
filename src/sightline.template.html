@@ -629,7 +629,7 @@ body.presenting #filterBtn,body.presenting #viewSave{display:none!important}
 .tsec.since .seg{margin-left:auto}.tsec.since .seg button{font-size:12px;padding:2px 8px}.trow.tsub{margin-top:6px;color:var(--ink-2);font-size:12px}
 .tsec h3{margin:0;font-size:14px;display:flex;align-items:center;gap:6px}
 .tsec h3 b{font-size:11px;font-weight:700;background:var(--paper);border:1px solid var(--rule);border-radius:9px;padding:0 6px;color:var(--ink-2)}
-.tsec .tbulk{margin-left:auto;font-size:12px;padding:3px 9px}
+.tsec .tbulk{margin-left:auto;font-size:12px;padding:3px 9px}.tsec .tbulkw{margin-left:auto;display:flex;align-items:center;gap:8px}.tbulkw .hint{font-size:12px}
 .tsec ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .tnone{margin:2px 0}
 .tsec h3 .ic{width:15px;height:15px;color:var(--ink-3)}.tsec.bad h3 .ic{color:var(--bad)}.tsec.warn h3 .ic{color:var(--warn)}.tsec.good h3 .ic{color:var(--ok)}
@@ -3078,11 +3078,11 @@ function shiftBar(b, calDays){
   if (!calDays) return;
   [b, ...descendantsOf(b.id)].forEach(x=>{
     if (hasTasks(x)) shiftTasks(x, calDays);
-    if (!derived(x)) x.start = Math.max(0, x.start + calDays/7);
+    if (!derived(x) && !jiraFixed(x)) x.start = Math.max(0, x.start + calDays/7);   // a Jira sprint keeps its own
   });
   rollup(S);
 }
-function shiftTasks(b, calDays){ const hs = HS(), sd = startDay(); b.tasks.forEach(t=>{ t.start = dayToIso(nextWork(Math.max(sd, isoToDay(t.start) + calDays), hs)); }); }
+function shiftTasks(b, calDays){ const hs = HS(), sd = startDay(); b.tasks.forEach(t=>{ if (jiraFixed(t)) return; t.start = dayToIso(nextWork(Math.max(sd, isoToDay(t.start) + calDays), hs)); }); }
 function taskById(id){ for (const b of S.bars) for (const t of (b.tasks||[])) if (t.id === id) return {t, b}; return null; }
 // A "work item" is a task, or an initiative that has no tasks and nothing inside it (holders just roll up).
 function workItem(key){
@@ -3115,7 +3115,7 @@ function stampStatuses(before, after){
 }
 // Late work: move it to today (not started) or stretch it to finish k working days from today (in progress).
 function reforecast(key, k){
-  const w = workItem(key); if (!w || w.obj.status === "done") return false;
+  const w = workItem(key); if (!w || w.obj.status === "done" || jiraFixed(w.obj)) return false;   // its Jira sprint dates it
   const hs = HS(), t0 = nextWork(Math.max(todayDay(), startDay()), hs), target = k ? addWork(t0, k + 1, hs) : t0;
   if (w.type === "task"){ const t = w.t, ths = taskHs(t), sp = taskSpan(t, ths);
     if (t.status === "notstarted") t.start = dayToIso(nextWork(target, ths));
@@ -12321,7 +12321,7 @@ function quickPanel(key){
       h("button",{type:"button",class:"qst" + (x.status===v ? " on" : ""),"aria-pressed":String(x.status===v),id:"q-"+v,onclick:()=>act(`${label}: ${t.toLowerCase()}`, w=>{ if (w.obj.status === v) return NOCHANGE; w.obj.status = v; })}, t))));
     if (x.startedAt || x.doneAt) box.append(h("p",{class:"hint"}, [x.startedAt ? `Started ${fmtDay(stampDay(x.startedAt))}` : "", x.doneAt ? `done ${fmtDay(stampDay(x.doneAt))}` : ""].filter(Boolean).join(" · ")));
     // late: move it or stretch it
-    if (x.status !== "done" && (sp.e < t0 || (x.status === "notstarted" && sp.s < t0))){
+    if (x.status !== "done" && !(JL && JL.dates) && (sp.e < t0 || (x.status === "notstarted" && sp.s < t0))){
       const ns = x.status === "notstarted", late = sp.e < t0;
       box.append(h("div",{class:"msg " + (late ? "bad" : "warn") + " qlate"},
         h("div",{}, late ? `Should have finished ${fmtDay(sp.e)}.` : `Should have started ${fmtDay(sp.s)}.`, " ", ns ? "Move it:" : "New finish:"),
@@ -13230,7 +13230,9 @@ function amCheck0(c00, p){
     if (o.type === "initiative" || o.type === "task"){ const isIn = o.type === "initiative", F = isIn ? AM_IN_FIELDS : AM_TK_FIELDS, id = String(o.id || "");
       const barOf = x => madeBars.get(x) || p.bars.find(b=>b.id === x), taskOf = x => { if (madeTasks.has(x)) return madeTasks.get(x); for (const b of p.bars){ const t = (b.tasks || []).find(y=>y.id === x); if (t) return {t, b}; } return null; };
       const cur = (x, f) => isIn ? (f === "start" ? amWeekIso(p, x.start) : f === "weeks" ? x.span : f === "owners" ? (x.owners || []) : x[f] ?? null) : (f === "owners" ? (x.owners || []) : x[f] ?? null);
-      const locked = (x, f, b) => { const jl = isIn ? !!(x.jira || (x.epics || []).length) : !!x.jira;
+      const linked = y => !!y && (isIn ? !!(y.jira || (y.epics || []).length) : !!y.jira);
+      const linkedNow = x => { if (!cand) return false; if (isIn) return linked(cand.bars.find(y=>y.id === x.id)); for (const b of cand.bars){ const t = (b.tasks || []).find(y=>y.id === x.id); if (t) return linked(t); } return false; };   // an epic or key linked earlier in this change
+      const locked = (x, f, b) => { const jl = linked(x) || linkedNow(x);
         if (jl && (f === "status" || f === "start" || f === "weeks" || f === "days")) return `${f === "status" ? "its status comes" : "its dates come"} from Jira: propose ${f === "status" ? "a status" : "a sprint"} in Jira instead`;
         if (isIn && (f === "start" || f === "weeks") && derived(x, p)) return hasKids(x, p) ? "its dates come from the initiatives inside it" : "its dates come from its tasks";
         if (isIn && f === "status" && rolls(x) && (hasTasks(x) || hasKids(x, p))) return hasKids(x, p) ? "its status comes from the initiatives inside it" : "its status comes from its tasks";
@@ -15153,9 +15155,10 @@ function renderToday(){
     ? [btn("Start today", ()=>act(it.key, `${itemLabel(it)}: moved to today`, ()=>reforecast(it.key, 0) ? undefined : NOCHANGE)), btn("Next week", ()=>act(it.key, `${itemLabel(it)}: moved to next week`, ()=>reforecast(it.key, 5) ? undefined : NOCHANGE))]
     : [btn("+1 day", ()=>act(it.key, `${itemLabel(it)}: +1 day`, ()=>reforecast(it.key, 1) ? undefined : NOCHANGE)), btn("+1 week", ()=>act(it.key, `${itemLabel(it)}: +1 week`, ()=>reforecast(it.key, 5) ? undefined : NOCHANGE))];
   const doneBtn = it => btn("Done", ()=>act(it.key, `${itemLabel(it)}: done`, w=>{ w.obj.status = "done"; }));
-  const allLate = [...D.stale, ...D.late];
-  const bulk = allLate.length > 1 && !present ? btn(`Move all ${allLate.length}`, ()=>{ if (!window.confirm(`Move ${allLate.length} late items? Not started ones move to start today; in-progress ones get 3 more working days. Anything waiting on them moves too.`)) return;
+  const lateAll = [...D.stale, ...D.late], allLate = lateAll.filter(it=>!jiraFixed(it.obj)), jiraN = lateAll.length - allLate.length;
+  const bulkBtn = allLate.length > 1 && !present ? btn(`Move all ${allLate.length}`, ()=>{ if (!window.confirm(`Move ${allLate.length} late items? Not started ones move to start today; in-progress ones get 3 more working days. Anything waiting on them moves too.`)) return;
     const keys = allLate.map(it=>it.key); whoAmI(null, ()=>quickSave(`moved ${keys.length} late items`, ()=>{ let n = 0; keys.forEach(k=>{ const w = workItem(k); if (w && reforecast(k, w.obj.status === "notstarted" ? 0 : 3)) n++; }); return n ? undefined : NOCHANGE; })); }, "tbulk") : null;
+  const bulk = bulkBtn && jiraN ? h("span",{class:"tbulkw"}, h("span",{class:"hint",title:"Their dates come from their Jira sprints. Change those in Jira."}, `${jiraN} follow${jiraN === 1 ? "s its" : ""} Jira sprint${jiraN === 1 ? "" : "s"}`), bulkBtn) : bulkBtn;
   host.replaceChildren(
     h("div",{class:"thead"},
       h("div",{}, h("h2",{tabindex:"-1",id:"todayH"}, `Today · ${fmtDay(t0)}`), (()=>{ if (present) return null; try { const Q = sinceData(["visit","yesterday","week"].includes(UI.sinceMode) ? UI.sinceMode : "visit"), J = Q.jira;
