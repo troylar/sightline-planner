@@ -45,7 +45,9 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   ok("day view renders task bars", d.querySelectorAll(".tbar").length===2 && d.querySelectorAll(".gday").length>20);
   ok("holiday column shaded", d.querySelectorAll(".gday.hol").length===1);
   ev(`openInitiative("${b0.id}")`);
-  ok("drill-in shows one initiative + back link", d.querySelectorAll(".dlabel").length===1 && /All initiatives/.test(d.querySelector(".gcorner").textContent));
+  ok("drill-in shows one initiative + back link", d.querySelectorAll(".dlabel").length===1 && /Back/.test(d.querySelector(".gcorner").textContent) && ev("drillOn()") && !!d.querySelector("#drillPath"));
+  ev(`drillEnd(); setZoom("days", "${b0.id}")`);   // the rest of this file expects the plain Days framing, without a focus over it
+  ok("drill-in without a focus keeps its own back link", d.querySelectorAll(".dlabel").length===1 && /All initiatives/.test(d.querySelector(".gcorner").textContent));
   ev("UI.ws='people'; render()");
   ok("day-level load", /working day/.test(d.querySelector("#loadHint").textContent) && d.querySelectorAll("#load .p").length>=1);
   ev("UI.ws='timeline'; render()");
@@ -501,7 +503,7 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   // --- final review regressions ---
   ev(`S = normalize({meta:{start:"2026-10-05",weeks:12},lanes:[{id:"a",name:"A"}],people:[{id:"p1",name:"Pat"},{id:"p2",name:"Sam"}],bars:[{id:"f1",lane:"a",start:0.5,span:1,label:"Frac"},{id:"t1b",lane:"a",start:0,span:2,label:"Has tasks",owners:["p1"],tasks:[{id:"tt1",label:"x",start:"2026-10-05",days:3,owners:["p2"]}]}],gates:[{id:"g1",gate:"G",date:"2026-10-16",neededBy:"Oct 16"}],sprints:[{name:"S0",weeks:2},{name:"S1",weeks:2},{name:"S2",weeks:2},{name:"S3",weeks:2},{name:"S4",weeks:2},{name:"S5",weeks:2}]},false); resetHistory(); UI.filter=normFilter({}); UI.view=null; file.handle=null; render()`);
   ok("F-P1: a 1-week initiative at a half-week start is still 5 working days", ev(`workBetween(nextWork(wkDay(barById("f1").start), new Set()), barEndDay(barById("f1")), new Set())`)===5);
-  ok("F-P1: an initiative with tasks matches people only through its tasks", ev(`barVisible(barById("t1b"), normFilter({people:["p1"]}))`)===false && ev(`barVisible(barById("t1b"), normFilter({people:["p2"]}))`)===true);
+  ok("F-P1: an initiative with tasks matches people through its tasks, and its lead (1.147.0), whose view still hides the others' tasks", ev(`barVisible(barById("t1b"), normFilter({people:["p1"]}))`)===true && ev(`taskVisible(taskById("tt1").t, normFilter({people:["p1"]}))`)===false && ev(`barVisible(barById("t1b"), normFilter({people:["p2"]}))`)===true && ev(`barVisible(barById("t1b"), normFilter({people:["p1"], status:["done"]}))`)===false);
   ev(`commit(()=>{ personById("p2").off.push({from:"2026-10-06",to:"2026-10-06",note:""}); })`);
   document_baseline: { ev("S.baseline=null"); d.querySelector("#baseline").click(); }
   ok("F-P1: a fresh baseline shows no slip when time off is already in the task", ev(`slipTask(taskById("tt1").t)`)===null && ev(`!!S.baseline.tasks.tt1.end`));

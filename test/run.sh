@@ -188,6 +188,7 @@ main(){
     "harness163 60 node harness163.js"
     "harness164 60 node harness164.js"
     "harness165 60 node harness165.js"
+    "harness166 60 node harness166.js"
     "harness144 90 node harness144.js"
     "harness139 90 node harness139.js"
     "build 240 python3 test_build.py"
@@ -225,7 +226,7 @@ main(){
 # is installed (npm ci, then npx playwright install chromium, or PLAYWRIGHT=/path/to/node_modules/playwright). A skip fails
 # the run, so a local pass means what CI's does, unless SIGHTLINE_NO_BROWSER=1 says the skip is on purpose.
 browser_checks(){
-  local t suites=(layout-shelves layout-labels layout-avatars side-scroll capture-dialog)
+  local t suites=(layout-shelves layout-labels layout-avatars side-scroll capture-dialog layout-focus)
   if node -e 'require(process.env.PLAYWRIGHT || "playwright")' 2>/dev/null || [[ -n "$CI" ]]; then
     for t in "${suites[@]}"; do run_suite "$t" 180 node "$t.js"; done
     return
