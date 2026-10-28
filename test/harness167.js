@@ -125,6 +125,23 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ev(`taskById("fa").t.status = "todo"; render(); select("task", "fa");`); await wait(10); key("i"); await wait(20);
     ok("K32 …and I the same", X(`taskById("fa").t.status`) === "todo" && X("QSN") === 0, [X(`taskById("fa").t.status`), X("QSN")].join(" | "));
     ev(`jiraLockOf = JL0; quickSave = QS0; taskById("fa").t.status = "inprogress"; sel = null; render();`);
+    // O: change who owns the selection, from the keyboard, through the item's own owner picker
+    ev(`closeFind(); UI.ws = "timeline"; render(); select("task", "fa"); render(); document.activeElement && document.activeElement.blur();`); await wait(10);
+    key("o"); await wait(20);
+    ok("K33 O on a selected task puts the cursor in its owner picker", d.activeElement?.id === "f-towner", d.activeElement && (d.activeElement.id || d.activeElement.tagName));
+    { const inp = $("#f-towner"); if (inp){ inp.value = "Blake"; inp.dispatchEvent(new w.Event("input", {bubbles:true})); inp.dispatchEvent(new w.KeyboardEvent("keydown", {key:"Enter", bubbles:true})); } } await wait(20);
+    ok("K34 …typing a name and Enter adds that person and keeps the owner already there", X(`taskById("fa").t.owners.join()`) === X("[A, B].join()"), X(`taskById("fa").t.owners.join()`));
+    ev(`undo(); render();`); await wait(10);
+    ok("K35 …and Undo takes it back", X(`taskById("fa").t.owners.join()`) === X("A"), X(`taskById("fa").t.owners.join()`));
+    ev(`select("bar", "m2"); render(); document.activeElement && document.activeElement.blur();`); await wait(10); key("o"); await wait(20);
+    ok("K36 O on an initiative whose owners come from its tasks says so and focuses nothing", !/owner/.test(d.activeElement?.id || "") && /from what's inside/.test($("#status")?.textContent || ""), $("#status")?.textContent);
+    ev(`window.HD1 = file.handle; file.handle = {name:"plan.json"}; file.holdLock = null; select("task", "fa"); render(); document.activeElement && document.activeElement.blur();`); await wait(10); key("o"); await wait(20);
+    ok("K37 O while you're not editing says to start editing, and Find doesn't offer it", d.activeElement?.id !== "f-towner" && /Start editing/.test($("#status")?.textContent || "") && !acts("owns").includes("Change who owns the selection"), $("#status")?.textContent);
+    ev(`closeFind(); file.handle = HD1; select("task", "fa"); UI.ws = "today"; render(); document.activeElement && document.activeElement.blur(); setStatus("");`); await wait(10); key("o"); await wait(20);
+    ok("K38 O on Today, where the row you're on isn't the selection, does nothing", d.activeElement?.id !== "f-towner" && !$("#status")?.textContent);
+    ev(`UI.ws = "timeline"; render(); select("task", "fa"); render();`); await wait(10);
+    ok("K39 Find offers Change who owns the selection, with its key, and the keyboard help lists O", acts("owner").includes("Change who owns the selection") && (T("SHORTCUTS.flatMap(([g, rows])=>rows.filter(r=>r[0].includes('O')).map(r=>r[1]))") || []).some(x=>/owns/.test(x)), acts("owner").join("|"));
+    ev(`closeFind(); sel = null; render();`);
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
   console.log(R.join("\n")); const f = R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

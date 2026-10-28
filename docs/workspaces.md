@@ -123,6 +123,8 @@ Today names each due decision's decider; its owners may be different people.
 
 **J** and **K** move to the next or previous item in the view you're in. On the Timeline and the List they select it, so its details open beside it; on Today, Sprint, Capacity and the Roadmap they move keyboard focus, and **Enter** opens it. Once you're on a row there, the **Up** and **Down** arrows do the same. In People load, **Enter** on a person opens their card. At either end they stay put and say so.
 
+With a task or initiative selected on the Timeline or the List, **O** puts the cursor in its owner picker: type a name and press **Enter** to add them, or **Backspace** to take off the last one. It's a plan edit, so it works while you're editing. On a Jira item it sets the plan's lead, never Jira's assignee. An initiative whose owners come from its tasks says so instead.
+
 Unsent notes, quick updates and blocker explanations stay with their plan and item during this session when details redraw. They clear after successful submission. They are temporary browser-session drafts; submit the text before closing the page. Saving other plan edits does not submit a composer draft.
 
 Use **Connect assistant** in the toolbar to set up the [private assistant folder](assistant-workflow.md). Proposed changes wait for your review. Common initiative and task updates remain visible; open **Organize this initiative** or **Move this task** for structural changes.
