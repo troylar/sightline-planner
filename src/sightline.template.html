@@ -220,6 +220,7 @@ button.lchip{padding:2px 9px;cursor:pointer}
 .banner.info{background:var(--surface);border:1px solid var(--rule)}
 .showstrip{flex-wrap:wrap;row-gap:6px}
 .showstrip .slabel{color:var(--ink-2)}
+.showgap{flex:1 0 100%;color:var(--ink-2);font-size:12.5px}
 .showstrip .schips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;flex:1 1 auto}
 .showchip{display:inline-flex;align-items:center;gap:6px;max-width:100%;min-width:0;border:1px solid var(--rule);background:var(--surface);color:var(--ink);border-radius:999px;padding:3px 6px 3px 10px;font:inherit;font-size:12.5px;cursor:pointer;transition:background-color .15s,border-color .15s}
 .showchip .sk{color:var(--ink-2)}
@@ -4236,7 +4237,26 @@ function showStrip(){
     h("span",{class:"slabel"}, "Showing"),
     h("span",{class:"schips"}, ...bars.map(id=>chip("bar", id, "Initiative", chartLabel(barById(id)))), ...ppl.map(id=>chip("person", id, "Person", personName(id))),
       rest ? h("button",{type:"button",class:"linkish",id:"showMore",onclick:e=>{ e.stopPropagation(); openFilterPop(); }}, `and ${rest} more filter${rest === 1 ? "" : "s"}`) : null),
-    h("button",{type:"button",class:"linkish",id:"showAll",onclick:()=>{ navStep(); UI.view = null; setFilter(x=>{ Object.assign(x, normFilter({})); }); setStatus("Showing all work. Back puts your filters back."); showSay("Showing all work."); focusShown(); }}, "Show all work"));
+    h("button",{type:"button",class:"linkish",id:"showAll",onclick:()=>{ navStep(); UI.view = null; setFilter(x=>{ Object.assign(x, normFilter({})); }); setStatus("Showing all work. Back puts your filters back."); showSay("Showing all work."); focusShown(); }}, "Show all work"),
+    h("div",{class:"showgap",id:"showGap",hidden:true}));
+}
+// On the Timeline, when nothing Show only leaves is in the dates on screen, the strip says where it is and goes there
+// (scrolling, or the sprint it's in, never a new zoom); when nothing matches at all, it says so. Checked as you scroll.
+function showGap(){
+  const el = $("#showGap"); if (!el) return;
+  const f = UI.filter, v = UI.ws === "timeline" ? visibleDays() : null, F = v && fitSpan();
+  if (!v || (!F.none && F.spans.some(([x, y])=>x <= v[1] && y >= v[0]))){ el.hidden = true; el.replaceChildren(); return; }
+  el.hidden = false;
+  if (F.none){ const b = (f.bars || []).map(barById).filter(Boolean), pp = (f.people || []).filter(id=>personById(id)), rest = fCount(normFilter({...clone(f), bars:[], people:[]}));
+    el.replaceChildren(h("span",{}, rest ? "Nothing matches these chips and your other filters." : b.length === 1 && pp.length === 1 ? `${personName(pp[0])} has no work on "${chartLabel(b[0])}".` : "Nothing matches these chips."), " ",
+      h("button",{type:"button",class:"linkish",id:"showGapAll",onclick:()=>$("#showAll")?.click()}, "Show all work"));
+    return; }
+  const after = F.spans.filter(([x])=>x > v[1]).sort((p, q)=>p[0] - q[0])[0], before = F.spans.filter(([, y])=>y < v[0]).sort((p, q)=>p[0] - q[0])[0];
+  const to = !before ? after[0] : !after ? before[0] : after[0] - v[1] <= v[0] - before[1] ? after[0] : before[0];
+  el.replaceChildren(h("span",{}, `Nothing for these chips in the dates on screen. Their work is ${F.a0 === F.z0 ? fmtDay(F.a0) : `${fmtDay(F.a0)} – ${fmtDay(F.z0)}`}.`), " ",
+    h("button",{type:"button",class:"linkish",id:"showGapGo",onclick:()=>{ const sp = chosenSprint() && sprintList().find(x=>to >= x.a && to <= x.z + 3);
+      if (sp) chooseSprint(sp.a); else scrollViewTo(Math.max(startDay(), UI.zoom === "days" ? to : mondayOf(to)));
+      updatePager(); focusShown(); }}, "Go to it"));
 }
 function drawBanners(){
   const host = $("#banners");
@@ -5937,16 +5957,16 @@ let noteMemo = null;                       // notes by item within one draw (not
 let fitMemo = null;                        // fitSpan within one draw (the zoom asks it many times); render and commit drop it
 function fitSpan(){ if (fitMemo) return fitMemo; return fitMemo = fitSpan0(); }
 function fitSpan0(){                      // the days the shown work covers: its first start to its last end, inside the plan
-  const f = UI.filter, R = fRangeDays(f), hs = HS(), tf = tasksFiltered(f); let a = Infinity, z = -Infinity; const add = (x, y) => { if (x < a) a = x; if (y > z) z = y; };
+  const f = UI.filter, R = fRangeDays(f), hs = HS(), tf = tasksFiltered(f), spans = []; let a = Infinity, z = -Infinity; const add = (x, y) => { if (x < a) a = x; if (y > z) z = y; spans.push([x, y]); };
   S.bars.forEach(b=>{ if (b.parked || !barVisible(b, f, R)) return;
     if (!hasTasks(b) || !tf) add(wkDay(b.start), barEndDay(b));
     (b.tasks || []).forEach(t=>{ if (taskVisible(t, f, R)){ const sp = taskSpan(t, hs); add(sp.s, sp.e); } });
     storiesOf(b).forEach(x=>{ if (x.drawn && storyVisible(x, f, R)) add(x.s, x.e); }); });
   S.milestones.forEach(m=>{ if (m.at != null && msVisible(m, f, R)){ const d = atToDay(m.at); add(d, d); } });
   if (!fActive(f)){ gateItems().forEach(g=>{ if (g.day != null) add(g.day, g.day); }); releasesInPlan().forEach(r=>{ const d = isoToDay(r.date); add(d, d); }); }   // gates and releases, when nothing's filtered
-  if (!isFinite(a)) return {a:startDay(), z:planEndDay()};
+  if (!isFinite(a)) return {a:startDay(), z:planEndDay(), spans, none:true};
   if (R){ a = Math.max(a, R[0]); z = Math.min(z, R[1]); }
-  return {a: Math.max(startDay(), mondayOf(a)), z: Math.max(startDay(), Math.min(planEndDay(), z))};
+  return {a: Math.max(startDay(), mondayOf(a)), z: Math.max(startDay(), Math.min(planEndDay(), z)), spans, a0:a, z0:z};
 }
 const fitWeeks = () => { const F = fitSpan(); return Math.max(1, Math.min(S.meta.weeks, Math.ceil((F.z + 1 - F.a) / 7))); };
 let fitKey = "";                          // what Fit last snapped to, so it moves only when the shown work does
@@ -6076,7 +6096,7 @@ function visibleDays(){
   const a = startDay() + Math.round(sc.scrollLeft / tw * W * 7), z = startDay() + Math.round((sc.scrollLeft + sc.clientWidth - UI.labelW.weeks) / tw * W * 7) - 1;
   return [a, Math.min(planEndDay(), Math.max(a, z))];
 }
-function updatePager(){ laneScrollCheck(); const r = $("#pgRange"), t = $("#pgToday"), v = visibleDays(); if (!r || !v) return;
+function updatePager(){ laneScrollCheck(); showGap(); const r = $("#pgRange"), t = $("#pgToday"), v = visibleDays(); if (!r || !v) return;
   const sw = sprintWindow(), fitted = sw && Math.abs(v[0] - sw.a) <= 3 && Math.abs(v[1] - sw.z) <= 3;   // a sprint fitted edge to edge: its own dates, not the pixels' rounding
   r.textContent = fitted ? `${fmtDay(sw.a)} – ${fmtDay(sw.z)}` : `${fmtDay(v[0])} – ${fmtDay(v[1])}`; const td = todayDay();
   { const p = $("#zoomSprint"); if (p) p.title = `On screen: ${r.textContent}. Fit the view to one sprint, edge to edge.`; }

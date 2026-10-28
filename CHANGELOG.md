@@ -6,6 +6,10 @@
 
 Show only, as chips you can take off.
 
+### New
+
+- **Show only tells you where the work is** (Timeline). When nothing your chips show is in the dates on screen, a line under the chips says when that work is, and Go to it scrolls there without changing the zoom. If the chips match nothing at all, it says so, with Show all work beside it. *Where:* The Showing strip above the Timeline
+
 ### Improved
 
 - **Focus is now Show only, with chips** (Timeline). Click Show only this initiative or Show Avery's work on a card, or press Z. A chip above the chart says what's shown: Initiative: Search, Person: Avery. Click a chip to take it off, or Show all work to clear every filter. Back undoes each step, and the zoom stays as it was. *Where:* Timeline, List and Capacity: the card's Show only button, Z, or a double-click on an initiative

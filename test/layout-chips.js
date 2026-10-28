@@ -58,6 +58,29 @@ function contrast(sel){
       await page.evaluate(()=>{ present = false; document.body.classList.remove("present"); render(); }); await page.waitForTimeout(100);
       if (w === 1500){ await page.evaluate(()=>{ S.bars.find(x=>x.id === "m2").label = "Search relevance"; showOnly("bar", "m2"); }); await page.waitForTimeout(150);
         await page.screenshot({path:path.join(process.env.SHOTS || require("os").tmpdir(), `chips-${theme}.png`), clip:{x:0, y:0, width:w, height:420}}); }
+      // Two chips whose work is out of the dates on screen: the strip says where it is, and Go to it gets there without a new zoom
+      const gap = () => page.evaluate(()=>{ const g = document.querySelector("#showGap"), v = visibleDays(), F = fitSpan();
+        return {shown:!!g && !g.hidden && g.getClientRects().length > 0, text:g ? g.textContent : "", go:!!document.querySelector("#showGapGo"), all:!!document.querySelector("#showGapAll"),
+          inView:!!v && (F.spans || []).some(([x, y])=>x <= v[1] && y >= v[0]), zoom:UI.zoom, zoomN:UI.zoomN, filter:[...UI.filter.bars, ...UI.filter.people].join()}; });
+      for (const z of ["days", "weeks"]){
+        await page.evaluate(([A, z])=>{ UI.filter = normFilter({}); showOnly("bar", "m2"); showOnly("person", A); if (z === "weeks"){ UI.zoomN = 1; UI.zoomSp = null; } setZoom(z); }, [A, z]); await page.waitForTimeout(150);
+        await page.evaluate(()=>{ const sc = $("#gscroll"); sc.scrollLeft = sc.scrollWidth; }); await page.waitForTimeout(200);
+        const g0 = await gap();
+        ok(`L8 ${tag} ${z}: with nothing for the chips on screen, the strip says when their work is and offers Go to it`, g0.shown && !g0.inView && /^Nothing for these chips in the dates on screen\. Their work is .+\./.test(g0.text) && g0.go, JSON.stringify(g0));
+        if (w === 1500 && z === "days") await page.evaluate(()=>document.activeElement && document.activeElement.blur()), await page.screenshot({path:path.join(process.env.SHOTS || require("os").tmpdir(), `chips-gap-${theme}.png`), clip:{x:0, y:0, width:w, height:560}});
+        await page.evaluate(()=>document.querySelector("#showGapGo")?.click()); await page.waitForTimeout(250);
+        const g1 = await gap();
+        ok(`L9 ${tag} ${z}: Go to it brings the work on screen, in the same zoom, and the note goes away`, g1.inView && !g1.shown && g1.zoom === z && g1.zoomN === g0.zoomN && g1.filter === g0.filter, JSON.stringify([g0, g1]));
+        if (w === 1500 && z === "days"){ await page.evaluate(()=>document.activeElement && document.activeElement.blur()); await page.waitForTimeout(50);
+          await page.screenshot({path:path.join(process.env.SHOTS || require("os").tmpdir(), `chips-go-${theme}.png`), clip:{x:0, y:0, width:w, height:560}}); }
+      }
+      // Chips that match nothing at all say so and offer Show all work
+      const none = await page.evaluate(()=>{ UI.zoomN = 0; const idle = S.people.find(p=>{ UI.filter = normFilter({bars:["m2"], people:[p.id]}); fitMemo = null; return !!fitSpan().none; }); UI.filter = normFilter({}); fitMemo = null; render();
+        if (!idle) return null; showOnly("bar", "m2"); showOnly("person", idle.id); return idle.name; }); await page.waitForTimeout(200);
+      const g2 = await gap();
+      ok(`L10 ${tag}: chips that match nothing say so and offer Show all work`, !!none && g2.shown && g2.text.startsWith(`${none} has no work on "`) && g2.all && !g2.go, JSON.stringify([none, g2]));
+      await page.evaluate(()=>document.querySelector("#showGapAll")?.click()); await page.waitForTimeout(150);
+      ok(`L11 ${tag}: Show all work there clears the chips, and the note is gone`, await page.evaluate(()=>!document.querySelector("#showStrip") && !fActive()), "");
       await page.close();
     }
     ok("no page errors", !errs.length, errs.slice(0, 2).join(" | "));
