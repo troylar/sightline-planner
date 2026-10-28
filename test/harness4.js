@@ -45,8 +45,7 @@ const w=dom.window,d=w.document,ev=s=>w.eval(s),wait=ms=>new Promise(r=>setTimeo
   ok("day view renders task bars", d.querySelectorAll(".tbar").length===2 && d.querySelectorAll(".gday").length>20);
   ok("holiday column shaded", d.querySelectorAll(".gday.hol").length===1);
   ev(`openInitiative("${b0.id}")`);
-  ok("drill-in shows one initiative + back link", d.querySelectorAll(".dlabel").length===1 && /Back/.test(d.querySelector(".gcorner").textContent) && ev("drillOn()") && !!d.querySelector("#drillPath"));
-  ev(`drillEnd(); setZoom("days", "${b0.id}")`);   // the rest of this file expects the plain Days framing, without a focus over it
+  ok("drill-in shows one initiative + back link", d.querySelectorAll(".dlabel").length===1 && /All initiatives/.test(d.querySelector(".gcorner").textContent));
   ok("drill-in without a focus keeps its own back link", d.querySelectorAll(".dlabel").length===1 && /All initiatives/.test(d.querySelector(".gcorner").textContent));
   ev("UI.ws='people'; render()");
   ok("day-level load", /working day/.test(d.querySelector("#loadHint").textContent) && d.querySelectorAll("#load .p").length>=1);

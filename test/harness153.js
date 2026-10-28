@@ -50,20 +50,20 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     const before = T("VIS()")?.length; ev(`undo && undo(); UI.filter = normFilter({}); render();`);
     ok("V8 taking the pick off brings every initiative back", before === 4 && T("VIS()")?.length === all);
 
-    // The card: Focus took the place of Show only this (harness166); picks still come from the Filters panel and chips.
+    // The card offers Show only this initiative (harness166); picks also come from the Filters panel and chips.
     ev(`select("bar", "c2");`); await wait(30);
-    ok("C1 an initiative's card offers Focus, not Show only this", !$("#f-only") && $("#f-focus")?.textContent === "Focus", $("#f-focus")?.textContent);
+    ok("C1 an initiative's card offers Show only this initiative", $("#f-only")?.textContent === "Show only this initiative" && !$("#f-focus"), $("#f-only")?.textContent);
     ev(`setOnly("c2", true);`); await wait(30);
     ok("C2 setOnly still picks that initiative", T("UI.filter.bars")?.join() === "c2" && T("VIS()")?.join() === "c1,c2,c3");
     ok("C4 the status line says what's shown", /Showing only/.test($("#status")?.textContent || J("document.body.textContent")));
     ok("C9 the scope line names the pick", /only Runtime library spike/.test(J("scopeText()")), J("scopeText()"));
 
     // It stays said: a strip above the chart while picks are on, in Present too; late counts say they're the whole plan.
-    const strip = $("#onlyStrip");
-    ok("B1 a strip says only one initiative is shown, for as long as it is", strip && /Showing only "Runtime library spike"/.test(strip.textContent) && $("#onlyAll"), strip && strip.textContent);
+    const strip = $("#showStrip");
+    ok("B1 a strip shows the pick as a chip, for as long as it's on", strip && /Initiative\s*Runtime library spike/.test(strip.textContent) && strip.querySelector('[data-show="bar:c2"]') && $("#showAll"), strip && strip.textContent);
     ok("B2 the late count says it's for the whole plan while picking", /late in the whole plan:/.test($("#banners")?.textContent || ""), ($("#banners")?.textContent || "").slice(0, 120));
     ev(`present = true; drawBanners();`);
-    ok("B3 Present shows the strip too", !!$("#onlyStrip"));
+    ok("B3 Present shows the strip too", !!$("#showStrip"));
     ev(`present = false; drawBanners();`);
     // The Filters panel.
     ev(`openFilterPop();`); await wait(30);
@@ -85,8 +85,10 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("S1 a saved view keeps the picks", saved?.join() === "c2,m5", JSON.stringify(saved));
     ev(`UI.filter = normFilter({}); render(); applyView("personal", personalViews().find(v=>v.name === "Chat only"));`);
     ok("S2 opening the view picks them again", T("UI.filter.bars")?.join() === "c2,m5");
-    $("#onlyAll")?.click(); await wait(30);
-    ok("B4 the strip's Show every initiative takes every pick off, and the strip goes", T("UI.filter.bars")?.length === 0 && !$("#onlyStrip") && !/in the whole plan/.test($("#banners")?.textContent || ""));
+    $('#showStrip [data-show="bar:c2"]')?.click(); await wait(30);
+    ok("B4 a chip's × takes that pick off and leaves the others", T("UI.filter.bars")?.join() === "m5" && !!$('#showStrip [data-show="bar:m5"]'));
+    $("#showAll")?.click(); await wait(30);
+    ok("B4 …and Show all work takes every pick off, and the strip goes", T("UI.filter.bars")?.length === 0 && !$("#showStrip") && !/in the whole plan/.test($("#banners")?.textContent || ""));
     ev(`applyView("personal", personalViews().find(v=>v.name === "Chat only"));`);
     const rows = T(`listModel().rows.filter(r=>r.type === "bar").map(r=>r.id).sort()`);
     ok("L1 the List shows only those initiatives and their trees", rows?.join() === "c1,c2,c3,m5", rows?.join());

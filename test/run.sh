@@ -228,7 +228,7 @@ main(){
 # is installed (npm ci, then npx playwright install chromium, or PLAYWRIGHT=/path/to/node_modules/playwright). A skip fails
 # the run, so a local pass means what CI's does, unless SIGHTLINE_NO_BROWSER=1 says the skip is on purpose.
 browser_checks(){
-  local t suites=(layout-shelves layout-labels layout-avatars side-scroll capture-dialog layout-focus back-place)
+  local t suites=(layout-shelves layout-labels layout-avatars side-scroll capture-dialog layout-chips back-place)
   if node -e 'require(process.env.PLAYWRIGHT || "playwright")' 2>/dev/null || [[ -n "$CI" ]]; then
     for t in "${suites[@]}"; do run_suite "$t" 180 node "$t.js"; done
     return
