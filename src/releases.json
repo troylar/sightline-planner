@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.148.0",
+    "date": "2026-10-28",
+    "headline": "Back and Forward keep your place",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Navigation",
+        "title": "Back puts you where you were",
+        "before": "Going back to a page brought back the item you had open, but the page, the chart and the details panel jumped to the top or drifted sideways.",
+        "now": "Back and Forward bring each page back as you left it: the same item open, and the page, the chart and the details panel scrolled where they were. Going back from one item to another puts the chart where the first one was. Links stay clean: scroll positions aren't in them.",
+        "where": "The browser's Back and Forward buttons, on every page"
+      }
+    ]
+  },
+  {
     "version": "1.147.1",
     "date": "2026-10-27",
     "headline": "Teammates' tasks stay readable while dimmed",
