@@ -48,7 +48,9 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
 
     ev(`{ const b = S.bars.find(x=>x.id === "c3"), st = dayToIso(nearWeekday(wkDay(b.start))); b.tasks = [{id:"ta", label:"Contract first", start:st, days:2, owners:[], status:"notstarted"}, {id:"tb", label:"Wire it up", start:st, days:2, owners:[], status:"notstarted", dependsOn:["ta"]}, {id:"tc", label:"Unrelated docs", start:st, days:1, owners:[], status:"notstarted"}]; }
         render(); select("task", "tb"); render();`); await wait(10);
-    d.querySelector("#f-linked")?.click(); await wait(20);
+    const swap = d.querySelector("#f-linkedOnly");
+    ok("L20 while linked work is shown, a card offers Add to linked work and Show only its linked work", /Add to linked work/.test(d.querySelector("#f-linked")?.textContent || "") && /Show only its linked work/.test(swap?.textContent || ""));
+    swap?.click(); await wait(20);
     const tv = J(`["ta","tb","tc"].filter(id=>taskVisible(taskById(id).t))`);
     ok("L8 from a task: its own chain of tasks shows, its siblings with no link don't, and its initiative holds the row", tv.join() === "ta,tb" && J("VIS()").includes("c3") && J("VIS()").includes("c1"), tv.join() + " / " + J("VIS()").join(","));
 
@@ -75,6 +77,36 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ev(`UI.ws = "list"; render();`); await wait(20);
     const rows = [...d.querySelectorAll("#listTable tr[data-lk^='list:bar:']")].map(r=>r.dataset.lk.slice(9));
     ok("L15 the List shows the same linked work", rows.includes("c3") && rows.includes("c6") && !rows.includes("c2"), rows.join(","));
+
+    // Several picks: the union of what's linked to each, one chip per pick, each taken off on its own.
+    ev(`UI.ws = "timeline"; UI.filter = normFilter({}); render(); showLinked("bar", "c3"); select("bar", "m2"); render();`); await wait(20);
+    const before2 = J("VIS()");
+    d.querySelector("#f-linked")?.click(); await wait(20);
+    const v2 = J("VIS()"), chips2 = [...d.querySelectorAll("#showStrip .linkchip")].map(c=>c.dataset.show);
+    ok("L21 Add to linked work shows both picks' linked work together, with a chip for each", v2.includes("m2") && v2.includes("m3") && v2.includes("c6") && !before2.includes("m2") && chips2.join() === "linked:bar:c3,linked:bar:m2", v2.join(",") + " | " + chips2.join());
+    ok("L22 …the status line names both and counts the others", /Showing .* and .* and the \d+ items linked to them/.test(d.querySelector("#status")?.textContent || ""), d.querySelector("#status")?.textContent);
+    d.querySelector('#showStrip [data-show="linked:bar:c3"]')?.click(); await wait(20);
+    ok("L23 taking one chip off leaves the other pick, still at Fit", J("UI.filter.linked").map(x=>x.id).join() === "m2" && X("zoomN()") === 0 && !J("VIS()").includes("c3"), JSON.stringify(J("UI.filter.linked")) + " " + J("VIS()").join(","));
+    ev(`select("bar", "m2"); render();`); await wait(10);
+    ok("L24 a lone pick's card doesn't offer to remove itself (the chip does that)", !d.querySelector("#f-linked"));
+    ev(`["c1","c2","c4","c5"].forEach(id=>showLinked("bar", id, true)); select("bar", "u4"); render();`); await wait(20);
+    const full = d.querySelector("#f-linked");
+    ok("L25 five picks is the most: a sixth is refused with a reason, and the button says why", J("UI.filter.linked").length === 5 && X(`showLinked("bar", "u4", true)`) === false && /up to 5/.test(d.querySelector("#status")?.textContent || "") && full?.disabled === true, (d.querySelector("#status")?.textContent || "") + " " + (full && full.title));
+    ok("L26 the same pick twice counts once, in a link too", J(`normFilter({linked:[{t:"bar",id:"c1"},{t:"bar",id:"c1"},{t:"ms",id:"ms6"}]}).linked`).length === 2);
+    ev(`select("bar", "c5"); render(); openFind(); renderFind("linked");`); await wait(10);
+    const cmd2 = [...d.querySelectorAll("#findList .fhit.fcmd .ft")].map(x=>x.textContent);
+    ok("L27 Find offers to take a pick off", cmd2.includes("Take the selection off linked work"), cmd2.join(" | "));
+    ev(`findCmd("linked-remove");`); await wait(20);
+    ok("L28 …and does", !J("UI.filter.linked").some(x=>x.id === "c5") && J("UI.filter.linked").length === 4);
+    ev(`select("bar", "u4"); render(); openFind(); renderFind("linked");`); await wait(10);
+    ok("L29 Find offers to add the selection while there's room", [...d.querySelectorAll("#findList .fhit.fcmd .ft")].some(x=>x.textContent === "Add the selection to linked work"));
+    ev(`closeFind && closeFind();`);
+    // Placement: the view buttons sit together under the title, not wrapped in with + Task.
+    ev(`UI.filter = normFilter({}); select("bar", "c3"); render();`); await wait(10);
+    const lb = d.querySelector("#f-linked");
+    ok("L30 Show only this initiative and Show linked work sit together in their own row, apart from + Task", !!lb && lb.parentElement.classList.contains("viewacts") && !!lb.parentElement.querySelector("#f-only") && ![...lb.parentElement.children].some(c=>/\+ Task/.test(c.textContent)));
+    ok("L31 a gate tied to the linked work counts toward Fit", (()=>{ ev(`S.gates.find(g=>g.id === "gate-3").date = dayToIso(nearWeekday(planEndDay() - 7)); dropJiraMemos(); render(); showLinked("ms", "ms6"); dropJiraMemos();`); const F = J("fitSpan()"), g = J(`gateItems().find(g=>g.id === "gate-3")`); return !!g && g.day != null && J("GV()").includes("gate-3") && F.a0 <= g.day && F.z0 >= g.day; })(), JSON.stringify(J("fitSpan()")));
+    ok("L32 the Key says what the dashed outline means", /Directly linked to the selection/.test(d.querySelector("#lgDirect")?.textContent || "") && !!d.querySelector("#legend #lgDirect i.lg-direct"));
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
   console.log(R.join("\n")); const f = R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

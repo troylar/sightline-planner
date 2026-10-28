@@ -168,6 +168,7 @@ body:not(.canEdit) .bar .h,body:not(.canEdit) .tbar .h{display:none}
 .linkline line{stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4}
 .linktarget{outline:3px solid var(--accent)!important;outline-offset:2px}
 .linked{outline:2px dashed var(--accent);outline-offset:2px}
+.legend i.lg-direct{background:transparent;outline:2px dashed var(--accent);outline-offset:-2px}
 .field .deps label,.field label.fcheck,.deps label{display:flex;gap:7px;align-items:flex-start;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:400;color:var(--ink);line-height:1.35;padding:2px 0}
 .field .deps label input,.deps label input,label.fcheck input{margin-top:2px;flex:none;width:auto!important;min-width:0}
 .deps .lg{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);font-weight:600;margin:6px 0 2px}
@@ -247,6 +248,7 @@ body:not(.hasSel) #side{display:none}
 .field label,.flabel{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);font-weight:600}
 .field input,.field select,.field textarea{border:1px solid var(--rule);background:var(--paper);border-radius:6px;padding:6px 8px;width:100%}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.viewacts{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
 .deps{border:1px solid var(--rule);border-radius:6px;max-height:180px;overflow:auto;padding:4px 6px;background:var(--paper);font-size:12.5px}
 .deps label{display:flex;gap:6px;align-items:flex-start;padding:2px 0;cursor:pointer}
 .deps label.off{opacity:.5;cursor:not-allowed}
@@ -1590,6 +1592,7 @@ body:has(> #bootfail) > :not(#bootfail){display:none !important}
       <span title="Initiative"><i class="lg-init"></i>Initiative</span><span title="Dates come from its tasks, so drag its tasks (or the whole bar) instead of resizing"><b class="lg-dk">≡</b>Dates from tasks</span><span title="Task"><i class="lg-task"></i>Task</span>
       <span><i></i>Work</span><span><i class="lg-gated"></i>Gated</span><span><i class="lg-waiting"></i>Waiting</span><span><i class="lg-done"></i>Done</span>
       <span><i class="lg-risk"></i>At risk</span><span><i class="lg-late"></i>Late</span>
+      <span id="lgDirect" title="With an item selected, a dashed outline marks what it waits for or what waits for it directly. Show linked work also shows what's linked through those."><i class="lg-direct"></i>Directly linked to the selection</span>
       <span class="lg-weeks"><i class="lg-ghost"></i>Baseline</span>
       <span class="lg-weeks"><i class="lg-dia"></i>Milestone</span><span class="lg-weeks"><i class="lg-dia lg-open"></i>Gated milestone</span><span class="lg-weeks"><i class="lg-dia lg-dot"></i>Unconfirmed</span>
       <span><i class="lg-hol"></i>Holiday</span>
@@ -2126,7 +2129,7 @@ function normFilter(f){
   const r = f.range && typeof f.range === "object" ? f.range : {}, type = RANGES.some(x=>x[0]===r.type) ? r.type : "all";
   return {bars:list(f.bars,null,100), tags:list(f.tags,null,100), hideTags:list(f.hideTags,null,100), labels:list(f.labels,null,100), hideLabels:list(f.hideLabels,null,100), authors:list(f.authors,null,100), people:list(f.people,null,100), lanes:list(f.lanes,null,100), status:list(f.status, [...STATUSES.map(x=>x[0]), "blocked"]), mstatus:list(f.mstatus, MSTATUS), kinds:list(f.kinds, FILTER_KINDS.map(x=>x[0])),
     range: type === "custom" ? {type, from: validIso(r.from) ? r.from : "", to: validIso(r.to) ? r.to : ""} : {type}, showEmpty: f.showEmpty === true,
-    linked: (Array.isArray(f.linked) ? f.linked : []).filter(x=>x && LINK_TYPES.includes(x.t) && str(x.id)).map(x=>({t:x.t, id:str(x.id).slice(0, 60)})).slice(0, 5)};
+    linked: (Array.isArray(f.linked) ? f.linked : []).filter(x=>x && LINK_TYPES.includes(x.t) && str(x.id)).map(x=>({t:x.t, id:str(x.id).slice(0, 60)})).filter((x, i, a)=>a.findIndex(y=>y.t === x.t && y.id === x.id) === i).slice(0, 5)};
 }
 const LINK_TYPES = ["bar","task","ms","gate"];
 const LW_DEFAULT = {weeks:160, days:220};
@@ -4245,7 +4248,7 @@ function showStrip(){
   return h("div",{class:"banner info showstrip",id:"showStrip",role:"group","aria-label":"Showing only"},
     h("span",{class:"slabel"}, "Showing"),
     h("span",{class:"schips"}, ...lk.map(x=>h("button",{type:"button",class:"showchip linkchip","data-show":"linked:" + x.t + ":" + x.id,"aria-label":`Stop showing only what's linked to ${linkName(x)}`,title:`Stop showing only what's linked to ${linkName(x)}`,
-        onclick:()=>{ linkedOff(); focusShown(); }}, h("span",{class:"sk"}, "Linked to"), h("span",{class:"sn"}, linkName(x)), h("span",{class:"sx","aria-hidden":"true"}, "×"))),
+        onclick:()=>{ linkedOff(x); focusShown(); }}, h("span",{class:"sk"}, "Linked to"), h("span",{class:"sn"}, linkName(x)), h("span",{class:"sx","aria-hidden":"true"}, "×"))),
       ...bars.map(id=>chip("bar", id, "Initiative", chartLabel(barById(id)))), ...ppl.map(id=>chip("person", id, "Person", personName(id))),
       rest ? h("button",{type:"button",class:"linkish",id:"showMore",onclick:e=>{ e.stopPropagation(); openFilterPop(); }}, `and ${rest} more filter${rest === 1 ? "" : "s"}`) : null),
     h("button",{type:"button",class:"linkish",id:"showAll",onclick:()=>{ navStep(); UI.view = null; setFilter(x=>{ Object.assign(x, normFilter({})); }); setStatus("Showing all work. Back puts your filters back."); showSay("Showing all work."); focusShown(); }}, "Show all work"),
@@ -6019,7 +6022,8 @@ function fitSpan0(){                      // the days the shown work covers: its
     (b.tasks || []).forEach(t=>{ if (taskVisible(t, f, R)){ const sp = taskSpan(t, hs); add(sp.s, sp.e); } });
     storiesOf(b).forEach(x=>{ if (x.drawn && storyVisible(x, f, R)) add(x.s, x.e); }); });
   S.milestones.forEach(m=>{ if (m.at != null && msVisible(m, f, R)){ const d = atToDay(m.at); add(d, d); } });
-  if (!fActive(f)){ gateItems().forEach(g=>{ if (g.day != null) add(g.day, g.day); }); releasesInPlan().forEach(r=>{ const d = isoToDay(r.date); add(d, d); }); }   // gates and releases, when nothing's filtered
+  if (!fActive(f)){ gateItems().forEach(g=>{ if (g.day != null) add(g.day, g.day); }); releasesInPlan().forEach(r=>{ const d = isoToDay(r.date); add(d, d); }); }
+  else if (linkedScope(f)) gateItems().forEach(g=>{ if (g.day != null && gateVisible(g, f, R)) add(g.day, g.day); });   // a linked gate is part of what's shown   // gates and releases, when nothing's filtered
   if (!isFinite(a)) return {a:startDay(), z:planEndDay(), spans, none:true};
   if (R){ a = Math.max(a, R[0]); z = Math.min(z, R[1]); }
   return {a: Math.max(startDay(), mondayOf(a)), z: Math.max(startDay(), Math.min(planEndDay(), z)), spans, a0:a, z0:z};
@@ -7196,6 +7200,8 @@ const COMMANDS = [
   {id:"owners", label:"Change who owns the selection", also:"owner lead assign people", keys:["O"], when:()=>CMD_VIEWS.includes(UI.ws) && selLeaf() && editable(), run:()=>openOwners()},
   {id:"link-epic", label:"Link a Jira epic to the selected initiative", also:"jira epic stories count", when:()=>CMD_VIEWS.includes(UI.ws) && sel?.type === "bar" && !!barById(sel.id) && editable() && !present, run:()=>openEpicLink()},
   {id:"linked", label:"Show only what's linked to the selection", also:"linked dependencies depends waits path upstream downstream", when:()=>CMD_VIEWS.includes(UI.ws) && !!sel && LINK_TYPES.includes(sel.type) && !!linkTarget({t:sel.type, id:sel.id}), run:()=>{ showLinked(sel.type, sel.id); focusShown(); }},
+  {id:"linked-add", label:"Add the selection to linked work", also:"linked pick another more add", when:()=>CMD_VIEWS.includes(UI.ws) && !!sel && LINK_TYPES.includes(sel.type) && linkSeeds().length > 0 && linkSeeds().length < LINK_MAX && !isSeed(sel.type, sel.id) && !!linkTarget({t:sel.type, id:sel.id}), run:()=>{ showLinked(sel.type, sel.id, true); focusShown(); }},
+  {id:"linked-remove", label:"Take the selection off linked work", also:"linked remove pick", when:()=>CMD_VIEWS.includes(UI.ws) && !!sel && isSeed(sel.type, sel.id), run:()=>{ linkedOff({t:sel.type, id:sel.id}); focusShown(); }},
   {id:"week-later", label:"Move the selection a week later", also:"push slip delay", when:()=>!!selMovable(), run:()=>moveSelTo(selStartDay(selMovable()) + 7)},
   {id:"week-earlier", label:"Move the selection a week earlier", also:"pull sooner", when:()=>!!selMovable(), run:()=>moveSelTo(selStartDay(selMovable()) - 7)},
   {id:"next-sprint", label:"Move the selection to the next sprint", also:"push slip", when:()=>{ const it = selMovable(); return !!it && nextSprintDay(it) != null; }, run:()=>moveSelTo(nextSprintDay(selMovable()))},
@@ -7393,26 +7399,47 @@ function showOff(k, id){ const key = k === "bar" ? "bars" : "people"; navStep();
 // Show only what's linked to an item (see linkedItems). It takes the place of initiative picks; other filters still apply.
 const linkTarget = x => x.t === "bar" ? barById(x.id) : x.t === "task" ? taskById(x.id)?.t : x.t === "ms" ? S.milestones.find(m=>m.id === x.id) : x.t === "gate" ? gateById(x.id) : null;
 const linkName = x => { const o = linkTarget(x); return !o ? "a missing item" : x.t === "bar" ? chartLabel(o) : x.t === "task" ? taskTitle(o) : x.t === "ms" ? o.what || "Milestone" : o.gate || "Gate"; };
-let linkZoom = null;                     // the zoom before Show linked work switched to Fit; taking the chip off puts it back
-function showLinked(t, id){
+let linkZoom = null;                     // the zoom before Show linked work switched to Fit; taking the last chip off puts it back
+const LINK_MAX = 5;
+const linkSeeds = () => (UI.filter.linked || []).filter(x=>linkTarget(x));
+const isSeed = (t, id) => linkSeeds().some(x=>x.t === t && x.id === id);
+const nameList = a => a.length < 3 ? a.join(" and ") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+// add: keep the picks you have and add this one (up to LINK_MAX); otherwise this one takes their place.
+function showLinked(t, id, add){
   const x = {t, id}; if (!linkTarget(x)) return false;
-  if (JSON.stringify(UI.filter.linked || []) === JSON.stringify([x])) return true;
-  navStep(); setFilter(f=>{ f.linked = [x]; f.bars = []; });
+  const have = linkSeeds();
+  if (add && have.some(y=>y.t === t && y.id === id)) return true;
+  if (!add && JSON.stringify(have) === JSON.stringify([x])) return true;
+  if (add && have.length >= LINK_MAX){ setStatus(`You can pick up to ${LINK_MAX} items. Take a chip off to add this one.`); return false; }
+  navStep(); setFilter(f=>{ f.linked = add ? [...have, x] : [x]; f.bars = []; });
   if (UI.ws === "timeline" && zoomN()){ if (!linkZoom) linkZoom = {n:UI.zoomN, sp:UI.zoomSp, p:UI.zoomPreset}; setZoomN(0); }   // Fit, so all of it is on screen
-  const L = linkedScope(), n = L ? L.items - 1 : 0;
-  const say = n ? `Showing ${linkName(x)} and the ${n} item${n === 1 ? "" : "s"} linked to it. Take the chip off, or press Back, to see the rest.` : `Nothing is linked to ${linkName(x)} yet, so it's shown on its own. Take the chip off, or press Back, to see the rest.`;
-  setStatus(say); showSay(say);
+  linkSay();
   if (UI.ws === "timeline"){ const w = fitSpan(); if (w && Number.isFinite(w.a)) scrollViewTo(Math.max(startDay(), w.a)); }
   return true;
 }
-function linkedOff(){ const x = (UI.filter.linked || [])[0]; navStep();
-  if (linkZoom){ const z = linkZoom; linkZoom = null; UI.zoomN = z.n; UI.zoomSp = z.sp; delete UI.zoomPreset; if (z.p != null) UI.zoomPreset = z.p; fitKey = ""; sprintKey = ""; }
-  setFilter(f=>{ f.linked = []; }); showSay(x ? `No longer showing only what's linked to ${linkName(x)}.` : "Showing all work."); }
+// What the status line says: the picks by name and how many other items are linked to them (what's drawn, less the picks).
+function linkSay(){ const seeds = linkSeeds(); if (!seeds.length) return; const L = linkedScope(), names = nameList(seeds.map(linkName));
+  const n = L ? L.items - seeds.length : 0, it = seeds.length === 1 ? "it" : "them";
+  const say = n ? `Showing ${names} and the ${n} item${n === 1 ? "" : "s"} linked to ${it}. Take a chip off, or press Back, to see the rest.` : `Nothing is linked to ${names} yet, so ${seeds.length === 1 ? "it's" : "they're"} shown on ${seeds.length === 1 ? "its" : "their"} own. Take a chip off, or press Back, to see the rest.`;
+  setStatus(say); showSay(say); }
+// Take one pick off (or all, with no x). The zoom comes back when the last one goes.
+function linkedOff(x){ const have = linkSeeds(), left = x ? have.filter(y=>!(y.t === x.t && y.id === x.id)) : []; navStep();
+  if (!left.length && linkZoom){ const z = linkZoom; linkZoom = null; UI.zoomN = z.n; UI.zoomSp = z.sp; delete UI.zoomPreset; if (z.p != null) UI.zoomPreset = z.p; fitKey = ""; sprintKey = ""; }
+  setFilter(f=>{ f.linked = left; });
+  if (left.length) linkSay(); else showSay(have.length === 1 ? `No longer showing only what's linked to ${linkName(have[0])}.` : "Showing all work."); }
+// On an item's card: Show linked work, or, while picks are shown, add it to them or take it off.
 function linkedBtn(t, id){
-  if (JSON.stringify(UI.filter.linked || []) === JSON.stringify([{t, id}])) return null;
-  return h("button",{type:"button",class:"btn nav",id:"f-linked",title:"Show only this and what's linked to it: what it waits for, all the way back, and what waits for it",
-    onclick:()=>{ showLinked(t, id); focusShown(); }}, "Show linked work");
+  const have = linkSeeds(), mine = isSeed(t, id);
+  if (mine && have.length === 1) return null;
+  if (mine) return h("button",{type:"button",class:"btn nav",id:"f-linked",title:"Stop showing what's linked to this one; the other picks stay",onclick:()=>{ linkedOff({t, id}); focusShown(); }}, "Remove from linked work");
+  const show = h("button",{type:"button",class:"btn nav",id:have.length ? "f-linkedOnly" : "f-linked",title:"Show only this and what's linked to it: what it waits for, all the way back, and what waits for it",
+    onclick:()=>{ showLinked(t, id); focusShown(); }}, have.length ? "Show only its linked work" : "Show linked work");
+  if (!have.length) return show;
+  const full = have.length >= LINK_MAX;
+  return [h("button",{type:"button",class:"btn nav",id:"f-linked",disabled:full,title:full ? `You can pick up to ${LINK_MAX} items` : "Add this and what's linked to it to what's shown",
+    onclick:()=>{ showLinked(t, id, true); focusShown(); }}, "Add to linked work"), show];
 }
+const viewActs = (...kids) => kids.flat().some(Boolean) ? h("div",{class:"viewacts"}, ...kids.flat().filter(Boolean)) : null;
 // The button on an initiative's or person's card; gone while it's the only one shown.
 function showOnlyBtn(k, id){
   if (JSON.stringify(UI.filter[k === "bar" ? "bars" : "people"] || []) === JSON.stringify([id])) return null;
@@ -11667,6 +11694,7 @@ function sideBody(put){
           ...rs.map(x=>h("button",{type:"button",class:"nav",onclick:()=>goTo("risk", x.id)}, h("span",{class:"dot " + (x.sev==="high" ? "atrisk" : "inprogress")}), `Risk (${x.sev}): ${x.text.slice(0,50)}`)),
           ...ds.map(x=>h("button",{type:"button",class:"nav",onclick:()=>goTo("decision", x.id)}, h("span",{class:"dot notstarted"}), `Decision${x.due ? " by " + fmtDay(isoToDay(x.due)) : ""}: ${x.text.slice(0,44)}`)))); })(),
       titleOf(b).from === "plan" ? field("f-label","Title", textIn("f-label", ()=>b.label, v=>act("initiative.set", {id:b.id, field:"label", value:v}), {tag:"textarea", attrs:{rows:"3"}, live:true})) : titleOf(b).from === "stale" ? jiraTitleField(b) : null,
+      viewActs(showOnlyBtn("bar", b.id), present ? null : linkedBtn("bar", b.id)),
       h("div",{class:"row2"},
         h("div",{}, field("f-jira","Jira key", textIn("f-jira", ()=>b.jira, v=>b.jira=v.trim(), {attrs:{placeholder:"PROJ-1234"}})), sideOf(b, "bar") === "jira" ? null : [jiraLink(b.jira), barEpics(b).length ? null : jiraLine(b.jira, b), lockLine(b)]),
         field("f-status", rolls(b) ? (hasKids(b) ? "Status (from what's inside)" : "Status (from tasks)") : "Status", h("select",{id:"f-status",disabled:rolls(b) || !!jiraLockOf(b)?.status,onchange:e=>commit(()=>act("initiative.setStatus", {id:b.id, status:e.target.value}))}, STATUSES.map(([v,t])=>h("option",{value:v,selected:effStatus(b)===v},t))))),
@@ -11677,8 +11705,7 @@ function sideBody(put){
       hasKids(b) ? h("div",{class:"field"}, h("span",{class:"flabel"},"Inside it"), h("div",{class:"tasklist"}, ...kidsOf(b.id).map(x=>h("button",{type:"button",onclick:()=>select("bar",x.id),title:barTitle(x)}, h("span",{class:"dot "+effStatus(x)}), chartLabel(x).slice(0,40) + (hasKids(x) ? ` (${kidsOf(x.id).length})` : ""), h("span",{class:"dt"}, `${wkDate(x.start)}–${endDate(x)}`))))) : null,
       h("div",{class:"field"}, h("span",{class:"flabel"},`Tasks (${(b.tasks||[]).length})`, (n => n ? h("span",{class:"hint",id:"f-rough"}, ` · ${n} with a guessed length`) : null)((b.tasks||[]).filter(t=>t.rough).length)), taskList),
       h("div",{class:"row2"},
-        h("button",{class:"btn",onclick:()=>addTask(b)},"+ Task"),
-        showOnlyBtn("bar", b.id), present ? null : linkedBtn("bar", b.id)),
+        h("button",{class:"btn",onclick:()=>addTask(b)},"+ Task")),
       fold("bar", "schedule", "Schedule", `${snap(b.span)} week${snap(b.span)===1?"":"s"}` + (derived(b) ? " · from tasks" : ""),
         effortField(b), deliversField(b),
         hasTasks(b) && !hasKids(b) ? field("f-datesfrom","Dates", h("select",{id:"f-datesfrom",onchange:e=>commit(()=>act("initiative.set", {id:b.id, field:"datesFrom", value:e.target.value}))}, [["manual","Planned (set here)"],["tasks","From tasks (earliest to latest)"]].map(([v,t])=>h("option",{value:v,selected:b.datesFrom===v},t)))) : null,
@@ -11743,6 +11770,7 @@ function sideBody(put){
       sl ? h("div",{class:"msg warn"}, `Baseline: end moved ${fmtD(sl)} (working days).`) : null,
       quickPanel("task:" + t.id), stickies(noteKeysOf(t, "task"), b.lane),
       titleOf(t).from === "plan" ? field("f-tlabel","Task", textIn("f-tlabel", ()=>t.label, v=>act("task.set", {id:t.id, field:"label", value:v}), {live:true})) : titleOf(t).from === "stale" ? jiraTitleField(t) : null,
+      present ? null : viewActs(linkedBtn("task", t.id)),
       h("div",{class:"row2"},
         h("div",{}, field("f-tjira","Jira key", textIn("f-tjira", ()=>t.jira, v=>t.jira=v.trim(), {attrs:{placeholder:"PROJ-1234"}})), sideOf(t, "task") === "jira" ? null : [jiraLink(t.jira), jiraLine(t.jira, t), lockLine(t)]),
         field("f-tstatus","Status", h("select",{id:"f-tstatus",disabled:!!jiraLockOf(t)?.status,onchange:e=>commit(()=>act("task.setStatus", {id:t.id, status:e.target.value}))}, STATUSES.map(([v,x])=>h("option",{value:v,selected:t.status===v},x))))),
@@ -11757,7 +11785,7 @@ function sideBody(put){
           h("button",{type:"button",class:"linkish",id:"f-tafterGo",onclick:()=>{ if (commit(()=>act("task.move", {id:t.id, start:c}))) setStatus(`Starts ${day}, right after ${what}.`); }}, `Start ${fmtDay(n)}`)); })(),
       h("div",{class:"row2"},
         h("button",{class:"btn",onclick:()=>{ const id = newId("task"); if (commit(()=>b.tasks.push({...clone(t), id, start:dayToIso(nextWork(sp.e+1,hs)), status:"notstarted", jira:""}))) select("task",id); }},"Add next task"),
-        UI.zoom==="days" && UI.focus===b.id ? null : h("button",{class:"btn nav",onclick:()=>openInitiative(b.id)},"Day view"), present ? null : linkedBtn("task", t.id)),
+        UI.zoom==="days" && UI.focus===b.id ? null : h("button",{class:"btn nav",onclick:()=>openInitiative(b.id)},"Day view")),
       fold("task", "schedule", "Schedule", `${t.days} working day${t.days===1?"":"s"}` + (t.rough ? " (a guess)" : ""),
         h("div",{class:"row2"},
           field("f-tstart","Start", h("input",{id:"f-tstart",type:"date",disabled:!!jiraLockOf(t)?.dates,min:S.meta.start,value:dayToIso(sp.s),onchange:e=>commit(()=>validIso(e.target.value) ? act("task.move", {id:t.id, start:e.target.value}) : NOCHANGE)})),
