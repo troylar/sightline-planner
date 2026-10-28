@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.147.1",
+    "date": "2026-10-27",
+    "headline": "Teammates' tasks stay readable while dimmed",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Dimmed, not faded",
+        "before": "With Show teammates' work on, teammates' tasks were drawn see-through, so in dark mode their names were hard to read.",
+        "now": "Teammates' tasks get a quiet outline with full-strength text, so they step back without fading out. The focused person's tasks keep their color.",
+        "where": "Focus on a person, then Show teammates' work"
+      }
+    ]
+  },
+  {
     "version": "1.147.0",
     "date": "2026-10-27",
     "headline": "Focus on one initiative or one person",
