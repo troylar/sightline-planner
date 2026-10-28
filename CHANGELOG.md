@@ -8,7 +8,7 @@ The arrow keys leave Jira's dates alone.
 
 ### Fixed
 
-- **Arrow keys respect Jira's dates** (Keyboard). The arrow keys leave it where it is and say to change its sprint in Jira, as dragging already did. Items the plan dates move as before. Nothing ever reached Jira. *Where:* Timeline, a selected initiative or task linked to Jira
+- **Arrow keys respect Jira's dates** (Keyboard). The arrow keys leave it where it is and say to change its sprint in Jira, as dragging does. Nothing ever reached Jira. If you used them on a Jira item before, look in Activity for items that moved with it and set their dates back; Undo only works in the same session. If you later unlink such an item, check its dates. *Where:* Timeline, a selected initiative or task linked to Jira
 
 ## 1.154.0 · Oct 28, 2026
 
