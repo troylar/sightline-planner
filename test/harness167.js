@@ -84,7 +84,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     open("notes"); $("#findIn").focus(); $("#findIn").dispatchEvent(new w.KeyboardEvent("keydown", {key:"Enter", bubbles:true})); await wait(20);
     ok("K17 after an action from Find, focus is on Find's button, not the hidden search box", d.activeElement === $("#findBtn"), d.activeElement && (d.activeElement.id || d.activeElement.tagName));
     ev(`UI.notes = "all"; saveUI(); render();`);
-    ev(`window.HD0 = file.handle; file.handle = {name:"plan.json"}; quickDone.push({what:"x", ops:[], hd:file.handle});`);
+    ev(`window.HD0 = file.handle; stopAuto(); startAuto = ()=>{}; file.handle = {name:"plan.json"}; quickDone.push({what:"x", ops:[], hd:file.handle});`);
     ok("K18 a quick update you can undo offers Undo in Find", acts("undo").includes("Undo"), acts("undo").join("|"));
     ev(`quickDone.length = 0; file.handle = HD0; closeFind(); render();`);
     ev(`window.JL0 = jiraLockOf; jiraLockOf = ()=>({status:true}); select("task", "fa");`); await wait(10);

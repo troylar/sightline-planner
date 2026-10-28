@@ -89,7 +89,7 @@ const act = (action, args)=>({op:'action', action, args});
     send('b-nodate', [{id:'n1', summary:'A risk', ops:[act('risk.add', {id:'risk-n', text:'Undated'})]}], {createdAt:undefined}); await tick();
     ok('E2 a batch without createdAt waits for review', !ev("S.risks.some(r=>r.id==='risk-n')") && change('n1').held && change('n1').held.code === 'review', JSON.stringify(change('n1').held));
 
-    ev("window.realHandle = file.handle; window.realBase = file.baseText; file.baseText = JSON.stringify(planOfRecord(S)); file.handle = {name:'plan.json'}; file.dirty = true");
+    ev("window.realHandle = file.handle; window.realBase = file.baseText; file.baseText = JSON.stringify(planOfRecord(S)); stopAuto(); startAuto = ()=>{}; file.handle = {name:'plan.json'}; file.dirty = true");
     send('b-edit', [{id:'e1', summary:'A risk', ops:[act('risk.add', {id:'risk-e', text:'While editing'})]}]); await tick();
     ok('X1 with unsaved edits nothing applies, and the results say who is editing', !ev("S.risks.some(r=>r.id==='risk-e')") && change('e1').held && change('e1').held.code === 'editing', JSON.stringify(change('e1').held));
     ok('X2 the heartbeat says editing', status().state === 'editing');

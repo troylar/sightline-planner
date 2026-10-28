@@ -47,7 +47,7 @@ async function page(opts = {}){
 (async()=>{
   const sec = async fn => { try { await fn(); } catch(e){ ok("section crashed", false, String(e.message).slice(0,140)); } };
   const shared = `window.BACKUPS = 0; backup = () => { BACKUPS++; }; FileStore.writeIfUnchanged = async (hd, exp, text) => { window.FILE = text; return "ok"; };
-    file.handle = {name:"p.json", queryPermission: async () => "granted", requestPermission: async () => "granted"}; file.holdLock = false; locked = false;
+    stopAuto(); startAuto = ()=>{}; file.handle = {name:"p.json", queryPermission: async () => "granted", requestPermission: async () => "granted"}; file.holdLock = false; locked = false;
     FileStore.read = async () => FILE;`;
   await sec(async ()=>{ const {ev} = await page();
     ev(`S.deliverables = [{id:"dv-a", name:"Thing", stage:"planned", target:"2027", owners:[]}]; window.FILE = serialize(S, "p.json"); ${shared}`);

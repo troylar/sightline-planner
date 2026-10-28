@@ -17,7 +17,7 @@ const read = f => fs.readFileSync(path.join(out, f), "utf8");
       w.CSS = w.CSS||{}; w.CSS.escape=s=>s; w.errs=[]; w.addEventListener("error",e=>w.errs.push(e.message)); }});
     const w = dom.window, d = w.document, ev = s => w.eval(s); await wait(200);
     w.P = read("plan.json"); w.ST = read("jira/status.json"); w.IS = read("jira/issues.json");
-    ev(`askWhoOnStart = ()=>{}; download = ()=>{}; file.handle = {name:"plan.json"}; S = normalize(parseText(P), false); resetHistory(); setMe(S.people[0].id);
+    ev(`askWhoOnStart = ()=>{}; download = ()=>{}; stopAuto(); startAuto = ()=>{}; file.handle = {name:"plan.json"}; S = normalize(parseText(P), false); resetHistory(); setMe(S.people[0].id);
       JIRA = parseJiraStatus(ST); JIRA_ISSUES = parseJiraIssues(IS); render();`);
     const L = JSON.parse(ev("JSON.stringify(jiraEpicList().map(x=>({k:x.key, s:x.state, f:x.finished})))"));
     const has = (st, fin) => L.some(x=>x.s === st && x.f === fin);

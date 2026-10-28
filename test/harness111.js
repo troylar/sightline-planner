@@ -84,7 +84,7 @@ setTimeout(()=>{console.log(checks.join('\n'));console.log('TIMEOUT');process.ex
     ok('oversized context fits the UTF-8 output limit',Buffer.byteLength(JSON.stringify(context,null,2))+1024<=ev('MAX_BYTES'));
     ok('byte-budget omissions are explicit',context.coverage.decisions.omitted>0&&context.coverage.decisions.total===1500&&!context.coverage.complete);
     const rawBefore=ev('JSON.stringify(S)');ev('assistantView()');ok('budget fitting never mutates plan arrays',ev('JSON.stringify(S)')===rawBefore);
-    ev(`S=normalize(JSON.parse(FIX),false);file.baseText=serialize(planOfRecord(S),'plan.json');file.handle={name:'plan.json'};file.dirty=true;
+    ev(`S=normalize(JSON.parse(FIX),false);file.baseText=serialize(planOfRecord(S),'plan.json');stopAuto(); startAuto = ()=>{}; file.handle={name:'plan.json'};file.dirty=true;
       S.risks=[{id:'risk-unsaved',text:'UNSAVED SECRET',owners:[]}];S.meta.capRates=[{from:'2026-09-21',points:99}];`);
     const before=ev('JSON.stringify(S)'),payload=JSON.parse(ev('JSON.stringify(assistantPayloads())'));
     ok('automatic context excludes unsaved planning fields',!JSON.stringify(payload.context).includes('UNSAVED SECRET')&&!payload.context.planning.capacity.rates.some(x=>x.points===99));
