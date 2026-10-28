@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.170.3",
+    "date": "2026-10-28",
+    "headline": "Linked work counts what's shown",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "The linked work count matches what's shown",
+        "now": "While linked work is showing, the status line counts only the linked items on screen, and says how many more your other filters hide, such as a person, a workstream, hidden done work or a tag. In the List, linked milestones and gates are said to be on the Timeline.",
+        "before": "The count included linked items your other filters hid, so it could say 6 when 3 were drawn.",
+        "where": "The status line, after Show linked work or Leads here only"
+      }
+    ]
+  },
+  {
     "version": "1.170.2",
     "date": "2026-10-28",
     "headline": "Long names in the List",

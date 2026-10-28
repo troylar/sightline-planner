@@ -7529,12 +7529,31 @@ function seedInView(){ const sc = UI.ws === "timeline" && $("#gscroll"); if (!sc
     .filter(r=>r.width > 0).sort((a, b)=>b.right - a.right)[0]).filter(Boolean); if (!R.length) return;   // the marker, not a row's name in the label column
   const far = Math.max(...R.map(r=>r.right)); if (far <= right) return;
   sc.scrollLeft += Math.max(0, Math.min(far - right, Math.min(...R.map(r=>r.left)) - left)); }
-// What the status line says: the picks by name and how many other items are linked to them (what's drawn, less the picks).
-function linkSay(){ const seeds = linkSeeds(); if (!seeds.length) return; const L = linkedScope(), one = seeds.length === 1, names = one ? linkName(seeds[0]) : `${seeds.length} picked items`;
-  const n = L ? L.items - seeds.length : 0, it = one ? "it" : "them", hl = UI.filter.linkMode === "highlight", verb = hl ? "Highlighting" : "Showing", rest = hl ? "Take a chip off, or press Back, to undim the rest." : "Take a chip off, or press Back, to see the rest.";
-  const s = n === 1 ? "" : "s", alone = `${one ? "it's" : "they're"} ${hl ? "highlighted" : "shown"} on ${one ? "its" : "their"} own`;
-  const say = UI.filter.linkDir === "up" ? (n ? `${verb} what leads to ${names}: ${n} item${s}. ${rest}` : `Nothing leads to ${names} yet, so ${alone}. ${rest}`)
-    : n ? `${verb} ${names} and the ${n} item${s} linked to ${it}. ${rest}` : `Nothing is linked to ${names} yet, so ${alone}. ${rest}`;
+// What the status line says: the picks by name and how many other items are linked to them that are drawn, asked
+// with the same predicates the chart and the List use, plus how many your other filters hide. The List has no rows
+// for milestones and gates, so there they're counted as on the Timeline.
+function linkCount(f = UI.filter){ const L = linkedScope(f); if (!L) return null;
+  const g = {...f, linkMode:"only"}, R = fRangeDays(g), tf = tasksFiltered(g), list = UI.ws === "list", gates = new Map(gateItems().map(x=>[x.id, x]));
+  const lane = b => S.lanes.some(l=>l.id === b.lane);
+  const drawn = (t, id) => { if (t === "bar"){ const b = barById(id); return !!b && lane(b) && barVisible(b, g, R); }
+    if (t === "task"){ const o = taskById(id); return !!o && lane(o.b) && barVisible(o.b, g, R) && (!tf || taskVisible(o.t, g, R)); }
+    if (t === "ms"){ const m = S.milestones.find(x=>x.id === id); return !!m && msVisible(m, g, R); }
+    const x = gates.get(id), at = x && x.day != null ? dayToAt(x.day) : null; return at != null && at >= 0 && at <= S.meta.weeks && gateVisible(x, g, R); };   // as the gates row: dated, in the plan
+  const out = {shown:0, hidden:0, elsewhere:0, picksHidden:[]}, seeds = linkSeeds(), isPick = k => seeds.some(x=>x.t + ":" + x.id === k);
+  L.keys.forEach(k=>{ const i = k.indexOf(":"), t = k.slice(0, i), id = k.slice(i + 1); if (!["bar", "task", "ms", "gate"].includes(t)) return;
+    if (list && (t === "ms" || t === "gate")){ if (!isPick(k)) out.elsewhere++; return; }
+    const on = drawn(t, id); if (isPick(k)){ if (!on) out.picksHidden.push({t, id}); return; } on ? out.shown++ : out.hidden++; });
+  return out; }
+function linkSay(){ const seeds = linkSeeds(); if (!seeds.length) return; const C = linkCount() || {shown:0, hidden:0, elsewhere:0, picksHidden:[]}, one = seeds.length === 1, names = one ? linkName(seeds[0]) : `${seeds.length} picked items`;
+  const n = C.shown, it = one ? "it" : "them", hl = UI.filter.linkMode === "highlight", verb = hl ? "Highlighting" : "Showing", rest = hl ? "Take a chip off, or press Back, to undim the rest." : "Take a chip off, or press Back, to see the rest.";
+  const s = n === 1 ? "" : "s", alone = `${one ? "it's" : "they're"} ${hl ? "highlighted" : "shown"} on ${one ? "its" : "their"} own`, up = UI.filter.linkDir === "up";
+  const hid = C.hidden ? `${C.hidden} ${n ? "more " : ""}${C.hidden === 1 ? "is" : "are"} hidden by your filters` : "";
+  const main = n ? (up ? `${verb} what leads to ${names}: ${n} item${s}` : `${verb} ${names} and the ${n} item${s} linked to ${it}`) + (hid ? `; ${hid}` : "") + "."
+    : hid ? `Nothing ${up ? "that leads to" : "linked to"} ${names} is shown: ${hid}.`
+    : C.elsewhere ? `${verb} ${names}.` : up ? `Nothing leads to ${names} yet, so ${alone}.` : `Nothing is linked to ${names} yet, so ${alone}.`;
+  const tl = C.elsewhere ? ` ${C.elsewhere} linked milestone${C.elsewhere === 1 ? " or gate is" : "s and gates are"} on the Timeline; the List shows work.` : "";
+  const ph = C.picksHidden.length ? ` ${C.picksHidden.length === seeds.length && one ? linkName(seeds[0]) : C.picksHidden.map(linkName).join(", ")} ${C.picksHidden.length === 1 ? "is" : "are"} hidden by your filters.` : "";
+  const say = `${main}${tl}${ph} ${rest}`;
   setStatus(say); showSay(say); }
 // Take one pick off (or all, with no x). The zoom comes back when the last one goes.
 function linkedOff(x){ const have = linkSeeds(), left = x ? have.filter(y=>!(y.t === x.t && y.id === x.id)) : []; navStep();
