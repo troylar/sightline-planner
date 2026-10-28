@@ -3,6 +3,9 @@
 // the keyboard, and taking a chip off moves keyboard focus to the next chip. Light and dark, two widths.
 // run.sh runs it when Playwright is installed, and CI always does. By hand: node test/layout-chips.js. Playwright comes from
 // node_modules, or from PLAYWRIGHT=/path/to/node_modules/playwright. The plan is fixtures/sample-plan.json; every name is invented.
+// Slack rule: a check that something stays on one line needs at least 40px of room to spare, measured locally (the gap
+// before the last item, not its distance from the edge, when that item is pushed right). CI's Linux fonts are wider,
+// and twice a slack under 20px passed here and wrapped there. If a layout can't leave 40px, its pull request says why.
 const fs = require("fs"), path = require("path");
 let pw; try { pw = require(process.env.PLAYWRIGHT || "playwright"); } catch(e){ console.log("FAIL  Playwright isn't installed. Run npm ci, then npx playwright install chromium (or set PLAYWRIGHT)."); console.log("\n0/1 passed"); process.exit(1); }
 const HTML = process.env.SIGHTLINE_HTML || path.join(__dirname, "..", "dist", "sightline.html");
