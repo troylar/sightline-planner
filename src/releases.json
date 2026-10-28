@@ -1,5 +1,27 @@
 [
   {
+    "version": "1.169.0",
+    "date": "2026-10-28",
+    "headline": "Many more keyboard shortcuts",
+    "changes": [
+      {
+        "kind": "new",
+        "area": "Keyboard",
+        "title": "Shortcuts for linked work, moves, rows and more",
+        "now": "C shows only what's linked to the selection, Shift+N moves it to the next sprint and { } move it a week. 0 shows all work. Shift+T opens the time controls, Shift+L goes to a milestone's What leads here, and Shift+W, Shift+O and Shift+E pick rows. Shift+C, Shift+X and Shift+Z work linked work. Press ? for the full list.",
+        "before": "Shift and a letter did the same as the letter alone, and these actions had no key.",
+        "where": "Press ? anywhere, or see each key beside its action in Find"
+      },
+      {
+        "kind": "new",
+        "area": "Keyboard",
+        "title": "Switch off single-key shortcuts",
+        "now": "If letter keys get in the way of a screen reader or speech input, clear Single-key shortcuts at the top of the shortcuts page. Find and keys with Ctrl (⌘ on a Mac) keep working.",
+        "where": "Press ?, then Single-key shortcuts"
+      }
+    ]
+  },
+  {
     "version": "1.168.0",
     "date": "2026-10-28",
     "headline": "Faster redraws",

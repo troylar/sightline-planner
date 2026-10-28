@@ -133,6 +133,27 @@ Today names each due decision's decider; its owners may be different people.
 
 With a task or initiative selected on the Timeline or the List, **O** puts the cursor in its owner picker: type a name and press **Enter** to add them, or **Backspace** to take off the last one. It's a plan edit, so it works while you're editing. On a Jira item it sets the plan's lead, never Jira's assignee. An initiative whose owners come from its tasks says so instead. Find also moves the selection while you're editing: type "week later", "week earlier" or "next sprint". Each move is one Undo (Ctrl+Z, or ⌘Z on a Mac), the status line says where it now starts and what moved with it, and focus stays on the item so J, K and another move carry on. To link a Jira epic to the selected initiative, type "link epic": the cursor lands in its epic box. An epic counts on one initiative, so a key that's already on another one is refused with its name. Work whose dates come from Jira isn't offered a move.
 
+**More keys.** With something selected on the Timeline or the List:
+
+- **C** shows only what's linked to it; **C** again shows everything. **Shift+C** adds the selection to the linked work and **Shift+X** takes it off. **Shift+Z** switches between highlighting the linked work and hiding the rest.
+- **Shift+N** moves it to the next sprint, and **{** and **}** move it a week earlier or later. Each move is one change that **Undo** reverses. Work whose dates come from Jira's sprint says so instead of moving, as dragging does, and nothing moves while you present.
+- **Shift+J** opens the Jira epic link on an initiative, while you're editing.
+- On a milestone, **Shift+L** or **<** goes to **What leads here**.
+
+Anywhere on the Timeline, the List or People, **0** shows all work. **Back** puts your filters back.
+
+On the Timeline:
+
+- **Shift+T** or **;** opens and closes the time controls.
+- **Shift+D** opens the Details of what's hidden.
+- **Shift+W**, **Shift+O** and **Shift+E** show rows by workstream, person or epic.
+
+**Shift+A** opens the assistant and **Shift+U** shows what's new.
+
+Shift and a letter is read from the Shift key, so with Caps Lock on a letter still does what it does without Shift.
+
+To switch off every single-key shortcut (letters, digits and symbols), clear **Single-key shortcuts** at the top of the **?** shortcuts page. This helps with screen readers and speech input. Find and keys with Ctrl (⌘ on a Mac) keep working, and this browser remembers the choice.
+
 Unsent notes, quick updates and blocker explanations stay with their plan and item during this session when details redraw. They clear after successful submission. They are temporary browser-session drafts; submit the text before closing the page. Saving other plan edits does not submit a composer draft.
 
 Use **Connect assistant**, in the menu under your name, to set up the [private assistant folder](assistant-workflow.md). Once an assistant is connected, the toolbar shows its state, and proposed changes wait there for your review. Common initiative and task updates remain visible; open **Organize this initiative** or **Move this task** for structural changes.
