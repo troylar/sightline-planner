@@ -1,5 +1,35 @@
 [
   {
+    "version": "1.153.0",
+    "date": "2026-10-28",
+    "headline": "The same \"you are here\" mark in every view, and Enter on a person",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Keyboard",
+        "title": "One row mark everywhere",
+        "before": "On the Roadmap, the idea or deliverable you moved to with J or K had only a thin box around its name, and in People load only the name was marked.",
+        "now": "Roadmap ideas and deliverables, and a person's whole row of weeks in People load, get the same tint and outline as Today rows, clear of the text.",
+        "where": "Roadmap and Capacity"
+      },
+      {
+        "kind": "new",
+        "area": "Keyboard",
+        "title": "Enter opens a person in People load",
+        "now": "Move to a person in People load with J or K, then press Enter to open their card. You stay on Capacity.",
+        "where": "Capacity, People load"
+      },
+      {
+        "kind": "fixed",
+        "area": "Today",
+        "title": "Long titles end in an ellipsis",
+        "before": "A long title on Today was cut off mid-word with no sign there was more.",
+        "now": "It ends in an ellipsis, and pointing at it shows the whole title.",
+        "where": "Today"
+      }
+    ]
+  },
+  {
     "version": "1.152.0",
     "date": "2026-10-28",
     "headline": "J and K on the Roadmap, and arrows on Today, Sprint and Capacity",

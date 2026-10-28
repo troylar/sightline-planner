@@ -655,9 +655,9 @@ textarea.celltext{field-sizing:content;min-height:0;width:100%;resize:none;font:
 .tacts{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
 .tacts .btn{font-size:11.5px;padding:3px 7px}
 /* J / K land on a row: the whole row shows where you are, like the List */
-.trow:focus-visible,.trow:has(.tname:focus-visible),.lgrid>.p:focus-visible{background:color-mix(in srgb,var(--accent) 10%,transparent);outline:2px solid var(--accent);outline-offset:-2px;border-radius:6px}
-.trow:has(.tname:focus-visible) .tname:focus-visible{outline:none}
-.trow:focus-visible,.trow:has(.tname:focus-visible){padding-inline:6px;margin-inline:-6px}.lgrid>.p:focus-visible{outline-offset:0}
+.trow:focus-visible,.trow:has(.tname:focus-visible),.lgrid>.lrow:focus-visible,.rmideas li:has(.dvidea:focus-visible),.dvcard:focus-visible{background:color-mix(in srgb,var(--accent) 10%,transparent);outline:2px solid var(--accent);outline-offset:-2px;border-radius:6px}
+.trow:has(.tname:focus-visible) .tname:focus-visible,.rmideas li:has(.dvidea:focus-visible) .dvidea:focus-visible{outline:none}
+.trow:focus-visible,.trow:has(.tname:focus-visible),.rmideas li:has(.dvidea:focus-visible){padding-inline:6px;margin-inline:-6px}.trow .tname{display:block;max-width:100%}
 @media (max-width:700px){.trow{grid-template-columns:1fr auto}.tmeta{grid-column:1/-1}.tacts{grid-column:1/-1;justify-content:flex-start}}
 .nbadge{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:12px;height:12px;margin:0 3px;padding:0 2px;border-radius:1px;background:#ffe97a;border-left:2px solid var(--nc,#e3c200);color:#4a3b00;font-size:9px;font-weight:700;line-height:12px;box-shadow:1px 1px 2px rgba(0,0,0,.35);cursor:pointer;transform:rotate(-4deg);font-style:normal}
 .nmrow{display:flex;align-items:center;min-width:0}
@@ -1025,7 +1025,7 @@ fieldset.recur > select{align-self:flex-start}
 .load{margin:0 16px 16px;padding:12px 14px}
 .load header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .lgrid{display:grid;grid-template-columns:160px repeat(var(--w),1fr);min-width:980px;font-size:12px}
-.lgrid .p{padding:4px 12px 4px 0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lgrid>.lrow{display:grid;grid-column:1/-1;grid-template-columns:subgrid}.lgrid .p{padding:4px 12px 4px 6px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lgrid .c{margin:2px;border-radius:4px;text-align:center;line-height:22px;font-family:var(--font-ui);color:var(--ink-3);background:var(--rule-2)}
 .lgrid .c.n1{background:var(--ok-bg);color:var(--ok)}
 .lgrid .c.n2{background:var(--warn-bg);color:var(--warn);font-weight:600}
@@ -5933,7 +5933,7 @@ function stepItem(dir){
 }
 // J / K on Today, Sprint and Capacity: move keyboard focus through what's drawn, in page order, without opening anything
 // (Enter does that). Timeline and List select as they go (stepItem).
-const NAV_STOPS = {today:"#today li.trow", standup:"#standupWs .sucard[data-card]", people:"#ws-people tr[data-fc], #load .lgrid > .p", roadmap:"#roadmapWs .dvcard[data-dv], #roadmapWs li[data-idea]"};
+const NAV_STOPS = {today:"#today li.trow", standup:"#standupWs .sucard[data-card]", people:"#ws-people tr[data-fc], #load .lgrid > .lrow", roadmap:"#roadmapWs .dvcard[data-dv], #roadmapWs li[data-idea]"};
 function stepFocus(dir){
   const q = NAV_STOPS[UI.ws]; if (!q) return false;
   const stops = [...document.querySelectorAll(q)].filter(el=>!el.closest("[hidden]")).map(row=>({row, el:row.matches("button,a") ? row : row.querySelector("button.tname, a.tname, .tname button, button.dvidea, td button, a") || row}));
@@ -9995,15 +9995,17 @@ function renderLoad(){
   const order = new Map(S.people.map((pp,i)=>[pp.id,i]));
   [...map.entries()].sort((x,y)=>(order.get(x[0]) ?? 1e9) - (order.get(y[0]) ?? 1e9)).forEach(([pid,arr])=>{
     const pp = personById(pid), name = pp ? pp.name + (pp.inactive ? " (inactive)" : "") : "Unknown", off = pp ? personOff(pp) : new Set();
-    grid.append(h("div",{class:"p",title:name}, pp ? h("i",{class:"ini",style:{background:pp.color, color:iniFg(pp.color)}}, pp.initials) : null, " ", name));
+    const row = h("div",{class:"lrow","data-pid":pid,"aria-label":name,onkeydown:e=>{ if (e.key === "Enter" && e.target === e.currentTarget && pp){ e.preventDefault(); select("person", pid); } }},
+      h("div",{class:"p",title:name}, pp ? h("i",{class:"ini",style:{background:pp.color, color:iniFg(pp.color)}}, pp.initials) : null, " ", name));
+    grid.append(row);
     arr.forEach((items,i)=>{
       const n = items.length, c0 = cols[i], label = days ? fmtDay(c0) : "week of " + wkDate(c0);
       if (days){
         const isOff = off.has(c0) || hsL.has(c0);
-        grid.append(h("div",{class:"c" + (isOff ? " off" : n>=3?" n3":n===2?" n2":n===1?" n1":""), title: isOff ? `${name} is off ${label}` + (n ? ` but has ${n} item${n===1?"":"s"}` : "") : n ? `${name}, ${label}:\n• ` + items.join("\n• ") : `${name}: free ${label}`}, isOff ? (n ? "!" : "off") : (n || "·")));
+        row.append(h("div",{class:"c" + (isOff ? " off" : n>=3?" n3":n===2?" n2":n===1?" n1":""), title: isOff ? `${name} is off ${label}` + (n ? ` but has ${n} item${n===1?"":"s"}` : "") : n ? `${name}, ${label}:\n• ` + items.join("\n• ") : `${name}: free ${label}`}, isOff ? (n ? "!" : "off") : (n || "·")));
       } else {
         const av = availDays(pp, wkDay(c0)), cls = loadClass(n, av);
-        grid.append(h("div",{class:"c" + (cls ? " " + cls : ""), title: (n ? `${name}, ${label} · ${av} of 5 days available:\n• ` + items.join("\n• ") : `${name}: free ${label}`) + (av < 5 ? `\n(${5-av} day${5-av===1?"":"s"} off or part-time)` : "")}, n ? (av < 5 ? `${n}·${av}d` : String(n)) : "·"));
+        row.append(h("div",{class:"c" + (cls ? " " + cls : ""), title: (n ? `${name}, ${label} · ${av} of 5 days available:\n• ` + items.join("\n• ") : `${name}: free ${label}`) + (av < 5 ? `\n(${5-av} day${5-av===1?"":"s"} off or part-time)` : "")}, n ? (av < 5 ? `${n}·${av}d` : String(n)) : "·"));
       }
     });
   });
@@ -15122,7 +15124,7 @@ function renderToday(){
     const li = e.currentTarget.closest("li"), sec = e.currentTarget.closest(".tsec"), secs = [...document.querySelectorAll("#today .tsec")];
     UI.todayFocus = {key: li ? li.dataset.tkey : "", sec: secs.indexOf(sec), idx: li ? [...sec.querySelectorAll("li")].indexOf(li) : 0}; fn(); }}, t);
   const itemRow = (it, meta, actions) => h("li",{class:"trow","data-tkey":it.key},
-    h("div",{class:"tmain"}, h("button",{type:"button",class:"linkish tname","data-key":"today:" + it.key,onclick:()=>goTo(it.type, it.id)}, itemLabel(it)), h("small",{}, where(it))),
+    h("div",{class:"tmain"}, h("button",{type:"button",class:"linkish tname","data-key":"today:" + it.key,title:itemLabel(it),onclick:()=>goTo(it.type, it.id)}, itemLabel(it)), h("small",{}, where(it))),
     h("div",{class:"tmeta"}, meta), h("div",{class:"twho"}, who(it)), present ? null : (L => h("div",{class:"tacts"}, ...(L ? actions.filter(a=>a.textContent === "Unblock") : actions), L ? h("span",{class:"hint",title:"Its dates and status come from Jira"}, "Update it in Jira") : null))(jiraLockOf(it.obj)));
   let quiet = [];
   const section = (ic, title, hint, list, tone, extra, quietName) => { if (!list.length && quietName){ quiet.push(quietName); return null; }
@@ -15153,7 +15155,7 @@ function renderToday(){
     h("div",{class:"tgrid"},
       h("div",{class:"tcol"},
         ...(()=>{ const secs = [section("flag", "Escalate", "Risks and decisions past their escalate-by date, and decisions past when they were needed", D.escalate.map(e=>{ const x = e.x, over = Math.max(0, workBetween(e.by + 1, t0, hs));
-          return h("li",{class:"trow","data-tkey":`${e.kind}:${x.id}`}, h("div",{class:"tmain"}, h("button",{type:"button",class:"linkish tname",onclick:()=>goTo(e.kind, x.id)}, x.text || "(untitled)"),
+          return h("li",{class:"trow","data-tkey":`${e.kind}:${x.id}`}, h("div",{class:"tmain"}, h("button",{type:"button",class:"linkish tname",title:x.text || null,onclick:()=>goTo(e.kind, x.id)}, x.text || "(untitled)"),
               h("small",{}, [e.kind === "risk" ? `Risk (${x.sev})` : "Decision", x.decider ? `${personName(x.decider)} decides` : "", x.next ? `next: ${x.next}` : "", x.waitingOn ? `waiting on ${x.waitingOn}` : ""].filter(Boolean).join(" · "))),
             h("div",{class:"tmeta"}, h("b",{}, e.why === "overdue" ? `needed ${fmtDay(e.by)}` : `escalate by ${fmtDay(e.by)}`), over ? ` · ${days(over)} over` : " · today"),
             h("div",{class:"twho"}, (x.owners || []).length ? initialsRow(x.owners.slice(0, 3)) : h("span",{class:"hint"},"no owner"))); }), "bad", null, "past its escalate-by date"),
