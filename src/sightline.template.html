@@ -1944,7 +1944,7 @@ try { sessionBC = new BroadcastChannel("sightline-session");
   sessionBC.postMessage({q:SESSION, from:PAGE_NONCE}); } catch(e){}
 
 // ================= small helpers =================
-const $ = q => document.querySelector(q);
+const $ = q => /^#[A-Za-z][\w-]*$/.test(q) ? document.getElementById(q.slice(1)) : document.querySelector(q);   // an id by id: a selector search walks the page (jsdom: every call)
 const clone = o => o === undefined ? undefined : JSON.parse(JSON.stringify(o));
 const setField = (obj, f, v) => { if (v === undefined) delete obj[f]; else obj[f] = clone(v); };   // an op whose value is undefined removes the field
 const num = (v,d) => { v = Number(v); return Number.isFinite(v) ? v : d; };
