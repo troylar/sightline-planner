@@ -173,6 +173,14 @@ async function open(){
     ok("J6 no Jira write anywhere: the Jira files are as they were", ev("JIRA.issues['ABC-201'].status") === "To Do" && ev("JIRA.issues['ABC-104'].sprint") === undefined);
     // Keyboard: M picks a card up, arrows choose, Enter drops, Esc cancels
     ev(`S = parseText(${JSON.stringify(snap)}); dropJiraMemos(); resetHistory(); render()`);
+    { d.activeElement?.blur?.(); const cards = [...d.querySelectorAll("#cardsWs .cvcard[data-card]")], live = () => d.querySelector("#navLive")?.textContent || "";
+      key(d.body, "j"); const f1 = d.activeElement; key(f1, "j"); const f2 = d.activeElement;
+      ok("K7 J on Cards focuses each card's title in turn, never its Jira link, and says where you are", f1?.matches(".cvt") && f1.closest(".cvcard") === cards[0] && f2?.matches(".cvt") && f2.closest(".cvcard") === cards[1] && /^2 of \d+: /.test(live()), [f1?.className, f2?.className, live()].join(" | "));
+      key(f2, "ArrowUp");
+      ok("K8 …and the up arrow goes back, with the plan unchanged", d.activeElement?.closest(".cvcard") === cards[0] && ev("JSON.stringify(planOfRecord(S))") === snap, d.activeElement?.className);
+      key(d.activeElement, "m"); const lifted = d.activeElement; key(lifted, "j");
+      ok("K9 while a card is picked up (M), J doesn't walk off to another card", ev("cvPick") !== null && d.activeElement?.closest(".cvcard")?.dataset.card === cards[0].dataset.card, d.activeElement?.closest(".cvcard")?.dataset.card);
+      key(d.activeElement, "Escape"); }
     let b103 = card("ABC-103").querySelector(".cvt"); b103.focus(); key(b103, "m");
     ok("K4 M picks the card up and says where it would go", d.querySelector("#cardsWs .cvcard.lifted")?.contains(d.activeElement) && /Moving ABC-103/.test(d.querySelector("#status").textContent), d.querySelector("#status").textContent);
     key(d.activeElement, "Escape");
