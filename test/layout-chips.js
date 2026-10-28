@@ -134,6 +134,18 @@ function contrast(sel){
           const th = t.querySelector('thead th[data-col="status"]');
           return {n:ds.length, two:two.length, w:th ? Math.round(th.getBoundingClientRect().width) : 0}; }); }
       await page.evaluate(()=>{ UI.ws = "timeline"; render(); });
+      // An initiative with tasks heads its rows (a th), and a long name on one wraps like any other: the table stays
+      // inside the page instead of scrolling sideways (a th doesn't wrap by default; it once made the List 2384px at 900).
+      const side = {}, keep = await page.evaluate(()=>{ const pick = ["m2", "m3"].map(id=>S.bars.find(b=>b.id === id)), was = JSON.stringify(pick.map(b=>({label:b.label, tasks:b.tasks})));
+        const P = S.people[0].id, t = (b, n) => ({id:b.id + "-t" + n, label:"Step " + n, start:dayToIso(nearWeekday(wkDay(b.start))), days:3, owners:[P], status:"notstarted"});
+        pick[0].label = "A very long initiative name ".repeat(12).trim(); pick[1].label = "https://jira.example.com/browse/ABC-123?" + "view=all&field=summary".repeat(8);   // spaced, and one unbroken token
+        pick.forEach(b=>{ if (!(b.tasks || []).length) b.tasks = [t(b, 1), t(b, 2)]; }); UI.ws = "list"; render(); return was; });
+      for (const lay of ["lane", "initiative", "start", "person"]){ await page.evaluate(lay=>setListLayout(lay), lay); await page.waitForTimeout(120);
+        side[lay] = await page.evaluate(()=>{ const t = document.querySelector("#listTable"), wrap = t.closest(".lwrap") || t.parentElement, long = [...t.querySelectorAll(".lname")].some(c=>c.textContent.startsWith("A very long"));
+          const tok = [...t.querySelectorAll(".lname")].some(c=>c.textContent.startsWith("https://jira.example.com"));
+          return {long, tok, over:Math.round(t.getBoundingClientRect().width - wrap.clientWidth)}; }); }
+      await page.evaluate(was=>{ JSON.parse(was).forEach((v, i)=>Object.assign(S.bars.find(b=>b.id === ["m2", "m3"][i]), v)); UI.ws = "timeline"; render(); }, keep);
+      ok(`L15e ${tag}: a long initiative name with tasks, spaced or one unbroken token, wraps in every List layout, and the table doesn't scroll sideways`, Object.values(side).every(x=>x.over <= 1) && side.lane.long && side.lane.tok, JSON.stringify(side));
       ok(`L15d ${tag}: the List's Status stays on one line in every layout, in a narrow column`, Object.values(lst).every(x=>x.n > 10 && !x.two && x.w > 0 && x.w <= 160), JSON.stringify(lst));
       await page.evaluate(()=>{ UI.filter = normFilter({}); S.milestones.find(m=>m.id === "ms8").after = ["c4"]; render(); select("ms", "ms8"); render(); document.querySelector("#f-mrwshow").click(); }); await page.waitForTimeout(250);
       if (w === 1500){ await page.screenshot({path:path.join(process.env.SHOTS || require("os").tmpdir(), `leads-here-${theme}.png`), clip:{x:0, y:0, width:w, height:700}});
