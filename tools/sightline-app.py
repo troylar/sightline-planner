@@ -223,6 +223,7 @@ def check_jira_place(sort: dict, name: str, args: dict) -> list:
     pile = {up(x.get("key")): x for x in sort.get("issues") or [] if isinstance(x, dict)}
     placed = {up(k): v for k, v in (sort.get("placed") or {}).items() if isinstance(v, dict)}
     epics = {up(x.get("key")) for x in sort.get("epics") or [] if isinstance(x, dict)}
+    epic_on = {up(x.get("key")): (x.get("state"), x.get("on")) for x in sort.get("epics") or [] if isinstance(x, dict)}
     targets = sort.get("targets") or {}
     lane_of = {}                                       # a workstream's id, or a former id it keeps (was) -> its id now
     for x in targets.get("workstreams") or []:
@@ -237,6 +238,11 @@ def check_jira_place(sort: dict, name: str, args: dict) -> list:
         epic = up(args.get("epic"))
         if epic not in epics:
             bad.append(f"{epic[:40] or 'epic'} isn't an epic in jiraSort.epics.")
+        state, on = epic_on.get(epic, (None, None))
+        lane_on = next((x.get("lane") for x in targets.get("initiatives") or [] if isinstance(x, dict) and x.get("id") == on), None)
+        here = state == "on" and (on == args.get("id") if name == "jira.epicLink" else lane_on is not None and lane_on == args.get("lane") and args.get("id") in (None, "", on))   # already there: done, as the page says
+        if on and not here and (name == "jira.epicNew" or state == "on"):   # one initiative per epic; a parked one moves on a link
+            bad.append(f"{epic[:40]} is already on {str(on)[:40]} (jiraSort.epics), so it wouldn't be moved.")
     else:
         keys = list(dict.fromkeys(up(k) for k in args.get("keys"))) if isinstance(args.get("keys"), list) else []
         if not keys:
