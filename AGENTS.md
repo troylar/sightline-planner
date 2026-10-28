@@ -88,7 +88,7 @@ SIGHTLINE_HTML=/path/to/old.html node test/harnessN.js
   generated file does not validate source changes.
 - Before calling a change done, run the full build and `./test/run.sh`. Use focused
   checks during iteration; they do not replace the full suite. The suite fails when
-  Playwright is missing (its seven browser checks would be skipped); set `PLAYWRIGHT`
+  Playwright is missing (its eight browser checks would be skipped); set `PLAYWRIGHT`
   to an install, or `SIGHTLINE_NO_BROWSER=1` only to skip them on purpose.
 - Inspect the explicit harness list in `test/run.sh`; it does not discover files
   automatically. Register a new harness there. Each harness must print its counts
