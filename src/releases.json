@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.158.0",
+    "date": "2026-10-28",
+    "headline": "J and K on the Plan pages",
+    "changes": [
+      {
+        "kind": "improved",
+        "area": "Keyboard",
+        "title": "Step through decisions, risks and cards",
+        "now": "On Milestones, Gates, Decisions and Risks, J and K (or the arrows, once you're on a row) step through the rows and read each one out, and Enter puts the cursor in its first field. On Cards they step through the cards, marking the whole card and bringing it into view, never stopping on its Jira link. While you're moving a card with M, they leave it alone.",
+        "where": "Plan pages and Cards"
+      }
+    ]
+  },
+  {
     "version": "1.157.1",
     "date": "2026-10-28",
     "headline": "The assistant's check knows where each epic is",
