@@ -61,7 +61,7 @@ async function page(opts = {}){
   await sec(async ()=>{ const {ev} = await page({jira:false});
     // a real quick save against a fake shared file
     ev(`window.BACKUPS = 0; backup = () => { BACKUPS++; }; window.WROTE = 0; FileStore.writeIfUnchanged = async () => { WROTE++; return "ok"; };
-      file.handle = {name:"p.json", queryPermission: async () => "granted", requestPermission: async () => "granted"}; file.holdLock = false; localStorage.setItem(SAYG_KEY, "1");`);
+      stopAuto(); startAuto = ()=>{}; file.handle = {name:"p.json", queryPermission: async () => "granted", requestPermission: async () => "granted"}; file.holdLock = false; localStorage.setItem(SAYG_KEY, "1");`);
     ev(`S.notes.push({id:"note-q", text:"old", author:"", lane:S.lanes[0].id, date:"2026-09-21"}); S = normalize(JSON.parse(JSON.stringify(S)), false);`);
     const nid = "note-q";
     ev(`const theirs = clone(S); theirs.notes = theirs.notes.filter(n=>n.id !== "${nid}"); window.FILE = serialize(theirs, "p.json"); FileStore.read = async () => FILE;

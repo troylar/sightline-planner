@@ -63,7 +63,7 @@ async function page(){
     d.querySelector("#jiraBatchPark").click(); await wait(30);
     ok("E4: one that worked clears them", ev("jiraPicks.size") === 0);
     ok("E4: and says what happened (not a stuck Saving…)", ev("$('#status').textContent") === "2 epics parked.", ev("$('#status').textContent"));
-    ev("file.handle = {name:'team.json'}; file.holdLock = true; jiraPicks = new Set(['ABC-4']); renderJiraWs();");
+    ev("stopAuto(); startAuto = ()=>{}; file.handle = {name:'team.json'}; file.holdLock = true; jiraPicks = new Set(['ABC-4']); renderJiraWs();");
     d.querySelector("#jiraBatchOn").click(); await wait(30);
     ok("E4: in an editing session it says the change waits for Save", ev("$('#status').textContent") === "1 epic on the board. Save to share it.", ev("$('#status').textContent")); });
 

@@ -41,7 +41,7 @@ const show = (ev, mins, sync) => { ev(`JIRA = parseJiraStatus(MK(${mins}, ${JSON
   await sec(async ()=>{ const {d, ev} = await page(); show(ev, 30 * 60, {by:"sync", every:0, plan:"team.json"});
     ok("H3: a sync run by hand a while ago suggests keeping it current", !!d.querySelector("#jiraHandOld") && !!d.querySelector(".jhealth .hdot.warn") && /Synced 1 d ago by hand/.test(d.querySelector(".jhealth").textContent), d.querySelector(".jhealth")?.textContent); });
 
-  await sec(async ()=>{ const {d, ev} = await page(); ev("file.handle = {name:'copy-of-team.json'};"); show(ev, 5, {by:"watch", every:15, plan:"team.json"});
+  await sec(async ()=>{ const {d, ev} = await page(); ev("stopAuto(); startAuto = ()=>{}; file.handle = {name:'copy-of-team.json'};"); show(ev, 5, {by:"watch", every:15, plan:"team.json"});
     ok("H4: Jira files made for another plan (a copied or renamed folder) are flagged", (t => t.includes("team.json") && t.includes("copy-of-team.json"))(d.querySelector("#jiraOtherPlan")?.textContent || "")); });
 
   await sec(async ()=>{ const {d, ev} = await page(); show(ev, 5, null);

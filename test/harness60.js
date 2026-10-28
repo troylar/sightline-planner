@@ -57,7 +57,7 @@ async function page(opts = {}){
       && ev(`parseJiraStatus(JSON.stringify({kind:"sightline-jira-status", issues:{}, page:{version:"<b>", file:"x"}})).page`) === null); });
 
   await sec(async ()=>{ const {ev} = await page({jira:false});
-    ev(`window.RELOADS = 0; reloadPage = () => { RELOADS++; }; window.SAVES = 0; file.handle = {name:"plan.json"}; file.dirty = true; file.holdLock = true;
+    ev(`window.RELOADS = 0; reloadPage = () => { RELOADS++; }; window.SAVES = 0; stopAuto(); startAuto = ()=>{}; file.handle = {name:"plan.json"}; file.dirty = true; file.holdLock = true;
       save = () => { SAVES++; file.dirty = false; return Promise.resolve(); }; doneEditing = () => { file.holdLock = false; return Promise.resolve(); };`);
     ev(`confirm = () => false; safeRefresh();`); await wait(10);
     ok("G1: with unsaved edits, Cancel keeps the page and the edits", ev("RELOADS") === 0 && ev("SAVES") === 0 && ev("file.dirty") === true);
