@@ -18,6 +18,14 @@ Run any action from Find.
 
 - **Shortcuts wait while you type** (Keyboard). Shortcuts stay quiet while you type anywhere, including while an input method is composing. *Where:* Anywhere you type
 
+## 1.149.1 · Oct 28, 2026
+
+Back and Forward clear the last message.
+
+### Fixed
+
+- **Back and Forward clear the last message** (Timeline). Back and Forward clear the line at the top, so it never describes a step you've left. *Where:* The line at the top of the page
+
 ## 1.149.0 · Oct 28, 2026
 
 Show only, as chips you can take off.

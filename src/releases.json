@@ -30,6 +30,21 @@
     ]
   },
   {
+    "version": "1.149.1",
+    "date": "2026-10-28",
+    "headline": "Back and Forward clear the last message",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "Back and Forward clear the last message",
+        "before": "After Show all work, pressing Back brought your chips back while the line at the top still said all work was showing.",
+        "now": "Back and Forward clear the line at the top, so it never describes a step you've left.",
+        "where": "The line at the top of the page"
+      }
+    ]
+  },
+  {
     "version": "1.149.0",
     "date": "2026-10-28",
     "headline": "Show only, as chips you can take off",
