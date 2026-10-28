@@ -19,6 +19,10 @@ async function page(stored = {}){
     w.CSS = w.CSS||{}; w.CSS.escape=s=>s; w.errs=[]; w.addEventListener("error",e=>w.errs.push(e.message)); }});
   const w = dom.window; await wait(200);
   const ev = s => w.eval(s);
+  // The page starts up asynchronously and, once it has, asks who you are 50 ms later. On a busy machine that can land after
+  // the plan below is loaded and open the people picker over what a check clicks (U3b), so wait for both to be done.
+  for (let i = 0; i < 60 && ev("locked"); i++) await wait(50);
+  await wait(120);
   w.FIX = plan; ev(`askWhoOnStart = ()=>{}; S = normalize(JSON.parse(FIX), false); file.handle = null; resetHistory(); sel = null; UI.filter = normFilter({}); setWs("timeline"); setZoom("weeks"); render();`);
   return {w, d: w.document, ev};
 }
