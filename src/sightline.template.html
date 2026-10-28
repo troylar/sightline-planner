@@ -342,6 +342,8 @@ td.spname input{width:100%}
 .sutop{display:flex;gap:6px;align-items:baseline;min-width:0}.sut{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis}.sumeta{font-size:11.5px;color:var(--ink-3)}.suflags{display:flex;gap:4px;flex-wrap:wrap}
 @media (max-width:760px){.surow{grid-template-columns:1fr}.suhead{display:none}.suwho{border-right:0}.sucol{border-right:0}.sucol::before{content:attr(data-label);font-size:11.5px;font-weight:600;color:var(--ink-3)}}
 .hstrip{display:flex;flex-wrap:wrap;gap:4px 16px;padding:5px 16px;font-size:12.5px;color:var(--ink-2);background:var(--paper);border-bottom:1px solid var(--rule-2)}
+.hstrip.folded{flex-direction:column;gap:4px}.hsline{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}.hssum{font-variant-numeric:tabular-nums}
+.hsdetails{display:flex;flex-wrap:wrap;gap:4px 16px;padding-left:12px;border-left:2px solid var(--rule-2)}.hsdetails[hidden]{display:none}
 .bar .h.l{left:0}.bar .h.r{right:0}
 .bar .tag{display:inline-block;flex:none;font-size:10px;font-weight:600;line-height:16px;padding:0 5px;border-radius:3px;background:rgba(255,255,255,.94);color:#1b2231}
 .bar .tag.bad{background:var(--bad);color:var(--on-bad)}
@@ -1591,7 +1593,7 @@ body:has(> #bootfail) > :not(#bootfail){display:none !important}
 <!--__SOURCE_NOTICE_END__-->
 <div class="editstrip" id="editstrip" role="region" aria-label="Editing status" hidden></div>
 <div id="banners"></div>
-<div class="hstrip" id="hiddenStrip" role="status" hidden></div>
+<div class="hstrip" id="hiddenStrip" role="group" aria-label="Hidden from view" hidden></div>
 <div class="menu unsavedpop" id="unsavedPop" role="menu" aria-label="Unsaved changes" hidden></div>
 <div id="dragtip" hidden></div>
 <div id="peek" class="peek" role="tooltip" aria-hidden="true" hidden></div>
@@ -6028,7 +6030,7 @@ const UI = {ws:"timeline", zoom:"weeks", focus:null, collapsed:{}};
 try { Object.assign(UI, JSON.parse(localStorage.getItem("timeline-planner-ui") || "{}")); } catch(e){}
 if (!["today","timeline","list","people","plan","standup","roadmap","settings"].includes(UI.ws)) UI.ws = "timeline";
 UI.rmHorizon = UI.rmHorizon === "long" ? "long" : "four";
-UI.filter = normFilter(UI.filter); UI.pinTop = UI.pinTop === true; UI.timeOpen = UI.timeOpen === true; UI.labelW = normLW(UI.labelW); UI.notes = ["all","mine","others","none"].includes(UI.notes) ? UI.notes : "all"; UI.rows = ["people","epics"].includes(UI.rows) ? UI.rows : "lanes"; if (!UI.epicOpen || typeof UI.epicOpen !== "object") UI.epicOpen = {};
+UI.filter = normFilter(UI.filter); UI.pinTop = UI.pinTop === true; UI.timeOpen = UI.timeOpen === true; UI.hiddenOpen = UI.hiddenOpen === true; UI.labelW = normLW(UI.labelW); UI.notes = ["all","mine","others","none"].includes(UI.notes) ? UI.notes : "all"; UI.rows = ["people","epics"].includes(UI.rows) ? UI.rows : "lanes"; if (!UI.epicOpen || typeof UI.epicOpen !== "object") UI.epicOpen = {};
 UI.view = UI.view && typeof UI.view === "object" && ["team","personal"].includes(UI.view.src) ? {src:UI.view.src, id:str(UI.view.id)} : null;
 // A Focus saved by 1.147 in this browser opens as the same Show only filters, in the zoom it was over.
 function fromFocus(d){ const f = normFilter(d && d.base && d.base.filter || {});
@@ -6203,6 +6205,7 @@ function timeSay(){
   const range = sw ? ` (${fmtDay(sw.a)} – ${fmtDay(sw.z)})` : v ? ` (${fmtDay(v[0])} – ${fmtDay(v[1])})` : "", sp = cs && (cs.sp.name || "Sprint");
   const what = cs ? (n === 1 ? sp : `${zoomText()} from ${sp}`) + range : (n ? zoomText() : "Fit") + range;
   const t = `Time: ${UI.zoom === "days" ? "Days" : "Weeks"} · ${what}`; if (b.textContent !== t) b.textContent = t; }
+function showHiddenOpen(){ const b = $("#hsMore"), d = $("#hsDetails"); if (!b || !d) return; d.hidden = !UI.hiddenOpen; b.setAttribute("aria-expanded", String(UI.hiddenOpen)); b.textContent = UI.hiddenOpen ? "Hide details" : "Details"; }
 function setTimeOpen(open){ UI.timeOpen = !!open; saveUI(); showTimeOpen(); }
 // Open, the controls say it all: the button shrinks to its chevron and they take their old places on the toolbar's row.
 function showTimeOpen(){ const b = $("#timeSummary"), body = $("#timeBody"); if (!b || !body) return; body.hidden = !UI.timeOpen; b.setAttribute("aria-expanded", String(UI.timeOpen));
@@ -7762,23 +7765,31 @@ function renderWs(){
   $("#layerSeg").hidden = (ws !== "timeline" && ws !== "standup" && ws !== "list") || (!hasJiraWork() && !(S.changes || []).length && !mineOnly());
   $("#lyAll").setAttribute("aria-pressed", String(layerOf() === "all")); $("#lyJira").setAttribute("aria-pressed", String(jiraOnly())); $("#lyMine").setAttribute("aria-pressed", String(mineOnly()));
   $("#lyHere").hidden = ws === "standup" || !hasJiraWork(); $("#lyHere").setAttribute("aria-pressed", String(hereOnly())); if (layerOf() === "here" && !hereOnly()) $("#lyAll").setAttribute("aria-pressed", "true");
-  { const hs = $("#hiddenStrip"), t = ws === "timeline" ? hiddenTally() : null, parts = [];
-    if (t && t.layer) parts.push(h("span",{}, (mineOnly() ? `Showing Jira's work and what you added: ${t.layer} item${t.layer===1?"":"s"} added by others ${t.layer===1?"is":"are"} hidden` + (t.unknown ? ` (${t.unknown} with no recorded author)` : "") + ". "
-      : `Showing only what comes from Jira: ${t.layer} item${t.layer===1?"":"s"} added here ${t.layer===1?"is":"are"} hidden. `), h("button",{type:"button",class:"linkish",id:"hsEveryone",onclick:()=>setLayer("all")},"Show everyone")));
+  { const hs = $("#hiddenStrip"), t = ws === "timeline" ? hiddenTally() : null, parts = [], R = (el, short, mine) => parts.push({el, short, mine});
+    if (t && t.layer) R(h("span",{}, (mineOnly() ? `Showing Jira's work and what you added: ${t.layer} item${t.layer===1?"":"s"} added by others ${t.layer===1?"is":"are"} hidden` + (t.unknown ? ` (${t.unknown} with no recorded author)` : "") + ". "
+      : `Showing only what comes from Jira: ${t.layer} item${t.layer===1?"":"s"} added here ${t.layer===1?"is":"are"} hidden. `), h("button",{type:"button",class:"linkish",id:"hsEveryone",onclick:()=>setLayer("all")},"Show everyone")), `${t.layer} added ${mineOnly() ? "by others" : "here"} hidden`, true);
     if (t && Object.keys(t.people).length){ const ps = Object.entries(t.people), n = ps.reduce((a, [, v])=>a + v, 0);
-      parts.push(h("span",{}, `${n} hidden from your view (${ps.map(([id, v])=>`${id === "unknown" ? "no recorded author" : personOrFormer(id)} ${v}`).join(", ")}). `, h("button",{type:"button",class:"linkish",id:"hsUnhide",onclick:()=>setHide(x=>{ x.people = []; x.unknown = false; })},"Show them"))); }
+      R(h("span",{}, `${n} hidden from your view (${ps.map(([id, v])=>`${id === "unknown" ? "no recorded author" : personOrFormer(id)} ${v}`).join(", ")}). `, h("button",{type:"button",class:"linkish",id:"hsUnhide",onclick:()=>setHide(x=>{ x.people = []; x.unknown = false; })},"Show them")), `${n} hidden by person`, true); }
     const outL = [...lanesOut, ...lanesOffscreen.filter(l=>!lanesOut.includes(l))];
-    if (ws === "timeline" && outL.length) parts.push(h("span",{id:"hsLanes"}, `${outL.length} workstream${outL.length===1?"":"s"} outside the dates on screen (${outL.slice(0, 3).map(l=>`${l.name} ${laneWord(l) || "outside them"}`).join(", ")}${outL.length > 3 ? "…" : ""}). `,
-      h("button",{type:"button",class:"linkish",id:"hsLanesShow",onclick:()=>{ showOutLanes = true; render(); }},"Show anyway")));
-    else if (ws === "timeline" && showOutLanes && S.lanes.some(l=>laneWin(l))) parts.push(h("span",{}, "Showing workstreams outside these dates, faded. ", h("button",{type:"button",class:"linkish",id:"hsLanesHide",onclick:()=>{ showOutLanes = false; render(); }},"Hide them")));
-    if (t && t.parked && !parkedNoteOff()) parts.push(h("span",{id:"hsParked"}, `${t.parked} initiative${t.parked===1?" is":"s are"} parked: switched off for now, so ${t.parked===1?"it's":"they're"} not on the timeline. Nothing is lost; bring any back from Work, then Sort Jira work. `,
+    if (ws === "timeline" && outL.length) R(h("span",{id:"hsLanes"}, `${outL.length} workstream${outL.length===1?"":"s"} outside the dates on screen (${outL.slice(0, 3).map(l=>`${l.name} ${laneWord(l) || "outside them"}`).join(", ")}${outL.length > 3 ? "…" : ""}). `,
+      h("button",{type:"button",class:"linkish",id:"hsLanesShow",onclick:()=>{ showOutLanes = true; render(); }},"Show anyway")), `${outL.length} workstream${outL.length===1?"":"s"} outside these dates`, false);
+    else if (ws === "timeline" && showOutLanes && S.lanes.some(l=>laneWin(l))) R(h("span",{}, "Showing workstreams outside these dates, faded. ", h("button",{type:"button",class:"linkish",id:"hsLanesHide",onclick:()=>{ showOutLanes = false; render(); }},"Hide them")), "workstreams outside these dates shown faded", false);
+    if (t && t.parked && !parkedNoteOff()) R(h("span",{id:"hsParked"}, `${t.parked} initiative${t.parked===1?" is":"s are"} parked: switched off for now, so ${t.parked===1?"it's":"they're"} not on the timeline. Nothing is lost; bring any back from Work, then Sort Jira work. `,
       h("button",{type:"button",class:"linkish",id:"hsParkedGo",onclick:()=>{ UI.planTab = "epics"; UI.jiraOpen = {...(UI.jiraOpen || {}), parked:true}; saveUI(); goWs("plan"); setTimeout(()=>document.querySelector("#jiraWs .egroup.parked")?.scrollIntoView({block:"start"}), 50); }},"Review parked"), " · ",
-      h("button",{type:"button",class:"linkish",id:"hsParkedOff",onclick:()=>{ try { const o = JSON.parse(localStorage.getItem(PARKED_NOTE) || "{}") || {}; o[S.meta.planId] = parkedSig(); localStorage.setItem(PARKED_NOTE, JSON.stringify(o)); } catch(e){} render(); }},"Don't show this again")));
-    if (t && t.filter) parts.push(h("span",{}, `${t.filter} item${t.filter===1?"":"s"} hidden by the Added by filter. `, h("button",{type:"button",class:"linkish",id:"hsAuthors",onclick:()=>{ UI.filter.authors = []; saveUI(); render(); }},"Clear it")));
-    if (t && t.notes && !t.layer) parts.push(h("span",{}, `${t.notes} note${t.notes===1?"":"s"} hidden by the Notes setting. `, h("button",{type:"button",class:"linkish",onclick:()=>{ UI.notes = "all"; saveUI(); render(); }},"Show all notes")));
+      h("button",{type:"button",class:"linkish",id:"hsParkedOff",onclick:()=>{ try { const o = JSON.parse(localStorage.getItem(PARKED_NOTE) || "{}") || {}; o[S.meta.planId] = parkedSig(); localStorage.setItem(PARKED_NOTE, JSON.stringify(o)); } catch(e){} render(); }},"Don't show this again")), `${t.parked} initiative${t.parked===1?"":"s"} parked`, false);
+    if (t && t.filter) R(h("span",{}, `${t.filter} item${t.filter===1?"":"s"} hidden by the Added by filter. `, h("button",{type:"button",class:"linkish",id:"hsAuthors",onclick:()=>{ UI.filter.authors = []; saveUI(); render(); }},"Clear it")), `${t.filter} hidden by Added by`, true);
+    if (t && t.notes && !t.layer) R(h("span",{}, `${t.notes} note${t.notes===1?"":"s"} hidden by the Notes setting. `, h("button",{type:"button",class:"linkish",onclick:()=>{ UI.notes = "all"; saveUI(); render(); }},"Show all notes")), `${t.notes} note${t.notes===1?"":"s"} hidden`, true);
     { const hk = ["timeline","people","list"].includes(ws) ? hiddenKinds() : [];
-      if (hk.length) parts.unshift(h("span",{id:"hsKinds"}, `${hk.length} hidden: ${hk.map(k=>kindName(k).toLowerCase()).join(", ")}. `, h("button",{type:"button",class:"linkish",id:"hsShowAll",onclick:showEverything},"Show everything"))); }
-    hs.replaceChildren(...parts); hs.hidden = !parts.length; }
+      if (hk.length) parts.unshift({mine:true, short:`${hk.length} kind${hk.length===1?"":"s"} hidden`, el:h("span",{id:"hsKinds"}, `${hk.length} hidden: ${hk.map(k=>kindName(k).toLowerCase()).join(", ")}. `, h("button",{type:"button",class:"linkish",id:"hsShowAll",onclick:showEverything},"Show everything"))}); }
+    // Two or more reasons fold into one line, what you chose to hide first: that's the usual "where did it go".
+    const ps = [...parts.filter(p=>p.mine), ...parts.filter(p=>!p.mine)], back = document.activeElement && document.activeElement.id === "hsMore";
+    if (ps.length < 2) hs.replaceChildren(...ps.map(p=>p.el));
+    else { const open = UI.hiddenOpen;
+      hs.replaceChildren(h("div",{class:"hsline"}, h("span",{class:"hssum",role:"status"}, ps.map(p=>p.short).join(" · ")),
+          h("button",{type:"button",class:"linkish hsmore",id:"hsMore","aria-expanded":String(open),"aria-controls":"hsDetails",onclick:()=>{ UI.hiddenOpen = !UI.hiddenOpen; saveUI(); showHiddenOpen(); }}, open ? "Hide details" : "Details")),
+        h("div",{class:"hsdetails",id:"hsDetails",hidden:!open}, ...ps.map(p=>p.el)));
+      if (back) $("#hsMore").focus(); }
+    hs.classList.toggle("folded", ps.length >= 2); hs.hidden = !ps.length; }
   const pt = PLAN_TABS.some(x=>x[0]===UI.planTab) ? UI.planTab : jiraDir || JIRA || S.bars.some(b=>(b.epics || []).length) ? "epics" : "milestones";
   const mis = S.milestones.filter(m=>labelMismatch(m,false) || labelMismatch(m,true)).length, hi = S.risks.filter(r=>r.sev==="high").length;
   MAIN_NAV.pages.forEach(b=>{ const k = b.dataset.section; if (!k) return;

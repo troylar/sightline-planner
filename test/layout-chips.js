@@ -132,6 +132,30 @@ function contrast(sel){
       ok(`L19 1400px ${theme}: the Time button shows a focus ring`, ring.on && ring.ring, JSON.stringify(ring));
       await page.close();
     }
+    // What the Timeline leaves out, three reasons: closed it's one short line and the chart starts higher than open; at
+    // 900 nothing runs off the side and Details shows a focus ring. The late warning stays in view throughout.
+    for (const [w, theme] of [[1400, "light"], [1400, "dark"], [900, "light"], [900, "dark"]]){
+      const page = await b.newPage({viewport:{width:w, height:800}}); page.on("pageerror", e=>errs.push(String(e)));
+      await page.goto("file://" + HTML); await page.evaluate(t=>{ localStorage.clear(); localStorage.setItem("timeline-planner-theme", t); }, theme); await page.goto("file://" + HTML); await page.waitForTimeout(300);
+      await page.evaluate(FIX=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); loadExternal(FIX, "sample"); }, FIX); await page.waitForTimeout(200); await page.keyboard.press("Escape"); await page.waitForTimeout(100);
+      await page.evaluate(()=>{ setHiddenKinds(["gate"]); S.bars.find(x=>x.id === "c6").parked = true; UI.filter.authors = ["nobody"]; render(); }); await page.waitForTimeout(200);
+      const strip = () => page.evaluate(()=>{ const s = document.querySelector("#hiddenStrip"), g = document.querySelector("#gscroll"), late = [...document.querySelectorAll("#banners *")].find(e=>/\d+ late/.test(e.textContent));
+        return {h:Math.round(s.getBoundingClientRect().height), chart:Math.round(g.getBoundingClientRect().top), over:document.scrollingElement.scrollWidth - innerWidth, late:!!late && late.getClientRects().length > 0}; });
+      const shot = n => page.screenshot({path:path.join(process.env.SHOTS || require("os").tmpdir(), `hidden-${w}-${theme}-${n}.png`)});
+      const shut = await strip(); await page.evaluate(()=>document.activeElement && document.activeElement.blur()); await shot("closed");
+      if (w === 1400){
+        await page.click("#hsMore"); await page.waitForTimeout(150); const open = await strip(); await page.evaluate(()=>document.activeElement && document.activeElement.blur()); await shot("open");
+        ok(`L20 ${w}px ${theme}: closed, what's hidden is one short line`, shut.h <= 32, JSON.stringify(shut));
+        ok(`L21 ${w}px ${theme}: closed, the chart starts higher than with Details open`, shut.chart < open.chart, JSON.stringify([shut.chart, open.chart]));
+        await page.click("#hsMore"); await page.waitForTimeout(100);
+      } else {
+        await page.focus("#hsMore"); await page.keyboard.press("Tab"); await page.keyboard.press("Shift+Tab");
+        const ring = await page.evaluate(()=>{ const a = document.activeElement, s = getComputedStyle(a); return {on:a.id === "hsMore", ring:s.outlineStyle !== "none" && parseFloat(s.outlineWidth) >= 2}; });
+        ok(`L22 ${w}px ${theme}: nothing runs off the side, and Details shows a focus ring`, shut.over <= 0 && ring.on && ring.ring, JSON.stringify({...shut, ...ring}));
+      }
+      ok(`L23 ${w}px ${theme}: the late warning stays in view`, shut.late, "");
+      await page.close();
+    }
     ok("no page errors", !errs.length, errs.slice(0, 2).join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 300)); }
   await b.close();
