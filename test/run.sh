@@ -197,6 +197,7 @@ main(){
     "assistant 120 python3 test_assistant.py"
     "runner 30 python3 test_runner.py"
     "release-count 30 bash ../tools/release/test-browser-count.sh"
+    "release-gate 30 bash ../tools/release/test-gate.sh"
     "repo 30 node repo-files.js"
     "app 90 python3 test_app.py"
     "package 30 node test_package.js"

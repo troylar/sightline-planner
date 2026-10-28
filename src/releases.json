@@ -48,6 +48,13 @@
         "title": "The Filters count includes what you've shown only",
         "now": "The number on Filters counts every filter, including the initiative or person you chose to show only, and a saved view keeps them.",
         "where": "The Filters button"
+      },
+      {
+        "kind": "new",
+        "area": "Timeline",
+        "title": "Show only tells you where the work is",
+        "now": "When nothing your chips show is in the dates on screen, a line under the chips says when that work is, and Go to it scrolls there without changing the zoom. If the chips match nothing at all, it says so, with Show all work beside it.",
+        "where": "The Showing strip above the Timeline"
       }
     ]
   },
