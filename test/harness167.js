@@ -160,6 +160,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     const rf0 = !!$("#q-rf0") || !!$("#q-rf1"); ev(`UI.ws = "today"; sel = null; render();`); await wait(10);
     ev(`window.JL2 = jiraLockOf; window.LO = workItem(${JSON.stringify(LK)}).obj; jiraLockOf = o => o === LO ? {dates:true, status:false, key:"ABC-2"} : JL2(o); render();`); await wait(10);
     ok("K43 Move all on Today leaves out work whose dates come from Jira", n0 > 1 && bulkN() === n0 - 1, [n0, bulkN(), LK].join(" | "));
+    ok("K48 …and says how many it leaves out and why", /^1 follows its Jira sprint$/.test($("#today .tbulkw .hint")?.textContent || ""), $("#today .tbulkw")?.textContent);
     ev(`UI.ws = "timeline"; select(${JSON.stringify(LK.split(":")[0])}, ${JSON.stringify(LK.split(":")[1])}); render();`); await wait(10);
     ok("K45 …and its details, which offer to move it when the plan dates it, don't once Jira does", rf0 && !$("#q-rf0") && !$("#q-rf1") && !$("#q-rf5"), String(rf0));
     const snap = X(`JSON.stringify([LO.start, LO.span, LO.days])`);

@@ -629,7 +629,7 @@ body.presenting #filterBtn,body.presenting #viewSave{display:none!important}
 .tsec.since .seg{margin-left:auto}.tsec.since .seg button{font-size:12px;padding:2px 8px}.trow.tsub{margin-top:6px;color:var(--ink-2);font-size:12px}
 .tsec h3{margin:0;font-size:14px;display:flex;align-items:center;gap:6px}
 .tsec h3 b{font-size:11px;font-weight:700;background:var(--paper);border:1px solid var(--rule);border-radius:9px;padding:0 6px;color:var(--ink-2)}
-.tsec .tbulk{margin-left:auto;font-size:12px;padding:3px 9px}
+.tsec .tbulk{margin-left:auto;font-size:12px;padding:3px 9px}.tsec .tbulkw{margin-left:auto;display:flex;align-items:center;gap:8px}.tbulkw .hint{font-size:12px}
 .tsec ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .tnone{margin:2px 0}
 .tsec h3 .ic{width:15px;height:15px;color:var(--ink-3)}.tsec.bad h3 .ic{color:var(--bad)}.tsec.warn h3 .ic{color:var(--warn)}.tsec.good h3 .ic{color:var(--ok)}
@@ -15155,9 +15155,10 @@ function renderToday(){
     ? [btn("Start today", ()=>act(it.key, `${itemLabel(it)}: moved to today`, ()=>reforecast(it.key, 0) ? undefined : NOCHANGE)), btn("Next week", ()=>act(it.key, `${itemLabel(it)}: moved to next week`, ()=>reforecast(it.key, 5) ? undefined : NOCHANGE))]
     : [btn("+1 day", ()=>act(it.key, `${itemLabel(it)}: +1 day`, ()=>reforecast(it.key, 1) ? undefined : NOCHANGE)), btn("+1 week", ()=>act(it.key, `${itemLabel(it)}: +1 week`, ()=>reforecast(it.key, 5) ? undefined : NOCHANGE))];
   const doneBtn = it => btn("Done", ()=>act(it.key, `${itemLabel(it)}: done`, w=>{ w.obj.status = "done"; }));
-  const allLate = [...D.stale, ...D.late].filter(it=>!jiraFixed(it.obj));
-  const bulk = allLate.length > 1 && !present ? btn(`Move all ${allLate.length}`, ()=>{ if (!window.confirm(`Move ${allLate.length} late items? Not started ones move to start today; in-progress ones get 3 more working days. Anything waiting on them moves too.`)) return;
+  const lateAll = [...D.stale, ...D.late], allLate = lateAll.filter(it=>!jiraFixed(it.obj)), jiraN = lateAll.length - allLate.length;
+  const bulkBtn = allLate.length > 1 && !present ? btn(`Move all ${allLate.length}`, ()=>{ if (!window.confirm(`Move ${allLate.length} late items? Not started ones move to start today; in-progress ones get 3 more working days. Anything waiting on them moves too.`)) return;
     const keys = allLate.map(it=>it.key); whoAmI(null, ()=>quickSave(`moved ${keys.length} late items`, ()=>{ let n = 0; keys.forEach(k=>{ const w = workItem(k); if (w && reforecast(k, w.obj.status === "notstarted" ? 0 : 3)) n++; }); return n ? undefined : NOCHANGE; })); }, "tbulk") : null;
+  const bulk = bulkBtn && jiraN ? h("span",{class:"tbulkw"}, h("span",{class:"hint",title:"Their dates come from their Jira sprints. Change those in Jira."}, `${jiraN} follow${jiraN === 1 ? "s its" : ""} Jira sprint${jiraN === 1 ? "" : "s"}`), bulkBtn) : bulkBtn;
   host.replaceChildren(
     h("div",{class:"thead"},
       h("div",{}, h("h2",{tabindex:"-1",id:"todayH"}, `Today · ${fmtDay(t0)}`), (()=>{ if (present) return null; try { const Q = sinceData(["visit","yesterday","week"].includes(UI.sinceMode) ? UI.sinceMode : "visit"), J = Q.jira;

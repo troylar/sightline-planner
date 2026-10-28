@@ -9,7 +9,7 @@
         "area": "Today",
         "title": "Move all and Start today skip Jira's dates",
         "before": "Move all on Today, and the Start today and +1 week buttons in an item's details, could move work whose dates come from its Jira sprint. The chart hid the move, but it was saved, and work waiting on it could really move.",
-        "now": "Move all counts and moves only work the plan dates, and those buttons don't appear on work Jira dates. Nothing ever reached Jira. If you unlink such an item, check its dates.",
+        "now": "Move all counts and moves only work the plan dates, and says how many follow Jira sprints. Those buttons don't appear on work Jira dates. Nothing ever reached Jira. If you unlink such an item, check its dates.",
         "where": "Today, and an item's details"
       },
       {

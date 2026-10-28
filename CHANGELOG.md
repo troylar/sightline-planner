@@ -8,7 +8,7 @@ Jira's dates hold everywhere.
 
 ### Fixed
 
-- **Move all and Start today skip Jira's dates** (Today). Move all counts and moves only work the plan dates, and those buttons don't appear on work Jira dates. Nothing ever reached Jira. If you unlink such an item, check its dates. *Where:* Today, and an item's details
+- **Move all and Start today skip Jira's dates** (Today). Move all counts and moves only work the plan dates, and says how many follow Jira sprints. Those buttons don't appear on work Jira dates. Nothing ever reached Jira. If you unlink such an item, check its dates. *Where:* Today, and an item's details
 - **Moving an initiative leaves Jira's work inside it in place** (Timeline). What the plan dates moves with it; what Jira dates stays in its sprint. *Where:* Timeline, initiatives with others inside them
 - **A change can't set what Jira owns right after linking it** (Assistant). It's refused with the reason, as it is for an initiative that was already linked. *Where:* Assistant changes you review
 

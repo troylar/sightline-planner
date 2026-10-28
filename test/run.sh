@@ -17,11 +17,19 @@ run_suite(){
   fail=1
   return 1
 }
+# The commit and the uncommitted files the run is testing. A run whose tree changed under it proves nothing about either.
+worktree_state(){ git -C "$1" rev-parse HEAD 2>/dev/null; git -C "$1" status --porcelain 2>/dev/null; }
+worktree_check(){   # before, dir
+  [[ "$(worktree_state "$2")" == "$1" ]] && return 0
+  printf "  %-10s %s\n" "worktree" "WORKTREE CHANGED DURING RUN: the commit or files changed while the suite ran, so these results don't describe either. Run it again."
+  fail=1; return 1
+}
 main(){
-  local self
+  local self before
   self="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
   cd "$(dirname "$self")" || return 1
   fail=0
+  before=$(worktree_state ..)
   # Each line: name, seconds allowed, command. They run side by side (SIGHTLINE_JOBS at a time, default one per CPU)
   # and print in this order; one after another they took about 25 minutes on CI.
   local specs=(
@@ -225,6 +233,7 @@ main(){
   done
   rm -rf "$dir"
   (( k == n )) && browser_checks
+  worktree_check "$before" ..
   return "$fail"
 }
 # Layout in a real browser (jsdom has no layout). CI installs Chromium and must run them. Elsewhere they run when Playwright

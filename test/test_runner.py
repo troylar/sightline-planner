@@ -54,6 +54,23 @@ for name, payload, expected in cases:
     result = exercise(payload)
     ok(name, (result.returncode == 0) == expected, result.stdout[-400:] + result.stderr[-400:])
 
+if "worktree_check(){" in SOURCE:
+    with tempfile.TemporaryDirectory() as temporary:
+        repo = pathlib.Path(temporary)
+        git = lambda *a: subprocess.run(["git", "-C", str(repo), *a], capture_output=True, text=True, check=True)
+        git("init", "-q"); (repo / "a.txt").write_text("one\n"); git("add", "a.txt")
+        git("-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-qm", "one")
+        probe = 'source "$1"; fail=0; before=$(worktree_state "$2"); eval "$3"; worktree_check "$before" "$2"; echo "fail=$fail"'
+        same = subprocess.run(["bash", "-c", probe, "runner-test", str(RUNNER), str(repo), ":"], capture_output=True, text=True, timeout=10)
+        ok("a run whose tree didn't change passes the worktree check", same.returncode == 0 and "fail=0" in same.stdout, same.stdout + same.stderr)
+        edited = subprocess.run(["bash", "-c", probe, "runner-test", str(RUNNER), str(repo), 'echo two >> "$2/a.txt"'], capture_output=True, text=True, timeout=10)
+        ok("a file edited during the run fails it, saying so", "fail=1" in edited.stdout and "WORKTREE CHANGED DURING RUN" in edited.stdout, edited.stdout + edited.stderr)
+        git("checkout", "-q", "a.txt")
+        moved = subprocess.run(["bash", "-c", probe, "runner-test", str(RUNNER), str(repo), 'git -C "$2" -c user.name=T -c user.email=t@example.com commit -q --allow-empty -m two'], capture_output=True, text=True, timeout=10)
+        ok("a new commit during the run fails it too", "fail=1" in moved.stdout and "WORKTREE CHANGED DURING RUN" in moved.stdout, moved.stdout + moved.stderr)
+else:
+    ok("the runner checks that the tree didn't change during the run", False, "run.sh has no worktree_check")
+
 result = exercise("import sys; print('1/1 passed'); print('diagnostic-first', file=sys.stderr); print('Not implemented: diagnostic-last', file=sys.stderr); raise SystemExit(7)")
 ok("retains complete stdout and stderr on failure", result.returncode != 0 and all(text in result.stdout for text in ("1/1 passed", "diagnostic-first", "Not implemented: diagnostic-last", "exit 7")), result.stdout[-500:])
 payload = "import time; print('1/1 passed', flush=True); time.sleep(5)" if "run_suite(){" in SOURCE else "print('1/1 passed'); raise SystemExit(124)"
