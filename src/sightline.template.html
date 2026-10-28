@@ -6306,6 +6306,7 @@ document.addEventListener("scroll", e=>{ if (placeHold) return; const t = e.targ
   if (Object.keys(place).length > 24) delete place[Object.keys(place).find(k=>k)];
   clearTimeout(placeT); placeT = setTimeout(savePlace, 250); }, {capture:true, passive:true});
 window.addEventListener("popstate", ()=>{
+  setStatus(""); statusAt = 0;   // what the last action said is about the step you left (applyNav can still speak for this one)
   clearTimeout(placeT); places.set(placeId, place);                  // the step you left keeps a scroll made just now, in memory
   placeId = history.state && history.state.pid || newPlaceId(); const p = places.get(placeId) || history.state && history.state.place;
   const gen = ++placeGen; placeHold = !!p; place = p ? {...p} : {};

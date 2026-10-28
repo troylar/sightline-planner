@@ -121,6 +121,13 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("R7 Show only says it once on screen (the strip) and tells a screen reader in the hidden live region", !/Showing only/.test($("#status")?.textContent || "") && /Showing only/.test($("#showLive")?.textContent || "") && !!$("#showStrip"), [$("#status")?.textContent, $("#showLive")?.textContent]);
     ev(`showOff("bar", "m2");`); await wait(10);
     ok("R8 taking the chip off tells a screen reader, without a line on screen", !/showing only/i.test($("#status")?.textContent || "") && /No longer showing only/.test($("#showLive")?.textContent || ""), [$("#status")?.textContent, $("#showLive")?.textContent]);
+    ev(`setStatus(""); UI.filter = normFilter({}); render(); showOnly("bar", "m2"); showOnly("person", A);`); await wait(20);
+    $("#showAll")?.click(); await wait(20);
+    const said = $("#status")?.textContent || "";
+    w.history.back(); await wait(80);
+    ok("R9 Show all work, then Back: the chips return and the status line no longer says all work is showing", /Showing all work/.test(said) && chips().length === 2 && !/Showing all work/.test($("#status")?.textContent || ""), JSON.stringify([said, chips(), $("#status")?.textContent]));
+    ev(`setStatus("Showing all work. Back puts your filters back.")`); w.history.forward(); await wait(80);
+    ok("R10 Forward clears what the last step said as well", !$("#showStrip") && !/Back puts your filters back/.test($("#status")?.textContent || ""), $("#status")?.textContent);
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
 
