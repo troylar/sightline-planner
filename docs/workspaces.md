@@ -121,6 +121,8 @@ Today names each due decision's decider; its owners may be different people.
 
 **Find** (/ or Ctrl+K) also runs actions by name: type "days", "start editing", "rows by person" or "show only" and press Enter. Each action shows its shortcut, and only actions that apply right now are offered, so what's selected and whether you're editing decide what you see. Press **?** for every shortcut. Find reveals a matching milestone, gate or note through the Timeline's filters, folded rows and hidden layers. **Restore previous view** returns to the view you had before opening the result. Filter controls retain keyboard focus when the view updates, and status messages remain visible on narrow screens.
 
+**J** and **K** move to the next or previous item in the view you're in. On the Timeline and the List they select it, so its details open beside it; on Today, Sprint and Capacity they move keyboard focus, and **Enter** opens it. At either end they stay put and say so.
+
 Unsent notes, quick updates and blocker explanations stay with their plan and item during this session when details redraw. They clear after successful submission. They are temporary browser-session drafts; submit the text before closing the page. Saving other plan edits does not submit a composer draft.
 
 Use **Connect assistant** in the toolbar to set up the [private assistant folder](assistant-workflow.md). Proposed changes wait for your review. Common initiative and task updates remain visible; open **Organize this initiative** or **Move this task** for structural changes.

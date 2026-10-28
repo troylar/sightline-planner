@@ -5653,7 +5653,7 @@ document.addEventListener("keydown", e=>{
 // ================= name, keyboard shortcuts, help =================
 const APP_NAME = "Sightline", APP_TAGLINE = "Your team's work, in plain sight.";
 const SHORTCUTS = [       // [keys (each shown as a key; alternatives joined by "or"), what it does]
-  ["Get around", [[["1","2","3","4","5","6"],"Today, Timeline, People, Settings, Sprint, Roadmap", " "],[["T","L"],"Today or List"],[["\\"],"Collapse or expand the menu"],[["/","Ctrl+K"],"Find anything, or an action by name"],[["W","D"],"Weeks or Days view"],[["R"],"Rows by workstream, person or epic"],[["."],"Jump to today"],[["[","]"],"Earlier / later (Days view), or the previous / next sprint when one is chosen"],[["+","−"],"One sprint fewer or more on screen"],[["Shift+1","Shift+2","Shift+3"],"This sprint, this and the next, or the next three, from the sprint we're in"],[["Shift+0"],"Fit the whole plan"],[["J","K"],"Next / previous item"],[["Z"],"Show only the selected initiative or person, as a chip above the chart (× takes it off)"],[["↑","↓"],"Previous / next item, while its details are open (Timeline and List)"],[["Esc"],"Close whatever is open"]]],
+  ["Get around", [[["1","2","3","4","5","6"],"Today, Timeline, People, Settings, Sprint, Roadmap", " "],[["T","L"],"Today or List"],[["\\"],"Collapse or expand the menu"],[["/","Ctrl+K"],"Find anything, or an action by name"],[["W","D"],"Weeks or Days view"],[["R"],"Rows by workstream, person or epic"],[["."],"Jump to today"],[["[","]"],"Earlier / later (Days view), or the previous / next sprint when one is chosen"],[["+","−"],"One sprint fewer or more on screen"],[["Shift+1","Shift+2","Shift+3"],"This sprint, this and the next, or the next three, from the sprint we're in"],[["Shift+0"],"Fit the whole plan"],[["J","K"],"Next or previous item in this view"],[["Z"],"Show only the selected initiative or person, as a chip above the chart (× takes it off)"],[["↑","↓"],"Previous / next item, while its details are open (Timeline and List)"],[["Esc"],"Close whatever is open"]]],
   ["Update the item you've selected", [[["I"],"In progress"],[["X"],"Done (again: back to in progress)"],[["B"],"Mark blocked"],[["U"],"Write an update"],[["S"],"Stick a note on it"],[["Enter"],"Open it"]]],
   ["Plan", [[["A"],"Add something (then a letter from the menu)"],[["←","→"],"Move the selected item (with Shift: smaller steps)"],[["Alt+←","Alt+→"],"Make it shorter / longer"],[["Delete"],"Delete it"],[["Ctrl+Z","Ctrl+Y","Ctrl+Shift+Z"],"Undo / redo (either redo key)"]]],
   ["Show and share", [[["F"],"Filters"],[["V"],"Saved views"],[["H"],"Show menu: hide gates, meetings, done work and more, or pin the top rows"],[["G","M"],"Hide or show gates / meetings"],[["Shift+H"],"Show everything you hid"],[["N"],"Show / hide notes"],[["P"],"Present"],[["E"],"Start editing / Done editing (shared file)"],[["Ctrl+S"],"Save"],[["?"],"This help"]]],
@@ -5908,17 +5908,42 @@ $("#helpNav").addEventListener("keydown", e=>{ if (!["ArrowUp","ArrowDown"].incl
 // J / K: step through the items on the chart in the order you see them.
 function stepItem(dir){
   if (UI.ws === "list"){ const keys = [...document.querySelectorAll("#listTable tr[data-lk]")].filter(r=>!r.closest("[hidden]")).map(r=>r.dataset.lk.slice(5)); if (!keys.length) return;
-    const cur = sel ? sel.type + ":" + sel.id : null, i = keys.indexOf(cur), next = keys[i < 0 ? (dir > 0 ? 0 : keys.length - 1) : Math.min(keys.length - 1, Math.max(0, i + dir))];
+    const cur = sel ? sel.type + ":" + sel.id : null, i = keys.indexOf(cur), ni = i < 0 ? (dir > 0 ? 0 : keys.length - 1) : Math.min(keys.length - 1, Math.max(0, i + dir)), next = keys[ni];
+    if (ni === i) return navSay(dir > 0 ? "Last item" : "First item"); navSay(`${ni + 1} of ${keys.length}`);
     select(next.slice(0, next.indexOf(":")), next.slice(next.indexOf(":") + 1));
     const row = document.querySelector(`#listTable tr[data-lk="list:${next}"]`); if (row){ document.querySelectorAll("#listTable tr[data-lk]").forEach(r=>{ r.tabIndex = -1; }); row.tabIndex = 0; row.focus(); } return; }
-  const els = [...document.querySelectorAll('#gantt [data-key^="bar:"], #gantt [data-key^="task:"], #gantt [data-key^="dbar:"]')].filter(el=>!el.closest("[hidden]"));
-  const keys = [], seen = new Set(); els.forEach(el=>{ const k = el.dataset.key.replace(/^dbar:/, "bar:"); if (!seen.has(k)){ seen.add(k); keys.push(k); } });
-  if (!keys.length) return;
-  const cur = sel && (sel.type === "bar" || sel.type === "task") ? sel.type + ":" + sel.id : null, i = keys.indexOf(cur);
-  const next = keys[i < 0 ? (dir > 0 ? 0 : keys.length - 1) : Math.min(keys.length - 1, Math.max(0, i + dir))];
-  const [t, id] = [next.slice(0, next.indexOf(":")), next.slice(next.indexOf(":") + 1)];
-  select(t, id); setTimeout(()=>{ const el = document.querySelector(`#gantt [data-key="${next}"]`) || document.querySelector(`#gantt [data-key="dbar:${id}"]`); el?.scrollIntoView({block:"nearest", inline:"nearest"}); el?.focus({preventScroll:true}); }, 0);
+  // Timeline: each drawn occurrence in page order (a task on two people's rows is two stops), named by what it is
+  // (data-sel), with an item's label and bar next to each other counted once.
+  const stops = []; document.querySelectorAll('#gantt [data-sel^="bar:"], #gantt [data-sel^="task:"], #gantt [data-sel^="story:"], #gantt [data-key^="dbar:"]').forEach(el=>{
+    if (el.closest("[hidden]")) return;
+    const id = el.dataset.sel || el.dataset.key.replace(/^dbar:/, "bar:"); if (stops.length && stops[stops.length - 1].id === id) return; stops.push({el, id}); });
+  if (!stops.length) return;
+  const at = document.activeElement && document.activeElement.closest?.("#gantt [data-sel], #gantt [data-key]");
+  let i = at ? stops.findIndex(x=>x.el === at || x.el.contains(at) || at.contains(x.el)) : -1;
+  if (i < 0 && sel) i = stops.findIndex(x=>x.id === sel.type + ":" + sel.id);
+  const n = i < 0 ? (dir > 0 ? 0 : stops.length - 1) : Math.min(stops.length - 1, Math.max(0, i + dir));
+  if (n === i){ navSay(dir > 0 ? "Last item" : "First item"); return; }
+  const {id, el} = stops[n], t = id.slice(0, id.indexOf(":")), x = id.slice(id.indexOf(":") + 1), occ = el.dataset.key;
+  select(t, x); navSay(`${n + 1} of ${stops.length}`);
+  setTimeout(()=>{ const e2 = (occ && document.querySelector(`#gantt [data-key="${CSS.escape(occ)}"]`)) || document.querySelector(`#gantt [data-sel="${CSS.escape(id)}"]`); e2?.scrollIntoView({block:"nearest", inline:"nearest"}); e2?.focus({preventScroll:true}); }, 0);
 }
+// J / K on Today, Sprint and Capacity: move keyboard focus through what's drawn, in page order, without opening anything
+// (Enter does that). Timeline and List select as they go (stepItem).
+const NAV_STOPS = {today:"#today li.trow", standup:"#standupWs .sucard[data-card]", people:"#ws-people tr[data-fc], #load .lgrid > .p"};
+function stepFocus(dir){
+  const q = NAV_STOPS[UI.ws]; if (!q) return false;
+  const stops = [...document.querySelectorAll(q)].filter(el=>!el.closest("[hidden]")).map(row=>({row, el:row.matches("button,a") ? row : row.querySelector("button.tname, a.tname, .tname button, td button, a") || row}));
+  if (!stops.length) return true;
+  const a = document.activeElement; let i = a ? stops.findIndex(x=>x.row === a || x.row.contains(a)) : -1;
+  const n = i < 0 ? (dir > 0 ? 0 : stops.length - 1) : Math.min(stops.length - 1, Math.max(0, i + dir));
+  if (n === i){ navSay(dir > 0 ? "Last item" : "First item"); return true; }
+  const el = stops[n].el; if (!el.matches("button,a,[tabindex]")) el.tabIndex = -1;
+  el.focus({preventScroll:true}); el.scrollIntoView({block:"nearest", inline:"nearest"});
+  const name = el.getAttribute("aria-label") || (el.title && !el.matches("button,a") ? el.title : (el.innerText || [...el.childNodes].map(x=>x.textContent).join("\n")).trim().split(/\s*\n+\s*/).join(", "));
+  navSay(`${n + 1} of ${stops.length}: ${name.slice(0, 120)}`);
+  return true;
+}
+function navSay(t){ let el = $("#navLive"); if (!el){ el = h("div",{class:"vh",id:"navLive",role:"status","aria-live":"polite","aria-atomic":"true"}); document.body.append(el); } el.textContent = t; }
 // I / X / B / U / S act on the selected task or initiative through its quick panel.
 function quickKey(k){
   if (!sel || (sel.type !== "bar" && sel.type !== "task")) return false;
@@ -16037,8 +16062,7 @@ document.addEventListener("keydown", e=>{
   else if (e.key === "\\" && !mod && !e.altKey && !present){ e.preventDefault(); toggleNavRail(); }
   else if (k==="t" && !mod && !e.altKey){ goWs("today"); }
   else if (k==="l" && !mod && !e.altKey){ goWs("list"); }
-  else if (k==="j" && !mod && !e.altKey){ e.preventDefault(); if (UI.ws !== "timeline") setWs("timeline"); stepItem(1); }
-  else if (k==="k" && !mod && !e.altKey){ e.preventDefault(); if (UI.ws !== "timeline") setWs("timeline"); stepItem(-1); }
+  else if ((k==="j" || k==="k") && !mod && !e.altKey && !e.shiftKey && (["timeline","list"].includes(UI.ws) || NAV_STOPS[UI.ws])){ e.preventDefault(); const d = k === "j" ? 1 : -1; if (!stepFocus(d)) stepItem(d); }
   else if (["i","x","b","u","s"].includes(k) && !mod && !e.altKey && !present && quickKey(k)){ e.preventDefault(); }
   else if (e.key === "." && !mod){ jumpToday(); }
   else if (k==="z" && !mod && !e.altKey && sel && ["bar","task","person"].includes(sel.type)){ e.preventDefault(); sel.type === "task" ? showOnly("bar", taskById(sel.id)?.b.id) : showOnly(sel.type, sel.id); }
