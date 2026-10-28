@@ -15691,7 +15691,7 @@ function renderPlanningGuide(){
 // ================= List: the plan's work as rows (docs/workspaces.md) =================
 // The same items Timeline draws for the same filters, read top to bottom: initiatives as group headers, their tasks and
 // the Jira stories placed under them. It only reads; edits happen in the side panel.
-const LIST_KEY = "sightline-list-layout", LIST_LAYOUTS = [["initiative", "By initiative"], ["lane", "By workstream"], ["person", "By person"], ["start", "By start date", "Everything in one list, by start date"], ["order", "By order", "Steps from what waits for what: first what waits for nothing, then what waits only on those. Order, not what's ready: done work still counts"]], LIST_DEFAULT = "lane";
+const LIST_KEY = "sightline-list-layout", LIST_LAYOUTS = [["initiative", "By initiative"], ["lane", "By workstream"], ["person", "By person"], ["start", "By start date", "Everything in one list, by start date"], ["connection", "By connection", "Each chain of linked work together, in the order it has to happen; work with no links last"], ["order", "By order", "Steps from what waits for what: first what waits for nothing, then what waits only on those. Order, not what's ready: done work still counts"]], LIST_DEFAULT = "lane";
 let listMemo = null, listFocus = null;
 function listLayout(){
   if (listMemo !== null) return listMemo;
@@ -15768,10 +15768,12 @@ function listModel(f = UI.filter){
 // for. A task waits for its own links and for what its initiatives wait for; an initiative, for its links and what holds
 // it waits for. Waiting for an initiative is waiting for everything in it. Work hidden by filters still counts. -1: part
 // of a loop. Keyed "bar:id" / "task:id".
-function orderSteps(){
+function orderPreds(){
   const preds = new Map(), add = (k, L) => preds.set(k, [...(preds.get(k) || []), ...L]);
   const barWaits = b => { const out = []; for (let x = b, seen = new Set(); x && !seen.has(x.id); x = x.parent && barById(x.parent)){ seen.add(x.id); (x.dependsOn || []).forEach(id=>{ const y = barById(id); if (!y || sameTree(id, b.id)) return; [y, ...descendantsOf(id)].forEach(z=>{ out.push("bar:" + z.id); (z.tasks || []).forEach(t=>out.push("task:" + t.id)); }); }); } return out; };
   S.bars.forEach(b=>{ add("bar:" + b.id, barWaits(b)); (b.tasks || []).forEach(t=>add("task:" + t.id, [...(t.dependsOn || []).filter(id=>taskById(id)).map(id=>"task:" + id), ...barWaits(b)])); });
+  return preds; }
+function orderSteps(preds = orderPreds()){
   const step = new Map(), on = new Set();
   const walk = k => { if (step.has(k)) return step.get(k); if (on.has(k)) return -1; on.add(k); let v = 0;
     for (const q of preds.get(k) || []){ const x = walk(q); if (x < 0){ v = -1; break; } v = Math.max(v, x + 1); }
@@ -15784,6 +15786,27 @@ function listGroups(m, layout){
     items.forEach(r=>{ const k = r.b && r.b.kind === "waiting" ? WAIT : st.get(r.type + ":" + r.id) ?? 0; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
     const rank = k => k === WAIT ? 2e9 : k < 0 ? 1e9 : k;
     return [...groups.keys()].sort((a, b)=>rank(a) - rank(b)).map(k=>({label:k === WAIT ? "Waiting and unstaffed" : k < 0 ? "In a loop: these wait for each other" : k === 0 ? "Step 1: waits for nothing" : `Step ${k + 1}: waits for something in step ${k}`, step:k, rows:groups.get(k).sort(byStart)})); }
+  if (layout === "connection"){
+    // Linked work in groups: work that waits on other work (or that other work waits on), chained through any number of
+    // links, is one group, in step order (ties by start). Groups go by their first start; ones holding linked picks first;
+    // work with no links at all last. The same links as By order, so a filter never changes which group a row is in.
+    const preds = orderPreds(), st = orderSteps(preds), up = new Map(), find = k => { while (up.get(k) !== k){ up.set(k, up.get(up.get(k))); k = up.get(k); } return k; };
+    const node = k => { if (!up.has(k)) up.set(k, k); return k; }, linked = new Set();
+    preds.forEach((L, k)=>{ node(k); L.forEach(q=>{ node(q); if (q === k) return; linked.add(k); linked.add(q); const a = find(k), b = find(q); if (a !== b) up.set(a, b); }); });
+    const L = linkedScope(), picked = r => !!L && (r.type === "bar" ? L.bars.has(r.id) : r.type === "task" ? L.tasks.has(r.id) : L.bars.has(r.b.id));
+    const groups = new Map(), loose = [];
+    items.forEach(r=>{ const k = r.type === "story" ? "bar:" + r.b.id : r.type + ":" + r.id; if (!linked.has(k)){ loose.push(r); return; }
+      const c = find(k); if (!groups.has(c)) groups.set(c, []); groups.get(c).push({...r, step:st.get(k) ?? 0}); });
+    const rank = x => x < 0 ? 1e9 : x, out = [...groups.values()].map(rows=>{ rows.sort((a, b)=>rank(a.step) - rank(b.step) || byStart(a, b));
+      const loop = rows.some(r=>r.step < 0), s0 = Math.min(...rows.map(r=>r.s ?? 1e12));
+      // Name every starting point: one name alone reads as if the rest of the group comes after it.
+      const roots = rows.filter(r=>r.step === 0 && r.type !== "story").map(r=>r.label), from = roots.length ? roots : [rows[0].label];
+      const named = from.length > 3 ? `${from.length} starting points: ${from[0]}, +${from.length - 1}` : from.length > 1 ? from.slice(0, -1).join(", ") + " and " + from[from.length - 1] : from[0];
+      return {label:`From ${named}` + (loop ? " (includes a loop: some of this waits on itself)" : ""), connection:true, picked:rows.some(picked), s0, rows}; });
+    out.sort((a, b)=>(b.picked - a.picked) || a.s0 - b.s0 || a.rows[0].ord - b.rows[0].ord);
+    if (loose.length) out.push({label:"No links: waits for nothing, and nothing waits for it", connection:true, rows:loose.sort(byStart)});
+    return out;
+  }
   if (layout === "lane"){
     // Each workstream in its order, its initiatives as on By initiative; a sub-initiative in another workstream starts at its own top level.
     const depth = b => { let n = 0; for (let p = b.parent && barById(b.parent), seen = new Set(); p && p.lane === b.lane && !seen.has(p.id); p = p.parent && barById(p.parent)){ seen.add(p.id); n++; b = p; } return n; };
