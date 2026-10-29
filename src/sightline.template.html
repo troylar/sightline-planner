@@ -14489,11 +14489,14 @@ function askDetails(t, id){
   return askRef(t, id) + "\n\n```json\n" + json.replace(/`/g, "\\u0060") + "\n```\n"; }
 function askStars(){ const list = starsAll().map(x=>starWhere(x)).filter(w=>w.t && askOk(w.t, w.id));
   return list.length ? ["My starred items in Sightline:", ...list.map(w=>"- " + askItemLine(w.t, w.id)), askFresh(), ASK_NOTE].join("\n") : ""; }
+// When the browser won't copy, the text is shown to copy by hand, never lost
+const askCopy = (text, what) => copyText(text, what, ()=>{ openDialog(text, true, "Copy for your assistant", "This browser didn't allow copying. Select all, copy, and paste it into your assistant. It's your team's plan data: paste it only where your team allows.");
+  setStatus("Couldn't copy automatically, so the text is shown for you to copy."); });
 function copyForAsk(how){ const t = sel && sel.type, id = sel && sel.id;
   if (how === "stars"){ const x = askStars(); if (!x){ setStatus("Star something first (select it and press ,), then copy your stars."); return; }
-    return copyText(x, `your ${starsAll().length === 1 ? "star" : "stars"} for your assistant. It's your team's plan data: paste it only where your team allows`); }
+    return askCopy(x, `your ${starsAll().length === 1 ? "star" : "stars"} for your assistant. It's your team's plan data: paste it only where your team allows`); }
   if (!t || !askOk(t, id)){ setStatus(t === "note" ? "Sticky notes aren't copied for an assistant. Select the item it's on instead." : "Select an item to copy it for your assistant."); return; }
-  return copyText(how === "details" ? askDetails(t, id) : askRef(t, id), `${how === "details" ? "the details of " : "a reference to "}${askOne(starLabel(t, id))} for your assistant. It's your team's plan data: paste it only where your team allows`); }
+  return askCopy(how === "details" ? askDetails(t, id) : askRef(t, id), `${how === "details" ? "the details of " : "a reference to "}${askOne(starLabel(t, id))} for your assistant. It's your team's plan data: paste it only where your team allows`); }
 // Ctrl+C (⌘C) with an item selected and no text selected copies the reference: nothing else would have been copied.
 document.addEventListener("copy", e=>{
   if (!sel || !askOk(sel.type, sel.id) || !e.clipboardData) return;
@@ -15450,10 +15453,10 @@ function relNotesText(rid, final, md){ const {r, groups} = relNotes(rid, final);
   return head + draft + "\n" + groups.map(g=>(md ? `\n### ${g.label}\n\n` : `\n${g.label}\n`) + g.items.map(d=>(md ? `- **${E(d.name)}**${d.line ? ": " + E(d.line) : ""}` : `• ${E(dvLine(d))}`)).join("\n")).join("\n") + "\n"; }
 // For the person pasting the notes (not the customer): whether the data behind them was complete.
 function relNotesCopy(rid, final, md){ const t = relNotesText(rid, final, md), D = dataCheck(); return D.level === "ok" || D.level === "none" ? t : t + (md ? "\n_" + mdEsc(dataCheckText()) + "_\n" : "\n" + dataCheckText() + "\n"); }
-function copyText(text, what){ const done = () => setStatus(`Copied ${what}.`);
+function copyText(text, what, fail){ const done = () => setStatus(`Copied ${what}.`);
   try { if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(done, ()=>fallback()); } catch(e){}
   return fallback();
-  function fallback(){ const ta = h("textarea",{style:{position:"fixed",left:"-9999px"}}); ta.value = text; document.body.append(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch(e){} ta.remove(); setStatus(ok ? `Copied ${what}.` : "Couldn't copy here. Select the notes and copy them yourself."); } }
+  function fallback(){ const ta = h("textarea",{style:{position:"fixed",left:"-9999px"}}); ta.value = text; document.body.append(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch(e){} ta.remove(); if (!ok && fail) return fail(); setStatus(ok ? `Copied ${what}.` : "Couldn't copy here. Select the notes and copy them yourself."); } }
 function printRelNotes(rid, final){ const {r, groups} = relNotes(rid, final); if (!r) return;
   const box = h("div",{id:"printNotes"}, h("h1",{}, r.name), h("p",{class:"pn-when"}, r.date ? fullDate(isoToDay(r.date)) : "Date not set in Jira", !final || !r.released ? " · Draft" : ""),
     ...groups.flatMap(g=>[h("h2",{}, g.label), h("ul",{}, ...g.items.map(d=>h("li",{}, h("b",{}, d.name), d.line ? ": " + d.line : "")))]));
@@ -16400,10 +16403,10 @@ $("#fileIn").onchange = e=>{
   r.readAsText(f);
 };
 const dlg = $("#dlg");
-function openDialog(text, readOnly){
+function openDialog(text, readOnly, title, hint){
   $("#dlgText").value = text || ""; $("#dlgErr").textContent = "";
-  $("#dlgTitle").textContent = readOnly ? "Copy this JSON" : "Paste JSON or YAML";
-  $("#dlgHint").textContent = readOnly ? "Select all and copy." : "Paste a timeline exported from this app. It replaces the current plan (Undo brings it back).";
+  $("#dlgTitle").textContent = title || (readOnly ? "Copy this JSON" : "Paste JSON or YAML");
+  $("#dlgHint").textContent = hint || (readOnly ? "Select all and copy." : "Paste a timeline exported from this app. It replaces the current plan (Undo brings it back).");
   $("#dlgOk").hidden = !!readOnly; $("#dlgCancel").textContent = readOnly ? "Close" : "Cancel";
   dlg.showModal(); readOnly ? $("#dlgText").select() : $("#dlgText").focus();
 }

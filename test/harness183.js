@@ -13,7 +13,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
   try {
     const dom = new JSDOM(html, {runScripts:"dangerously", pretendToBeVisual:true, url:"https://local.test/", virtualConsole:new VirtualConsole(), beforeParse(w){
       w.indexedDB = undefined; w.confirm = ()=>true; w.alert = ()=>{}; w.prompt = ()=>""; w.Element.prototype.scrollIntoView = ()=>{};
-      w.HTMLCanvasElement.prototype.getContext = ()=>null; w.CSS = w.CSS || {}; w.CSS.escape = s=>s; w.errs = []; w.addEventListener("error", e=>w.errs.push(e.message));
+      w.HTMLCanvasElement.prototype.getContext = ()=>null; w.HTMLDialogElement.prototype.showModal = function(){ this.open = true; }; w.HTMLDialogElement.prototype.close = function(){ this.open = false; }; w.CSS = w.CSS || {}; w.CSS.escape = s=>s; w.errs = []; w.addEventListener("error", e=>w.errs.push(e.message));
       w.__clip = null; Object.defineProperty(w.navigator, "clipboard", {configurable:true, value:{writeText:t=>{ w.__clip = t; return Promise.resolve(); }}}); }});
     const w = dom.window, d = w.document; await wait(150); w.FIX = FIX;
     const X = s => { try { return w.eval(s); } catch(e){ return "ERR " + e.message; } }, J = s => { const v = X(`JSON.stringify(${s})`); try { return JSON.parse(v); } catch(e){ return v; } };
@@ -107,6 +107,10 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     X(`const b = S.bars.find(x=>x.id === "c3"); b.tasks = Array.from({length:80}, (_, i)=>({id:"big" + i, label:"Big " + i, start:"2026-11-02", days:1, story:"x".repeat(4000)})); S = normalize(S, false); render();`);
     const big = X(`askDetails("bar", "c3")`), bm = big.match(/\`\`\`json\n([\s\S]*)\n\`\`\`/); let bo = null; try { bo = JSON.parse(bm[1]); } catch(e){}
     ok("A31 a very large item is trimmed to fit, and says what was left out", big.length <= X("ASK_MAX") + 2000 && !!bo && /left out/.test(bo.item.recordTrimmed || "") && bo.item.record.id === "c3", big.length + " " + (bo && bo.item.recordTrimmed));
+    // The browser won't copy: the text is shown to copy by hand, and the status line says so
+    Object.defineProperty(w.navigator, "clipboard", {configurable:true, value:{writeText:()=>Promise.reject(new Error("denied"))}}); d.execCommand = () => false;
+    await pick("bar", "c4"); X(`copyForAsk("ref")`); await wait(40);
+    ok("A32 when copying is blocked, the reference is shown in a dialog to copy by hand, and the status line says so", d.querySelector("#dlgTitle").textContent === "Copy for your assistant" && /^Sightline initiative .+\[bar:c4\]/.test(d.querySelector("#dlgText").value) && /team's plan data/.test(d.querySelector("#dlgHint").textContent) && /Couldn't copy automatically/.test(status()), status());
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
   console.log(R.join("\n")); const f = R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
