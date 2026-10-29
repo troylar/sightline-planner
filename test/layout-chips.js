@@ -203,6 +203,25 @@ function contrast(sel){
       ok(`L23 ${w}px ${theme}: the late warning stays in view`, shut.late, "");
       await page.close();
     }
+    // A selected item scrolled under the sticky names column stays under it: a bar that starts before what's on screen,
+    // a milestone and a task, in Weeks and Days, light and dark. What's on top there is the names column, not a track (in
+// Days the names column repeats the bar's name with the same data-sel, so the test is "not inside a track"). The chart's tracks are their own layer (z 0), so
+    // nothing in them (a selected bar is z 5, a hover label z 6) paints over the names (z 4).
+    for (const [z, theme] of [["weeks", "light"], ["weeks", "dark"], ["days", "light"], ["days", "dark"]]){
+      const page = await b.newPage({viewport:{width:1400, height:800}}); page.on("pageerror", e=>errs.push(String(e)));
+      await page.goto("file://" + HTML); await page.evaluate(t=>localStorage.setItem("timeline-planner-theme", t), theme); await page.goto("file://" + HTML); await page.waitForTimeout(300);
+      const out = await page.evaluate(([FIX, z])=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); S = normalize(JSON.parse(FIX), false);
+        const c4 = S.bars.find(b=>b.id === "c4"); c4.tasks = [{id:"tk1", label:"Wire the tools", start:dayToIso(wkDay(c4.start) + 1), days:3}];
+        S = normalize(S, false); file.handle = null; UI.filter = normFilter({}); UI.ws = "timeline"; render(); if (z === "days") setZoom("days"); else render();
+        const ms = S.milestones.find(m=>m.lane && m.at != null && m.id !== "ms8").id;
+        return [["bar", "c3"], ["ms", ms], ...(z === "days" ? [["task", "tk1"]] : [])].map(([t, id])=>{ select(t, id); render();
+          const sc = document.querySelector("#gscroll"), P = sc.getBoundingClientRect(), edge = P.left + (z === "days" ? UI.labelW.days : UI.labelW.weeks), q = `#gantt [data-sel="${t}:${id}"], #gantt [data-key="${t}:${id}"]`;
+          const find = () => [...document.querySelectorAll(q)].find(e=>e.getBoundingClientRect().width > 0); let el = find(); if (!el) return {t, missing:true};
+          el.scrollIntoView({block:"center", inline:"nearest"}); el = find(); sc.scrollLeft += el.getBoundingClientRect().left - (edge - 60); el = find(); const r = el.getBoundingClientRect(), top = document.elementFromPoint(edge - 20, r.top + Math.min(r.height / 2, 10));
+          return {t, left:Math.round(r.left), edge:Math.round(edge), under:!!top && r.left < edge - 20 && !top.closest(".track"), top:top ? top.className : null}; }); }, [FIX, z]);
+      ok(`L24 ${z} ${theme}: a selected bar, milestone${z === "days" ? " and task" : ""} scrolled under the names column stay under it`, out.every(o=>o.under), JSON.stringify(out));
+      await page.close();
+    }
     ok("no page errors", !errs.length, errs.slice(0, 2).join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 300)); }
   await b.close();

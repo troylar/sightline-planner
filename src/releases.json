@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.172.1",
+    "date": "2026-10-29",
+    "headline": "Selected work stays out of the names",
+    "changes": [
+      {
+        "kind": "fixed",
+        "area": "Timeline",
+        "title": "A selected item no longer covers the workstream names",
+        "now": "When the chart is scrolled sideways, a selected initiative, task or milestone slides under the names column like everything else, so the names stay readable.",
+        "before": "A selected item that started before what's on screen was drawn over the names column, hiding the workstream's name and people.",
+        "where": "The Timeline, zoomed in or in Days, with something selected"
+      }
+    ]
+  },
+  {
     "version": "1.172.0",
     "date": "2026-10-29",
     "headline": "Stars",
