@@ -8,12 +8,13 @@ Copy for your assistant.
 
 ### New
 
-- **Copy an item for your assistant** (Everywhere). Select an item and click Copy for assistant at the top of its details, or press Ctrl+C when no text is selected. It copies the item's name, id, Jira key and how fresh the data is, so you can paste it into any assistant and ask, for example, how many of its stories are done. *Where:* The top of an item's details, or Ctrl+C
-- **Copy with its details, or copy your stars** (Find). In Find, Copy the selection with its details adds the item's record and, for an initiative, its story counts and stories, for an assistant that can't read files. Copy your starred items copies a reference for each star. Sticky notes are never copied. *Where:* Find (/)
+- **Copy an item for your assistant** (Everywhere). Select an item and choose Copy, then For your assistant, at the top of its details, or press Ctrl+C when no text is selected. It copies the item's name, id, Jira key and how fresh the data is, so you can paste it into any assistant and ask, for example, how many of its stories are done. *Where:* Copy at the top of an item's details, or Ctrl+C
+- **Copy with its details, or copy your stars** (Find). Copy, then With its details (or Find) adds the item's record and, for an initiative, its story counts and stories, for an assistant that can't read files. Copy your starred items copies a reference for each star. Sticky notes are never copied. *Where:* Find (/)
 
 ### Improved
 
 - **Assistants understand a pasted item** (Assistant). The assistant instructions and the skills explain the reference Sightline copies, so an assistant finds the same item and says when its data may be older than yours. *Where:* Connect assistant, Analyze with any assistant
+- **One Copy menu on every item's details** (Everywhere). Copy at the top of an item's details holds Link, For your assistant and With its details, so the header stays on one line however narrow the panel or long the name. *Where:* Copy at the top of an item's details
 
 ### Fixed
 

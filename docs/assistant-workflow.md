@@ -27,11 +27,11 @@ Gemini or your company's own. Open **Connect assistant** (in the menu under your
 For example: *"What's late or at risk, and why? Cite the ids."* or *"Who has the most work in the next sprint?"*
 The instructions are read-only.
 
-**Ask about one item** (since 1.174.0): select it and click **Copy for assistant** at the top of its details, or press
+**Ask about one item** (since 1.174.0): select it and choose **Copy** > **For your assistant** at the top of its details, or press
 **Ctrl+C** (⌘C on a Mac) when no text is selected. It copies a short reference: the item's name, its type and id as the
 export writes them (for example `[bar:c4]`), its Jira key and epics, the plan's id and revision, whether your copy is
 saved, and when Jira was last synced. Paste it and ask, for example *"How many stories are in this, and how many are
-done?"* For more, type **details** in Find (/) and choose **Copy the selection with its details**: it adds the item's
+done?"* For more, choose **Copy** > **With its details** (or type **details** in Find): it adds the item's
 record from the export and, for an initiative, its epics' story counts and its stories, so an assistant that can't read
 files can answer too. **Copy your starred items for your assistant** copies a reference for each of your stars. Sticky
 notes are never copied. Each copy is your team's plan data, so paste it only into an assistant your team allows. To have an assistant propose changes, use the private folder below.

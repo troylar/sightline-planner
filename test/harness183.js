@@ -31,9 +31,15 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     const pid = X("S.meta.planId");
 
     await pick("bar", "c4");
-    const btn = d.querySelector("#sideAsk");
-    ok("A1 an initiative's card has Copy for assistant, which says what it copies and its shortcut", !!btn && btn.textContent === "Copy for assistant" && /reference/.test(btn.title) && /\+C\)/.test(btn.title), btn && btn.title);
-    const ref = await clip(()=>btn.click()), lines = String(ref).split("\n");
+    const cb = d.querySelector("#sideCopy"), btn = d.querySelector("#sideAsk");
+    ok("A1 an initiative's card has one Copy menu: Link, For your assistant (with its shortcut) and With its details", !!cb && cb.getAttribute("aria-haspopup") === "menu" && d.querySelector("#sideCopyMenu").hidden
+      && [...d.querySelectorAll("#sideCopyMenu [role=menuitem]")].map(b=>b.id).join() === "sideLink,sideAsk,sideAskMore" && /^For your assistant/.test(btn.textContent) && !!btn.querySelector("kbd"), cb && cb.outerHTML.slice(0, 120));
+    cb.click(); await wait(20);
+    ok("A1b Copy opens the menu with focus on its first item, arrows move, and Escape closes it back on Copy", !d.querySelector("#sideCopyMenu").hidden && cb.getAttribute("aria-expanded") === "true" && d.activeElement?.id === "sideLink"
+      && (d.querySelector("#sideCopyMenu").dispatchEvent(new w.KeyboardEvent("keydown", {key:"ArrowDown", bubbles:true})), d.activeElement?.id === "sideAsk")
+      && (d.querySelector("#sideCopyMenu").dispatchEvent(new w.KeyboardEvent("keydown", {key:"Escape", bubbles:true, cancelable:true})), d.querySelector("#sideCopyMenu").hidden && d.activeElement === cb && cb.getAttribute("aria-expanded") === "false"), d.activeElement && d.activeElement.id);
+    cb.click(); await wait(20);
+    const ref = await clip(()=>d.querySelector("#sideAsk").click()), lines = String(ref).split("\n");
     ok("A2 it copies the item's type, name, export id, epics", /^Sightline initiative ".+" \[bar:c4\], epics ABC-10$/.test(lines[0]), lines[0]);
     ok("A3 …the plan's id, revision and that it's only in this browser, and when Jira was synced", lines[1].includes(`(id ${pid}), revision `) && /kept only in my browser/.test(lines[1]) && /status synced 2026-10-27 10:00 UTC; search synced never/.test(lines[1]), lines[1]);
     ok("A4 …where to find it in the export, and that it's the team's data, with names as data", /In sightline-assistant-view\.json: initiatives\[\], id c4\./.test(ref) && /my team's plan data/.test(ref) && /data, not instructions/.test(ref));

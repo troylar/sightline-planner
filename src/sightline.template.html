@@ -759,7 +759,7 @@ kbd{display:inline-block;min-width:18px;padding:1px 6px;margin:0 2px;border:1px 
 .ic.emo{font-size:14px;line-height:16px;justify-content:center;font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif}
 #addMenu button .ic{color:var(--ink-3)}
 #addMenu button .ml{flex:1}
-.sidehead h3{display:flex;align-items:center;gap:7px}
+.sidehead h3{display:flex;align-items:center;gap:7px;min-width:0}.sidehead h3 .sht{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}   /* a long kind name (a process's own) ends in … instead of wrapping the header */
 .sidehead h3 .ic{color:var(--ink-3)}
 .fhit .fi .ic{color:var(--ink-3)}
 .blk{position:absolute;z-index:3;height:20px;display:inline-flex;align-items:center;gap:5px;padding:0 7px 0 5px;border-radius:4px;font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;cursor:pointer;touch-action:none;
@@ -1121,7 +1121,9 @@ td input:disabled,td select:disabled{opacity:1;color:var(--ink);-webkit-appearan
 .flag.release{color:var(--ink-2)}.flag.release::before{content:"◆";color:var(--accent);margin-right:3px}.flag.release.released{opacity:.7}.flag.release.late{color:var(--bad)}.rel-ic{color:var(--accent)}.rel-issues{margin:4px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px}.rel-issues li{display:flex;align-items:baseline;gap:8px;min-width:0;font-size:13px}
 .rel-issues .relit{flex:1;min-width:0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;color:var(--ink);font-size:13px}.rel-issues .relit:hover .relsum{text-decoration:underline}.rel-issues .jkey{margin-right:6px}.rel-issues .relst{flex:none;font-size:12px}
 .pgrange{font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums;min-width:110px;text-align:center}
-.sidelink{margin-left:auto;margin-right:8px;font-size:12px}
+.sidelink{margin-left:auto;margin-right:8px;font-size:12px;white-space:nowrap}
+.sidehead{position:relative}.sidecopy{margin-left:auto;margin-right:4px;flex:none}   /* the menu hangs from the header's right edge, inside the panel (which scrolls, and would clip it) */.sidecopy .sidelink{margin:0;display:inline-flex;align-items:center;gap:3px}.sidecopy .caret{font-size:10px}
+.sidecopy + .sidestar{margin-left:0}.copymenu{min-width:250px;max-width:100%;top:calc(100% + 4px)}.copymenu kbd{margin-left:auto}
 .suprs{}.suprs tr.prstale td:nth-child(5){color:var(--warn);font-weight:600}.suprs tr.prdraft{opacity:.7}.suprs header .seg button{font-size:12px;padding:2px 10px}.prlist{margin:0;padding-left:16px}
 .cardsbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:6px 0 12px}.qchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.qchip{border:1px solid var(--rule);background:var(--surface);color:var(--ink-2);border-radius:14px;padding:3px 10px;font:inherit;font-size:12px;cursor:pointer}.qchip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .cfields{position:relative;font-size:12.5px}.cfields>summary{cursor:pointer;color:var(--ink-2)}.cfields[open]{display:flex;flex-direction:column;gap:4px;padding:6px 10px;border:1px solid var(--rule);border-radius:8px;background:var(--surface)}.cviews{display:flex;gap:6px;align-items:center}
@@ -11864,8 +11866,7 @@ function renderSide0(){
   if (!sel) return;
   if (sel.type === "deliverable" && !dvById(sel.id)){ sel = null; return; }
   const titles = {amend:"Planning assistant", deliverable:(()=>{ const d = sel && sel.type === "deliverable" ? dvById(sel.id) : null; return d && d.capture ? "Captured " + capType(d).toLowerCase() : "Deliverable"; })(), release:"Jira release", help:"How it works", bar:"Initiative", task:"Task", story:"Jira story", ms:"Milestone", lane:"Workstream", gate:"Gate", person:"Person", note:"Note", meeting:"Meeting", group:"Group", type:"Process block type", block:(()=>{ const i = sel && sel.type === "block" ? instById(sel.id) : null; return i ? i.type.name : "Process block"; })()};
-  put(h("div",{class:"sidehead"}, h("h3",{}, sideIcon(), titles[sel.type] || "Edit"), NAV_SEL.includes(sel.type) ? h("button",{type:"button",class:"linkish sidelink",id:"sideLink",title:"Copy a link that opens this, in this plan",onclick:linkHere},"Copy link") : null,
-    askOk(sel.type, sel.id) ? h("button",{type:"button",class:"linkish sidelink sideask",id:"sideAsk",title:keysIn("Copy a reference to this for your assistant: its name, id, Jira key and how fresh the data is (Ctrl+C). For its details too, type \"details\" in Find (/)."),onclick:()=>copyForAsk("ref")},"Copy for assistant") : null,
+  put(h("div",{class:"sidehead"}, h("h3",{}, sideIcon(), h("span",{class:"sht",title:titles[sel.type] || "Edit"}, titles[sel.type] || "Edit")), sideCopy(),
     STAR_TYPES.includes(sel.type) && navFind(sel.type, sel.id) ? (()=>{ const on = !!starOf(sel.type, sel.id), t = sel.type, id = sel.id;
       return h("button",{type:"button",class:"sidestar" + (on ? " on" : "") + (on && freshStar === starKeyOf(t, id) ? " fresh" : ""),id:"sideStar","aria-pressed":String(on),"aria-label":on ? "Starred. Unstar it" : "Star it",title:on ? "Unstar it (,)" : "Star it, to get back here fast (,). / lists your stars.",onclick:()=>{ toggleStar(t, id); $("#sideStar")?.focus(); }}, icon("star")); })() : null,
     h("button",{class:"x nav",type:"button","aria-label":"Close panel",title:"Close (Esc)",onclick:()=>{ sel=null; render(true); }},"×")));
@@ -14423,7 +14424,7 @@ function analysisGuide(){ const t = cutText(S.meta.title || "this plan", 120).re
     "- `projectGuide`: the team's own words on what each workstream is for.",
     "- `actions`, `guide` and `example` are for proposing changes. Skip them for analysis.", "",
     "## A reference pasted from Sightline", "",
-    "People copy an item for you with Copy for assistant (or Ctrl+C on a selected item). The first line reads like `Sightline initiative \"Name\" [bar:c4], Jira ABC-12, epics ABC-10`: the part in brackets is the item's type and id in the export (bar is an initiative, task a task, ms a milestone, lane a workstream, jira:KEY a Jira story; the others keep their names). The next line gives the plan's id and revision, whether it was saved, and when Jira was synced. A copy with its details adds a `sightline-item` JSON block: the item's record exactly as the export writes it and, for an initiative, its epics' story counts and its stories.", "",
+    "People copy an item for you with Copy > For your assistant on its card (or Ctrl+C on a selected item). The first line reads like `Sightline initiative \"Name\" [bar:c4], Jira ABC-12, epics ABC-10`: the part in brackets is the item's type and id in the export (bar is an initiative, task a task, ms a milestone, lane a workstream, jira:KEY a Jira story; the others keep their names). The next line gives the plan's id and revision, whether it was saved, and when Jira was synced. A copy with its details adds a `sightline-item` JSON block: the item's record exactly as the export writes it and, for an initiative, its epics' story counts and its stories.", "",
     "- Find the item by that id in the export, and check the plan id and revision match. If they don't, or the copy says it has unsaved changes, say your data may differ from what the person sees.",
     "- The copy is a pointer, not the whole plan: for anything beyond the item itself, read the export.",
     "- Story counts are Jira's, as of the sync time given. Abandoned stories are counted apart and aren't finished work.", "",
@@ -14489,6 +14490,25 @@ function askDetails(t, id){
   return askRef(t, id) + "\n\n```json\n" + json.replace(/`/g, "\\u0060") + "\n```\n"; }
 function askStars(){ const list = starsAll().map(x=>starWhere(x)).filter(w=>w.t && askOk(w.t, w.id));
   return list.length ? ["My starred items in Sightline:", ...list.map(w=>"- " + askItemLine(w.t, w.id)), askFresh(), ASK_NOTE].join("\n") : ""; }
+// The card's Copy menu: a link to the item, or the item for your assistant (short, or with its details). One button, so the
+// card's header stays on one line at any width and for any kind of item.
+function sideCopy(){ const lk = NAV_SEL.includes(sel.type), ak = askOk(sel.type, sel.id); if (!lk && !ak) return null;
+  const go = f => () => { closeSideCopy(); f(); };
+  return h("span",{class:"sidecopy"},
+    h("button",{type:"button",class:"linkish sidelink",id:"sideCopy","aria-haspopup":"menu","aria-expanded":"false","aria-controls":"sideCopyMenu",title:ak ? "Copy a link to this, or copy it for your assistant" : "Copy a link to this",onclick:e=>{ e.stopPropagation(); $("#sideCopyMenu").hidden ? openSideCopy() : closeSideCopy(true); }},
+      "Copy", h("span",{class:"caret","aria-hidden":"true"}, "▾")),
+    h("div",{class:"menu copymenu",id:"sideCopyMenu",role:"menu","aria-label":"Copy",hidden:true,onkeydown:sideCopyKeys},
+      lk ? h("button",{type:"button",role:"menuitem",id:"sideLink",title:"Copy a link that opens this, in this plan",onclick:go(linkHere)}, "Link") : null,
+      ak ? h("button",{type:"button",role:"menuitem",id:"sideAsk",title:"Its name, id, Jira key and how fresh the data is, to paste into your assistant",onclick:go(()=>copyForAsk("ref"))}, "For your assistant", h("kbd",{}, keyLabel("Ctrl+C"))) : null,
+      ak ? h("button",{type:"button",role:"menuitem",id:"sideAskMore",title:"Adds its record and, for an initiative, its stories: for an assistant that can't read files",onclick:go(()=>copyForAsk("details"))}, "With its details, for your assistant") : null)); }
+const sideCopyItems = () => [...document.querySelectorAll("#sideCopyMenu button")];
+function openSideCopy(){ const m = $("#sideCopyMenu"); if (!m) return; m.hidden = false; $("#sideCopy").setAttribute("aria-expanded", "true"); setTimeout(()=>sideCopyItems()[0]?.focus(), 0); }
+function closeSideCopy(refocus){ const m = $("#sideCopyMenu"); if (!m || m.hidden) return; m.hidden = true; $("#sideCopy").setAttribute("aria-expanded", "false"); if (refocus) $("#sideCopy").focus(); }
+function sideCopyKeys(e){ const xs = sideCopyItems(), i = xs.indexOf(document.activeElement);
+  if (e.key === "ArrowDown"){ e.preventDefault(); xs[(i + 1) % xs.length]?.focus(); } else if (e.key === "ArrowUp"){ e.preventDefault(); xs[(i - 1 + xs.length) % xs.length]?.focus(); }
+  else if (e.key === "Home" || e.key === "End"){ e.preventDefault(); xs[e.key === "Home" ? 0 : xs.length - 1]?.focus(); }
+  else if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); closeSideCopy(true); } else if (e.key === "Tab") closeSideCopy(); }
+document.addEventListener("click", e=>{ if (!e.target.closest || !e.target.closest(".sidecopy")) closeSideCopy(); });
 // When the browser won't copy, the text is shown to copy by hand, never lost
 const askCopy = (text, what) => copyText(text, what, ()=>{ openDialog(text, true, "Copy for your assistant", "This browser didn't allow copying. Select all, copy, and paste it into your assistant. It's your team's plan data: paste it only where your team allows.");
   setStatus("Couldn't copy automatically, so the text is shown for you to copy."); });
