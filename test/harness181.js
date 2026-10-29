@@ -102,6 +102,17 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("T31 with a dialog open, neither , nor / acts (/ used to open Find over it)", !X(`starOf("bar", "c2")`) && d.querySelector("#findPop").hidden); dlg.remove();
     ok("T32 Find offers Star and Unstar by name, with the , key", J(`COMMANDS.filter(c=>["star","unstar"].includes(c.id) && c.when()).map(c=>c.id)`).join() === "star" && J(`COMMANDS.find(c=>c.id === "star").keys`).join() === ",");
     ok("T33 the keyboard help lists ,", [...d.querySelectorAll("kbd")].some(k=>k.textContent === ",") || X(`JSON.stringify(HELP_KEYS || null)`).includes('[","]') || X("document.documentElement.outerHTML").includes("Star the selection or unstar it"));
+    // Codex review: a relinked task, zoom outside the Timeline, unstarring from the keyboard
+    X(`S = normalize(JSON.parse(FIX), false); const c4 = S.bars.find(b=>b.id === "c4"); c4.tasks = [{id:"tk1", label:"Wire the tools", start:"2026-11-02", days:3, jira:"ABC-1"}, {id:"tk2", label:"Docs pass", start:"2026-11-05", days:2}];
+       S = normalize(S, false); JIRA = {kind:"sightline-jira-status", generatedAt:"2026-10-27T10:00:00Z", sprints:[], releases:[], rollups:{}, issues:{"ABC-1":{summary:"Wire the tools", status:"In Progress", category:"inprogress", type:"Story"}, "ABC-2":{summary:"Other", status:"To Do", category:"todo", type:"Story"}}};
+       dropJiraMemos(); localStorage.removeItem("sightline-stars"); starMemo = null; starBack = null; setHiddenQuiet([]); UI.filter = normFilter({}); sel = null; render(); toggleStar("task", "tk1");
+       S.bars.find(b=>b.id === "c4").tasks[0].jira = "ABC-2"; dropJiraMemos(); render();`);
+    ok("T34 a starred task relinked to another Jira issue isn't that star any more: the new issue isn't starred, and the old one's star doesn't open the task", !X(`starOf("task", "tk1")`) && J(`starWhere(starsAll()[0])`).t !== "task", JSON.stringify(J(`starWhere(starsAll()[0])`)));
+    X(`toggleStar("task", "tk2"); UI.ws = "list"; UI.zoom = "weeks"; sel = null; render(); starGo(starsAll().find(x=>x.k === "task:tk2"));`); await wait(30);
+    const zIn = X("UI.zoom"); X(`backWhereIWas();`); await wait(30);
+    ok("T35 Back to where I was puts the zoom back from the List too (going to a task switches to days)", zIn === "days" && X("UI.ws") === "list" && X("UI.zoom") === "weeks", zIn + " -> " + X("UI.ws") + " " + X("UI.zoom"));
+    const ux = d.querySelector('#snstars [data-unstar="task:tk2"]');
+    ok("T36 each Unstar in Starred can be reached with Tab, so a star that can't be opened can still be cleared from the keyboard", !!ux && ux.getAttribute("tabindex") !== "-1" && ux.tabIndex >= 0);
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
   console.log(R.join("\n")); const f = R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

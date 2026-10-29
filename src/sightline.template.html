@@ -6381,8 +6381,10 @@ function starKeyOf(t, id){
   if (t === "bar"){ const b = barById(id), k = b && isLeafBar(b) && !barEpics(b).length ? upKey(b.jira) : ""; if (k) return "jira:" + k; }   // a leaf initiative linked to an issue is that issue
   if (t === "lane"){ const l = S.lanes.find(x=>x.id === id || (x.was || []).includes(id)); if (l) return "lane:" + l.id; }
   return t + ":" + id; }
+// A Jira star's fallback id (the task it was starred on) counts only while that item isn't linked to another issue.
+const altOk = (x, t, id) => { const k = starKeyOf(t, id); return k === x.k || k === t + ":" + id; };
 const starOf = (t, id) => { const k = starKeyOf(t, id), a = t + ":" + id, l = t === "lane" ? S.lanes.find(x=>x.id === id) : null, ks = new Set([k, a, ...(l ? (l.was || []).map(w=>"lane:" + w) : [])]);
-  return starsAll().find(x=>ks.has(x.k) || x.alt === a) || null; };
+  return starsAll().find(x=>ks.has(x.k) || x.alt === a && altOk(x, t, id)) || null; };
 // Where a star is now: {t, id} to open, or why it can't be (and never a guess).
 function starWhere(x){
   const i = x.k.indexOf(":"), t = x.k.slice(0, i), id = x.k.slice(i + 1);
@@ -6390,7 +6392,7 @@ function starWhere(x){
     for (const b of S.bars){ const tk = (b.tasks || []).find(z=>upKey(z.jira) === id); if (tk) return {t:"task", id:tk.id}; }
     const lf = S.bars.find(b=>isLeafBar(b) && !barEpics(b).length && upKey(b.jira) === id); if (lf) return {t:"bar", id:lf.id};
     if (storyByKey(id)) return {t:"story", id};
-    if (x.alt){ const j = x.alt.indexOf(":"), at = x.alt.slice(0, j), aid = x.alt.slice(j + 1); if (navFind(at, aid)) return {t:at, id:aid}; }
+    if (x.alt){ const j = x.alt.indexOf(":"), at = x.alt.slice(0, j), aid = x.alt.slice(j + 1); if (navFind(at, aid) && altOk(x, at, aid)) return {t:at, id:aid}; }
     if (!JIRA) return {why:`Jira isn't loaded, so ${id} can't be shown. The star stays.`, kind:"nojira"};
     if (jiraOf(id)) return {why:`${id} is in the last sync but not on this plan's chart: its epic isn't on an initiative, or that initiative is switched off. The star stays.`, kind:"unplaced"};
     return {why:`${id} is not in the last sync. The star stays for when it's back.`, kind:"nosync"}; }
@@ -6411,7 +6413,8 @@ function unstar(x){ if (!starsWrite(starsAll().filter(y=>y.k !== x.k))) return; 
 // zoom, selection, scroll, what's hidden or folded, rows, notes and the layer (Find may change them to reveal the item).
 function viewSnap(){ const a = document.activeElement;
   return {plan:S.meta.planId, nav:navState(), place:placeNow(), focus:a && a.id && a !== document.body ? a.id : "",
-    x:clone({hidden:hiddenKinds(), hide:hideOf(), collapsed:UI.collapsed || {}, rows:UI.rows, notes:UI.notes, focus:UI.focus || null, fold:UI.fold || null, layer:layerOf()})}; }
+    x:clone({hidden:hiddenKinds(), hide:hideOf(), collapsed:UI.collapsed || {}, rows:UI.rows, notes:UI.notes, focus:UI.focus || null, fold:UI.fold || null, layer:layerOf(),
+      zoom:UI.zoom, zoomN:UI.zoomN ?? null, zoomSp:UI.zoomSp ?? null, dayZoom:UI.dayZoom ?? null, ...("zoomPreset" in UI ? {zoomPreset:UI.zoomPreset} : {})})}; }
 function starGo(x){ const w = starWhere(x); if (!w.t){ setStatus(w.why); return false; }
   const back = viewSnap(); navStep(); goTo(w.t, w.id); starBack = back;
   const name = starLabel(w.t, w.id); if (name && name !== x.name) starsWrite(starsAll().map(y=>y.k === x.k ? {...y, name} : y));
@@ -6420,6 +6423,7 @@ function backWhereIWas(){ const b = starBack; starBack = null;
   if (!b || b.plan !== S.meta.planId){ setStatus("There's nowhere to go back to in this plan."); render(); return false; }
   setHiddenQuiet(b.x.hidden); setHide(hd=>{ Object.keys(hd).forEach(k=>delete hd[k]); Object.assign(hd, clone(b.x.hide)); });
   UI.collapsed = clone(b.x.collapsed); UI.rows = b.x.rows; UI.notes = b.x.notes; UI.focus = b.x.focus; UI.fold = b.x.fold; setLayerQuiet(b.x.layer);
+  UI.zoom = b.x.zoom; UI.zoomN = b.x.zoomN; UI.zoomSp = b.x.zoomSp; UI.dayZoom = b.x.dayZoom; delete UI.zoomPreset; if ("zoomPreset" in b.x) UI.zoomPreset = b.x.zoomPreset; fitKey = ""; sprintKey = "";
   try { pushPlace("#" + encodeNav(b.nav)); } catch(e){}   // its own step, so Back from here goes to the star again
   applyNav(b.nav); placeHold = true; restorePlace(b.place, ++placeGen);
   const f = b.focus && document.getElementById(b.focus); if (f) f.focus({preventScroll:true}); else focusShown();
@@ -7421,7 +7425,7 @@ function renderFind(q){
     if (st.length) list.append(h("div",{class:"fhead",id:"findStarsH"}, "Starred"), ...st.map((x, i)=>{ const w = starWhere(x), name = w.t ? starLabel(w.t, w.id) : x.name || x.k;
       return h("button",{type:"button",role:"option",class:"fhit fstar" + (i === 0 ? " on" : "") + (w.t ? "" : " gone"),"aria-selected":String(i === 0),id:"fhit" + i,"data-star":x.k,onclick:e=>{ e.stopPropagation(); closeFind(); starGo(x); }},
         h("span",{class:"fi"}, icon(w.t ? KIND_ICON[w.t] || "flag" : "star")), h("span",{class:"ft"}, name), h("small",{}, w.t ? "Starred" : w.why)); }));
-    list.append(h("p",{class:"hint"}, st.length ? "Or type to search everything. Press , to star or unstar what you've selected." : "Type to search every initiative, task, Jira story, milestone, gate, meeting, note, person, workstream, decision and risk. Jira keys work too. Actions come up by name, like \"days\" or \"start editing\". Press , to star what you've selected, and your stars come up here.")); return; }
+    list.append(h("p",{class:"hint"}, ...(st.length ? ["Or type to search everything. Press ", h("kbd",{}, ","), " to star or unstar what you've selected."] : ["Type to search every initiative, task, Jira story, milestone, gate, meeting, note, person, workstream, decision and risk. Jira keys work too. Actions come up by name, like \"days\" or \"start editing\". Press , to star what you've selected, and your stars come up here."]))); return; }
   const words = q.split(/\s+/), first = x => (x.text.toLowerCase().startsWith(q) ? 0 : 1);
   // actions match the start of their words ("lis" finds Go to List, "s" doesn't), and a short query leaves room for plan items
   const starts = l => { const lw = l.toLowerCase().split(/[^a-z0-9+]+/); return words.every(w=>lw.some(x=>x.startsWith(w))); };
@@ -7856,8 +7860,8 @@ function renderStars(){ const box = $("#snstars"); if (!box) return; const all =
   const rows = all.slice(0, STAR_SIDE).map(x=>{ const w = starWhere(x), name = w.t ? starLabel(w.t, w.id) : x.name || x.k, here = !!w.t && sel && sel.type === w.t && sel.id === w.id;
     return h("div",{class:"snrow"}, h("button",{type:"button",class:"snk" + (x.k === freshStar ? " fresh" : "") + (w.t ? "" : " gone"),"data-star":x.k,"aria-current":here ? "true" : null,title:w.t ? `Go to ${name}` : w.why,onclick:()=>{ starGo(x); }},
         icon(w.t ? KIND_ICON[w.t] || "flag" : "star"), h("span",{class:"snl"}, name)),
-      h("button",{type:"button",class:"snpinx on",tabindex:"-1","aria-pressed":"true",title:`Unstar ${name}`,"aria-label":`Unstar ${name}`,onclick:()=>unstar(x)}, icon("star"))); });
-  box.replaceChildren(...nonNull(h("span",{class:"snsub",id:"snStarH"}, "Starred"), ...rows,
+      h("button",{type:"button",class:"snpinx on","data-unstar":x.k,"aria-pressed":"true",title:`Unstar ${name}`,"aria-label":`Unstar ${name}`,onclick:()=>{ unstar(x); ($("#snstars .snk") || $("#findBtn"))?.focus({preventScroll:true}); }}, icon("star"))); });
+  box.replaceChildren(...nonNull(h("span",{class:"snsub",id:"snStarH",title:"Yours alone, in this browser: stars aren't saved in the plan file"}, "Starred"), ...rows,
     all.length > STAR_SIDE ? h("button",{type:"button",class:"linkish snmore",id:"starsAll",onclick:()=>openFind()}, `Show all ${all.length} (/)`) : null,
     back ? h("button",{type:"button",class:"linkish snmore",id:"starBack",title:"Put the page, filters, zoom and scroll back as they were before you went to a star",onclick:()=>backWhereIWas()}, "Back to where I was") : null)); }
 function renderMainNav(){
