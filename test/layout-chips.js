@@ -240,6 +240,38 @@ function contrast(sel){
       ok(`L24 ${z} ${theme}: a selected bar, milestone${z === "days" ? " and task" : ""} scrolled under the names column stay under it`, out.every(o=>o.under), JSON.stringify(out));
       await page.close();
     }
+    // An item's card header stays one line for every kind of item, docked (1500) and as an overlay (1100), light and dark:
+    // the title, one Copy menu, the star and close, with at least 40px to spare (the slack rule). A long name the team gave
+    // a kind of process ends in … instead of wrapping.
+    for (const [w, theme] of [[1500, "light"], [1500, "dark"], [1100, "light"], [1100, "dark"]]){
+      const page = await b.newPage({viewport:{width:w, height:900}}); page.on("pageerror", e=>errs.push(String(e)));
+      await page.goto("file://" + HTML); await page.evaluate(t=>localStorage.setItem("timeline-planner-theme", t), theme); await page.goto("file://" + HTML); await page.waitForTimeout(300);
+      const res = await page.evaluate(FIX=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); S = normalize(JSON.parse(FIX), false);
+        const c4 = S.bars.find(b=>b.id === "c4"); c4.epics = ["ABC-10"]; c4.tasks = [{id:"tk1", label:"Wire the tools", start:"2026-11-02", days:3, jira:"ABC-1"}];
+        S.types = [...(S.types || []), {id:"tx", name:"Check", shape:"window", days:2}, {id:"tl", name:"Quarterly compliance and security review with the platform group", shape:"window", days:2}];
+        S.blocks = [...(S.blocks || []), {id:"blk1", type:"tx", label:"", lane:S.lanes[0].id, date:"2026-11-03", days:2, status:"planned", after:[], sprint:"", skip:false},
+          {id:"blk2", type:"tl", label:"", lane:S.lanes[0].id, date:"2026-11-10", days:2, status:"planned", after:[], sprint:"", skip:false}];
+        S.deliverables = [...(S.deliverables || []), {id:"dv1", name:"Partner onboarding", kind:"feature", stage:"idea"}];
+        if (!(S.meetings || []).length) S.meetings = [{id:"mt1", title:"Weekly sync", lane:S.lanes[0].id}];
+        S = normalize(S, false); file.handle = null;
+        JIRA = {kind:"sightline-jira-status", generatedAt:"2026-10-27T10:00:00Z", sprints:[], releases:[{id:"rel1", name:"2026.11", date:"2026-11-20", released:false}], rollups:{"ABC-10":{children:["ABC-11"]}},
+          issues:{"ABC-1":{summary:"Wire the tools", status:"In Progress", category:"inprogress"}, "ABC-10":{summary:"Tools epic", status:"In Progress", category:"inprogress", isEpic:true}, "ABC-11":{summary:"One", status:"Done", category:"done", sprintStart:"2026-11-02", sprintEnd:"2026-11-13"}}};
+        dropJiraMemos(); UI.filter = normFilter({}); UI.ws = "timeline"; render();
+        const list = [["bar","c4"],["task","tk1"],["ms",S.milestones[0]?.id],["gate",S.gates[0]?.id],["meeting",S.meetings[0].id],["lane",S.lanes[0].id],["person",S.people[0].id],["deliverable","dv1"],["block","blk1"],["story","ABC-11"],["release","rel1"],["block","blk2"]].filter(x=>x[1]);
+        return list.map(([t, id])=>{ select(t, id); render(); const hd = document.querySelector("#side .sidehead"); if (!hd) return {t, missing:true};
+          const one = e => { const r = e.getBoundingClientRect(), lh = parseFloat(getComputedStyle(e).lineHeight) || parseFloat(getComputedStyle(e).fontSize) * 1.3; return r.height <= lh * 1.5 + 4; };
+          const h3 = hd.querySelector("h3"), sht = hd.querySelector(".sht") || hd.querySelector("h3"), copy = hd.querySelector("#sideCopy") || hd.querySelector("#sideAsk"), right = [...hd.children].filter(k=>k !== h3).map(k=>k.getBoundingClientRect());
+          const slack = Math.round(Math.min(...right.map(r=>r.left)) - h3.getBoundingClientRect().right), H = hd.getBoundingClientRect();
+          return {t, id, title:sht.textContent, lines:[h3, copy].filter(Boolean).every(one) && right.every(r=>r.top >= H.top - 1 && r.bottom <= H.bottom + 1), copy:!!copy, slack, cut:sht.scrollWidth > sht.clientWidth + 1, ell:getComputedStyle(sht).textOverflow, fits:hd.scrollWidth <= hd.clientWidth + 1 && right.every(r=>r.right <= H.right + 1)}; }); }, FIX);
+      const tag = `${w}px ${theme}`, std = res.filter(x=>!(x.t === "block" && x.id === "blk2")), long = res.find(x=>x.id === "blk2");
+      ok(`L25 ${tag}: every kind of item's card header is one line, with one Copy menu and 40px to spare`, std.length >= 10 && std.every(x=>x.lines && x.fits && x.slack >= 40) && std.filter(x=>x.copy).length >= 10, JSON.stringify(std.map(x=>[x.t, x.slack, x.lines, x.fits])));
+      const mv = await page.evaluate(()=>{ select("bar", "c4"); render(); document.querySelector("#sideCopy").click(); const m = document.querySelector("#sideCopyMenu").getBoundingClientRect(), s = document.querySelector("#side").getBoundingClientRect();
+        const seen = [[m.left + 4, m.top + 6], [m.right - 4, m.top + 6], [m.left + 4, m.bottom - 6], [m.right - 4, m.bottom - 6]].every(([x, y])=>!!document.elementFromPoint(x, y)?.closest("#sideCopyMenu"));
+        return {seen, menu:[Math.round(m.left), Math.round(m.right)], side:[Math.round(s.left), Math.round(s.right)]}; });
+      ok(`L25c ${tag}: the open Copy menu is wholly in view inside the panel`, mv.seen && mv.menu[0] >= mv.side[0] && mv.menu[1] <= mv.side[1], JSON.stringify(mv));
+      ok(`L25b ${tag}: a long kind name the team gave ends in … and the header stays one line`, !!long && long.lines && long.fits && long.cut && long.ell === "ellipsis", JSON.stringify(long));
+      await page.close();
+    }
     ok("no page errors", !errs.length, errs.slice(0, 2).join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 300)); }
   await b.close();
