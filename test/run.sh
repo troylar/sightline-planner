@@ -244,6 +244,7 @@ main(){
     "harness179 30 node harness179.js"
     "harness180 30 node harness180.js"
     "harness181 30 node harness181.js"
+    "harness182 30 node harness182.js"
     "harness144 90 node harness144.js"
     "harness139 90 node harness139.js"
     "build 240 python3 test_build.py"
