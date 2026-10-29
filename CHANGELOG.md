@@ -8,7 +8,7 @@ Selected work stays out of the names.
 
 ### Fixed
 
-- **A selected item no longer covers the workstream names** (Timeline). When the chart is scrolled sideways, a selected initiative, task or milestone slides under the names column like everything else, so the names stay readable. *Where:* The Timeline, zoomed in or in Days, with something selected
+- **Selected work and the Today line no longer cover the names** (Timeline). When the chart is scrolled sideways, a selected initiative, task or milestone, and the red Today line, slide under the names column like everything else, so the names stay readable. *Where:* The Timeline, zoomed in or in Days, with something selected
 
 ## 1.172.0 · Oct 29, 2026
 

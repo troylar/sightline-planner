@@ -219,6 +219,16 @@ function contrast(sel){
           const find = () => [...document.querySelectorAll(q)].find(e=>e.getBoundingClientRect().width > 0); let el = find(); if (!el) return {t, missing:true};
           el.scrollIntoView({block:"center", inline:"nearest"}); el = find(); sc.scrollLeft += el.getBoundingClientRect().left - (edge - 60); el = find(); const r = el.getBoundingClientRect(), top = document.elementFromPoint(edge - 20, r.top + Math.min(r.height / 2, 10));
           return {t, left:Math.round(r.left), edge:Math.round(edge), under:!!top && r.left < edge - 20 && !top.closest(".track"), top:top ? top.className : null}; }); }, [FIX, z]);
+      const tl = await page.evaluate(z=>{ const sc = document.querySelector("#gscroll"), P = sc.getBoundingClientRect(), edge = P.left + (z === "days" ? UI.labelW.days : UI.labelW.weeks), line = document.querySelector("#gantt .today");
+        if (!line) return {missing:true}; line.style.pointerEvents = "auto";   // it ignores the pointer, and so would elementFromPoint
+        sc.scrollLeft += line.getBoundingClientRect().left - (edge - 30); const x = line.getBoundingClientRect().left + 1, hits = [];
+        const head = document.querySelector("#gantt .ghead"), y0 = head ? head.getBoundingClientRect().bottom + 1 : P.top + 60;
+        for (let y = y0; y < Math.min(P.bottom, innerHeight) - 2; y += 3){ const e = document.elementFromPoint(x, y); if (e) hits.push(!!e.closest(".today")); }
+        return {x:Math.round(x), edge:Math.round(edge), n:hits.length, over:hits.filter(Boolean).length}; }, z);
+      const dg = await page.evaluate(z=>{ const n = document.querySelector("#gantt .lane .note, #gantt .lane .bar, #gantt .lane .tbar"); if (!n) return {missing:true}; n.classList.add("dragging");
+        const tr = n.closest(".track"), ln = n.closest(".lane"), out = {track:tr ? getComputedStyle(tr).zIndex : "3", lane:z === "days" && ln ? getComputedStyle(ln).zIndex : "n/a"}; n.classList.remove("dragging"); return out; }, z);
+      ok(`L24c ${z} ${theme}: while something is dragged, its row is lifted above the others (a note can be dragged to another row)`, dg.track === "3" && (z !== "days" || dg.lane === "3"), JSON.stringify(dg));
+      ok(`L24b ${z} ${theme}: the Today line scrolled under the names column stays under it`, tl.n > 50 && tl.x < tl.edge - 20 && tl.over === 0, JSON.stringify(tl));
       ok(`L24 ${z} ${theme}: a selected bar, milestone${z === "days" ? " and task" : ""} scrolled under the names column stay under it`, out.every(o=>o.under), JSON.stringify(out));
       await page.close();
     }

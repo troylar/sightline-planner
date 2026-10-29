@@ -77,7 +77,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     // Days: rows off screen skip layout and paint (content-visibility), but stay in the page; printing draws them all. jsdom has no
     // layout, so this reads the rules; the browser checks are in the PR (scrolled screenshots, find, the printed text).
     const css = [...d.querySelectorAll("style")].map(x => x.textContent).join("\n");
-    ok("D1 Days rows draw only near the screen, and print in full", /\.gantt\.days>\.lane\{content-visibility:auto;contain-intrinsic-size:auto \d+px\}/.test(css) && /@media print\{\.gantt\.days>\.lane\{content-visibility:visible\}\}/.test(css));
+    ok("D1 Days rows draw only near the screen, and print in full", /\.gantt\.days>\.lane\{content-visibility:auto;contain-intrinsic-size:auto \d+px[;}]/.test(css) && /@media print\{\.gantt\.days>\.lane\{content-visibility:visible\}\}/.test(css));
     // the selector right before each block that holds content-visibility:auto (a split, not a regex: one regex over the whole stylesheet took seconds)
     const lazy = css.split("}").filter(r => r.includes("content-visibility:auto")).map(r => { const pre = r.slice(0, r.lastIndexOf("{", r.indexOf("content-visibility:auto"))); return pre.slice(Math.max(pre.lastIndexOf("{"), pre.lastIndexOf("\n")) + 1).trim(); }), printed = [...css.matchAll(/@media print\{([^{]+)\{content-visibility:visible\}\}/g)].map(m => m[1].trim());
     ok("D2 whatever draws only near the screen prints in full, and Weeks isn't among them", lazy.length >= 1 && lazy.every(x => printed.includes(x)) && !lazy.some(x => /:not\(\.days\)|\.gantt>|\.gantt \.lane/.test(x)), JSON.stringify({lazy, printed}));

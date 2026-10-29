@@ -292,6 +292,7 @@ td.spname input{width:100%}
 .lname.selected{box-shadow:inset 3px 0 0 var(--sel)}
 .track{position:relative;min-height:48px;z-index:0}   /* its own layer: a selected or hovered bar (z 5-6) never paints over the sticky names (z 4) or dates */
 .track:hover,.track:focus-within{z-index:1}   /* the row you're on stays above its neighbors, so a hover label can spill into the next row */
+.track:has(.dragging){z-index:3}.gantt.days>.lane:has(.dragging){z-index:3}   /* what you drag (a note can go to another row) stays above every row */
 .track .grid{position:absolute;inset:0;pointer-events:none}
 .bar{position:absolute;height:26px;border-radius:3px;padding:0 8px 0 10px;font-size:11.5px;line-height:26px;white-space:nowrap;overflow:hidden;cursor:grab;touch-action:none;border-left:4px solid rgba(0,0,0,.2);display:flex;align-items:center;gap:5px;z-index:2}
 .bar .nm,.tbar .nm{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
@@ -387,7 +388,7 @@ button.flag{border:0;background:transparent;font-family:inherit;cursor:pointer;c
 .glabel span{font-size:11px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gantt.days .glabel{position:sticky;left:0;z-index:4;background:var(--surface)}
 /* Days draws every row; the browser lays out and paints only the ones near the screen. They stay in the page, so find and screen readers see them all, and printing draws them all. */
-.gantt.days>.lane{content-visibility:auto;contain-intrinsic-size:auto 64px}
+.gantt.days>.lane{content-visibility:auto;contain-intrinsic-size:auto 64px;position:relative;z-index:2}   /* its paint containment makes each row a layer, so lift it above the Today line (z 1), as Weeks' names already are */
 @media print{.gantt.days>.lane{content-visibility:visible}}
 .lane.gaterow{background:color-mix(in srgb,var(--warn) 5%,transparent)}
 .lane.markrow .track{min-height:30px}
@@ -1097,6 +1098,7 @@ td input:disabled,td select:disabled{opacity:1;color:var(--ink);-webkit-appearan
 .colshade.hol{background:repeating-linear-gradient(135deg,var(--rule-2) 0 4px,transparent 4px 8px)}
 .colshade.tod{background:color-mix(in srgb,var(--today) 8%,transparent)}
 .lanehdr{padding:6px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);font-weight:600;background:var(--paper);border-bottom:1px solid var(--rule-2);display:flex;align-items:center;gap:7px}
+.gantt .lanehdr:not(.pinned):not([data-ohdr]){position:relative;z-index:2}   /* a section heading sits above the Today line (z 1) */
 .lanehdr i{width:9px;height:9px;border-radius:2px}
 .dlabel{padding:6px 8px 6px 10px;display:flex;align-items:flex-start;gap:4px;border-right:1px solid var(--rule-2);min-width:0}
 .dlabel .caret{border:0;background:transparent;padding:0 2px;color:var(--ink-3);font-size:11px;line-height:18px;width:16px}
@@ -1108,6 +1110,7 @@ td input:disabled,td select:disabled{opacity:1;color:var(--ink);-webkit-appearan
 .gantt.days .dlabel,.gantt.days .gcorner{position:sticky;left:0;z-index:4;background:var(--surface)}
 .gantt.days .gcorner{flex-wrap:wrap}.gantt.days .gcorner .epall{flex-basis:100%;order:-1;margin:0 0 4px}
 .gantt.zoomed:not(.days) .lane>:first-child,.gantt.zoomed:not(.days) .gcorner{position:sticky;left:0;z-index:4;background:var(--surface)}
+.gantt.zoomed:not(.days) .lane>:first-child{box-shadow:0 1px 0 var(--rule-2)}   /* the row's divider under the names, so the Today line can't show through the border */
 .gantt.zoomed:not(.days) .lanehdr .lh-in{position:sticky;left:12px}
 .tagcombo{position:relative;display:inline-block}.tagsug{position:absolute;left:0;top:100%;z-index:30;min-width:200px;max-width:280px;margin:2px 0 0;padding:4px;list-style:none;background:var(--surface);border:1px solid var(--rule);border-radius:8px;box-shadow:var(--drawer-shadow)}
 .tagopt{padding:4px 8px;border-radius:5px;cursor:pointer;font-size:12.5px}.tagopt.act{background:color-mix(in srgb,var(--accent) 14%,var(--surface))}.tagopt.create{color:var(--ink-2);font-style:italic}
@@ -6993,7 +6996,7 @@ document.addEventListener("pointermove", e=>{
   const d = noteDrag; if (!d) return;
   if (!d.moved && Math.abs(e.clientX - d.x0) + Math.abs(e.clientY - d.y0) < 5) return;
   d.moved = true; closePeek();
-  d.el.style.transform = `translate(${e.clientX - d.x0}px, ${e.clientY - d.y0}px)`; d.el.style.zIndex = 20; d.el.style.pointerEvents = "none";
+  d.el.style.transform = `translate(${e.clientX - d.x0}px, ${e.clientY - d.y0}px)`; d.el.style.zIndex = 20; d.el.style.pointerEvents = "none"; d.el.classList.add("dragging");
   const hit = document.elementFromPoint(e.clientX, e.clientY), tr = hit?.closest("#gantt .track");
   if (tr){ d.day = dayAtX(tr, e.clientX); d.lane = laneOfTrack(tr); }
   const onto = hit?.closest('#gantt [data-peek-type="bar"], #gantt [data-peek-type="task"], #gantt [data-peek-type="ms"], #gantt [data-peek-type="gate"], #gantt [data-peek-type="meeting"]');
@@ -7005,7 +7008,7 @@ document.addEventListener("pointermove", e=>{
 });
 const endNoteDrag = (e, cancel) => {
   const d = noteDrag; if (!d) return; noteDrag = null; hideTip();
-  d.el.style.transform = ""; d.el.style.zIndex = ""; d.el.style.pointerEvents = "";
+  d.el.style.transform = ""; d.el.style.zIndex = ""; d.el.style.pointerEvents = ""; d.el.classList.remove("dragging");
   document.querySelectorAll("#gantt .stick-target").forEach(x=>x.classList.remove("stick-target"));
   if (!d.moved || cancel) return;
   noteDragEnded = true; setTimeout(()=>{ noteDragEnded = false; }, 0);
