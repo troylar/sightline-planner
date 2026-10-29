@@ -35,7 +35,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     const forH = d.querySelector("#findSelH"), forIds0 = J(`findHits.filter(x=>x.kind === "cmd").map(x=>x.id)`), forIds = J(`findHits.filter(x=>x.kind === "cmd").map(x=>x.id)`);
     ok("C5 with an initiative selected, For <its name> leads, with its actions", heads()[0] === "findSelH" && forH.textContent === "For " + X(`starLabel("bar", "c3")`) && forIds.includes("star") && forIds.includes("copy-link"), JSON.stringify([forH && forH.textContent, forIds]));
     const nFor = J(`(()=>{ const l = [...document.querySelectorAll("#findList > *")], a = l.findIndex(e=>e.id === "findSelH"), b = l.findIndex((e, i)=>i > a && e.classList.contains("fhead")); return l.slice(a + 1, b < 0 ? l.length : b).length; })()`);
-    ok("C6 For lists at most 8 actions, every one of them about the selection, most used first", nFor > 0 && nFor <= 8 && forIds0.slice(0, nFor).every(id=>X(`CMD_SEL.includes("${id}")`)) && forIds0[0] === "star", JSON.stringify([nFor, forIds0.slice(0, nFor)]));
+    ok("C6 For lists at most 5 actions, every one of them about the selection, most used first", nFor > 0 && nFor <= 5 && forIds0.slice(0, nFor).every(id=>X(`CMD_SEL.includes("${id}")`)) && forIds0[0] === "star", JSON.stringify([nFor, forIds0.slice(0, nFor)]));
     // The selection is taken when Find opens: if it changes before an action runs, nothing happens to the new one
     await pick("bar", "c4"); X(`findCmd("star");`); await wait(10);
     ok("C7 an action for the selection refuses if the selection changed while Find was open", !X(`starOf("bar", "c4")`) && !X(`starOf("bar", "c3")`) && /selection changed while Find was open/.test(status()), status());
@@ -51,6 +51,10 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("C11 an empty Find lists Starred, then Recent without what's starred or selected", heads().join() === "findSelH,findStarsH,findRecentH,findViewH" && rec.join() === "bar:c4", JSON.stringify([heads(), rec]));
     X(`toggleStar("bar", "c3"); sel = null; render();`); await open();
     const rec2 = J(`findHits.filter(x=>x.kind === "recent").map(x=>x.s.k)`);
+    X(`toggleStar("bar", "c4");`); await pick("bar", "c3"); await open();
+    const rowOf = id => J(`[...document.querySelectorAll("#findList > *")].findIndex(e=>e.id === "${id}")`);
+    ok("C28 with something selected, Starred comes within the first 7 rows, so stars stay near the top", rowOf("findStarsH") > 0 && rowOf("findStarsH") <= 6, String(rowOf("findStarsH")));
+    X(`toggleStar("bar", "c4"); sel = null; render();`); await open();
     ok("C12 …and with nothing starred and nothing selected, everything you opened", rec2.join() === "bar:m2,bar:c3,bar:c4", JSON.stringify(rec2));
     const ri = J(`findHits.findIndex(x=>x.kind === "recent" && x.s.k === "bar:c3")`); X(`findIdx = ${ri};`); await enter();
     ok("C13 Enter on a Recent item goes to it", X(`sel && sel.type + ":" + sel.id`) === "bar:c3" && d.querySelector("#findPop").hidden);
@@ -66,6 +70,8 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("C18 > on its own lists every action that applies, and nothing else", heads().join() === "findActsH" && hits().length > 6 && hits().every(h=>h.startsWith("cmd:")), JSON.stringify(heads()));
     await type("> zoom");
     ok("C19 > with words narrows the actions", hits().length > 0 && hits().every(h=>h.startsWith("cmd:")) && J(`findHits.every(x=>/zoom/i.test(x.text + " " + (COMMANDS.find(c=>c.id === x.id).also || "")))`), JSON.stringify(hits()));
+    await type("> zoom");
+    ok("C27 > zoom finds the Weeks or Days view", J(`findHits.map(x=>x.id)`).some(id=>id === "weeks" || id === "days"), JSON.stringify(hits()));
     await type("Integrations");
     ok("C20 without >, typing still finds items as well as actions", hits().some(h=>!h.startsWith("cmd:")), JSON.stringify(hits().slice(0, 4)));
 

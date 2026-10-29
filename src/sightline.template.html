@@ -7374,8 +7374,8 @@ const COMMANDS = [
   {id:"go-sprint", label:"Go to Sprint", keys:["5"], run:()=>goWs("standup")},
   {id:"go-roadmap", label:"Go to Roadmap", keys:["6"], run:()=>goWs("roadmap")},
   {id:"go-settings", label:"Go to Settings", keys:["4"], run:()=>goMainGroup("settings")},
-  {id:"weeks", label:"Weeks view", keys:["W"], when:()=>UI.zoom === "days", run:()=>setZoom("weeks")},
-  {id:"days", label:"Days view", keys:["D"], when:()=>UI.zoom !== "days", run:()=>setZoom("days", UI.focus)},
+  {id:"weeks", label:"Weeks view", keys:["W"], also:"zoom out scale range", when:()=>UI.zoom === "days", run:()=>setZoom("weeks")},
+  {id:"days", label:"Days view", keys:["D"], also:"zoom in scale range", when:()=>UI.zoom !== "days", run:()=>setZoom("days", UI.focus)},
   {id:"rows-lanes", label:"Rows by workstream", keys:["Shift+W"], when:()=>UI.ws === "timeline" && UI.rows !== "lanes", run:()=>setRows("lanes")},
   {id:"rows-people", label:"Rows by person", keys:["Shift+O"], when:()=>UI.ws === "timeline" && UI.rows !== "people", run:()=>setRows("people")},
   {id:"rows-epics", label:"Rows by epic", keys:["Shift+E"], when:()=>UI.ws === "timeline" && UI.rows !== "epics" && hasJiraTree(), run:()=>setRows("epics")},
@@ -7465,7 +7465,7 @@ function findLaunch(list, actsOnly){
   if (actsOnly) add("Actions", "findActsH", COMMANDS.filter(cmdOn).map(findCmdHit));
   else {
     const s = findSel && STAR_TYPES.includes(findSel.type) && navFind(findSel.type, findSel.id) ? findSel : null, st = starsAll();
-    if (s) add(`For ${starLabel(s.type, s.id)}`, "findSelH", CMD_SEL.map(id=>COMMANDS.find(c=>c.id === id)).filter(c=>c && cmdOn(c)).slice(0, 8).map(findCmdHit));
+    if (s) add(`For ${starLabel(s.type, s.id)}`, "findSelH", CMD_SEL.map(id=>COMMANDS.find(c=>c.id === id)).filter(c=>c && cmdOn(c)).slice(0, 5).map(findCmdHit));
     add("Starred", "findStarsH", st.map(x=>({kind:"star", s:x})));
     const shown = new Set([...(s ? [s.type + ":" + s.id] : []), ...st.map(x=>{ const w = starWhere(x); return w.t ? w.t + ":" + w.id : ""; })]);
     add("Recent", "findRecentH", recentAll().filter(x=>{ const w = starWhere(x), k = w.t ? w.t + ":" + w.id : ""; if (!k || shown.has(k)) return false; shown.add(k); return true; }).map(x=>({kind:"recent", s:x})));
