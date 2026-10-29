@@ -222,6 +222,7 @@ button.lchip{padding:2px 9px;cursor:pointer}
 .banner.warn{background:var(--warn-bg)}
 .banner.info{background:var(--surface);border:1px solid var(--rule)}
 .showstrip{flex-wrap:wrap;row-gap:6px}
+@media (max-width:1180px){.showstrip #showBack .wide{display:none}}   /* the chip row stays one line on a narrow window */
 .showstrip .slabel{color:var(--ink-2)}
 .showgap{flex:1 0 100%;color:var(--ink-2);font-size:12.5px}
 .showstrip .schips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;flex:1 1 auto}
@@ -547,6 +548,7 @@ body.presenting #filterBtn,body.presenting #viewSave{display:none!important}
 .fhit small{color:var(--ink-3);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fhit kbd{font-weight:600;font-size:inherit;line-height:1;font-family:var(--mono,ui-monospace,monospace);border:1px solid var(--ink-3);border-bottom-width:2px;border-radius:4px;padding:1px 4px;color:var(--ink-2);background:var(--surface)}
 .fhit.fcmd .fi{color:var(--accent)}
+.fhit .fout{margin-left:6px;padding:0 5px;border:1px dashed var(--warn);border-radius:4px;color:var(--ink-2);white-space:nowrap}
 .fhit.on,.fhit:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .flash{animation:flashit 1.6s ease-out}
 @keyframes flashit{0%,40%{box-shadow:0 0 0 3px var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
@@ -1580,7 +1582,6 @@ body:has(> #bootfail) > :not(#bootfail){display:none !important}
       <button type="button" class="btn" id="viewBtn" aria-haspopup="menu" aria-expanded="false">All work ▾</button>
       <button type="button" class="btn primary" id="viewSave" hidden title="Save changes to this view">Save</button>
       <button type="button" class="btn" id="findBtn" aria-haspopup="dialog" aria-expanded="false" title="Find anything, or an action by name (/ or Ctrl+K)">⌕ Find</button>
-      <button type="button" class="btn" id="findRestore" hidden>Restore previous view</button>
       <button type="button" class="btn" id="notesBtn" aria-haspopup="menu" aria-controls="notesMenu" aria-expanded="false" title="Show or hide notes (N)">Notes</button>
       <button type="button" class="btn" id="filterBtn" aria-haspopup="dialog" aria-expanded="false" title="Filter what's shown (F)">Filters</button>
     </span>
@@ -4287,7 +4288,7 @@ function clearBanner(key){ banners.delete(key); drawBanners(); }
 // While initiatives are picked, or only work added here shows, say so above the chart for as long as it lasts (the status
 // line fades), Present too. partialView() is what makes counts like "late" say they cover the whole plan.
 const partialView = () => (UI.filter.linked || []).some(x=>linkTarget(x)) || (UI.filter.bars || []).some(id=>barById(id)) || (UI.filter.people || []).some(id=>personById(id)) || hereOnly();
-function viewStrips(){ return [showStrip(), hereOnly() ? h("div",{class:"banner info",id:"hereStrip",role:"status"}, h("span",{}, h("b",{}, "Showing only work added here"), ": Jira's work is hidden, except initiatives that hold work added here"),
+function viewStrips(){ return [backStrip(), showStrip(), hereOnly() ? h("div",{class:"banner info",id:"hereStrip",role:"status"}, h("span",{}, h("b",{}, "Showing only work added here"), ": Jira's work is hidden, except initiatives that hold work added here"),
   h("button",{type:"button",class:"linkish",id:"hereAll",onclick:()=>{ setLayer("all"); setStatus("Showing work from every source again."); }}, "Show everything")) : null].filter(Boolean); }
 // Showing: what you narrowed to, one chip per initiative or person, each taken off with a click. Show all work clears
 // every filter. Each of these is a step Back undoes.
@@ -4307,6 +4308,7 @@ function showStrip(){
         onclick:e=>{ e.stopPropagation(); $("#linkMenu").hidden ? openLinkMenu() : closeLinkMenu(true); }}, "Linked work", h("span",{"aria-hidden":"true"}, " ▾")) : null,
       ...bars.map(id=>chip("bar", id, "Initiative", chartLabel(barById(id)))), ...ppl.map(id=>chip("person", id, "Person", personName(id))),
       rest ? h("button",{type:"button",class:"linkish",id:"showMore",onclick:e=>{ e.stopPropagation(); openFilterPop(); }}, `and ${rest} more filter${rest === 1 ? "" : "s"}`) : null),
+    lk.length && wayBack()?.why === "linked" ? h("button",{type:"button",class:"linkish",id:"showBack",title:"Put the page, filters, zoom and scroll back as they were before Show linked work (Back does this too)","aria-label":"Back to where I was",onclick:()=>backWhereIWas()}, "Back", h("span",{class:"wide"}, " to where I was")) : null,
     h("button",{type:"button",class:"linkish",id:"showAll",onclick:()=>{ navStep(); UI.view = null; setFilter(x=>{ Object.assign(x, normFilter({})); }); setStatus("Showing all work. Back puts your filters back."); showSay("Showing all work."); focusShown(); }}, "Show all work"),
     h("div",{class:"showgap",id:"showGap",hidden:true}));
 }
@@ -5761,7 +5763,8 @@ const HELP = [
   ["views", "Views and finding", ()=>[
     h("ul",{}, h("li",{}, h("b",{},"Weeks / Days"), " (W, D): the big picture, or day by day with tasks."), h("li",{}, h("b",{},"By workstream / By person / By epic"), " (R): rows per workstream, per person with their load, or per Jira epic, nested."),
       h("li",{}, h("b",{},"Find"), keysIn(" (/ or Ctrl+K): any item, person, meeting, note or Jira key. It unfolds and un-filters what's hiding the result.")),
-      h("li",{}, h("b",{},"Stars"), " (,): star what you've selected to get back to it fast. Your stars are under Starred in the menu and first in an empty Find (/). After going to one, Back to where I was puts your view back as it was. Yours alone, in this browser."),
+      h("li",{}, h("b",{},"Stars"), " (,): star what you've selected to get back to it fast. Your stars are under Starred in the menu and first in an empty Find (/). Yours alone, in this browser."),
+      h("li",{}, h("b",{},"Back to where I was"), ": going to something your view hides, from Find, a star or a link, changes the view to show it; Back to where I was above the chart, or the browser's Back, puts the page, filters, zoom, folds and selection back. Find marks such results first (Outside your filter, Folded row). Show linked work offers the same way back."),
       h("li",{}, h("b",{},"Filters"), " (F): by person, workstream, status (including Blocked), kind, dates. ", h("b",{},"Views"), " (V) save a filter and layout, for you or the team."),
       h("li",{}, h("b",{},"Show"), " (H): hide gates, releases, deliverables, meetings, process blocks, milestones or done work, just for you in this plan. ", h("b",{},"Focus"), " hides meetings, process and done work; G and M toggle gates and meetings; Shift+H shows everything. ", h("b",{},"Pin the top rows"), " keeps them in view while you scroll."),
       h("li",{}, h("b",{},"Notes"), " (N): show all, only yours, only others', or hide them."), h("li",{}, h("b",{},"Present"), " (P): a clean, read-only view for reviews."),
@@ -6372,7 +6375,7 @@ function navFind(t, id){
 // A Jira-backed item is starred by its key, so a story that becomes a task (or a task that is a story) keeps its star; a
 // workstream by id, following its former ids. A star that can't be found stays, says why, and can always be unstarred.
 const STAR_KEY = "sightline-stars", STAR_MAX = 24, STAR_SIDE = 5;
-let starMemo = null, freshStar = "", starBack = null;
+let starMemo = null, freshStar = "", backs = [];
 const starRec = x => x && typeof x === "object" && typeof x.k === "string" && /^[a-z]+:[^\s]{1,80}$/.test(x.k) ? {k:x.k, name:str(x.name).slice(0, 120), ...(typeof x.alt === "string" && /^[a-z]+:[^\s]{1,80}$/.test(x.alt) ? {alt:x.alt} : {})} : null;
 function starsAll(){ if (starMemo && starMemo.plan === S.meta.planId) return starMemo.list; let list = [];
   try { const o = JSON.parse(localStorage.getItem(STAR_KEY) || "{}"), v = o && typeof o === "object" ? o[S.meta.planId] : null;
@@ -6418,25 +6421,68 @@ function toggleStar(t, id){
   if (!starsWrite([...list, {k, name, ...(k !== a ? {alt:a} : {})}])) return false;
   freshStar = k; setTimeout(()=>{ if (freshStar === k) freshStar = ""; }, 900); setStatus(`Starred ${name}. Press / to get back to it.`); showSay(`Starred ${name}.`); render(); return true; }
 function unstar(x){ if (!starsWrite(starsAll().filter(y=>y.k !== x.k))) return; setStatus(`Unstarred ${x.name || "it"}.`); render(); }
-// Going to a star remembers everything about where you were, so Back to where I was undoes all of it: the page, filters,
-// zoom, selection, scroll, what's hidden or folded, rows, notes and the layer (Find may change them to reveal the item).
+// Ways back: going to an item that your view hides (from Find, a star or a link), or narrowing to linked work, first
+// remembers everything about where you were: the page, filters, zoom, selection, scroll, what's hidden or folded, rows,
+// notes, the layer and the saved view. Back to where I was, or one press of the browser's Back, undoes all of it. A
+// visit from a visit you haven't changed since still goes back to where you were before the first, so a second search
+// doesn't lose the chain. Each step of history a way back made keeps its own whole view too (as you left it), so the
+// browser's Back and Forward between them put back exactly what that step showed. A way back is offered only on steps
+// after the one it was taken from: going Back to that step, or past it, sets it aside, and Forward brings it back.
+const BACK_MAX = 5, liveBacks = () => backs.filter(x=>x.plan === S.meta.planId && !x.off), wayBack = () => liveBacks().pop() || null;
+const steps = new Map(), STEP_MAX = 60;   // history step id -> the whole view at that step, for steps a way back made; in memory only
+function noteStep(pid, snap){ steps.delete(pid); steps.set(pid, snap); while (steps.size > STEP_MAX) steps.delete(steps.keys().next().value); }
+// A visit's step: its view, and what the way back says and expects there. Only the newest few are kept.
+function noteVisit(r, b){ noteStep(b.from, b); if (placeId === b.from) return;   // the address didn't change: there's no step of its own
+  const a = viewSnap(); noteStep(placeId, a); r.at = {...(r.at || {}), [placeId]:{name:r.name, after:snapKey(a)}};
+  const ks = Object.keys(r.at); ks.slice(0, Math.max(0, ks.length - 20)).forEach(k=>delete r.at[k]); }
+const stepDepth = pid => depths.get(pid) ?? 0;
 function viewSnap(){ const a = document.activeElement;
-  return {plan:S.meta.planId, nav:navState(), place:placeNow(), focus:a && a.id && a !== document.body ? a.id : "",
+  return {plan:S.meta.planId, nav:navState(), place:placeNow(), focus:a && a.id && a !== document.body ? a.id : "", from:placeId,
     x:clone({hidden:hiddenKinds(), hide:hideOf(), collapsed:UI.collapsed || {}, rows:UI.rows, notes:UI.notes, focus:UI.focus || null, fold:UI.fold || null, layer:layerOf(),
-      zoom:UI.zoom, zoomN:UI.zoomN ?? null, zoomSp:UI.zoomSp ?? null, dayZoom:UI.dayZoom ?? null, ...("zoomPreset" in UI ? {zoomPreset:UI.zoomPreset} : {})})}; }
+      zoom:UI.zoom, zoomN:UI.zoomN ?? null, zoomSp:UI.zoomSp ?? null, dayZoom:UI.dayZoom ?? null, ...("zoomPreset" in UI ? {zoomPreset:UI.zoomPreset} : {}), view:UI.view || null, linkZoom})}; }
+const snapKey = b => JSON.stringify([b.nav.f || "", b.nav.layer || "", {...b.x, linkZoom:null}]);   // what you see changed: not the page or the selection
+function pushBack(b, why, name, after){ backs = liveBacks(); const top = wayBack();
+  if (top && top.why !== "linked" && why !== "linked" && top.after === snapKey(b)){ top.name = name; top.after = after; return top; }
+  const r = {...b, why, name, after, fromD:stepDepth(b.from)}; backs = [...backs, r].slice(-BACK_MAX); return r; }
+// Once you're back, an older way back is offered only if this is exactly the view it left you in (the chain you went
+// to an item from), not one you've changed since.
+function backPrune(){ const k = snapKey(viewSnap()); for (let r = wayBack(); r && r.after !== k; r = wayBack()) backs = backs.filter(x=>x !== r); }
 function starGo(x){ const w = starWhere(x); if (!w.t){ setStatus(w.why); return false; }
-  const back = viewSnap(); navStep(); goTo(w.t, w.id); starBack = back;
+  goTo(w.t, w.id, true);
   const name = starLabel(w.t, w.id); if (name && name !== x.name) starsWrite(starsAll().map(y=>y.k === x.k ? {...y, name} : y));
-  render(); showToast(`Went to ${name}.`, "Back to where I was", backWhereIWas); return true; }
-function backWhereIWas(){ const b = starBack; starBack = null;
-  if (!b || b.plan !== S.meta.planId){ setStatus("There's nowhere to go back to in this plan."); render(); return false; }
+  return true; }
+function snapApply(b){ navApplying = true; try { snapApplyAll(b); } finally { navApplying = false; } }   // the address isn't touched until it's all back
+function snapApplyAll(b){
   setHiddenQuiet(b.x.hidden); setHide(hd=>{ Object.keys(hd).forEach(k=>delete hd[k]); Object.assign(hd, clone(b.x.hide)); });
   UI.collapsed = clone(b.x.collapsed); UI.rows = b.x.rows; UI.notes = b.x.notes; UI.focus = b.x.focus; UI.fold = b.x.fold; setLayerQuiet(b.x.layer);
   UI.zoom = b.x.zoom; UI.zoomN = b.x.zoomN; UI.zoomSp = b.x.zoomSp; UI.dayZoom = b.x.dayZoom; delete UI.zoomPreset; if ("zoomPreset" in b.x) UI.zoomPreset = b.x.zoomPreset; fitKey = ""; sprintKey = "";
-  try { pushPlace("#" + encodeNav(b.nav)); } catch(e){}   // its own step, so Back from here goes to the star again
+  UI.view = b.x.view || null; linkZoom = b.x.linkZoom || null; }
+// r: the way back a toast was made for, which may be gone (kept the view, or already used); otherwise the newest.
+function backWhereIWas(r){ const live = liveBacks(), b = r ? (live.includes(r) ? r : null) : wayBack();
+  if (!b){ setStatus(r ? "That way back is gone: you kept the view, or already went back." : "There's nowhere to go back to in this plan."); render(); return false; }
+  backs = backs.filter(x=>x.plan === S.meta.planId && live.indexOf(x) < live.indexOf(b) && live.includes(x));   // it, and anything newer
+  stepLeave(); snapApply(b);
+  try { pushPlace("#" + encodeNav(b.nav)); noteStep(placeId, b); } catch(e){}   // its own step, so Back from here goes to the item again
   applyNav(b.nav); placeHold = true; restorePlace(b.place, ++placeGen);
+  backPrune(); render();
   const f = b.focus && document.getElementById(b.focus); if (f) f.focus({preventScroll:true}); else focusShown();
-  setStatus("Back where you were."); return true; }
+  setStatus("Back where you were."); showSay("Back where you were."); return true; }
+// The browser's Back or Forward onto a step a way back made puts the rest of that step's view back too (the address only
+// holds the page, filters, zoom, layer and selection). Back onto where a way back was taken from sets it aside; Forward
+// onto one of its visits brings it, and the item it named, back.
+function backOnPop(){ const snap = steps.get(placeId); if (snap && snap.plan === S.meta.planId) snapApply(snap);
+  const d = stepDepth(placeId); let home = false;
+  backs.forEach(r=>{ if (r.plan !== S.meta.planId) return; const off = d <= r.fromD; if (off && !r.off) home = true; r.off = off;
+    const at = r.at && r.at[placeId]; if (at){ r.name = at.name; r.after = at.after; } });
+  return home; }
+// Leaving a step a way back made: it keeps the view as you leave it, not as you arrived.
+const stepLeave = () => { if (steps.has(placeId) && steps.get(placeId).plan === S.meta.planId) noteStep(placeId, viewSnap()); };
+// Above the chart while a visit can be undone. Linked work says it in its own strip.
+function backStrip(){ const b = wayBack(); if (!b || b.why === "linked" || present) return null;
+  return h("div",{class:"banner info backstrip",id:"backStrip",role:"status"},
+    h("span",{}, h("b",{}, `Showing ${b.name || "this item"}`), ": your view changed so you could see it"),
+    h("button",{type:"button",class:"linkish",id:"backGo",title:"Put the page, filters, zoom and scroll back as they were (Back does this too)",onclick:()=>backWhereIWas(b)}, "Back to where I was"),
+    h("button",{type:"button",class:"linkish",id:"backKeep",title:"Stay on this view and stop offering the way back",onclick:()=>{ backs = backs.filter(x=>x !== b); $("#toast").hidden = true; setStatus("Keeping this view."); render(); focusShown(); }}, "Keep this view")); }
 // Recent: the last items you opened (selected), newest first, per plan in this browser, by the same identity as stars.
 // Back and Forward don't count, and an item is listed once.
 const RECENT_KEY = "sightline-recent", RECENT_MAX = 8;
@@ -6476,7 +6522,7 @@ function applyNavDrill(st){
     if (k === "bar" && barById(id)) UI.filter.bars = [id]; if (k === "person" && personById(id)) UI.filter.people = [id]; });
 }
 function syncNav(){
-  if (navApplying || typeof history === "undefined") return;
+  if (navApplying || navHold || typeof history === "undefined") return;
   if (navPending){ const st = navPending;                      // a link opens where it points, once its plan is here
     if (!st.plan || st.plan === S.meta.planId){ navPending = null; setTimeout(()=>applyNav(st), 0); return; }
     if (file.handle){ navPending = null; setStatus("That link is for another plan, so nothing was selected here. Open that plan to follow it."); } else return; }         // a different shared plan opened: the link was for another one
@@ -6485,9 +6531,9 @@ function syncNav(){
   if (hash === location.hash) return;
   const cur = parseNav(location.hash) || {}, go = navGo || cur.ws !== next.ws || (cur.pt || "") !== (next.pt || "") || (cur.sel || "") !== (next.sel || "") || (cur.dr || "") !== (next.dr || "");
   navGo = false;
-  try { go && cur.ws ? pushPlace(hash) : history.replaceState(history.state, "", hash); } catch(e){}
+  try { if (go && cur.ws){ stepLeave(); pushPlace(hash); } else history.replaceState(history.state, "", hash); } catch(e){}
 }
-let navGo = false, recentSel = ""; const navStep = () => { navGo = true; };
+let navGo = false, navHold = false, recentSel = ""; const navStep = () => { navGo = true; };
 // Back and Forward keep your place: each step remembers how far you'd scrolled the page, the chart, the details panel and any
 // other area with an id, and going back puts them there again once the page has drawn. Scrolls are noted as they happen
 // (the browser reports them a frame later, so a page drawn for the next step hasn't moved them yet when the step is added);
@@ -6504,7 +6550,9 @@ function placeNow(){
 }
 function savePlace(){ clearTimeout(placeT); if (typeof history === "undefined") return; places.set(placeId, place);
   try { history.replaceState({...(history.state || {}), pid:placeId, place}, ""); } catch(e){} }
-function pushPlace(hash){ savePlace(); placeId = newPlaceId(); history.pushState({pid:placeId}, "", hash); place = placeNow(); places.set(placeId, place); }
+const depths = new Map();   // how far into this tab's history each step is, so a way back knows which steps come after it
+function pushPlace(hash){ savePlace(); const d = stepDepth(placeId) + 1; backs = backs.filter(x=>!x.off);   // a new step: what Forward could reach is gone
+  placeId = newPlaceId(); depths.set(placeId, d); history.pushState({pid:placeId, d}, "", hash); place = placeNow(); places.set(placeId, place); }
 function restorePlace(p, gen){
   // A page can finish drawing a little later (the details panel, the chart's fit, a long list), so try again for up to a second.
   const go = () => { let all = true; Object.entries(p).forEach(([id, [x, y]])=>{ const el = id === "" ? document.scrollingElement : document.getElementById(id); if (!el) return;
@@ -6514,7 +6562,7 @@ function restorePlace(p, gen){
     if (go() || ++n > 10){ place = {...p}; places.set(placeId, place); placeHold = false; return; } setTimeout(step, 100); };
   go(); requestAnimationFrame(step);
 }
-try { history.scrollRestoration = "manual"; placeId = history.state && history.state.pid || newPlaceId(); history.replaceState({...(history.state || {}), pid:placeId}, ""); } catch(e){}
+try { history.scrollRestoration = "manual"; placeId = history.state && history.state.pid || newPlaceId(); depths.set(placeId, history.state && history.state.d || 0); history.replaceState({...(history.state || {}), pid:placeId}, ""); } catch(e){}
 ["wheel", "touchstart", "keydown", "mousedown"].forEach(t=>window.addEventListener(t, ()=>{ placeHold = false; }, {capture:true, passive:true}));   // you scroll yourself: stop putting it back
 document.addEventListener("scroll", e=>{ if (placeHold) return; const t = e.target, el = t === document ? document.scrollingElement : t;
   if (!el || (t !== document && !t.id)) return; place[t === document ? "" : t.id] = [Math.round(el.scrollLeft), Math.round(el.scrollTop)];
@@ -6523,9 +6571,9 @@ document.addEventListener("scroll", e=>{ if (placeHold) return; const t = e.targ
 window.addEventListener("popstate", ()=>{
   setStatus(""); statusAt = 0;   // what the last action said is about the step you left (applyNav can still speak for this one)
   clearTimeout(placeT); places.set(placeId, place);                  // the step you left keeps a scroll made just now, in memory
-  placeId = history.state && history.state.pid || newPlaceId(); const p = places.get(placeId) || history.state && history.state.place;
+  stepLeave(); placeId = history.state && history.state.pid || newPlaceId(); if (history.state && Number.isFinite(history.state.d)) depths.set(placeId, history.state.d); const p = places.get(placeId) || history.state && history.state.place;
   const gen = ++placeGen; placeHold = !!p; place = p ? {...p} : {};
-  applyNav(parseNav(location.hash)); if (p) restorePlace(p, gen); });
+  const st = parseNav(location.hash), home = backOnPop(); applyNav(st); if (p) restorePlace(p, gen); if (home) setStatus("Back where you were."); });
 const linkHere = () => { const u = location.href; (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(()=>setStatus("Link copied. It opens this place in this plan."), ()=>{ window.prompt("Copy this link:", u); }); };
 // ================= filters (what's shown; calculations always use the whole plan) =================
 const lc = x => String(x||"").trim().toLowerCase();
@@ -7413,7 +7461,7 @@ const COMMANDS = [
   {id:"copy-ask-stars", label:"Copy your starred items for your assistant", also:"ai assistant stars favorites paste chat ask copy", when:()=>starsAll().length > 0, run:()=>copyForAsk("stars")},
   {id:"copy-link", label:"Copy a link to the selection", also:"share url address link", when:()=>!!sel && NAV_SEL.includes(sel.type), run:()=>linkHere()},
   {id:"clear-recent", label:"Clear recently opened items", also:"history recent forget", when:()=>recentAll().length > 0, run:()=>{ recentWrite([]); setStatus("Cleared the recently opened items for this plan, in this browser."); }},
-  {id:"back-where", label:"Back to where I was, before going to a star", also:"return restore previous view star", when:()=>!!starBack && starBack.plan === S.meta.planId, run:()=>backWhereIWas()},
+  {id:"back-where", label:"Back to where I was", also:"return restore previous view star linked chain undo visit", when:()=>!!wayBack(), run:()=>backWhereIWas()},
   {id:"leads-here-sel", label:"Show what leads to the selection on the Timeline", keys:[">"], also:"runway leads here timeline milestone waits upstream", when:()=>!linkSeeds().length && !!sel && LINK_TYPES.includes(sel.type) && !!linkTarget({t:sel.type, id:sel.id}), run:()=>{ leadsHere(sel.type, sel.id); focusShown(); }},
   {id:"linked-remove", label:"Take the selection off linked work", keys:["Shift+X"], also:"linked remove pick", when:()=>CMD_VIEWS.includes(UI.ws) && !!sel && isSeed(sel.type, sel.id), run:()=>{ linkedOff({t:sel.type, id:sel.id}); focusShown(); }},
   {id:"week-later", label:"Move the selection a week later", keys:["}"], also:"push slip delay", when:()=>!!selMovable(), run:()=>moveSelTo(selStartDay(selMovable()) + 7)},
@@ -7459,9 +7507,22 @@ function findHitEl(x, i){ const on = i === findIdx, base = {type:"button",role:"
     h("span",{class:"fi"}, "›"), h("span",{class:"ft"}, x.text), h("small",{}, x.keys.length ? h("span",{}, "Action · ", ...x.keys.map((k, j)=>[j ? " or " : "", h("kbd",{}, keyLabel(k))]).flat()) : "Action"));
   if (x.kind === "star" || x.kind === "recent"){ const w = starWhere(x.s), name = w.t ? starLabel(w.t, w.id) : x.s.name || x.s.k;
     return h("button",{...base,class:"fhit f" + x.kind + (on ? " on" : "") + (w.t ? "" : " gone"),["data-" + x.kind]:x.s.k,onclick:e=>{ e.stopPropagation(); closeFind(); starGo(x.s); }},
-      h("span",{class:"fi"}, icon(w.t ? KIND_ICON[w.t] || "flag" : "star")), h("span",{class:"ft"}, name), h("small",{}, w.t ? x.kind === "star" ? "Starred" : "Opened recently" : w.why)); }
-  return h("button",{...base,class:"fhit" + (on ? " on" : ""),onclick:()=>{ closeFind(); goTo(x.kind, x.id); }},
-    h("span",{class:"fi"}, x.emoji ? icon(null, x.emoji) : icon(x.icon || KIND_ICON[x.kind] || "flag")), h("span",{class:"ft"}, x.text), h("small",{}, x.sub)); }
+      h("span",{class:"fi"}, icon(w.t ? KIND_ICON[w.t] || "flag" : "star")), h("span",{class:"ft"}, name), h("small",{}, w.t ? x.kind === "star" ? "Starred" : "Opened recently" : w.why, w.t && findOut(w.t, w.id) ? h("span",{class:"fout"}, findOut(w.t, w.id)) : null)); }
+  const out = findOut(x.kind, x.id);
+  return h("button",{...base,class:"fhit" + (on ? " on" : ""),"data-out":out || null,onclick:()=>{ closeFind(); goTo(x.kind, x.id); }},
+    h("span",{class:"fi"}, x.emoji ? icon(null, x.emoji) : icon(x.icon || KIND_ICON[x.kind] || "flag")), h("span",{class:"ft"}, x.text), h("small",{}, x.sub, out ? h("span",{class:"fout"}, out) : null)); }
+// Why your view doesn't show a result as it is, said before you go to it: going there changes the view, and Back to
+// where I was puts it back. The same predicates the chart draws with.
+function findOut(kind, id){
+  const L = linkedScope(), f = UI.filter, hl = !!L && f.linkMode === "highlight", hid = k => !hl && !!L && !L.keys.has(k) ? "Outside linked work" : "Outside your filter";
+  const folded = b => [b, ...ancestorsOf(b)].some(a=>UI.collapsed && UI.collapsed[a.id]), dim = k => hl && !L.keys.has(k) ? "Dimmed: not linked" : "";
+  if (kind === "bar"){ const b = barById(id); if (!b || b.parked) return ""; if (!barVisible(b)) return hid("bar:" + id); return ancestorsOf(b).some(a=>UI.collapsed && UI.collapsed[a.id]) ? "Folded row" : dim("bar:" + id); }
+  if (kind === "task"){ const o = taskById(id); if (!o || o.b.parked) return ""; if (!barVisible(o.b) || (tasksFiltered() && !taskVisible(o.t))) return hid("task:" + id); return folded(o.b) ? "Folded row" : dim("task:" + id); }
+  if (kind === "story"){ const x = storyByKey(id); if (!x || !x.drawn) return ""; return !barVisible(x.b) || !storyVisible(x) ? "Outside your filter" : folded(x.b) ? "Folded row" : ""; }
+  if (kind === "ms"){ const m = S.milestones.find(z=>z.id === id); if (!m) return ""; if (m.at == null || !m.lane) return "Not on Timeline"; return !msVisible(m) ? hid("ms:" + id) : dim("ms:" + id); }
+  if (kind === "gate"){ const g = gateItems().find(z=>z.id === id); if (!g || !validIso(g.x.date)) return g ? "Not on Timeline" : ""; return !gateVisible(g) ? hid("gate:" + id) : dim("gate:" + id); }
+  if (kind === "block"){ const i = instById(id); return i && !blockShown(i) ? "Outside your filter" : ""; }
+  return ""; }
 const findCmdHit = c => ({kind:"cmd", id:c.id, text:c.label, keys:c.keys || []});
 // Find with nothing typed: what you can do with what you'd selected, your stars, what you opened lately, and this page's
 // actions. > on its own lists every action that applies now.
@@ -7492,8 +7553,23 @@ function renderFind(q){
   if (!findHits.length){ list.append(h("p",{class:"hint"}, `Nothing matches "${q}".`)); return; }
   findHits.forEach((x, i)=>list.append(findHitEl(x, i)));
 }
-// Show an item: switch to where it lives, unfold what hides it, clear a filter that hides it, select it and scroll to it.
-function goTo(kind, id){
+// Show an item: switch to where it lives, unfold what hides it, clear a filter that hides it, select it and scroll to it,
+// as one step of history. When that changes more than the page and the selection, it's a visit Back to where I was undoes.
+function goTo(kind, id, always){
+  const b = viewSnap(), k0 = snapKey(b), said0 = [statusAt, $("#status").textContent]; navHold = true;
+  try { reveal(kind, id); } finally { navHold = false; }
+  const said = statusAt !== said0[0] || $("#status").textContent !== said0[1] ? $("#status").textContent : "";   // what the reveal said it changed
+  const a = viewSnap(), changed = snapKey(a) !== k0;
+  const r = changed || always ? pushBack(b, "visit", findName(kind, id), snapKey(a)) : null;
+  const t = !r && wayBack(), on = t && t.why !== "linked" && t.after === k0 ? t : null; if (on) on.name = findName(kind, id);   // still on the visit: the strip names what you went to
+  navStep(); render();
+  if (r && changed && placeId === b.from) try { pushPlace(location.hash); } catch(e){}   // only what the address doesn't hold changed: still its own step
+  if (r || on) noteVisit(r || on, b);
+  if (changed && kind !== "note") setStatus(`${said && !/Back to where I was/.test(said) ? said : `Changed your view to show ${findName(kind, id)}.`} Back to where I was puts it back.`);
+  if (changed || always) showToast(changed ? `Changed your view to show ${findName(kind, id)}.` : `Went to ${findName(kind, id)}.`, "Back to where I was", ()=>backWhereIWas(r));   // the strip can be scrolled away
+}
+const findName = (kind, id) => starLabel(kind, id) || "this item";
+function reveal(kind, id){
   const scrollTo = sel0 => setTimeout(()=>{ const el = document.querySelector(sel0); if (el){ el.scrollIntoView({block:"center", inline:"center", behavior:"smooth"}); el.classList.add("flash"); setTimeout(()=>el.classList.remove("flash"), 1600); } }, 60);
   const unfold = b => { ancestorsOf(b).forEach(a=>{ delete UI.collapsed[a.id]; }); saveUI(); };
   { const b = kind === "bar" ? barById(id) : kind === "task" ? taskById(id)?.b : kind === "story" ? storyByKey(id)?.b : null, t = kind === "task" ? taskById(id)?.t : null, x = kind === "story" ? storyByKey(id) : null;
@@ -7515,8 +7591,7 @@ function goTo(kind, id){
     select("story", id); if (x.drawn) scrollTo(`#gantt [data-key="story:${id}"]`); return; }
   if (kind === "ms" || kind === "gate" || kind === "note"){
     const x = (kind === "ms" ? S.milestones : kind === "gate" ? S.gates : S.notes).find(x=>x.id === id); if (!x) return;
-    const previous = {plan:S.meta.planId, ui:clone({ws:UI.ws, planTab:UI.planTab, filter:UI.filter, notes:UI.notes, rows:UI.rows, focus:UI.focus, fold:UI.fold, view:UI.view}), layer:layerOf(), hide:clone(hideOf())};
-    const before = JSON.stringify([UI.filter, UI.notes, UI.rows, UI.focus, UI.fold, layerOf(), hideOf()]), f = clone(UI.filter);
+    const f = clone(UI.filter);
     if (kind !== "gate" && f.lanes.length && !f.lanes.includes(x.lane)) f.lanes = [];
     if (kind === "ms"){
       if (f.kinds.length && !f.kinds.includes("milestone")) f.kinds.push("milestone");
@@ -7531,6 +7606,7 @@ function goTo(kind, id){
     const R = fRangeDays(f); if (R && !days.some(d=>d >= R[0] && d <= R[1])) f.range = {type:"all"};
     if (f.authors.length && hideReason(x)?.k === "filter") f.authors = [];
     if ((f.bars || []).length && (kind === "ms" ? !msVisible(x, normFilter(f)) : kind === "gate" ? !gateVisible(gateItems().find(g=>g.id === x.id) || {}, normFilter(f)) : false)) f.bars = [];   // a Show only chip hides it
+    { const L = linkedHide(normFilter(f)); if (L && (kind === "ms" ? !L.ms.has(x.id) : kind === "gate" ? !L.gates.has(x.id) : false)){ f.linked = []; f.linkMode = "only"; f.linkDir = "both"; f.linkSide = false; } }   // not linked to the picks
     UI.filter = normFilter(f);
     // Layer, hidden author, and Added by can all hide the same result.
     for (let i = 0; i < 3; i++){ const reason = hideReason(x); if (!reason) break;
@@ -7542,16 +7618,10 @@ function goTo(kind, id){
     if (kind === "note" && !noteSeen()(x)) UI.notes = "all";
     if (kind !== "gate") UI.rows = "lanes";
     UI.focus = null; if (UI.fold){ delete UI.fold[kind === "gate" ? "sec:gates" : "lane:" + x.lane]; }
-    const changed = before !== JSON.stringify([UI.filter, UI.notes, UI.rows, UI.focus, UI.fold, layerOf(), hideOf()]);
-    if (changed){ const btn = $("#findRestore"); btn.dataset.plan = S.meta.planId; btn.hidden = false; btn.onclick = ()=>{
-      btn.hidden = true; if (S.meta.planId !== previous.plan) return;
-      Object.assign(UI, clone(previous.ui)); setLayerQuiet(previous.layer); saveUI(); setHide(hd=>Object.assign(hd, previous.hide)); setStatus("Restored the view from before Find.");
-    }; }
     UI.ws = "timeline"; saveUI();
     if (UI.zoom === "days" && Number.isFinite(days[0])) dayScrollTo(days[0]);
     select(kind, id); scrollTo(`#gantt [data-peek-id="${id}"]`);
     if (kind === "note" && noteOn(x)) setStatus(`This note appears on ${itemName(noteOn(x))}. Use its item link in the details panel to reveal the attached work.`);
-    else if (changed) setStatus("Adjusted your view to reveal this result. Restore previous view returns to your earlier settings.");
     else if ((kind === "ms" && (x.at == null || !x.lane)) || (kind === "gate" && !validIso(x.date))) setStatus("Opened details. Add a chart date and workstream where needed to show it on the Timeline.");
     return;
   }
@@ -7659,8 +7729,10 @@ function showLinked(t, id, add, dir, mode){
   if (add && have.some(y=>y.t === t && y.id === id)) return true;
   if (!add && JSON.stringify(have) === JSON.stringify([x]) && same) return true;
   if (add && have.length >= LINK_MAX){ setStatus(`You can pick up to ${LINK_MAX} items. Take a chip off to add this one.`); return false; }
+  const b0 = viewSnap(), rec = have.length ? null : pushBack(b0, "linked", linkName(x));   // where you were before linked work, for Back to where I was
   navStep(); setFilter(f=>{ f.linked = add ? [...have, x] : [x]; f.bars = []; f.linkDir = d; f.linkMode = m; });
   if (UI.ws === "timeline" && zoomN()){ if (!linkZoom) linkZoom = {n:UI.zoomN, sp:UI.zoomSp, p:UI.zoomPreset}; setZoomN(0); }   // Fit, so all of it is on screen
+  if (rec){ rec.after = snapKey(viewSnap()); noteVisit(rec, b0); }
   linkSay();
   if (UI.ws === "timeline"){ const w = fitSpan(); if (w && Number.isFinite(w.a)) scrollViewTo(Math.max(startDay(), w.a)); if (d === "up") seedInView(); }
   return true;
@@ -7706,6 +7778,7 @@ function linkSay(){ const seeds = linkSeeds(); if (!seeds.length) return; const 
   setStatus(say); showSay(say); }
 // Take one pick off (or all, with no x). The zoom comes back when the last one goes.
 function linkedOff(x){ const have = linkSeeds(), left = x ? have.filter(y=>!(y.t === x.t && y.id === x.id)) : []; navStep();
+  if (!left.length && wayBack()?.why === "linked") backs = backs.filter(y=>y !== wayBack());   // you took it off yourself
   if (!left.length && linkZoom){ const z = linkZoom; linkZoom = null; UI.zoomN = z.n; UI.zoomSp = z.sp; delete UI.zoomPreset; if (z.p != null) UI.zoomPreset = z.p; fitKey = ""; sprintKey = ""; }
   setFilter(f=>{ f.linked = left; if (!left.length){ f.linkMode = "only"; f.linkDir = "both"; f.linkSide = false; } });
   if (left.length) linkSay(); else showSay(have.length === 1 ? `No longer showing only what's linked to ${linkName(have[0])}.` : "Showing all work."); }
@@ -7908,7 +7981,7 @@ function renderPins(current){
     x.classList.toggle("on", on); x.setAttribute("aria-pressed", String(on)); x.title = on ? `Unpin ${lbl} (P)` : `Pin ${lbl} to the top (P)`; b.setAttribute("aria-keyshortcuts", "P"); x.setAttribute("aria-label", on ? `Unpin ${lbl}` : `Pin ${lbl} to the top`); });
 }
 // Starred, under the pinned pages: the first few, and the rest in Find (/). Back to where I was while a jump can be undone.
-function renderStars(){ const box = $("#snstars"); if (!box) return; const all = starsAll(), back = !!starBack && starBack.plan === S.meta.planId;
+function renderStars(){ const box = $("#snstars"); if (!box) return; const all = starsAll(), back = !!wayBack();
   box.hidden = navRail() || present || (!all.length && !back); if (box.hidden){ box.replaceChildren(); return; }
   const rows = all.slice(0, STAR_SIDE).map(x=>{ const w = starWhere(x), name = w.t ? starLabel(w.t, w.id) : x.name || x.k, here = !!w.t && sel && sel.type === w.t && sel.id === w.id;
     return h("div",{class:"snrow"}, h("button",{type:"button",class:"snk" + (x.k === freshStar ? " fresh" : "") + (w.t ? "" : " gone"),"data-star":x.k,"aria-current":here ? "true" : null,title:w.t ? `Go to ${name}` : w.why,onclick:()=>{ starGo(x); }},
@@ -7916,10 +7989,9 @@ function renderStars(){ const box = $("#snstars"); if (!box) return; const all =
       h("button",{type:"button",class:"snpinx on","data-unstar":x.k,"aria-pressed":"true",title:`Unstar ${name}`,"aria-label":`Unstar ${name}`,onclick:()=>{ const i = starsAll().findIndex(y=>y.k === x.k); unstar(x); const ks = [...document.querySelectorAll("#snstars .snk")]; (ks[Math.min(i, ks.length - 1)] || $("#findBtn"))?.focus({preventScroll:true}); }}, icon("star"))); });
   box.replaceChildren(...nonNull(h("span",{class:"snsub",id:"snStarH",title:"Yours alone, in this browser: stars aren't saved in the plan file"}, "Starred"), ...rows,
     all.length > STAR_SIDE ? h("button",{type:"button",class:"linkish snmore",id:"starsAll",onclick:()=>openFind()}, `Show all ${all.length} (/)`) : null,
-    back ? h("button",{type:"button",class:"linkish snmore",id:"starBack",title:"Put the page, filters, zoom and scroll back as they were before you went to a star",onclick:()=>backWhereIWas()}, "Back to where I was") : null)); }
+    back ? h("button",{type:"button",class:"linkish snmore",id:"starBack",title:"Put the page, filters, zoom and scroll back as they were before you went there",onclick:()=>backWhereIWas()}, "Back to where I was") : null)); }
 function renderMainNav(){
   const group = workspaceGroup();
-  if ($("#findRestore").dataset.plan !== S.meta.planId) $("#findRestore").hidden = true;
   UI.groupLast = {...(UI.groupLast || {}), [group]:{ws:UI.ws, section:UI.planTab}};
   const rail = navRail(), open = UI.navOpen || {};
   MAIN_NAV.nav.hidden = present; document.body.classList.toggle("hasnav", !present); document.body.classList.toggle("navrail", rail);
