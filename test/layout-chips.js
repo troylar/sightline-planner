@@ -203,6 +203,43 @@ function contrast(sel){
       ok(`L23 ${w}px ${theme}: the late warning stays in view`, shut.late, "");
       await page.close();
     }
+    // A selected item scrolled under the sticky names column stays under it: a bar that starts before what's on screen,
+    // a milestone and a task, in Weeks and Days, light and dark. What's on top there is the names column, not a track (in
+// Days the names column repeats the bar's name with the same data-sel, so the test is "not inside a track"). The chart's tracks are their own layer (z 0), so
+    // nothing in them (a selected bar is z 5, a hover label z 6) paints over the names (z 4).
+    for (const [z, theme] of [["weeks", "light"], ["weeks", "dark"], ["days", "light"], ["days", "dark"]]){
+      const page = await b.newPage({viewport:{width:1400, height:800}}); page.on("pageerror", e=>errs.push(String(e)));
+      await page.goto("file://" + HTML); await page.evaluate(t=>localStorage.setItem("timeline-planner-theme", t), theme); await page.goto("file://" + HTML); await page.waitForTimeout(300);
+      const out = await page.evaluate(([FIX, z])=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); S = normalize(JSON.parse(FIX), false);
+        const c4 = S.bars.find(b=>b.id === "c4"); c4.tasks = [{id:"tk1", label:"Wire the tools", start:dayToIso(wkDay(c4.start) + 1), days:3}];
+        S = normalize(S, false); file.handle = null; UI.filter = normFilter({}); UI.ws = "timeline"; render(); if (z === "days") setZoom("days"); else render();
+        const ms = S.milestones.find(m=>m.lane && m.at != null && m.id !== "ms8").id;
+        return [["bar", "c3"], ["ms", ms], ...(z === "days" ? [["task", "tk1"]] : [])].map(([t, id])=>{ select(t, id); render();
+          const sc = document.querySelector("#gscroll"), P = sc.getBoundingClientRect(), edge = P.left + (z === "days" ? UI.labelW.days : UI.labelW.weeks), q = `#gantt [data-sel="${t}:${id}"], #gantt [data-key="${t}:${id}"]`;
+          const find = () => [...document.querySelectorAll(q)].find(e=>e.getBoundingClientRect().width > 0); let el = find(); if (!el) return {t, missing:true};
+          el.scrollIntoView({block:"center", inline:"nearest"}); el = find(); sc.scrollLeft += el.getBoundingClientRect().left - (edge - 60); el = find(); const r = el.getBoundingClientRect(), top = document.elementFromPoint(edge - 20, r.top + Math.min(r.height / 2, 10));
+          return {t, left:Math.round(r.left), edge:Math.round(edge), under:!!top && r.left < edge - 20 && !top.closest(".track"), top:top ? top.className : null}; }); }, [FIX, z]);
+      const tl = await page.evaluate(z=>{ const sc = document.querySelector("#gscroll"), P = sc.getBoundingClientRect(), edge = P.left + (z === "days" ? UI.labelW.days : UI.labelW.weeks), line = document.querySelector("#gantt .today");
+        if (!line) return {missing:true}; line.style.pointerEvents = "auto";   // it ignores the pointer, and so would elementFromPoint
+        sc.scrollLeft += line.getBoundingClientRect().left - (edge - 30); const x = line.getBoundingClientRect().left + 1, hits = [];
+        const head = document.querySelector("#gantt .ghead"), y0 = head ? head.getBoundingClientRect().bottom + 1 : P.top + 60;
+        for (let y = y0; y < Math.min(P.bottom, innerHeight) - 2; y += 3){ const e = document.elementFromPoint(x, y); if (e) hits.push(!!e.closest(".today")); }
+        return {x:Math.round(x), edge:Math.round(edge), n:hits.length, over:hits.filter(Boolean).length}; }, z);
+      // Mid-chart the line runs through each section heading (only the names side of a heading covers it), so it
+      // reaches from the Today pill all the way down
+      const mid = await page.evaluate(z=>{ const sc = document.querySelector("#gscroll"), P = sc.getBoundingClientRect(), edge = P.left + (z === "days" ? UI.labelW.days : UI.labelW.weeks), line = document.querySelector("#gantt .today");
+        if (!line) return {missing:true}; line.style.pointerEvents = "auto"; sc.scrollTop = 0; scrollTo(0, 0); sc.scrollLeft += line.getBoundingClientRect().left - (edge + P.right) / 2; const x = line.getBoundingClientRect().left + 1;
+        const hs = [...document.querySelectorAll("#gantt .lanehdr:not(.pinned):not([data-ohdr])")].map(e=>e.getBoundingClientRect()).filter(r=>r.height && r.top > P.top && r.bottom < Math.min(P.bottom, innerHeight));
+        const cov = hs.map(r=>{ const e = document.elementFromPoint(x, (r.top + r.bottom) / 2); return e ? e.className : null; }).filter(c=>c !== "today");
+        return {x:Math.round(x), edge:Math.round(edge), heads:hs.length, covered:cov}; }, z);
+      ok(`L24d ${z} ${theme}: mid-chart, the Today line crosses every section heading`, mid.heads > 0 && mid.x > mid.edge + 100 && !mid.covered.length, JSON.stringify(mid));
+      const dg = await page.evaluate(z=>{ const n = document.querySelector("#gantt .lane .note, #gantt .lane .bar, #gantt .lane .tbar"); if (!n) return {missing:true}; n.classList.add("dragging");
+        const tr = n.closest(".track"), ln = n.closest(".lane"), out = {track:tr ? getComputedStyle(tr).zIndex : "3", lane:z === "days" && ln ? getComputedStyle(ln).zIndex : "n/a"}; n.classList.remove("dragging"); return out; }, z);
+      ok(`L24c ${z} ${theme}: while something is dragged, its row is lifted above the others (a note can be dragged to another row)`, dg.track === "3" && (z !== "days" || dg.lane === "3"), JSON.stringify(dg));
+      ok(`L24b ${z} ${theme}: the Today line scrolled under the names column stays under it`, tl.n > 50 && tl.x < tl.edge - 20 && tl.over === 0, JSON.stringify(tl));
+      ok(`L24 ${z} ${theme}: a selected bar, milestone${z === "days" ? " and task" : ""} scrolled under the names column stay under it`, out.every(o=>o.under), JSON.stringify(out));
+      await page.close();
+    }
     ok("no page errors", !errs.length, errs.slice(0, 2).join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 300)); }
   await b.close();
