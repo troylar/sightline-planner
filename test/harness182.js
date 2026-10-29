@@ -78,6 +78,17 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     X(`starsWrite([]); ["c3","c4","m2"].forEach(id=>toggleStar("bar", id)); render();`); await wait(10);
     d.querySelector('#snstars [data-unstar="bar:c4"]').click(); await wait(20);
     ok("C22 unstarring from the menu moves focus to the star now in its place", d.activeElement?.dataset?.star === "bar:m2", d.activeElement && d.activeElement.outerHTML.slice(0, 80));
+    // From review: every action that reads the selection is refused when it changed; Back and Forward never reorder Recent,
+    // even on the next draw; a workstream whose id changed is listed once; a refusal leaves focus somewhere you can see
+    ok("C23 every action whose availability reads the selection is one Find refuses when the selection changed", J(`COMMANDS.filter(c=>c.when && /\\bsel/.test(String(c.when)) && !CMD_SEL.includes(c.id)).map(c=>c.id)`).length === 0 && X(`CMD_SEL.includes("blocked") && CMD_SEL.includes("owners")`));
+    X(`localStorage.removeItem("sightline-recent"); recentSel = "";`); await pick("bar", "c3"); await pick("bar", "c4");
+    X(`applyNav({...navState(), sel:"bar:c3"});`); await wait(20); X(`UI.zoom = "days"; render(); UI.zoom = "weeks"; render();`); await wait(10);
+    ok("C24 going Back to an item, then redrawing, doesn't move it up in Recent", recent().join() === "bar:c4,bar:c3" && X(`sel && sel.id`) === "c3", JSON.stringify([recent(), X(`sel && sel.id`)]));
+    const ln = X(`S.lanes[1].id`); await pick("lane", ln); X(`reidLane(S, "${ln}", "renamed-row"); sel = {type:"lane", id:"renamed-row"}; render();`); await wait(10); X(`sel = null; render();`); await open();
+    const lanesListed = J(`findHits.filter(x=>x.kind === "recent").map(x=>starWhere(x.s)).filter(w=>w.t === "lane").map(w=>w.id)`);
+    ok("C25 a workstream whose id changed is listed once in Recent", lanesListed.join() === "renamed-row", JSON.stringify([lanesListed, recent()]));
+    await pick("bar", "c3"); await open(); await pick("bar", "c4"); X(`findCmd("star");`); await wait(10);
+    ok("C26 a refused action still leaves focus on Find's button", d.activeElement === d.querySelector("#findBtn") && !X(`starOf("bar", "c4")`), d.activeElement && d.activeElement.id);
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
   console.log(R.join("\n")); const f = R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

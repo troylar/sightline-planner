@@ -6436,7 +6436,7 @@ function recentAll(){ try { const o = JSON.parse(localStorage.getItem(RECENT_KEY
 function recentWrite(list){ let o = {}; try { o = JSON.parse(localStorage.getItem(RECENT_KEY) || "{}"); if (!o || typeof o !== "object" || Array.isArray(o)) o = {}; } catch(e){ o = {}; }
   if (list.length) o[S.meta.planId] = list; else delete o[S.meta.planId]; try { localStorage.setItem(RECENT_KEY, JSON.stringify(o)); return true; } catch(e){ return false; } }
 function noteRecent(t, id){ if (!STAR_TYPES.includes(t) || !navFind(t, id)) return; const k = starKeyOf(t, id), a = t + ":" + id;
-  const rest = recentAll().filter(x=>x.k !== k && x.k !== a && !(x.alt === a && altOk(x, t, id)));
+  const rest = recentAll().filter(x=>{ const w = starWhere(x); return x.k !== k && x.k !== a && !(x.alt === a && altOk(x, t, id)) && !(w.t === t && w.id === id); });
   recentWrite([{k, name:starLabel(t, id), ...(k !== a ? {alt:a} : {})}, ...rest].slice(0, RECENT_MAX)); }
 function applyNav(st){
   if (!st) return;
@@ -6458,6 +6458,7 @@ function applyNav(st){
     if (st.sel && (!st.plan || st.plan === S.meta.planId)){ const i = st.sel.indexOf(":"), t = st.sel.slice(0, i), id = st.sel.slice(i + 1); if (NAV_SEL.includes(t) && navFind(t, id)) sel = {type:t, id}; }
     saveUI(); fitKey = ""; render();
   } finally { navApplying = false; }
+  recentSel = navState().sel || "";   // where Back or Forward lands isn't opened anew, now or on the next draw
   try { history.replaceState(history.state, "", "#" + encodeNav(navState())); } catch(e){}
 }
 // A link from 1.147 with a focus path (dr=bar:id,person:id) opens as the same Show only filters.
@@ -7424,14 +7425,15 @@ const COMMANDS = [
 const cmdOn = c => { try { return !c.when || !!c.when(); } catch(e){ return false; } };
 function runCmd(id){ const c = COMMANDS.find(x=>x.id === id); if (!c || !cmdOn(c)){ setStatus("That doesn't apply here right now."); return false; } c.run(); return true; }
 function findCmd(id){ closeFind();
-  if (CMD_SEL.includes(id) && !(findSel && sel && sel.type === findSel.type && sel.id === findSel.id)){ setStatus("The selection changed while Find was open, so nothing was done. Select it again and press /."); return; }
-  runCmd(id); const a = document.activeElement; if (!a || a === document.body || a.closest("#findPop")) $("#findBtn").focus({preventScroll:true}); }
+  if (CMD_SEL.includes(id) && !(findSel && sel && sel.type === findSel.type && sel.id === findSel.id)) setStatus("The selection changed while Find was open, so nothing was done. Select it again and press /.");
+  else runCmd(id);
+  const a = document.activeElement; if (!a || a === document.body || a.closest("#findPop")) $("#findBtn").focus({preventScroll:true}); }
 const FIND_ICON = {bar:"▬", task:"▭", story:"▭", ms:"◆", gate:"‖", meeting:"▣", note:"✎", person:"●", lane:"≡", decision:"?", risk:"⚠"};
 let findHits = [], findIdx = 0, findSel = null;
 // Which actions are about the selection (listed under For <it> in an empty Find) and which belong to the whole app (not
 // listed there); the rest are about the page you're on. when() still decides whether each applies right now.
 // For <it> lists them in this order, most used first.
-const CMD_SEL = ["star","unstar","update","copy-link","show-only","in-progress","done","linked","linked-add","linked-remove","link-epic","sticky","leads-here-sel","milestone-runway","week-later","week-earlier","next-sprint"];
+const CMD_SEL = ["star","unstar","update","copy-link","show-only","in-progress","done","blocked","owners","linked","linked-add","linked-remove","link-epic","sticky","leads-here-sel","milestone-runway","week-later","week-earlier","next-sprint"];
 const CMD_APP = ["assistant","add","edit","edit-done","undo","redo","present","present-off","menu","back-where","clear-recent"];
 function openFind(){
   closeViewMenu(); closeFilterPop(); closeNotesMenu(); closeAddMenu(false);
@@ -7456,10 +7458,11 @@ function findLaunch(list, actsOnly){
   findIdx = 0;
   if (actsOnly) add("Actions", "findActsH", COMMANDS.filter(cmdOn).map(findCmdHit));
   else {
-    const s = findSel && STAR_TYPES.includes(findSel.type) && navFind(findSel.type, findSel.id) ? findSel : null, st = starsAll(), sk = s ? starKeyOf(s.type, s.id) : "";
+    const s = findSel && STAR_TYPES.includes(findSel.type) && navFind(findSel.type, findSel.id) ? findSel : null, st = starsAll();
     if (s) add(`For ${starLabel(s.type, s.id)}`, "findSelH", CMD_SEL.map(id=>COMMANDS.find(c=>c.id === id)).filter(c=>c && cmdOn(c)).slice(0, 8).map(findCmdHit));
     add("Starred", "findStarsH", st.map(x=>({kind:"star", s:x})));
-    add("Recent", "findRecentH", recentAll().filter(x=>x.k !== sk && !st.some(y=>y.k === x.k) && !!starWhere(x).t).map(x=>({kind:"recent", s:x})));
+    const shown = new Set([...(s ? [s.type + ":" + s.id] : []), ...st.map(x=>{ const w = starWhere(x); return w.t ? w.t + ":" + w.id : ""; })]);
+    add("Recent", "findRecentH", recentAll().filter(x=>{ const w = starWhere(x), k = w.t ? w.t + ":" + w.id : ""; if (!k || shown.has(k)) return false; shown.add(k); return true; }).map(x=>({kind:"recent", s:x})));
     add("On this page", "findViewH", COMMANDS.filter(c=>!CMD_SEL.includes(c.id) && !CMD_APP.includes(c.id) && cmdOn(c)).slice(0, 6).map(findCmdHit)); }
   findHits = hits; hits.length ? $("#findIn").setAttribute("aria-activedescendant", "fhit0") : $("#findIn").removeAttribute("aria-activedescendant");
   list.append(h("p",{class:"hint"}, ...(actsOnly ? ["Type after > to narrow the actions."] : ["Type to search every initiative, task, Jira story, milestone, gate, meeting, note, person, workstream, decision and risk, or start with ", h("kbd",{}, ">"), " for actions only. Press ", h("kbd",{}, ","), " to star what you've selected."]))); }
