@@ -95,6 +95,18 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     const sk = ["sightline-status", "sightline-review-plan", "sightline-edit-plan"].map(n=>fs.readFileSync(path.join(__dirname, "..", "skills", n, "SKILL.md"), "utf8"));
     ok("A27 the status, review and edit skills explain a pasted reference too", sk.every(t=>/\[bar:c4\]/.test(t) && /sightline-item/.test(t)));
     ok("A28 the keyboard help lists Ctrl+C", html.includes('[["Ctrl+C"],"Copy the selection for your assistant, when no text is selected"]'));
+    // From review: a process block's record (never its note), outcomes and releases by their own names, and a size bound
+    X(`S.types = [...(S.types || []), {id:"tx-ask", name:"Check", shape:"window", days:2}];
+       S.blocks = [...(S.blocks || []), {id:"blk-ask", type:"tx-ask", label:"Release check", lane:S.lanes[0].id, date:"2026-11-03", days:2, status:"planned", after:[], sprint:"", skip:false, note:"Private block note"}];
+       S.deliverables = [...(S.deliverables || []), {id:"dv-ask", name:"Named outcome", kind:"feature", stage:"idea", note:"Private outcome note"}];
+       JIRA.releases = [{id:"rel-ask", name:"Named release", date:"2026-12-01", released:false}]; dropJiraMemos(); render();`); await wait(10);
+    const bdet = X(`navFind("block", "blk-ask") ? askDetails("block", "blk-ask") : "not found"`);
+    ok("A29 a process block's details have its record, without its note", /"record":\{"id":"blk-ask"/.test(bdet) && /"start":"2026-11-03"/.test(bdet) && /"label":"Release check"/.test(bdet) && !/Private block note/.test(bdet), bdet.slice(0, 160));
+    ok("A30 an outcome and a release are copied, and starred, by their own names", /^Sightline outcome "Named outcome" \[deliverable:dv-ask\]$/.test(X(`askRef("deliverable", "dv-ask")`).split("\n")[0]) && /^Sightline release "Named release" \[release:rel-ask\]$/.test(X(`askRef("release", "rel-ask")`).split("\n")[0])
+      && X(`starLabel("deliverable", "dv-ask")`) === "Named outcome" && !/Private outcome note/.test(X(`askDetails("deliverable", "dv-ask")`)), X(`askRef("deliverable", "dv-ask")`).split("\n")[0] + " | " + X(`askRef("release", "rel-ask")`).split("\n")[0]);
+    X(`const b = S.bars.find(x=>x.id === "c3"); b.tasks = Array.from({length:80}, (_, i)=>({id:"big" + i, label:"Big " + i, start:"2026-11-02", days:1, story:"x".repeat(4000)})); S = normalize(S, false); render();`);
+    const big = X(`askDetails("bar", "c3")`), bm = big.match(/\`\`\`json\n([\s\S]*)\n\`\`\`/); let bo = null; try { bo = JSON.parse(bm[1]); } catch(e){}
+    ok("A31 a very large item is trimmed to fit, and says what was left out", big.length <= X("ASK_MAX") + 2000 && !!bo && /left out/.test(bo.item.recordTrimmed || "") && bo.item.record.id === "c3", big.length + " " + (bo && bo.item.recordTrimmed));
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 400)); }
   console.log(R.join("\n")); const f = R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

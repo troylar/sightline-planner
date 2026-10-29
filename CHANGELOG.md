@@ -15,6 +15,10 @@ Copy for your assistant.
 
 - **Assistants understand a pasted item** (Assistant). The assistant instructions and the skills explain the reference Sightline copies, so an assistant finds the same item and says when its data may be older than yours. *Where:* Connect assistant, Analyze with any assistant
 
+### Fixed
+
+- **Starred outcomes and releases show their names** (Menu). A starred outcome or release is listed by its own name in Starred and in Find. *Where:* Starred in the menu, and Find (/)
+
 ## 1.173.1 · Oct 29, 2026
 
 Find fixes.

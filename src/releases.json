@@ -24,6 +24,14 @@
       "title": "Assistants understand a pasted item",
       "now": "The assistant instructions and the skills explain the reference Sightline copies, so an assistant finds the same item and says when its data may be older than yours.",
       "where": "Connect assistant, Analyze with any assistant"
+    },
+    {
+      "kind": "fixed",
+      "area": "Menu",
+      "title": "Starred outcomes and releases show their names",
+      "now": "A starred outcome or release is listed by its own name in Starred and in Find.",
+      "before": "They were listed as \"meeting\".",
+      "where": "Starred in the menu, and Find (/)"
     }
   ]
 },

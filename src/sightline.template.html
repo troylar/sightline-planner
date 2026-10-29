@@ -6405,7 +6405,8 @@ function starWhere(x){
   if (t === "lane"){ const l = S.lanes.find(z=>z.id === id || (z.was || []).includes(id)); if (l) return {t, id:l.id}; }
   else if (STAR_TYPES.includes(t) && navFind(t, id)) return {t, id};
   return {why:`${x.name || "That item"} isn't in this plan any more. Undo brings it back if it was just deleted; the star stays until you unstar it.`, kind:"gone"}; }
-const starLabel = (t, id) => t === "story" ? itemName("jira:" + id) : t === "person" ? personName(id) : t === "lane" ? (S.lanes.find(l=>l.id === id)?.name || "workstream") : itemName(t + ":" + id);
+const starLabel = (t, id) => t === "story" ? itemName("jira:" + id) : t === "person" ? personName(id) : t === "lane" ? (S.lanes.find(l=>l.id === id)?.name || "workstream")
+  : t === "deliverable" ? (dvById(id)?.name || "outcome") : t === "release" ? (relById(id)?.name || "release") : itemName(t + ":" + id);
 function toggleStar(t, id){
   if (!STAR_TYPES.includes(t) || !navFind(t, id)){ setStatus("Select an item to star it: an initiative, task, story, milestone, gate, meeting, note, person, workstream, release, process block or deliverable."); return false; }
   const on = starOf(t, id), name = starLabel(t, id), list = starsAll();
@@ -14464,7 +14465,9 @@ function askRecord(t, id){
   if (t === "task"){ for (const b of av.initiatives || []){ const x = (b.tasks || []).find(z=>z.id === id); if (x) return {initiative:b.id, ...x}; } return null; }
   if (t === "ms") return by(P.milestones); if (t === "gate") return by(P.gates); if (t === "meeting") return by(P.meetings); if (t === "lane") return by(P.workstreams);
   if (t === "person") return by(P.people); if (t === "deliverable") return by(av.deliverables); if (t === "story") return by((av.jira || {}).issues, "key");
-  if (t === "release") return by((av.choices || {}).releases); return null; }
+  if (t === "release") return by((av.choices || {}).releases);
+  if (t === "block"){ const i = instById(id); return i ? {id:i.id, type:i.type ? i.type.name : "", label:i.label, lane:i.lane || "", start:dayToIso(i.s), end:dayToIso(i.e), days:i.len, status:i.status, after:[...(i.after || [])], ...(i.sprint ? {sprint:i.sprint} : {}), ...(i.skip ? {skip:true} : {})} : null; }   // never its note
+  return null; }
 function askDetails(t, id){
   const rec = askRecord(t, id), b = t === "bar" ? barById(id) : null, out = {kind:"sightline-item", version:1, appVersion:APP_VERSION, copiedAt:new Date().toISOString(),
     plan:{id:S.meta.planId, title:S.meta.title, revision:S.meta.revision || 0, saved:!!file.handle && !file.dirty, sharedFile:!!file.handle},
@@ -14477,8 +14480,12 @@ function askDetails(t, id){
     if (st.length) out.item.stories = st.slice(0, 300).map(x=>({key:x.key, summary:x.j.summary || "", status:x.label || "", state:x.state, epic:x.epic, assignee:x.j.assignee || "", points:typeof x.j.points === "number" ? x.j.points : null, ...(x.off ? {switchedOff:true} : {}), ...(x.real ? {onPlan:true} : {})}));
     if (st.length > 300) out.item.storiesLeftOut = st.length - 300;
     if ((b.tasks || []).length) out.item.taskCount = b.tasks.length; }
-  let json = JSON.stringify(out);
-  if (json.length > ASK_MAX && out.item.stories){ out.item.storiesLeftOut = (out.item.storiesLeftOut || 0) + out.item.stories.length; delete out.item.stories; json = JSON.stringify(out); }
+  // Too big to paste comfortably: drop the stories list, then the stories' text in the record, then all but its short fields
+  let json = ""; const fits = () => (json = JSON.stringify(out)).length <= ASK_MAX, r = out.item.record;
+  if (!fits() && out.item.stories){ out.item.storiesLeftOut = (out.item.storiesLeftOut || 0) + out.item.stories.length; delete out.item.stories; }
+  if (!fits() && r){ delete r.story; if (Array.isArray(r.tasks)) r.tasks = r.tasks.map(({story, ...x})=>x); out.item.recordTrimmed = "Story text left out to keep this paste small; the export has it."; }
+  if (!fits() && r){ out.item.record = Object.fromEntries(Object.entries(r).filter(([, v])=>v == null || typeof v !== "object" && String(v).length <= 300)); out.item.recordTrimmed = "Long text and lists left out to keep this paste small; the export has them."; }
+  if (!fits()) return askRef(t, id) + "\n\n(The details were too large to copy. Ask me for the export instead.)\n";
   return askRef(t, id) + "\n\n```json\n" + json.replace(/`/g, "\\u0060") + "\n```\n"; }
 function askStars(){ const list = starsAll().map(x=>starWhere(x)).filter(w=>w.t && askOk(w.t, w.id));
   return list.length ? ["My starred items in Sightline:", ...list.map(w=>"- " + askItemLine(w.t, w.id)), askFresh(), ASK_NOTE].join("\n") : ""; }
