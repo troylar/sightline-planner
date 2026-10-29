@@ -75,7 +75,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     X(`starGo(starsAll()[0]);`); await wait(40);
     const moved = J(`[UI.ws, hiddenKinds(), UI.filter.lanes, sel && sel.id]`);
     ok("T20 going to a starred milestone that's hidden by kind and by a workstream filter shows it on the Timeline and selects it", moved[0] === "timeline" && !moved[1].includes("milestone") && !moved[2].length && moved[3] === msId, JSON.stringify(moved));
-    ok("T21 Back to where I was is offered in the menu and the toast", !!d.querySelector("#snstars #starBack") && /Back to where I was/.test(d.querySelector("#toast").textContent));
+    ok("T21 Back to where I was is offered in the menu and above the chart", !!d.querySelector("#snstars #starBack") && /Back to where I was/.test(d.querySelector("#backStrip #backGo")?.textContent || ""));
     d.querySelector("#snstars #starBack").click(); await wait(60);
     ok("T22 …and puts the page, hidden kinds, filter, folds and selection back exactly", JSON.stringify(J(`[UI.ws, hiddenKinds(), UI.filter.lanes, UI.collapsed, sel]`)) === JSON.stringify(before) && !d.querySelector("#starBack"), JSON.stringify(J(`[UI.ws, hiddenKinds(), UI.filter.lanes, UI.collapsed, sel]`)));
     w.history.back(); await wait(80);

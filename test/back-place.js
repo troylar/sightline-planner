@@ -77,11 +77,51 @@ const near = (a, b) => Math.abs(a - b) <= 3;
     await page.evaluate(()=>goWs("list")); await settle(); await page.goBack(); await settle(); const r2 = await at();
     ok("B12 two quick Backs land where the earlier page was, not where the one in between was, and it stays that way", r1.ws === "timeline" && near(r1.gx, r0.gx) && near(r1.gy, r0.gy) && near(r2.gx, r0.gx) && near(r2.gy, r0.gy), JSON.stringify([r0, r1, r2]));
 
+    // A linked chain on screen, Find something outside it with the keyboard and press Enter, then one Back: the chain,
+    // its zoom and the chart's scroll are back, and so is what was hidden
+    await page.evaluate(()=>{ goWs("timeline"); setHiddenQuiet(["gate"]); select("bar", "c3"); render(); }); await settle();
+    await page.click("#f-linked"); await settle();
+    await page.evaluate(()=>{ const g = $("#gscroll"); g.scrollTop = 40; }); await settle();
+    const chainAt = async () => ({...await at(), linked:await page.evaluate(()=>JSON.stringify(UI.filter.linked)), n:await page.evaluate(()=>zoomN()), hid:await page.evaluate(()=>hiddenKinds().join())});
+    const c0 = await chainAt();
+    await page.evaluate(()=>document.activeElement && document.activeElement.blur && document.activeElement.blur());
+    await page.keyboard.press("/"); await page.waitForTimeout(100); await page.keyboard.type("Extra initiative 5"); await page.waitForTimeout(100);
+    const tag = await page.evaluate(()=>$("#findList .fhit.on .fout")?.textContent || "");
+    await page.keyboard.press("Enter"); await settle();
+    const v1 = await chainAt(), strip = await page.evaluate(()=>{ const s = $("#backStrip"); if (!s) return null; const r = s.getBoundingClientRect(), p = s.parentElement.getBoundingClientRect(); return {w:r.width, fits:r.right <= p.right + 1 && s.scrollWidth <= s.clientWidth + 1, text:s.textContent}; });
+    ok("B13 Find marks the result outside the chain, and Enter shows it with a way back above the chart that fits", tag === "Outside linked work" && v1.sel === "bx5" && !!strip && strip.fits && /Back to where I was/.test(strip.text), JSON.stringify([tag, v1.sel, strip]));
+    await page.goBack(); await settle(); const c1 = await chainAt();
+    ok("B14 one Back puts the chain, its zoom, the chart's scroll and the selection back", c1.linked === c0.linked && c1.n === c0.n && c1.sel === c0.sel && near(c1.gy, c0.gy) && near(c1.gx, c0.gx), JSON.stringify([c0, c1]));
+    ok("B15 …and what was hidden, and the visit's strip goes", c1.hid === "gate" && !(await page.$("#backStrip")), c1.hid);
+    await page.evaluate(()=>{ setHiddenQuiet([]); linkedOff(); render(); }); await settle();
+
+
     // The place stays out of the address: a copied link opens clean
     const hash = await page.evaluate(()=>location.hash);
     ok("B8 the address doesn't carry scroll positions", !/scroll|place|gx=|wy=/.test(hash), hash);
     ok("B9 no page errors", !errs.length, errs.slice(0, 2).join(" | "));
     await page.close();
+    // While the details panel floats over the right of the page (narrower than 1400px), every action in the strips that
+    // carry a way back stays out from under it, whole: in the linked-work strip and in a visit's strip, light and dark
+    for (const scheme of ["light", "dark"]) for (const vw of [1300, 1180, 1100, 900]){
+      const p2 = await b.newPage({viewport:{width:vw, height:900}, colorScheme:scheme}); p2.on("pageerror", e=>errs.push(String(e)));
+      await p2.goto("file://" + HTML); await p2.waitForTimeout(250);
+      await p2.evaluate(FIX=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); localStorage.clear(); S = normalize(JSON.parse(FIX), false); file.handle = null;
+        for (let i = 0; i < 30; i++) S.bars.push({...clone(S.bars[0]), id:"bx" + i, label:"Extra initiative " + i, tasks:[], jira:"", epics:[]});
+        goWs("timeline"); select("bar", "c3"); render(); }, FIX); await p2.waitForTimeout(300);
+      await p2.click("#f-linked"); await p2.waitForTimeout(400);
+      const clear = ids => p2.evaluate(ids=>ids.map(id=>{ const e = document.getElementById(id); if (!e) return id + " absent"; const r = e.getBoundingClientRect();
+        const hit = (x, y) => { const t = document.elementFromPoint(x, y); return t === e || e.contains(t); };
+        return hit(r.left + r.width / 2, r.top + r.height / 2) && hit(r.right - 2, r.top + r.height / 2) ? "" : id + " covered by " + ((t=>t && (t.id || t.className || t.tagName))(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2))); }).filter(Boolean), ids);
+      const linkedBad = await clear(["showBack", "showAll"]);
+      await p2.evaluate(()=>{ const a = document.activeElement; a && a.blur && a.blur(); }); await p2.keyboard.press("/"); await p2.waitForTimeout(100);
+      await p2.keyboard.type("Extra initiative 5"); await p2.waitForTimeout(120); await p2.keyboard.press("Enter"); await p2.waitForTimeout(900);
+      await p2.evaluate(()=>scrollTo(0, 0)); await p2.waitForTimeout(150);
+      const visitBad = await clear(["backGo", "backKeep"]), panel = await p2.evaluate(()=>!!document.body.classList.contains("hasSel") && getComputedStyle($("#side")).position === "fixed");
+      ok(`B16 ${vw}px ${scheme}: with the details panel floating, Back to where I was, Keep this view and Show all work are all clear of it`, panel && !linkedBad.length && !visitBad.length, JSON.stringify({panel, linkedBad, visitBad}));
+      await p2.close(); }
+    ok("B17 no page errors on the narrow windows", !errs.length, errs.slice(0, 2).join(" | "));
+
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 300)); }
   finally { await b.close(); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

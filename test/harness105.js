@@ -82,14 +82,14 @@ async function page(){
     ev("S.milestones.push({id:'ux-ms',what:'Synthetic milestone',lane:S.lanes[0].id,at:2,status:'planned'}); UI.filter=normFilter({lanes:[S.lanes[1].id],status:['done']}); UI.rows='people'; UI.fold={['lane:'+S.lanes[0].id]:true}; window.BEFORE_FIND=JSON.stringify(UI.filter); goTo('ms','ux-ms');");
     ok("Find reveals milestone hidden by another workstream",!!d.querySelector('#gantt [data-peek-id="ux-ms"]'));
     ok("Find retains unrelated status filter",ev("UI.filter.status.includes('done')"));
-    ok("Find explains adjustment and offers restore",/reveal this result/.test(d.querySelector("#status").textContent) && !d.querySelector("#findRestore")?.hidden);
-    d.querySelector("#findRestore")?.click();
+    ok("Find explains adjustment and offers the way back",/Back to where I was puts it back/.test(d.querySelector("#status").textContent) && !!d.querySelector("#backStrip #backGo"));
+    d.querySelector("#backGo")?.click();
     ok("restore returns previous filter, grouping, and fold",ev("JSON.stringify(UI.filter)===BEFORE_FIND && UI.rows==='people' && UI.fold['lane:'+S.lanes[0].id]"));
     ev("S.lanes.push({id:'ux-empty-lane',name:'Synthetic empty workstream',members:[],color:'#123456'}); S.milestones.push({id:'ux-people-ms',what:'Synthetic filtered milestone',lane:'ux-empty-lane',at:2,status:'planned'});");
     for (const zoom of ["weeks","days"]){
       ev(`UI.zoom='${zoom}'; UI.rows='people'; UI.filter=normFilter({people:[S.people[0].id]}); window.PEOPLE_BEFORE_FIND=JSON.stringify(UI.filter); goTo('ms','ux-people-ms');`);
       ok(`Find reveals milestone without matching work in ${zoom}`,!!d.querySelector('#gantt [data-peek-id="ux-people-ms"]') && ev("UI.filter.people.length===0"));
-      d.querySelector("#findRestore")?.click();
+      d.querySelector("#backGo")?.click();
       ok(`restoring milestone Find keeps original people filter in ${zoom}`,ev("JSON.stringify(UI.filter)===PEOPLE_BEFORE_FIND && UI.rows==='people'"));
     }
     ev("barById('ux-card').owners=[S.people[0].id]; S.milestones.push({id:'ux-matching-ms',what:'Milestone with matching work',lane:barById('ux-card').lane,at:2,status:'planned'}); UI.zoom='weeks'; UI.rows='people'; UI.filter=normFilter({people:[S.people[0].id]}); goTo('ms','ux-matching-ms');");
@@ -103,7 +103,7 @@ async function page(){
     ev("S.notes.push({id:'ux-attached',text:'Attached synthetic note',on:'bar:ux-card',lane:S.lanes[0].id,date:'2026-09-30',author:S.people[0].id}); UI.filter=normFilter({lanes:[S.lanes[1].id]}); goWs('today'); goTo('note','ux-attached');");
     ok("Find explains how an attached note appears",d.querySelector("#f-ntext")?.value==="Attached synthetic note" && /Use its item link/.test(d.querySelector("#status").textContent));
     d.querySelector("#f-nattached")?.click(); ok("attached note's item link reveals filtered parent",ev("sel.type==='bar' && sel.id==='ux-card'") && !!d.querySelector('#gantt [data-peek-id="ux-card"]'));
-    ev("S.meta.planId='ux-different-plan'; render();"); ok("a different plan hides stale Find restore action",d.querySelector("#findRestore").hidden);
+    ev("S.meta.planId='ux-different-plan'; render();"); ok("a different plan hides a stale way back",!d.querySelector("#backStrip"));
   });
   await section("daily navigation",async({d,ev})=>{
     ev("S.decisions=[{id:'ux-decision',text:'Choose synthetic option',state:'open',due:'2026-09-30',owners:[S.people[1].id],decider:S.people[0].id},{id:'ux-no-decider',text:'Unassigned synthetic decision',state:'open',due:'2026-09-30',owners:[]}]; UI.todayScope='team'; goWs('today');");
