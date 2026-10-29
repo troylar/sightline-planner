@@ -95,11 +95,33 @@ const near = (a, b) => Math.abs(a - b) <= 3;
     ok("B15 …and what was hidden, and the visit's strip goes", c1.hid === "gate" && !(await page.$("#backStrip")), c1.hid);
     await page.evaluate(()=>{ setHiddenQuiet([]); linkedOff(); render(); }); await settle();
 
+
     // The place stays out of the address: a copied link opens clean
     const hash = await page.evaluate(()=>location.hash);
     ok("B8 the address doesn't carry scroll positions", !/scroll|place|gx=|wy=/.test(hash), hash);
     ok("B9 no page errors", !errs.length, errs.slice(0, 2).join(" | "));
     await page.close();
+    // While the details panel floats over the right of the page (narrower than 1400px), every action in the strips that
+    // carry a way back stays out from under it, whole: in the linked-work strip and in a visit's strip, light and dark
+    for (const scheme of ["light", "dark"]) for (const vw of [1300, 1180, 1100, 900]){
+      const p2 = await b.newPage({viewport:{width:vw, height:900}, colorScheme:scheme}); p2.on("pageerror", e=>errs.push(String(e)));
+      await p2.goto("file://" + HTML); await p2.waitForTimeout(250);
+      await p2.evaluate(FIX=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); localStorage.clear(); S = normalize(JSON.parse(FIX), false); file.handle = null;
+        for (let i = 0; i < 30; i++) S.bars.push({...clone(S.bars[0]), id:"bx" + i, label:"Extra initiative " + i, tasks:[], jira:"", epics:[]});
+        goWs("timeline"); select("bar", "c3"); render(); }, FIX); await p2.waitForTimeout(300);
+      await p2.click("#f-linked"); await p2.waitForTimeout(400);
+      const clear = ids => p2.evaluate(ids=>ids.map(id=>{ const e = document.getElementById(id); if (!e) return id + " absent"; const r = e.getBoundingClientRect();
+        const hit = (x, y) => { const t = document.elementFromPoint(x, y); return t === e || e.contains(t); };
+        return hit(r.left + r.width / 2, r.top + r.height / 2) && hit(r.right - 2, r.top + r.height / 2) ? "" : id + " covered by " + ((t=>t && (t.id || t.className || t.tagName))(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2))); }).filter(Boolean), ids);
+      const linkedBad = await clear(["showBack", "showAll"]);
+      await p2.evaluate(()=>{ const a = document.activeElement; a && a.blur && a.blur(); }); await p2.keyboard.press("/"); await p2.waitForTimeout(100);
+      await p2.keyboard.type("Extra initiative 5"); await p2.waitForTimeout(120); await p2.keyboard.press("Enter"); await p2.waitForTimeout(900);
+      await p2.evaluate(()=>scrollTo(0, 0)); await p2.waitForTimeout(150);
+      const visitBad = await clear(["backGo", "backKeep"]), panel = await p2.evaluate(()=>!!document.body.classList.contains("hasSel") && getComputedStyle($("#side")).position === "fixed");
+      ok(`B16 ${vw}px ${scheme}: with the details panel floating, Back to where I was, Keep this view and Show all work are all clear of it`, panel && !linkedBad.length && !visitBad.length, JSON.stringify({panel, linkedBad, visitBad}));
+      await p2.close(); }
+    ok("B17 no page errors on the narrow windows", !errs.length, errs.slice(0, 2).join(" | "));
+
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 300)); }
   finally { await b.close(); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

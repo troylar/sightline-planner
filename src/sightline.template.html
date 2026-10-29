@@ -223,6 +223,9 @@ button.lchip{padding:2px 9px;cursor:pointer}
 .banner.info{background:var(--surface);border:1px solid var(--rule)}
 .showstrip{flex-wrap:wrap;row-gap:6px}
 @media (max-width:1180px){.showstrip #showBack .wide{display:none}}   /* the chip row stays one line on a narrow window */
+.backacts{display:inline-flex;flex-wrap:nowrap;gap:12px;flex:none}   /* the way back and Keep this view wrap together */
+/* while the details panel floats over the right of the page, the strips that carry a way back stop short of it */
+@media (max-width:1399px){body.hasSel #backStrip,body.hasSel #showStrip{margin-right:min(calc(min(360px,100vw - 32px) + 26px),calc(100% - 260px))}}
 .showstrip .slabel{color:var(--ink-2)}
 .showgap{flex:1 0 100%;color:var(--ink-2);font-size:12.5px}
 .showstrip .schips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;flex:1 1 auto}
@@ -6481,8 +6484,8 @@ const stepLeave = () => { if (steps.has(placeId) && steps.get(placeId).plan === 
 function backStrip(){ const b = wayBack(); if (!b || b.why === "linked" || present) return null;
   return h("div",{class:"banner info backstrip",id:"backStrip",role:"status"},
     h("span",{}, h("b",{}, `Showing ${b.name || "this item"}`), ": your view changed so you could see it"),
-    h("button",{type:"button",class:"linkish",id:"backGo",title:"Put the page, filters, zoom and scroll back as they were (Back does this too)",onclick:()=>backWhereIWas(b)}, "Back to where I was"),
-    h("button",{type:"button",class:"linkish",id:"backKeep",title:"Stay on this view and stop offering the way back",onclick:()=>{ backs = backs.filter(x=>x !== b); $("#toast").hidden = true; setStatus("Keeping this view."); render(); focusShown(); }}, "Keep this view")); }
+    h("span",{class:"backacts"}, h("button",{type:"button",class:"linkish",id:"backGo",title:"Put the page, filters, zoom and scroll back as they were (Back does this too)",onclick:()=>backWhereIWas(b)}, "Back to where I was"),
+    h("button",{type:"button",class:"linkish",id:"backKeep",title:"Stay on this view and stop offering the way back",onclick:()=>{ backs = backs.filter(x=>x !== b); $("#toast").hidden = true; setStatus("Keeping this view."); render(); focusShown(); }}, "Keep this view"))); }
 // Recent: the last items you opened (selected), newest first, per plan in this browser, by the same identity as stars.
 // Back and Forward don't count, and an item is listed once.
 const RECENT_KEY = "sightline-recent", RECENT_MAX = 8;
@@ -7505,9 +7508,9 @@ function closeFind(){ const p = $("#findPop"); if (p.hidden) return; p.hidden = 
 function findHitEl(x, i){ const on = i === findIdx, base = {type:"button",role:"option","aria-selected":String(on),id:"fhit" + i};
   if (x.kind === "cmd") return h("button",{...base,class:"fhit fcmd" + (on ? " on" : ""),"data-cmd":x.id,onclick:e=>{ e.stopPropagation(); findCmd(x.id); }},
     h("span",{class:"fi"}, "›"), h("span",{class:"ft"}, x.text), h("small",{}, x.keys.length ? h("span",{}, "Action · ", ...x.keys.map((k, j)=>[j ? " or " : "", h("kbd",{}, keyLabel(k))]).flat()) : "Action"));
-  if (x.kind === "star" || x.kind === "recent"){ const w = starWhere(x.s), name = w.t ? starLabel(w.t, w.id) : x.s.name || x.s.k;
+  if (x.kind === "star" || x.kind === "recent"){ const w = starWhere(x.s), name = w.t ? starLabel(w.t, w.id) : x.s.name || x.s.k, out = w.t ? findOut(w.t, w.id) : "";
     return h("button",{...base,class:"fhit f" + x.kind + (on ? " on" : "") + (w.t ? "" : " gone"),["data-" + x.kind]:x.s.k,onclick:e=>{ e.stopPropagation(); closeFind(); starGo(x.s); }},
-      h("span",{class:"fi"}, icon(w.t ? KIND_ICON[w.t] || "flag" : "star")), h("span",{class:"ft"}, name), h("small",{}, w.t ? x.kind === "star" ? "Starred" : "Opened recently" : w.why, w.t && findOut(w.t, w.id) ? h("span",{class:"fout"}, findOut(w.t, w.id)) : null)); }
+      h("span",{class:"fi"}, icon(w.t ? KIND_ICON[w.t] || "flag" : "star")), h("span",{class:"ft"}, name), h("small",{}, w.t ? x.kind === "star" ? "Starred" : "Opened recently" : w.why, out ? h("span",{class:"fout"}, out) : null)); }
   const out = findOut(x.kind, x.id);
   return h("button",{...base,class:"fhit" + (on ? " on" : ""),"data-out":out || null,onclick:()=>{ closeFind(); goTo(x.kind, x.id); }},
     h("span",{class:"fi"}, x.emoji ? icon(null, x.emoji) : icon(x.icon || KIND_ICON[x.kind] || "flag")), h("span",{class:"ft"}, x.text), h("small",{}, x.sub, out ? h("span",{class:"fout"}, out) : null)); }
@@ -7565,6 +7568,7 @@ function goTo(kind, id, always){
   navStep(); render();
   if (r && changed && placeId === b.from) try { pushPlace(location.hash); } catch(e){}   // only what the address doesn't hold changed: still its own step
   if (r || on) noteVisit(r || on, b);
+  if (!changed && !said) setStatus("");   // what the last action said was about somewhere else
   if (changed && kind !== "note") setStatus(`${said && !/Back to where I was/.test(said) ? said : `Changed your view to show ${findName(kind, id)}.`} Back to where I was puts it back.`);
   if (changed || always) showToast(changed ? `Changed your view to show ${findName(kind, id)}.` : `Went to ${findName(kind, id)}.`, "Back to where I was", ()=>backWhereIWas(r));   // the strip can be scrolled away
 }
