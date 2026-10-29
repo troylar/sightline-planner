@@ -1098,7 +1098,9 @@ td input:disabled,td select:disabled{opacity:1;color:var(--ink);-webkit-appearan
 .colshade.hol{background:repeating-linear-gradient(135deg,var(--rule-2) 0 4px,transparent 4px 8px)}
 .colshade.tod{background:color-mix(in srgb,var(--today) 8%,transparent)}
 .lanehdr{padding:6px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);font-weight:600;background:var(--paper);border-bottom:1px solid var(--rule-2);display:flex;align-items:center;gap:7px}
-.gantt .lanehdr:not(.pinned):not([data-ohdr]){position:relative;z-index:2}   /* a section heading sits above the Today line (z 1) */
+/* Over the names column a section heading covers the Today line (z 1); across the chart the line runs through it */
+.gantt .lanehdr:not(.pinned):not([data-ohdr])::before{content:"";position:sticky;left:0;z-index:2;flex:none;align-self:stretch;width:var(--lw,160px);margin:-6px calc(5px - var(--lw,160px)) -7px -12px;background:inherit;box-shadow:inset 0 -1px 0 var(--rule-2)}
+.gantt .lanehdr:not(.pinned):not([data-ohdr]) .lh-in{z-index:3}
 .lanehdr i{width:9px;height:9px;border-radius:2px}
 .dlabel{padding:6px 8px 6px 10px;display:flex;align-items:flex-start;gap:4px;border-right:1px solid var(--rule-2);min-width:0}
 .dlabel .caret{border:0;background:transparent;padding:0 2px;color:var(--ink-3);font-size:11px;line-height:18px;width:16px}

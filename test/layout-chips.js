@@ -225,6 +225,14 @@ function contrast(sel){
         const head = document.querySelector("#gantt .ghead"), y0 = head ? head.getBoundingClientRect().bottom + 1 : P.top + 60;
         for (let y = y0; y < Math.min(P.bottom, innerHeight) - 2; y += 3){ const e = document.elementFromPoint(x, y); if (e) hits.push(!!e.closest(".today")); }
         return {x:Math.round(x), edge:Math.round(edge), n:hits.length, over:hits.filter(Boolean).length}; }, z);
+      // Mid-chart the line runs through each section heading (only the names side of a heading covers it), so it
+      // reaches from the Today pill all the way down
+      const mid = await page.evaluate(z=>{ const sc = document.querySelector("#gscroll"), P = sc.getBoundingClientRect(), edge = P.left + (z === "days" ? UI.labelW.days : UI.labelW.weeks), line = document.querySelector("#gantt .today");
+        if (!line) return {missing:true}; line.style.pointerEvents = "auto"; sc.scrollTop = 0; scrollTo(0, 0); sc.scrollLeft += line.getBoundingClientRect().left - (edge + P.right) / 2; const x = line.getBoundingClientRect().left + 1;
+        const hs = [...document.querySelectorAll("#gantt .lanehdr:not(.pinned):not([data-ohdr])")].map(e=>e.getBoundingClientRect()).filter(r=>r.height && r.top > P.top && r.bottom < Math.min(P.bottom, innerHeight));
+        const cov = hs.map(r=>{ const e = document.elementFromPoint(x, (r.top + r.bottom) / 2); return e ? e.className : null; }).filter(c=>c !== "today");
+        return {x:Math.round(x), edge:Math.round(edge), heads:hs.length, covered:cov}; }, z);
+      ok(`L24d ${z} ${theme}: mid-chart, the Today line crosses every section heading`, mid.heads > 0 && mid.x > mid.edge + 100 && !mid.covered.length, JSON.stringify(mid));
       const dg = await page.evaluate(z=>{ const n = document.querySelector("#gantt .lane .note, #gantt .lane .bar, #gantt .lane .tbar"); if (!n) return {missing:true}; n.classList.add("dragging");
         const tr = n.closest(".track"), ln = n.closest(".lane"), out = {track:tr ? getComputedStyle(tr).zIndex : "3", lane:z === "days" && ln ? getComputedStyle(ln).zIndex : "n/a"}; n.classList.remove("dragging"); return out; }, z);
       ok(`L24c ${z} ${theme}: while something is dragged, its row is lifted above the others (a note can be dragged to another row)`, dg.track === "3" && (z !== "days" || dg.lane === "3"), JSON.stringify(dg));
