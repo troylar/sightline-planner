@@ -1168,6 +1168,13 @@ body.hasnav{padding-left:var(--navw)}
 .snpinx .ic svg{width:14px;height:14px}.snpinx:hover{background:var(--hov);color:var(--ink)}
 .snrow:hover>.snpinx,.snrow:focus-within>.snpinx{opacity:1}.snpinx.on{color:var(--accent)}.snpinx.on svg{fill:currentColor}.snpages .snpinx.on{opacity:.7}.snpages .snrow:hover>.snpinx.on{opacity:1}
 .snpins>.snsub{padding:2px 12px 4px}
+.snstars .snk .ic svg{width:15px;height:15px}.snstars .snk.gone{color:var(--ink-3)}.snstars .snk[aria-current="true"]{font-weight:650}
+.snmore{margin:2px 12px 0;font-size:12.5px;align-self:flex-start}
+.sidestar{margin-left:auto;width:30px;height:30px;display:grid;place-items:center;padding:0;border:0;border-radius:8px;background:transparent;color:var(--ink-3);cursor:pointer;flex:none}
+.sidestar .ic svg{width:18px;height:18px}.sidestar:hover{background:var(--hov);color:var(--ink)}.sidestar:active{background:var(--prs)}
+.sidestar.on{color:var(--warn)}.sidestar.on svg{fill:currentColor}
+.fhead{font-size:11.5px;font-weight:600;color:var(--ink-3);padding:6px 8px 2px}.fhit.fstar .fi{color:var(--warn)}.fhit.fstar.gone .ft{color:var(--ink-3)}
+@media (prefers-reduced-motion:no-preference){.sidestar.fresh svg{animation:star-pop .5s var(--ease)}@keyframes star-pop{0%{transform:scale(.6) rotate(-20deg)}55%{transform:scale(1.35) rotate(8deg)}100%{transform:none}}}
 .snrow:has(.snpinx)>.snp{padding-right:30px}
 .sngroup:not(.open)>.snh .sndot:not([hidden]){display:block;margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--warn)}
 .sngroup:not(.open)>.snh:has(.sndot:not([hidden]))::after{margin-left:8px}
@@ -1500,6 +1507,7 @@ body:has(> #bootfail) > :not(#bootfail){display:none !important}
 <nav class="sidenav" id="sidenav" aria-label="Main navigation">
   <div class="snbar"><button type="button" class="sntoggle" id="navToggle" aria-pressed="false" aria-label="Collapse the menu" title="Collapse the menu (\)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/></svg></button></div>
   <div class="snpins" id="snpins" role="group" aria-label="Pinned pages" hidden></div>
+  <div class="snpins snstars" id="snstars" role="group" aria-label="Starred" hidden></div>
   <div class="sngroup" data-group="work">
     <button type="button" class="snh" id="nav-work" data-group="work" aria-expanded="true" aria-controls="snp-work"><svg class="sni" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 11.5l2.2 2.2L15.5 9"/><rect x="4" y="4" width="16" height="16" rx="3.5"/></svg><span class="snl">Work</span><span class="sndot" hidden></span></button>
     <div class="snpages" id="snp-work" role="group" aria-labelledby="nav-work">
@@ -5705,7 +5713,7 @@ document.addEventListener("keydown", e=>{
 // ================= name, keyboard shortcuts, help =================
 const APP_NAME = "Sightline", APP_TAGLINE = "Your team's work, in plain sight.";
 const SHORTCUTS = [       // [keys (each shown as a key; alternatives joined by "or"), what it does]
-  ["Get around", [[["1","2","3","4","5","6"],"Today, Timeline, People, Settings, Sprint, Roadmap", " "],[["T","L"],"Today or List"],[["\\"],"Collapse or expand the menu"],[["/","Ctrl+K"],"Find anything, or an action by name"],[["W","D"],"Weeks or Days view"],[["R"],"Rows by workstream, person or epic"],[["Shift+W","Shift+O","Shift+E"],"Rows by workstream, by person, by epic", " / "],[["Shift+T",";"],"Open or close the time controls (Timeline)"],[["."],"Jump to today"],[["[","]"],"Earlier / later (Days view), or the previous / next sprint when one is chosen"],[["+","−"],"One sprint fewer or more on screen"],[["Shift+1","Shift+2","Shift+3"],"This sprint, this and the next, or the next three, from the sprint we're in"],[["Shift+0"],"Fit the whole plan"],[["J","K"],"Next or previous item in this view"],[["Z"],"Show only the selected initiative or person, as a chip above the chart (× takes it off)"],[["↑","↓"],"Previous / next item, while its details are open (Timeline and List)"],[["Esc"],"Close whatever is open"]]],
+  ["Get around", [[["1","2","3","4","5","6"],"Today, Timeline, People, Settings, Sprint, Roadmap", " "],[["T","L"],"Today or List"],[["\\"],"Collapse or expand the menu"],[[","],"Star the selection or unstar it (/ lists your stars)"],[["/","Ctrl+K"],"Find anything, or an action by name"],[["W","D"],"Weeks or Days view"],[["R"],"Rows by workstream, person or epic"],[["Shift+W","Shift+O","Shift+E"],"Rows by workstream, by person, by epic", " / "],[["Shift+T",";"],"Open or close the time controls (Timeline)"],[["."],"Jump to today"],[["[","]"],"Earlier / later (Days view), or the previous / next sprint when one is chosen"],[["+","−"],"One sprint fewer or more on screen"],[["Shift+1","Shift+2","Shift+3"],"This sprint, this and the next, or the next three, from the sprint we're in"],[["Shift+0"],"Fit the whole plan"],[["J","K"],"Next or previous item in this view"],[["Z"],"Show only the selected initiative or person, as a chip above the chart (× takes it off)"],[["↑","↓"],"Previous / next item, while its details are open (Timeline and List)"],[["Esc"],"Close whatever is open"]]],
   ["Update the item you've selected", [[["I"],"In progress"],[["X"],"Done (again: back to in progress)"],[["B"],"Mark blocked"],[["U"],"Write an update"],[["S"],"Stick a note on it"],[["O"],"Change who owns it (while editing)"],[["Shift+N"],"Move it to the next sprint"],[["{","}"],"Move it a week earlier / later", " / "],[["Shift+J"],"Link a Jira epic (an initiative, while editing)"],[["Enter"],"Open it"]]],
   ["Plan", [[["A"],"Add something (then a letter from the menu)"],[["←","→"],"Move the selected item (with Shift: smaller steps)"],[["Alt+←","Alt+→"],"Make it shorter / longer"],[["Delete"],"Delete it"],[["Ctrl+Z","Ctrl+Y","Ctrl+Shift+Z"],"Undo / redo (either redo key)"]]],
   ["Show and share", [[["F"],"Filters"],[["V"],"Saved views"],[["H"],"Show menu: hide gates, meetings, done work and more, or pin the top rows"],[["G","M"],"Hide or show gates / meetings"],[["Shift+H"],"Show everything you hid"],[["C"],"Show only what's linked to the selection (again: show it all)"],[["Shift+C","Shift+X"],"Add the selection to linked work / take it off", " / "],[["Shift+Z"],"Linked work: highlight it, or hide the rest"],[["0"],"Show all work (clears every filter; Back puts them back)"],[["Shift+D"],"Details of what's hidden"],[["Shift+L","<"],"What leads to the selected milestone, in its card"],[[">"],"What leads to the selection, on the Timeline; with linked work showing, only what leads there, or both ways again"],[["Shift+A"],"Connect assistant or review its changes"],[["Shift+U"],"What's new"],[["N"],"Show / hide notes"],[["P"],"Present"],[["E"],"Start editing / Done editing (shared file)"],[["Ctrl+S"],"Save"],[["?"],"This help"]]],
@@ -5745,6 +5753,7 @@ const HELP = [
   ["views", "Views and finding", ()=>[
     h("ul",{}, h("li",{}, h("b",{},"Weeks / Days"), " (W, D): the big picture, or day by day with tasks."), h("li",{}, h("b",{},"By workstream / By person / By epic"), " (R): rows per workstream, per person with their load, or per Jira epic, nested."),
       h("li",{}, h("b",{},"Find"), keysIn(" (/ or Ctrl+K): any item, person, meeting, note or Jira key. It unfolds and un-filters what's hiding the result.")),
+      h("li",{}, h("b",{},"Stars"), " (,): star what you've selected to get back to it fast. Your stars are under Starred in the menu and first in an empty Find (/). After going to one, Back to where I was puts your view back as it was. Yours alone, in this browser."),
       h("li",{}, h("b",{},"Filters"), " (F): by person, workstream, status (including Blocked), kind, dates. ", h("b",{},"Views"), " (V) save a filter and layout, for you or the team."),
       h("li",{}, h("b",{},"Show"), " (H): hide gates, releases, deliverables, meetings, process blocks, milestones or done work, just for you in this plan. ", h("b",{},"Focus"), " hides meetings, process and done work; G and M toggle gates and meetings; Shift+H shows everything. ", h("b",{},"Pin the top rows"), " keeps them in view while you scroll."),
       h("li",{}, h("b",{},"Notes"), " (N): show all, only yours, only others', or hide them."), h("li",{}, h("b",{},"Present"), " (P): a clean, read-only view for reviews."),
@@ -6351,6 +6360,70 @@ function navFind(t, id){
   if (t === "story") return storyIndex().byKey.has(id); if (t === "release") return (JIRA && JIRA.releases || []).some(r=>r.id === id); if (t === "person") return !!personById(id);
   if (t === "block") return (S.blocks || []).some(b=>b.id === id); if (t === "deliverable") return (S.deliverables || []).some(d=>d.id === id); return false;
 }
+// Stars: items you mark to get back to fast. Yours alone: this browser, per plan, never in the plan file or an export.
+// A Jira-backed item is starred by its key, so a story that becomes a task (or a task that is a story) keeps its star; a
+// workstream by id, following its former ids. A star that can't be found stays, says why, and can always be unstarred.
+const STAR_KEY = "sightline-stars", STAR_MAX = 24, STAR_SIDE = 5;
+let starMemo = null, freshStar = "", starBack = null;
+const starRec = x => x && typeof x === "object" && typeof x.k === "string" && /^[a-z]+:[^\s]{1,80}$/.test(x.k) ? {k:x.k, name:str(x.name).slice(0, 120), ...(typeof x.alt === "string" && /^[a-z]+:[^\s]{1,80}$/.test(x.alt) ? {alt:x.alt} : {})} : null;
+function starsAll(){ if (starMemo && starMemo.plan === S.meta.planId) return starMemo.list; let list = [];
+  try { const o = JSON.parse(localStorage.getItem(STAR_KEY) || "{}"), v = o && typeof o === "object" ? o[S.meta.planId] : null;
+    if (Array.isArray(v)) list = v.map(starRec).filter(Boolean).filter((x, i, a)=>a.findIndex(y=>y.k === x.k) === i).slice(0, STAR_MAX); } catch(e){}
+  starMemo = {plan:S.meta.planId, list}; return list; }
+function starsWrite(list){ let o = {}; try { o = JSON.parse(localStorage.getItem(STAR_KEY) || "{}"); if (!o || typeof o !== "object" || Array.isArray(o)) o = {}; } catch(e){ o = {}; }
+  if (list.length) o[S.meta.planId] = list; else delete o[S.meta.planId];
+  try { localStorage.setItem(STAR_KEY, JSON.stringify(o)); } catch(e){ setStatus("Couldn't save your stars: this browser's storage is full or switched off."); return false; }
+  starMemo = {plan:S.meta.planId, list}; return true; }
+const STAR_TYPES = NAV_SEL;
+function starKeyOf(t, id){
+  if (t === "story") return "jira:" + id;
+  if (t === "task"){ const k = upKey(taskById(id)?.t.jira); if (k) return "jira:" + k; }
+  if (t === "bar"){ const b = barById(id), k = b && isLeafBar(b) && !barEpics(b).length ? upKey(b.jira) : ""; if (k) return "jira:" + k; }   // a leaf initiative linked to an issue is that issue
+  if (t === "lane"){ const l = S.lanes.find(x=>x.id === id || (x.was || []).includes(id)); if (l) return "lane:" + l.id; }
+  return t + ":" + id; }
+const starOf = (t, id) => { const k = starKeyOf(t, id), a = t + ":" + id, l = t === "lane" ? S.lanes.find(x=>x.id === id) : null, ks = new Set([k, a, ...(l ? (l.was || []).map(w=>"lane:" + w) : [])]);
+  return starsAll().find(x=>ks.has(x.k) || x.alt === a) || null; };
+// Where a star is now: {t, id} to open, or why it can't be (and never a guess).
+function starWhere(x){
+  const i = x.k.indexOf(":"), t = x.k.slice(0, i), id = x.k.slice(i + 1);
+  if (t === "jira"){
+    for (const b of S.bars){ const tk = (b.tasks || []).find(z=>upKey(z.jira) === id); if (tk) return {t:"task", id:tk.id}; }
+    const lf = S.bars.find(b=>isLeafBar(b) && !barEpics(b).length && upKey(b.jira) === id); if (lf) return {t:"bar", id:lf.id};
+    if (storyByKey(id)) return {t:"story", id};
+    if (x.alt){ const j = x.alt.indexOf(":"), at = x.alt.slice(0, j), aid = x.alt.slice(j + 1); if (navFind(at, aid)) return {t:at, id:aid}; }
+    if (!JIRA) return {why:`Jira isn't loaded, so ${id} can't be shown. The star stays.`, kind:"nojira"};
+    if (jiraOf(id)) return {why:`${id} is in the last sync but not on this plan's chart: its epic isn't on an initiative, or that initiative is switched off. The star stays.`, kind:"unplaced"};
+    return {why:`${id} is not in the last sync. The star stays for when it's back.`, kind:"nosync"}; }
+  if (t === "lane"){ const l = S.lanes.find(z=>z.id === id || (z.was || []).includes(id)); if (l) return {t, id:l.id}; }
+  else if (STAR_TYPES.includes(t) && navFind(t, id)) return {t, id};
+  return {why:`${x.name || "That item"} isn't in this plan any more. Undo brings it back if it was just deleted; the star stays until you unstar it.`, kind:"gone"}; }
+const starLabel = (t, id) => t === "story" ? itemName("jira:" + id) : t === "person" ? personName(id) : t === "lane" ? (S.lanes.find(l=>l.id === id)?.name || "workstream") : itemName(t + ":" + id);
+function toggleStar(t, id){
+  if (!STAR_TYPES.includes(t) || !navFind(t, id)){ setStatus("Select an item to star it: an initiative, task, story, milestone, gate, meeting, note, person, workstream, release, process block or deliverable."); return false; }
+  const on = starOf(t, id), name = starLabel(t, id), list = starsAll();
+  if (on){ if (!starsWrite(list.filter(x=>x !== on))) return false; setStatus(`Unstarred ${name}.`); showSay(`Unstarred ${name}.`); render(); return true; }
+  if (list.length >= STAR_MAX){ setStatus(`You can star up to ${STAR_MAX} items. Unstar one first: press / to see them.`); return false; }
+  const k = starKeyOf(t, id), a = t + ":" + id;
+  if (!starsWrite([...list, {k, name, ...(k !== a ? {alt:a} : {})}])) return false;
+  freshStar = k; setTimeout(()=>{ if (freshStar === k) freshStar = ""; }, 900); setStatus(`Starred ${name}. Press / to get back to it.`); showSay(`Starred ${name}.`); render(); return true; }
+function unstar(x){ if (!starsWrite(starsAll().filter(y=>y.k !== x.k))) return; setStatus(`Unstarred ${x.name || "it"}.`); render(); }
+// Going to a star remembers everything about where you were, so Back to where I was undoes all of it: the page, filters,
+// zoom, selection, scroll, what's hidden or folded, rows, notes and the layer (Find may change them to reveal the item).
+function viewSnap(){ const a = document.activeElement;
+  return {plan:S.meta.planId, nav:navState(), place:placeNow(), focus:a && a.id && a !== document.body ? a.id : "",
+    x:clone({hidden:hiddenKinds(), hide:hideOf(), collapsed:UI.collapsed || {}, rows:UI.rows, notes:UI.notes, focus:UI.focus || null, fold:UI.fold || null, layer:layerOf()})}; }
+function starGo(x){ const w = starWhere(x); if (!w.t){ setStatus(w.why); return false; }
+  const back = viewSnap(); navStep(); goTo(w.t, w.id); starBack = back;
+  const name = starLabel(w.t, w.id); if (name && name !== x.name) starsWrite(starsAll().map(y=>y.k === x.k ? {...y, name} : y));
+  render(); showToast(`Went to ${name}.`, "Back to where I was", backWhereIWas); return true; }
+function backWhereIWas(){ const b = starBack; starBack = null;
+  if (!b || b.plan !== S.meta.planId){ setStatus("There's nowhere to go back to in this plan."); render(); return false; }
+  setHiddenQuiet(b.x.hidden); setHide(hd=>{ Object.keys(hd).forEach(k=>delete hd[k]); Object.assign(hd, clone(b.x.hide)); });
+  UI.collapsed = clone(b.x.collapsed); UI.rows = b.x.rows; UI.notes = b.x.notes; UI.focus = b.x.focus; UI.fold = b.x.fold; setLayerQuiet(b.x.layer);
+  try { pushPlace("#" + encodeNav(b.nav)); } catch(e){}   // its own step, so Back from here goes to the star again
+  applyNav(b.nav); placeHold = true; restorePlace(b.place, ++placeGen);
+  const f = b.focus && document.getElementById(b.focus); if (f) f.focus({preventScroll:true}); else focusShown();
+  setStatus("Back where you were."); return true; }
 function applyNav(st){
   if (!st) return;
   if (st.plan && st.plan !== S.meta.planId){ setStatus("That link is for another plan, so nothing was selected here. Open that plan to follow it."); return; }   // another plan's place: nothing here changes
@@ -7307,6 +7380,9 @@ const COMMANDS = [
   {id:"linked-both", label:"Show linked work both ways again", keys:[">"], also:"linked both ways direction downstream", when:()=>linkSeeds().length > 0 && UI.filter.linkDir === "up", run:()=>{ setLinkDir("both"); focusShown(); }},
   {id:"linked-side", label:"Linked work: also show work that waits for the same things", also:"linked sideways siblings same prerequisite shares waits for the same", when:()=>linkSeeds().length > 0 && !(UI.filter.linkDir !== "up" && UI.filter.linkSide), run:()=>{ setLinkSide(true); focusShown(); }},
   {id:"linked-side-off", label:"Linked work: stop showing work that waits for the same things", also:"linked sideways siblings same prerequisite", when:()=>linkSeeds().length > 0 && UI.filter.linkDir !== "up" && UI.filter.linkSide === true, run:()=>{ setLinkSide(false); focusShown(); }},
+  {id:"star", label:"Star the selection, to get back to it fast", keys:[","], also:"favorite bookmark pin mark star", when:()=>!!sel && STAR_TYPES.includes(sel.type) && navFind(sel.type, sel.id) && !starOf(sel.type, sel.id), run:()=>toggleStar(sel.type, sel.id)},
+  {id:"unstar", label:"Unstar the selection", keys:[","], also:"favorite bookmark remove star", when:()=>!!sel && STAR_TYPES.includes(sel.type) && !!starOf(sel.type, sel.id), run:()=>toggleStar(sel.type, sel.id)},
+  {id:"back-where", label:"Back to where I was, before going to a star", also:"return restore previous view star", when:()=>!!starBack && starBack.plan === S.meta.planId, run:()=>backWhereIWas()},
   {id:"leads-here-sel", label:"Show what leads to the selection on the Timeline", keys:[">"], also:"runway leads here timeline milestone waits upstream", when:()=>!linkSeeds().length && !!sel && LINK_TYPES.includes(sel.type) && !!linkTarget({t:sel.type, id:sel.id}), run:()=>{ leadsHere(sel.type, sel.id); focusShown(); }},
   {id:"linked-remove", label:"Take the selection off linked work", keys:["Shift+X"], also:"linked remove pick", when:()=>CMD_VIEWS.includes(UI.ws) && !!sel && isSeed(sel.type, sel.id), run:()=>{ linkedOff({t:sel.type, id:sel.id}); focusShown(); }},
   {id:"week-later", label:"Move the selection a week later", keys:["}"], also:"push slip delay", when:()=>!!selMovable(), run:()=>moveSelTo(selStartDay(selMovable()) + 7)},
@@ -7340,7 +7416,12 @@ function openFind(){
 function closeFind(){ const p = $("#findPop"); if (p.hidden) return; p.hidden = true; $("#findBtn").setAttribute("aria-expanded","false"); }
 function renderFind(q){
   q = q.trim().toLowerCase(); const list = $("#findList"); list.replaceChildren();
-  if (!q){ findHits = []; $("#findIn").removeAttribute("aria-activedescendant"); list.append(h("p",{class:"hint"},"Type to search every initiative, task, Jira story, milestone, gate, meeting, note, person, workstream, decision and risk. Jira keys work too. Actions come up by name, like \"days\" or \"start editing\".")); return; }
+  if (!q){ const st = starsAll(); findHits = st.map(x=>({kind:"star", s:x})); findIdx = 0;
+    st.length ? $("#findIn").setAttribute("aria-activedescendant", "fhit0") : $("#findIn").removeAttribute("aria-activedescendant");
+    if (st.length) list.append(h("div",{class:"fhead",id:"findStarsH"}, "Starred"), ...st.map((x, i)=>{ const w = starWhere(x), name = w.t ? starLabel(w.t, w.id) : x.name || x.k;
+      return h("button",{type:"button",role:"option",class:"fhit fstar" + (i === 0 ? " on" : "") + (w.t ? "" : " gone"),"aria-selected":String(i === 0),id:"fhit" + i,"data-star":x.k,onclick:e=>{ e.stopPropagation(); closeFind(); starGo(x); }},
+        h("span",{class:"fi"}, icon(w.t ? KIND_ICON[w.t] || "flag" : "star")), h("span",{class:"ft"}, name), h("small",{}, w.t ? "Starred" : w.why)); }));
+    list.append(h("p",{class:"hint"}, st.length ? "Or type to search everything. Press , to star or unstar what you've selected." : "Type to search every initiative, task, Jira story, milestone, gate, meeting, note, person, workstream, decision and risk. Jira keys work too. Actions come up by name, like \"days\" or \"start editing\". Press , to star what you've selected, and your stars come up here.")); return; }
   const words = q.split(/\s+/), first = x => (x.text.toLowerCase().startsWith(q) ? 0 : 1);
   // actions match the start of their words ("lis" finds Go to List, "s" doesn't), and a short query leaves room for plan items
   const starts = l => { const lw = l.toLowerCase().split(/[^a-z0-9+]+/); return words.every(w=>lw.some(x=>x.startsWith(w))); };
@@ -7430,14 +7511,14 @@ $("#findIn").addEventListener("input", e=>renderFind(e.target.value));
 $("#findIn").addEventListener("keydown", e=>{
   const move = d => { if (!findHits.length) return; findIdx = (findIdx + d + findHits.length) % findHits.length; $("#findList").querySelectorAll(".fhit").forEach((b,i)=>{ b.classList.toggle("on", i===findIdx); b.setAttribute("aria-selected", String(i===findIdx)); }); $("#fhit"+findIdx)?.scrollIntoView({block:"nearest"}); $("#findIn").setAttribute("aria-activedescendant","fhit"+findIdx); };
   if (e.key === "ArrowDown"){ e.preventDefault(); move(1); } else if (e.key === "ArrowUp"){ e.preventDefault(); move(-1); }
-  else if (e.key === "Enter"){ if (e.isComposing || e.keyCode === 229) return; e.preventDefault(); const x = findHits[findIdx]; if (x){ if (x.kind === "cmd") findCmd(x.id); else { closeFind(); goTo(x.kind, x.id); } } }
+  else if (e.key === "Enter"){ if (e.isComposing || e.keyCode === 229) return; e.preventDefault(); const x = findHits[findIdx]; if (x){ if (x.kind === "cmd") findCmd(x.id); else if (x.kind === "star"){ closeFind(); starGo(x.s); } else { closeFind(); goTo(x.kind, x.id); } } }
   else if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); closeFind(); $("#findBtn").focus(); }
 });
 document.addEventListener("click", e=>{ if (!$("#findPop").hidden && !e.target.closest("#findPop,#findBtn")) closeFind(); });
 document.addEventListener("keydown", e=>{
   if (e.isComposing || e.keyCode === 229) return;
   const typing = e.target.closest?.("input, textarea, select, [contenteditable]") || e.target.isContentEditable;
-  if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") || (e.key === "/" && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && UI.charKeys !== false)){ e.preventDefault(); openFind(); }
+  if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") || (e.key === "/" && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && UI.charKeys !== false && !document.querySelector("dialog[open]") && !e.target.closest?.(".menu"))){ e.preventDefault(); openFind(); }
 });
 // A kind in Filters cycles: off, show only, hide (releases, deliverables and done work: off, hide). Hiding is the per-plan declutter choice.
 function kindChip(v, label){
@@ -7769,6 +7850,16 @@ function renderPins(current){
   MAIN_NAV.pages.forEach(b=>{ const x = b.parentElement.querySelector(":scope > .snpinx"); if (!x) return; const on = pins.includes(b.id), lbl = b.querySelector(".snl").textContent;
     x.classList.toggle("on", on); x.setAttribute("aria-pressed", String(on)); x.title = on ? `Unpin ${lbl} (P)` : `Pin ${lbl} to the top (P)`; b.setAttribute("aria-keyshortcuts", "P"); x.setAttribute("aria-label", on ? `Unpin ${lbl}` : `Pin ${lbl} to the top`); });
 }
+// Starred, under the pinned pages: the first few, and the rest in Find (/). Back to where I was while a jump can be undone.
+function renderStars(){ const box = $("#snstars"); if (!box) return; const all = starsAll(), back = !!starBack && starBack.plan === S.meta.planId;
+  box.hidden = navRail() || present || (!all.length && !back); if (box.hidden){ box.replaceChildren(); return; }
+  const rows = all.slice(0, STAR_SIDE).map(x=>{ const w = starWhere(x), name = w.t ? starLabel(w.t, w.id) : x.name || x.k, here = !!w.t && sel && sel.type === w.t && sel.id === w.id;
+    return h("div",{class:"snrow"}, h("button",{type:"button",class:"snk" + (x.k === freshStar ? " fresh" : "") + (w.t ? "" : " gone"),"data-star":x.k,"aria-current":here ? "true" : null,title:w.t ? `Go to ${name}` : w.why,onclick:()=>{ starGo(x); }},
+        icon(w.t ? KIND_ICON[w.t] || "flag" : "star"), h("span",{class:"snl"}, name)),
+      h("button",{type:"button",class:"snpinx on",tabindex:"-1","aria-pressed":"true",title:`Unstar ${name}`,"aria-label":`Unstar ${name}`,onclick:()=>unstar(x)}, icon("star"))); });
+  box.replaceChildren(...nonNull(h("span",{class:"snsub",id:"snStarH"}, "Starred"), ...rows,
+    all.length > STAR_SIDE ? h("button",{type:"button",class:"linkish snmore",id:"starsAll",onclick:()=>openFind()}, `Show all ${all.length} (/)`) : null,
+    back ? h("button",{type:"button",class:"linkish snmore",id:"starBack",title:"Put the page, filters, zoom and scroll back as they were before you went to a star",onclick:()=>backWhereIWas()}, "Back to where I was") : null)); }
 function renderMainNav(){
   const group = workspaceGroup();
   if ($("#findRestore").dataset.plan !== S.meta.planId) $("#findRestore").hidden = true;
@@ -7782,7 +7873,7 @@ function renderMainNav(){
   });
   let current = null;
   MAIN_NAV.pages.forEach(b=>{ const on = pageOn(b); if (on){ b.setAttribute("aria-current", "page"); current = b; } else b.removeAttribute("aria-current"); });
-  renderPins(current);
+  renderPins(current); renderStars();
   MAIN_NAV.plan.setAttribute("aria-labelledby", current && current.dataset.section ? current.id : "tab-plan");
   if (current && !rail && MAIN_NAV.nav.lastCurrent !== current.id){ MAIN_NAV.nav.lastCurrent = current.id; current.scrollIntoView?.({block:"nearest"}); }
   const a = assistantStatus(), btn = MAIN_NAV.assistant;
@@ -11718,7 +11809,10 @@ function renderSide0(){
   if (!sel) return;
   if (sel.type === "deliverable" && !dvById(sel.id)){ sel = null; return; }
   const titles = {amend:"Planning assistant", deliverable:(()=>{ const d = sel && sel.type === "deliverable" ? dvById(sel.id) : null; return d && d.capture ? "Captured " + capType(d).toLowerCase() : "Deliverable"; })(), release:"Jira release", help:"How it works", bar:"Initiative", task:"Task", story:"Jira story", ms:"Milestone", lane:"Workstream", gate:"Gate", person:"Person", note:"Note", meeting:"Meeting", group:"Group", type:"Process block type", block:(()=>{ const i = sel && sel.type === "block" ? instById(sel.id) : null; return i ? i.type.name : "Process block"; })()};
-  put(h("div",{class:"sidehead"}, h("h3",{}, sideIcon(), titles[sel.type] || "Edit"), NAV_SEL.includes(sel.type) ? h("button",{type:"button",class:"linkish sidelink",id:"sideLink",title:"Copy a link that opens this, in this plan",onclick:linkHere},"Copy link") : null, h("button",{class:"x nav",type:"button","aria-label":"Close panel",title:"Close (Esc)",onclick:()=>{ sel=null; render(true); }},"×")));
+  put(h("div",{class:"sidehead"}, h("h3",{}, sideIcon(), titles[sel.type] || "Edit"), NAV_SEL.includes(sel.type) ? h("button",{type:"button",class:"linkish sidelink",id:"sideLink",title:"Copy a link that opens this, in this plan",onclick:linkHere},"Copy link") : null,
+    STAR_TYPES.includes(sel.type) && navFind(sel.type, sel.id) ? (()=>{ const on = !!starOf(sel.type, sel.id), t = sel.type, id = sel.id;
+      return h("button",{type:"button",class:"sidestar" + (on ? " on" : "") + (on && freshStar === starKeyOf(t, id) ? " fresh" : ""),id:"sideStar","aria-pressed":String(on),"aria-label":on ? "Starred. Unstar it" : "Star it",title:on ? "Unstar it (,)" : "Star it, to get back here fast (,). / lists your stars.",onclick:()=>{ toggleStar(t, id); $("#sideStar")?.focus(); }}, icon("star")); })() : null,
+    h("button",{class:"x nav",type:"button","aria-label":"Close panel",title:"Close (Esc)",onclick:()=>{ sel=null; render(true); }},"×")));
   if (sel.type !== "help" && !present && !editable() && file.handle && !file.holdLock) put(h("div",{class:"viewonly"}, (sel.type === "bar" || sel.type === "task") ? "Quick updates below save right away. To change anything else, click " : "View only. Click ", h("b",{},"Start editing"), (sel.type === "bar" || sel.type === "task") ? "." : " in the toolbar to make changes."));
   { const hk = {meeting:"meeting", gate:"gate", block:"process", release:"release", ms:"milestone", deliverable:"deliverable"}[sel.type];
     if (hk && ["timeline","people","list"].includes(UI.ws)) put(h("div",{class:"sidehide"}, h("button",{type:"button",class:"linkish",id:"sideHideKind",title:keysIn("Just for you, in this plan. Show everything (Shift+H) brings them back"),
@@ -16444,6 +16538,8 @@ function moreKeys(e){
     else { setStatus("Select an item to see what leads to it."); return true; }
     focusShown(); return true; }
   if (k === ";"){ timeKey(); return true; }
+  if (k === ","){ if (e.repeat || document.querySelector("dialog[open]")) return true;
+    if (sel && STAR_TYPES.includes(sel.type) && navFind(sel.type, sel.id)) toggleStar(sel.type, sel.id); else setStatus("Select something to star it. Press / to see your stars."); return true; }
   return false;
 }
 function timeKey(){ if (UI.ws !== "timeline"){ setStatus("The time controls are on the Timeline."); return; } setTimeOpen(!UI.timeOpen); $("#timeSummary")?.focus(); }
