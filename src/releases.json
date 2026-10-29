@@ -1,5 +1,28 @@
 [
 {
+  "version": "1.173.1",
+  "date": "2026-10-29",
+  "headline": "Find fixes",
+  "changes": [
+    {
+      "kind": "fixed",
+      "area": "Find",
+      "title": "Your stars stay near the top of Find",
+      "now": "With something selected, Find lists its five most used actions, then your stars, so they're in view without scrolling. Type > for every action.",
+      "before": "Eight actions for the selection could push your stars and recent items out of view.",
+      "where": "Find (/)"
+    },
+    {
+      "kind": "fixed",
+      "area": "Find",
+      "title": "\"zoom\" finds Weeks and Days",
+      "now": "Typing \"zoom\" in Find (or \"> zoom\") offers Weeks view or Days view, as well as the time controls.",
+      "before": "Only the time controls came up.",
+      "where": "Find (/)"
+    }
+  ]
+},
+{
   "version": "1.173.0",
   "date": "2026-10-29",
   "headline": "Find knows where you are",
