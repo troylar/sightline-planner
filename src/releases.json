@@ -8,9 +8,9 @@
       "kind": "fixed",
       "area": "Timeline",
       "title": "The late-work warning and the hidden line stay in view",
-      "before": "On a window narrower than about 1400 pixels, the details panel floats over the right of the page and covered the end of the late-work warning and of the line that says what's hidden, so some late items couldn't be clicked.",
+      "before": "Where the details panel floats over the right of the page (on a window narrower than about 1400 pixels, in Present, and in every view but the Timeline), it covered the end of the late-work warning and of the line that says what's hidden, so some late items couldn't be clicked.",
       "now": "While the details panel is open, those lines wrap before they reach it, so every item and button in them can be read and clicked.",
-      "where": "Above the chart, with an item's details open on a narrower window"
+      "where": "At the top of the page, with an item's details open"
     }
   ]
 },

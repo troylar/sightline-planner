@@ -8,7 +8,7 @@ Warnings stay clear of the details panel.
 
 ### Fixed
 
-- **The late-work warning and the hidden line stay in view** (Timeline). While the details panel is open, those lines wrap before they reach it, so every item and button in them can be read and clicked. *Where:* Above the chart, with an item's details open on a narrower window
+- **The late-work warning and the hidden line stay in view** (Timeline). While the details panel is open, those lines wrap before they reach it, so every item and button in them can be read and clicked. *Where:* At the top of the page, with an item's details open
 
 ## 1.175.0 · Oct 29, 2026
 

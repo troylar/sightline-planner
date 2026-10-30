@@ -224,9 +224,10 @@ button.lchip{padding:2px 9px;cursor:pointer}
 .showstrip{flex-wrap:wrap;row-gap:6px}
 @media (max-width:1180px){.showstrip #showBack .wide{display:none}}   /* the chip row stays one line on a narrow window */
 .backacts{display:inline-flex;flex-wrap:nowrap;gap:12px;flex:none}   /* the way back and Keep this view wrap together */
-/* while the details panel floats over the right of the page, the strips that carry a way back stop short of it */
+/* while the details panel floats over the right of the page (narrow windows, Present, and every view but the Timeline), the banners and the hidden line stop short of it */
 @media (max-width:1399px){body.hasSel #banners>*{margin-right:min(calc(min(360px,100vw - 32px) + 26px),calc(100% - 260px))}body.hasSel #hiddenStrip{padding-right:min(calc(min(360px,100vw - 32px) + 26px),calc(100% - 260px))}}
 body.presenting.hasSel #banners>*{margin-right:min(calc(min(360px,100vw - 32px) + 26px),calc(100% - 260px))}body.presenting.hasSel #hiddenStrip{padding-right:min(calc(min(360px,100vw - 32px) + 26px),calc(100% - 260px))}
+body.hasSel:has(#side.floating) #banners>*{margin-right:min(calc(min(380px,100vw - 32px) + 26px),calc(100% - 260px))}body.hasSel:has(#side.floating) #hiddenStrip{padding-right:min(calc(min(380px,100vw - 32px) + 26px),calc(100% - 260px))}
 .showstrip .slabel{color:var(--ink-2)}
 .showgap{flex:1 0 100%;color:var(--ink-2);font-size:12.5px}
 .showstrip .schips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;flex:1 1 auto}

@@ -126,6 +126,16 @@ const near = (a, b) => Math.abs(a - b) <= 3;
         return {n:els.length, warn:!!$("#banners .banner.warn"), hs:!$("#hiddenStrip").hidden, bad:els.filter(e=>[...e.getClientRects()].some(under)).map(e=>e.textContent.slice(0, 24))}; });
       ok(`B18 ${vw}px ${scheme}: with the details panel floating, the late-work warning and the hidden line are all clear of it`, warnBad.warn && warnBad.hs && warnBad.n > 3 && !warnBad.bad.length, JSON.stringify(warnBad));
       await p2.close(); }
+    // Off the Timeline the details panel floats at any width: on a wide window in the List, the warning stays clear of it too
+    { const p3 = await b.newPage({viewport:{width:1500, height:900}}); p3.on("pageerror", e=>errs.push(String(e)));
+      await p3.goto("file://" + HTML); await p3.waitForTimeout(250);
+      const w = await p3.evaluate(FIX=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); localStorage.clear(); S = normalize(JSON.parse(FIX), false); file.handle = null;
+        goWs("list"); setHiddenQuiet(["gate"]); render(); select("bar", "c3"); render(); scrollTo(0, 0);
+        const s = $("#side"), side = s.getBoundingClientRect(), els = [...document.querySelectorAll("#banners .banner.warn button, #banners .banner.warn b, #hiddenStrip button, #hiddenStrip b")].filter(e=>e.getClientRects().length);
+        const under = r => r.right > side.left && r.left < side.right && r.bottom > side.top && r.top < side.bottom;
+        return {floating:s.classList.contains("floating") && getComputedStyle(s).position === "fixed", n:els.length, bad:els.filter(e=>[...e.getClientRects()].some(under)).map(e=>e.textContent.slice(0, 24))}; }, FIX);
+      ok("B19 1500px, the List: with the details panel floating, the late-work warning and the hidden line are all clear of it", w.floating && w.n > 3 && !w.bad.length, JSON.stringify(w));
+      await p3.close(); }
     ok("B17 no page errors on the narrow windows", !errs.length, errs.slice(0, 2).join(" | "));
 
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 300)); }
