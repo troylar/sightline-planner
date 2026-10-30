@@ -22,6 +22,8 @@ const near = (a, b) => Math.abs(a - b) <= 3;
     await page.waitForTimeout(300);
     const at = () => page.evaluate(()=>{ const g = $("#gscroll"), s = $("#side"); return {ws:UI.ws, sel:sel && sel.id, gx:g ? g.scrollLeft : 0, gy:g ? g.scrollTop : 0, sy:s ? s.scrollTop : 0, wy:Math.round(scrollY)}; });
     const settle = () => page.waitForTimeout(450);
+    // Back restores on its own schedule, later on a busy machine: wait up to 3s for the place, then check what is there
+    const until = async f => { const t0 = Date.now(); let v = await at(); while (!f(v) && Date.now() - t0 < 3000){ await page.waitForTimeout(50); v = await at(); } return v; };
 
     // Timeline: an initiative open, the chart scrolled across and down, the panel scrolled; go to the List and come back
     await page.evaluate(()=>select("bar", S.bars[0].id)); await settle();
@@ -29,7 +31,7 @@ const near = (a, b) => Math.abs(a - b) <= 3;
     const t0 = await at();
     ok("B0 the chart and the panel have room to scroll", t0.gx === 300 && t0.gy > 60 && t0.sy > 60, JSON.stringify(t0));
     await page.evaluate(()=>goWs("list")); await settle();
-    await page.goBack(); await settle(); const t1 = await at();
+    await page.goBack(); await settle(); const t1 = await until(v=>v.ws === "timeline" && v.sel === t0.sel && near(v.gx, t0.gx) && near(v.gy, t0.gy) && near(v.sy, t0.sy));
     ok("B1 Back to the Timeline: the same initiative is open", t1.ws === "timeline" && t1.sel === t0.sel, JSON.stringify(t1));
     ok("B2 Back to the Timeline: the chart is scrolled where it was, across and down", near(t1.gx, t0.gx) && near(t1.gy, t0.gy), JSON.stringify([t0, t1]));
     ok("B3 Back to the Timeline: the details panel is scrolled where it was", near(t1.sy, t0.sy), JSON.stringify([t0.sy, t1.sy]));
@@ -38,7 +40,7 @@ const near = (a, b) => Math.abs(a - b) <= 3;
     await page.goForward(); await settle();
     await page.evaluate(()=>window.scrollTo(0, 260)); await settle(); const l0 = await at();
     await page.evaluate(()=>goWs("today")); await settle();
-    await page.goBack(); await settle(); const l1 = await at();
+    await page.goBack(); await settle(); const l1 = await until(v=>v.ws === "list" && near(v.wy, l0.wy));
     ok("B4 the List has room to scroll the page", l0.ws === "list" && l0.wy > 150, JSON.stringify(l0));
     ok("B5 Back to the List: the page is scrolled where it was", l1.ws === "list" && near(l1.wy, l0.wy), JSON.stringify([l0, l1]));
     await page.goForward(); await settle(); const d1 = await at();
@@ -49,7 +51,7 @@ const near = (a, b) => Math.abs(a - b) <= 3;
     await page.evaluate(()=>select("bar", S.bars[1].id)); await settle();
     await page.evaluate(()=>{ const g = $("#gscroll"); g.scrollLeft = 120; g.scrollTop = 40; }); await settle(); const i0 = await at();
     await page.evaluate(()=>goTo("bar", "bx28")); await settle(); const i1 = await at();
-    await page.goBack(); await settle(); const i2 = await at();
+    await page.goBack(); await settle(); const i2 = await until(v=>v.sel === i0.sel && near(v.gx, i0.gx) && near(v.gy, i0.gy));
     ok("B7 Back from the second item: the first is open and the chart is where it was", i2.sel === i0.sel && near(i2.gx, i0.gx) && near(i2.gy, i0.gy), JSON.stringify([i0, i1, i2]));
 
     // Back right after a scroll: the step you left still keeps it (Forward returns to it)

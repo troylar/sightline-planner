@@ -33,7 +33,9 @@ git diff --quiet -- CHANGELOG.md || echo "NOTE: the committed CHANGELOG.md is ou
 [ "$(python3 -c "import json;print(json.load(open('src/releases.json'))[0]['version'])")" = "$V" ] && grep -q "\"version\": \"$V\"" package.json && echo "version $V in releases and package" || { echo "VERSION MISMATCH"; exit 1; }
 PLAYWRIGHT=$PWM SIGHTLINE_JOBS=${SIGHTLINE_JOBS:-6} ./test/run.sh > "$N/suite.log" 2>&1; rc=$?; echo "suite exit $rc"; grep -E "harness4 |FAIL" "$N/suite.log" | head -5; [ $rc = 0 ] || exit 1
 BROWSER=$(sed -n "s/.*suites=(\([^)]*\)).*/\1/p" test/run.sh); [ -n "$BROWSER" ] || { echo "NO BROWSER LIST IN run.sh"; exit 1; }; echo "browser checks from run.sh: $BROWSER"
-BOUT=$(cd test && for t in $BROWSER; do [ -f "$t.js" ] || { echo "$t MISSING"; continue; }; PLAYWRIGHT=$PWM node "$t.js" | tail -1 | sed "s/^/$t /"; done); echo "$BOUT"
+NA=$(cd "$N" && pwd)   # each suite's full output is kept, and its failures shown, so a failed count says which check failed
+BOUT=$(cd test && for t in $BROWSER; do [ -f "$t.js" ] || { echo "$t MISSING"; continue; }; PLAYWRIGHT=$PWM node "$t.js" > "$NA/browser-$t.log" 2> "$NA/browser-$t.err"; tail -1 "$NA/browser-$t.log" | sed "s/^/$t /"; done); echo "$BOUT"
+for t in $BROWSER; do grep -h "^FAIL" "$NA/browser-$t.log" 2>/dev/null | cut -c1-400 | sed "s/^/  $t: /"; done
 # every listed suite must report all passed, and there must be at least one: a quiet step is a failed step
 CNT=$(echo "$BOUT" | bash "$H/browser-count.sh" "$BROWSER") || { echo "BROWSER CHECKS: $CNT passed: not publishing"; exit 1; }; echo "browser checks: $CNT passed"
 ./tools/check-private.sh --all 2>&1 | tail -1
