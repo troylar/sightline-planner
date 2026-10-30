@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.175.1",
+  "date": "2026-10-30",
+  "headline": "Warnings stay clear of the details panel",
+  "changes": [
+    {
+      "kind": "fixed",
+      "area": "Timeline",
+      "title": "The late-work warning and the hidden line stay in view",
+      "before": "Where the details panel floats over the right of the page (on a window narrower than about 1400 pixels, in Present, and in every view but the Timeline), it covered the end of the late-work warning and of the line that says what's hidden, so some late items couldn't be clicked.",
+      "now": "While the details panel is open, those lines wrap before they reach it, so every item and button in them can be read and clicked.",
+      "where": "At the top of the page, with an item's details open"
+    }
+  ]
+},
+{
   "version": "1.175.0",
   "date": "2026-10-29",
   "headline": "Find without losing your place",
