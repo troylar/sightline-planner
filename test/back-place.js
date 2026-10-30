@@ -119,6 +119,12 @@ const near = (a, b) => Math.abs(a - b) <= 3;
       await p2.evaluate(()=>scrollTo(0, 0)); await p2.waitForTimeout(150);
       const visitBad = await clear(["backGo", "backKeep"]), panel = await p2.evaluate(()=>!!document.body.classList.contains("hasSel") && getComputedStyle($("#side")).position === "fixed");
       ok(`B16 ${vw}px ${scheme}: with the details panel floating, Back to where I was, Keep this view and Show all work are all clear of it`, panel && !linkedBad.length && !visitBad.length, JSON.stringify({panel, linkedBad, visitBad}));
+      // The late-work warning and the hidden line stay clear of it too: no link or button in them, nor any line of one that wraps, runs under the panel
+      await p2.evaluate(()=>{ linkedOff(); setHiddenQuiet(["gate"]); select("bar", "c3"); render(); scrollTo(0, 0); }); await p2.waitForTimeout(300);
+      const warnBad = await p2.evaluate(()=>{ const side = $("#side").getBoundingClientRect(), els = [...document.querySelectorAll("#banners .banner.warn button, #banners .banner.warn b, #hiddenStrip button, #hiddenStrip b")].filter(e=>e.getClientRects().length);
+        const under = r => r.right > side.left && r.left < side.right && r.bottom > side.top && r.top < side.bottom;
+        return {n:els.length, warn:!!$("#banners .banner.warn"), hs:!$("#hiddenStrip").hidden, bad:els.filter(e=>[...e.getClientRects()].some(under)).map(e=>e.textContent.slice(0, 24))}; });
+      ok(`B18 ${vw}px ${scheme}: with the details panel floating, the late-work warning and the hidden line are all clear of it`, warnBad.warn && warnBad.hs && warnBad.n > 3 && !warnBad.bad.length, JSON.stringify(warnBad));
       await p2.close(); }
     ok("B17 no page errors on the narrow windows", !errs.length, errs.slice(0, 2).join(" | "));
 
