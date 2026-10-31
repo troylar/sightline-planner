@@ -61,9 +61,10 @@ prevention is the only real control.
 
 - **Add an entry in the same change that ships the behavior.** If a user can see it, it goes in. Pure
   refactors and test-only changes don't.
-- **Bump the version:** a fix is a patch (1.1.0 → 1.1.1), anything new or improved is a minor (→ 1.2.0),
-  a change to the plan file format that older versions can't read is a major. `APP_VERSION` is always
-  the newest release; there is no other version to update.
+- **Bump the version:** a fix is a patch (1.1.0 → 1.1.1), anything new or improved is a minor (→ 1.2.0).
+  A major is only for a change older copies couldn't open at all, even read-only. A new saved field or a
+  `SCHEMA` bump isn't one on its own: older copies open those plans read-only, and the release note says so.
+  `APP_VERSION` is always the newest release; there is no other version to update.
 - **Each change:** `kind` (new / improved / fixed), `area`, `title`, `now`, and where it helps `before`
   and `where`. Write for the people using the planner, not for engineers: what they'll notice and where
   to find it. US English, plain words, no people's names, no employer or client names.
