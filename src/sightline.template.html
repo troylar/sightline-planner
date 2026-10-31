@@ -6556,7 +6556,8 @@ function placeNow(){
 function savePlace(){ clearTimeout(placeT); if (typeof history === "undefined") return; places.set(placeId, place);
   try { history.replaceState({...(history.state || {}), pid:placeId, place}, ""); } catch(e){} }
 const depths = new Map();   // how far into this tab's history each step is, so a way back knows which steps come after it
-function pushPlace(hash){ savePlace(); const d = stepDepth(placeId) + 1; backs = backs.filter(x=>!x.off);   // a new step: what Forward could reach is gone
+function pushPlace(hash){ savePlace(); placeHold = false; placeGen++;   // a new step: a way back still being put back stops, so it can't pull this one
+  const d = stepDepth(placeId) + 1; backs = backs.filter(x=>!x.off);   // and what Forward could reach is gone
   placeId = newPlaceId(); depths.set(placeId, d); history.pushState({pid:placeId, d}, "", hash); place = placeNow(); places.set(placeId, place); }
 function restorePlace(p, gen){
   // A page can finish drawing a little later (the details panel, the chart's fit, a long list), and much later on a busy
