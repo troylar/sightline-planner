@@ -1,5 +1,28 @@
 [
 {
+  "version": "1.175.5",
+  "date": "2026-10-31",
+  "headline": "A save never makes the plan impossible to open",
+  "changes": [
+    {
+      "kind": "fixed",
+      "area": "Saving",
+      "title": "A plan that's too full to open again is no longer saved",
+      "before": "A save checked only the file's size. A plan under 2 MB could still hold more than the 60,000 entries Sightline opens, often after several snapshots of a big plan. It saved, and then nobody could open it.",
+      "now": "A save is refused if Sightline couldn't open the result, and the page says what takes the most room. A snapshot that would put the plan over is refused before anything changes. A plan that's already too full now opens, and deleting snapshots saves as long as the plan gets smaller.",
+      "where": "Save, quick updates and Snapshots"
+    },
+    {
+      "kind": "fixed",
+      "area": "Plan",
+      "title": "The plan-size readout counts entries as well as size",
+      "before": "The readout showed only the file's size, so a plan could read 70% full and still be too full to save.",
+      "now": "When entries are the closer limit, the readout shows them (for example, 46,000 of 60,000 entries) and lists what holds the most.",
+      "where": "Plan, Activity: Plan file"
+    }
+  ]
+},
+{
   "version": "1.175.4",
   "date": "2026-10-31",
   "headline": ". in Days shows this week",
