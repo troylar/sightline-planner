@@ -8,7 +8,7 @@ A save never makes the plan impossible to open.
 
 ### Fixed
 
-- **A plan that's too full to open again is no longer saved** (Saving). A save is refused if Sightline couldn't open the result, and the page says what takes the most room. Taking a snapshot that would put the plan over is refused the same way, before anything changes. This copy also opens plans with more entries, so a later copy can raise the limit without locking anyone out. *Where:* Save, quick updates and Snapshots
+- **A plan that's too full to open again is no longer saved** (Saving). A save is refused if Sightline couldn't open the result, and the page says what takes the most room. A snapshot that would put the plan over is refused before anything changes. A plan that's already too full now opens, and deleting snapshots saves as long as the plan gets smaller. *Where:* Save, quick updates and Snapshots
 - **The plan-size readout counts entries as well as size** (Plan). When entries are the closer limit, the readout shows them (for example, 46,000 of 60,000 entries) and lists what holds the most. *Where:* Plan, Activity: Plan file
 
 ## 1.175.4 · Oct 31, 2026

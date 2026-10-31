@@ -107,6 +107,19 @@ async function page(fileText){
     const r = await ev(`saveSnapshot("Edge")`); await wait(30); const st = d.querySelector("#status")?.textContent || "";
     ok("C7: a snapshot is refused when its Activity record would put the save over", r === false && ev("S.snapshots.length") === 1 && /^No snapshot saved/.test(st), JSON.stringify(fill) + " " + st.slice(0, 120)); });
 
+  // A file already over the limit (saved before 1.175.5) can be brought back down: deleting snapshots saves while it shrinks.
+  await sec(async ()=>{ const probe = await page();
+    const j = JSON.parse(plan); j.snapshots = Array.from({length:6}, (_, i)=>({...probe.ev(`(${snapsOf()})(1700)`), id:"snap-" + i, name:"Review " + i}));
+    const {d, ev, handle} = await page(JSON.stringify(j, null, 2)); ev(VC);
+    const count = () => ev(`__vc(JSON.parse(file.handle._text))`), del = id => ev(`quickSave("deleted snapshot", s=>{ s.snapshots = (s.snapshots || []).filter(z=>z.id !== "${id}"); })`);
+    const c0 = count(); await del("snap-0"); await wait(40); const c1 = count();
+    ok("C8: in a plan over the limit, deleting a snapshot saves even though it's still over", c0 > 60000 && c1 > 60000 && c1 < c0 && handle.writes === 1, `${c0} -> ${c1}, ${handle.writes} writes: ${(d.querySelector("#status")?.textContent || "").slice(0, 120)}`);
+    await del("snap-1"); await wait(40); const c2 = count();
+    await ev("startEditing(false)"); await wait(50);
+    ok("C8: and once it fits, editing starts again", c2 <= 60000 && ev("editable()") === true, `${c2} entries: ${(d.querySelector("#status")?.textContent || "").slice(0, 120)}`);
+    const before = handle.writes; ev(`commit(s=>{ s.snapshots.push({...s.snapshots[0], id:"grow"}); })`); await ev("save()"); await wait(40);
+    ok("C8: a save that grows a plan back over is still refused", handle.writes === before && /more than 60,000 entries/.test(d.querySelector("#status")?.textContent || "")); });
+
   await sec(async ()=>{ const {ev} = await page();
     const j = JSON.parse(plan); j.notes = Array.from({length:12000}, (_, i)=>({id:"v" + i, lane:j.lanes[0].id, date:j.meta.start, text:"n", author:"", color:"yellow", tags:["a", "b", "c"]}));
     ev(`window.MANY = ${JSON.stringify(JSON.stringify(j))}`);

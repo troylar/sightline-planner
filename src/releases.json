@@ -9,7 +9,7 @@
       "area": "Saving",
       "title": "A plan that's too full to open again is no longer saved",
       "before": "A save checked only the file's size. A plan under 2 MB could still hold more than the 60,000 entries Sightline opens, often after several snapshots of a big plan. It saved, and then nobody could open it.",
-      "now": "A save is refused if Sightline couldn't open the result, and the page says what takes the most room. Taking a snapshot that would put the plan over is refused the same way, before anything changes. This copy also opens plans with more entries, so a later copy can raise the limit without locking anyone out.",
+      "now": "A save is refused if Sightline couldn't open the result, and the page says what takes the most room. A snapshot that would put the plan over is refused before anything changes. A plan that's already too full now opens, and deleting snapshots saves as long as the plan gets smaller.",
       "where": "Save, quick updates and Snapshots"
     },
     {

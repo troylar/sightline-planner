@@ -3515,14 +3515,18 @@ function parseText(text){
 }
 // Never write a file this app would refuse to reopen: the read checks bytes (file.size) and then the shape (checkShape),
 // and a plan well under 2 MB can still hold more values than MAX_NODES, the most every copy reads. Returns why it can't be written, or "".
-function overLimit(text, room = 64){ const n = new Blob([text]).size, t = text.trim();   // room: entries a save leaves free, so marking the file as being edited still fits
+function overLimit(text, room = 64, was = ""){ const n = new Blob([text]).size, t = text.trim();   // room: entries a save leaves free, so marking the file as being edited still fits
   let obj = null; try { obj = t[0] === "{" ? JSON.parse(t) : jsyaml.load(t, {schema: jsyaml.JSON_SCHEMA}); } catch(e){}
+  // was: the file this write replaces. A plan already over a limit may still shrink toward it (deleting a snapshot), never grow.
+  const prior = () => { const w = String(was || "").trim(); if (!w) return null; try { return w[0] === "{" ? JSON.parse(w) : jsyaml.load(w, {schema: jsyaml.JSON_SCHEMA}); } catch(e){ return null; } };
   const most = () => { if (!obj || typeof obj !== "object") return ""; const k = n > MAX_BYTES ? x => utf8Len(JSON.stringify(x)) : valueCount;
     const top = SIZE_PARTS.map(([key, label])=>({label, n:k(obj[key] || [])})).sort((a, b)=>b.n - a.n)[0];
     return top && top.n ? ` Most of it is ${top.label.toLowerCase()}.` : ""; };
-  if (n > MAX_BYTES) return `Not saved: the plan would be ${(n/1048576).toFixed(1)} MB, over the 2 MB every copy of Sightline can open.${most()} Delete what's no longer needed, then save.`;
+  if (n > MAX_BYTES){ if (was && n <= new Blob([was]).size) return "";
+    return `Not saved: the plan would be ${(n/1048576).toFixed(1)} MB, over the 2 MB every copy of Sightline can open.${most()} Delete what's no longer needed, then save.`; }
   if (!obj) return "";
-  try { checkShape(obj, MAX_NODES - room); } catch(e){ return `Not saved: the plan would hold more than ${MAX_NODES.toLocaleString("en-US")} entries, more than older copies of Sightline can open.${most()} Delete what's no longer needed, then save.`; }
+  try { checkShape(obj, MAX_NODES - room); } catch(e){ const p = prior(), bare = x => valueCount({...x, changes:null}); if (p && typeof p === "object" && bare(obj) <= bare(p)) return "";   // the Activity record of the delete itself doesn't count against it (pruneChanges caps that log)
+    return `Not saved: the plan would hold more than ${MAX_NODES.toLocaleString("en-US")} entries, more than older copies of Sightline can open.${most()} Delete what's no longer needed, then save.`; }
   return ""; }
 function valueCount(v){ let n = 0; (function walk(x){ n++; if (x && typeof x === "object") for (const k of Object.keys(x)) walk(x[k]); })(v); return n; }
 // ================= storage =================
@@ -3836,7 +3840,7 @@ function quickSave(what, mutate, tries = 0, ops = null, isUndo = false, fromSayg
     if (!realOps(myOps).length){ installPlan(plan, now, hd); sel = keepSel; render(); planChanged("quick"); setStatus(`Nothing changed, so nothing was saved: ${what}`); return true; }   // never a new revision for nothing
     const out = clone(S); { const rec = changeRecord(what, myOps, mutate && mutate.via); if (rec) out.changes = pruneChanges([...(out.changes || []), rec]); } out.meta.revision = (plan.meta.revision||0) + 1; out.meta.savedAt = new Date().toISOString(); out.meta.lock = theirLock;
     const text = serialize(out, hd.name);
-    { const n = overLimit(text); if (n){ installPlan(plan, now, hd); sel = keepSel; render(); setStatus(n); return false; } }
+    { const n = overLimit(text, 64, now); if (n){ installPlan(plan, now, hd); sel = keepSel; render(); setStatus(n); return false; } }
     let res; try { res = await FileStore.apply(hd, now, text, cur=>backupBeforeUpgrade(hd, cur)); }
     catch(e){ setStatus("Couldn't save: " + e.message); installPlan(plan, now, hd); sel = keepSel; render(); return false; }
     if (res !== "ok"){ installPlan(plan, now, hd); sel = keepSel;
@@ -3973,7 +3977,7 @@ async function writeMine(hd, keepLock){
   const out = withRec(clone(planOfRecord(S))); out.meta.revision = (S.meta.revision||0) + 1; out.meta.savedAt = new Date().toISOString();
   out.meta.lock = keepLock ? {by:myName()||"Someone", id:SESSION, at:new Date().toISOString()} : null;
   let text; try { text = serialize(out, hd.name); } catch(e){ setStatus("Not saved: " + e.message + "."); return false; }
-  { const n = overLimit(text); if (n){ setStatus(n); return false; } }
+  { const n = overLimit(text, 64, file.baseText); if (n){ setStatus(n); return false; } }
   try {
     let res = await writeIfUnchanged(hd, file.baseText, text);
     if (res === "changed"){                          // a teammate's quick update landed a moment ago: merge it and try once more
@@ -3982,7 +3986,7 @@ async function writeMine(hd, keepLock){
       if (!(theirs && rebaseOnto(theirs, cur))){ setStatus("Not saved: the file changed while saving. Your edits are kept; save again."); return false; }
       const out2 = withRec(clone(planOfRecord(S))); out2.meta.revision = (S.meta.revision||0) + 1; out2.meta.savedAt = out.meta.savedAt; out2.meta.lock = out.meta.lock;
       Object.assign(out, out2); text = serialize(out, hd.name);
-      { const n = overLimit(text); if (n){ setStatus(n); return false; } }
+      { const n = overLimit(text, 64, cur); if (n){ setStatus(n); return false; } }
       res = await writeIfUnchanged(hd, file.baseText, text);
     }
     if (res !== "ok"){ setStatus("Not saved: someone saved at the same moment. Your edits are kept; save again."); return false; }
