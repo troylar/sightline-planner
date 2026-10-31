@@ -303,7 +303,7 @@ browser_checks(){
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   # SIGHTLINE_TODAY=2026-12-20 runs every check as if that were today (test/today.js), to find checks that depend on the real date
   if [[ -n "${SIGHTLINE_TODAY:-}" && "${NODE_OPTIONS:-}" != *today.js* ]]; then
-    export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--require $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/today.js"
+    export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--require \"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/today.js\""   # quoted: Node splits NODE_OPTIONS on spaces
   fi
   if [[ "${1:-}" == --one ]]; then
     shift; name=$1; cd "$(dirname "${BASH_SOURCE[0]}")" || exit 1
