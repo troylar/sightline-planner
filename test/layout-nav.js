@@ -29,6 +29,7 @@ function ringOf(rowSel){
     const errs = [];
     for (const theme of ["light", "dark"]){
       const page = await b.newPage({viewport:{width:1400, height:800}}); page.on("pageerror", e=>errs.push(String(e)));
+      await page.clock.install({time:new Date("2026-10-28T12:00:00")});   // the Roadmap places deliverables by quarter against today; 2027-Q1 is ahead
       await page.goto("file://" + HTML); await page.evaluate(t=>localStorage.setItem("timeline-planner-theme", t), theme); await page.goto("file://" + HTML); await page.waitForTimeout(300);
       const ideas = [{id:"dv1", name:"Faster search", stage:"idea"}, {id:"dv2", name:"Shared filters", stage:"idea"}], card = [{id:"dv3", name:"Saved views", target:"2027-Q1"}];
       for (const [ws, rowSel, name, dvs, tab] of [["today", "li.trow", "a Today row"], ["people", ".lgrid > .lrow", "a People load row"], ["roadmap", "li[data-idea]", "a Roadmap idea", ideas], ["roadmap", ".dvcard", "a Roadmap deliverable", card], ["plan", "#t-decisions tbody tr", "a Decisions row", null, "decisions"], ["plan", ".cvcard", "a card on Cards", null, "cards"]]){
