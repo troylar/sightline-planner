@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.175.4",
+  "date": "2026-10-31",
+  "headline": ". in Days shows this week",
+  "changes": [
+    {
+      "kind": "fixed",
+      "area": "Timeline",
+      "title": "Pressing . in Days goes to this week again",
+      "before": "In Days, with no sprint chosen, . went to the first day of the sprint we're in, so in a sprint's second week today could be off screen.",
+      "now": "In Days, . goes to the Monday of this week, so today is on screen. With a sprint chosen, it still goes to the sprint we're in.",
+      "where": "Timeline, Days: the . key, or Jump to today in Find"
+    }
+  ]
+},
+{
   "version": "1.175.3",
   "date": "2026-10-31",
   "headline": "Back right after opening an item",
