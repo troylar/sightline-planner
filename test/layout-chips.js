@@ -214,6 +214,8 @@ function contrast(sel){
     // nothing in them (a selected bar is z 5, a hover label z 6) paints over the names (z 4).
     for (const [z, theme] of [["weeks", "light"], ["weeks", "dark"], ["days", "light"], ["days", "dark"]]){
       const page = await b.newPage({viewport:{width:1400, height:800}}); page.on("pageerror", e=>errs.push(String(e)));
+      // a weekday inside the sample plan, so the Today line is on the chart (past the plan it isn't drawn)
+      await page.clock.install({time:new Date("2026-10-28T12:00:00")});
       await page.goto("file://" + HTML); await page.evaluate(t=>localStorage.setItem("timeline-planner-theme", t), theme); await page.goto("file://" + HTML); await page.waitForTimeout(300);
       const out = await page.evaluate(([FIX, z])=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); S = normalize(JSON.parse(FIX), false);
         const c4 = S.bars.find(b=>b.id === "c4"); c4.tasks = [{id:"tk1", label:"Wire the tools", start:dayToIso(wkDay(c4.start) + 1), days:3}];
