@@ -63,7 +63,8 @@ prevention is the only real control.
   refactors and test-only changes don't.
 - **Bump the version:** a fix is a patch (1.1.0 → 1.1.1), anything new or improved is a minor (→ 1.2.0).
   A major is only for a change older copies couldn't open at all, even read-only. A new saved field or a
-  `SCHEMA` bump isn't one on its own: older copies open those plans read-only, and the release note says so.
+  `SCHEMA` bump isn't one on its own: copies since 1.19.0 open those plans read-only, and the release note says
+  so. If the new shape fails an older copy's `parseText` (for example, lanes moved or renamed), that is a major.
   `APP_VERSION` is always the newest release; there is no other version to update.
 - **Each change:** `kind` (new / improved / fixed), `area`, `title`, `now`, and where it helps `before`
   and `where`. Write for the people using the planner, not for engineers: what they'll notice and where
@@ -113,7 +114,7 @@ prevention is the only real control.
   theirs)`, a pure function.
 - **Adding a saved field that older copies don't know:** name it in `featuresIn(plan)` and `KNOWN_FEATURES`, so a copy
   that doesn't know it opens the plan read-only instead of dropping it. Bump `SCHEMA` only for a change older copies
-  can't read, and then, in the same pull request: add a `MIGRATIONS` step `{to: SCHEMA, run}` (tests fail without one),
+  can't read correctly, and then, in the same pull request: add a `MIGRATIONS` step `{to: SCHEMA, run}` (tests fail without one),
   set `PLAN_SCHEMA` in `tools/sightline-jira-sync.py` to match (tests check), teach the sync's plan reading the new
   shape, and say in the release note that older copies will open the plan read-only. The first save in the new format
   downloads the old file as a backup. The Jira files carry their own `version`: bump `STATUS_FORMAT` / `ISSUES_FORMAT`
