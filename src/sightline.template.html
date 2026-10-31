@@ -6556,15 +6556,17 @@ function placeNow(){
 function savePlace(){ clearTimeout(placeT); if (typeof history === "undefined") return; places.set(placeId, place);
   try { history.replaceState({...(history.state || {}), pid:placeId, place}, ""); } catch(e){} }
 const depths = new Map();   // how far into this tab's history each step is, so a way back knows which steps come after it
-function pushPlace(hash){ savePlace(); const d = stepDepth(placeId) + 1; backs = backs.filter(x=>!x.off);   // a new step: what Forward could reach is gone
+function pushPlace(hash){ savePlace(); placeHold = false; placeGen++;   // a new step: a way back still being put back stops, so it can't pull this one
+  const d = stepDepth(placeId) + 1; backs = backs.filter(x=>!x.off);   // and what Forward could reach is gone
   placeId = newPlaceId(); depths.set(placeId, d); history.pushState({pid:placeId, d}, "", hash); place = placeNow(); places.set(placeId, place); }
 function restorePlace(p, gen){
-  // A page can finish drawing a little later (the details panel, the chart's fit, a long list), so try again for up to a second.
+  // A page can finish drawing a little later (the details panel, the chart's fit, a long list), and much later on a busy
+  // machine, so try again for up to three seconds by the clock, not by count: timers run late exactly when the page is slow.
   const go = () => { let all = true; Object.entries(p).forEach(([id, [x, y]])=>{ const el = id === "" ? document.scrollingElement : document.getElementById(id); if (!el) return;
       if (id === "") window.scrollTo(x, y); else { el.scrollLeft = x; el.scrollTop = y; }
       if (Math.abs(el.scrollLeft - x) > 2 || Math.abs(el.scrollTop - y) > 2) all = false; }); return all; };
-  let n = 0; const step = () => { if (gen !== placeGen || !placeHold) return;   // another step was opened, or you scrolled yourself
-    if (go() || ++n > 10){ place = {...p}; places.set(placeId, place); placeHold = false; return; } setTimeout(step, 100); };
+  const until = Date.now() + 3000; const step = () => { if (gen !== placeGen || !placeHold) return;   // another step was opened, or you scrolled yourself
+    if (go() || Date.now() > until){ place = {...p}; places.set(placeId, place); placeHold = false; return; } setTimeout(step, 100); };
   go(); requestAnimationFrame(step);
 }
 try { history.scrollRestoration = "manual"; placeId = history.state && history.state.pid || newPlaceId(); depths.set(placeId, history.state && history.state.d || 0); history.replaceState({...(history.state || {}), pid:placeId}, ""); } catch(e){}

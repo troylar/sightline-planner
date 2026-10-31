@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.175.2",
+  "date": "2026-10-30",
+  "headline": "Back finds your place on a busy computer",
+  "changes": [
+    {
+      "kind": "fixed",
+      "area": "Timeline",
+      "title": "Back puts the chart where it was, even when it draws slowly",
+      "before": "On a busy computer, Back could open the right item but leave the chart scrolled to the start, because the chart finished drawing after Back stopped trying.",
+      "now": "Back keeps putting the chart, the list and the details panel where you left them for up to three seconds while the page finishes drawing. Scrolling or pressing a key stops it at once.",
+      "where": "The browser's Back and Forward, and Back to where I was"
+    }
+  ]
+},
+{
   "version": "1.175.1",
   "date": "2026-10-30",
   "headline": "Warnings stay clear of the details panel",

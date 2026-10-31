@@ -138,6 +138,31 @@ const near = (a, b) => Math.abs(a - b) <= 3;
         return {floating:s.classList.contains("floating") && getComputedStyle(s).position === "fixed", n:els.length, bad:els.filter(e=>[...e.getClientRects()].some(under)).map(e=>e.textContent.slice(0, 24))}; }, FIX);
       ok("B19 1500px, the List: with the details panel floating, the late-work warning and the hidden line are all clear of it", w.floating && w.n > 3 && !w.bad.length, JSON.stringify(w));
       await p3.close(); }
+    // A chart that draws late (a busy machine): Back keeps trying to put the scroll back for longer than a second
+    { const p4 = await b.newPage({viewport:{width:1400, height:700}}); p4.on("pageerror", e=>errs.push(String(e)));
+      await p4.goto("file://" + HTML); await p4.waitForTimeout(250);
+      await p4.evaluate(FIX=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); localStorage.clear(); S = normalize(JSON.parse(FIX), false); file.handle = null;
+        for (let i = 0; i < 30; i++) S.bars.push({...clone(S.bars[0]), id:"bx" + i, label:"Extra initiative " + i, tasks:[], jira:"", epics:[]});
+        goWs("timeline"); render(); select("bar", S.bars[1].id); }, FIX);
+      await p4.waitForTimeout(450);
+      await p4.evaluate(()=>{ const g = $("#gscroll"); g.scrollLeft = 300; g.scrollTop = 120; }); await p4.waitForTimeout(450);
+      const s0 = await p4.evaluate(()=>[$("#gscroll").scrollLeft, $("#gscroll").scrollTop]);
+      await p4.evaluate(()=>goWs("list")); await p4.waitForTimeout(450);
+      await p4.evaluate(()=>{ const st = document.createElement("style"); st.id = "late"; st.textContent = "#gscroll *{display:none !important}"; document.head.append(st); });
+      await p4.goBack(); await p4.waitForTimeout(1600);
+      await p4.evaluate(()=>$("#late").remove());
+      const t0 = Date.now(); let s1 = [0, 0];
+      while (Date.now() - t0 < 2000){ s1 = await p4.evaluate(()=>{ const g = $("#gscroll"); return g ? [g.scrollLeft, g.scrollTop] : [0, 0]; }); if (near(s1[0], s0[0]) && near(s1[1], s0[1])) break; await p4.waitForTimeout(50); }
+      ok("B20 Back onto a chart that draws 1.6s late: the chart is still scrolled where it was", s0[0] === 300 && s0[1] > 60 && near(s1[0], s0[0]) && near(s1[1], s0[1]), JSON.stringify([s0, s1]));
+      // …and opening another item while it's still trying leaves that item's place alone
+      await p4.evaluate(()=>goWs("list")); await p4.waitForTimeout(450);
+      await p4.evaluate(()=>{ const st = document.createElement("style"); st.id = "late"; st.textContent = "#gscroll *{display:none !important}"; document.head.append(st); });
+      await p4.goBack(); await p4.waitForTimeout(1200);
+      await p4.evaluate(()=>goTo("bar", "bx28")); await p4.waitForTimeout(100);
+      await p4.evaluate(()=>$("#late").remove()); await p4.waitForTimeout(900);
+      const n1 = await p4.evaluate(()=>({at:[$("#gscroll").scrollLeft, $("#gscroll").scrollTop], sel:sel && sel.id}));
+      ok("B21 opening another item while Back is still putting the chart back: the chart is not pulled back to the old place", n1.sel === "bx28" && !(near(n1.at[0], s0[0]) && near(n1.at[1], s0[1])), JSON.stringify({s0, n1}));
+      await p4.close(); }
     ok("B17 no page errors on the narrow windows", !errs.length, errs.slice(0, 2).join(" | "));
 
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 300)); }
