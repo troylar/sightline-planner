@@ -925,6 +925,12 @@ const until=async(what,f,ms=2000)=>{ const t=Date.now(); while(!f() && Date.now(
     ev(`composerDrafts.clear(); addUpdate(S, "task:${tk2}", "Started"); renderSide()`); await wait(5);
     ok("QB5: a box with updates shows them and the add field, not one line", !st()[0].q && d.querySelectorAll("#side .ulog li").length >= 1, JSON.stringify(st()));
   }
+  { // the holiday set and day parsing are cached across draws: an edit in place, an added and a removed holiday all show at once
+    const r = ev(`(()=>{ const P = clone(S); P.holidays = [{date:"2026-10-12", name:"A"}]; const n = isoToDay("2026-10-12"), m = isoToDay("2026-10-13");
+      const a = holidaySet(P).has(n); P.holidays[0].date = "2026-10-13"; const b = holidaySet(P).has(m) && !holidaySet(P).has(n);
+      P.holidays.push({date:"2026-10-12", name:"B"}); const c = holidaySet(P).has(n); P.holidays.splice(0, 2); const e = holidaySet(P).size === 0;
+      return [a, b, c, e, isoToDay("2026-10-12") === n, isoToDay("2026-10-12") === dayNum(2026, 10, 12)].join(); })()`);
+    ok("HC1: holidays edited, added or removed in place count at once, and dates read the same", r === "true,true,true,true,true,true", r); }
   ok("no runtime errors", w.errs.length===0, w.errs.join(" | "));
   console.log(R.join("\n")); const f=R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length-f}/${R.length} passed`); process.exit(f ? 1 : 0);
 })();

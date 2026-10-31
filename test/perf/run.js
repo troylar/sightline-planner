@@ -151,7 +151,7 @@ async function main(){
   for (const size of SIZES_RUN){
     const g = generate(size, SEED);
     for (const cpu of CPUS){
-      const runs = size === "L" || size === "XL" ? Math.min(RUNS, 3) : RUNS;
+      const runs = /^(L|XL)/.test(size) || /-[0-9.]+y$/.test(size) ? Math.min(RUNS, 3) : RUNS;
       const acc = {};
       const add = (s, r, m0, m1, nodes) => { const a = acc[s.id] ||= {samples:[], fps:[], dropped:[], worst:[], longs:[], layouts:[], recalcs:[], heap:[], nodes:[], notes:new Set(), skip:""};
         if (r.skip){ a.skip = r.skip; return; }
