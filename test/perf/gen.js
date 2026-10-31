@@ -153,7 +153,7 @@ function age({r, pick, int, phrase, people, lanes, bars, milestones, notes, deci
   const reports = Array.from({length:Math.min(26, W)}, (_, i) => ({id:"rep" + i, at:at(i, 16), by:by(), status:pick(["ontrack","ontrack","atrisk"]), title:"Week " + (W - i), sections:sections()}));
   const keys = Object.keys(issues).filter(k => !issues[k].isEpic);
   const closed = jsprints.filter(s => s.state !== "future").slice(-26);
-  const commitments = closed.map((s, i) => ({id:"cmt" + i, sprint:i + 1, name:s.name, at:s.start + "T09:00:00.000Z", by:by(), goal:phrase(), points:int(20, 80), capacity:int(40, 90),
+  const commitments = closed.map((s, i) => ({id:"cmt" + i, sprint:s.id, name:s.name, at:s.start + "T09:00:00.000Z", by:by(), goal:phrase(), points:int(20, 80), capacity:int(40, 90),
     keys:Array.from({length:int(20, Math.min(500, Math.max(20, Math.round(keys.length / 26))))}, () => [pick(keys), pick([1,2,3,5,8])]), note:""}));
   // meetings that repeat for years: skipped weeks and moved ones pile up (the page keeps 300 of each)
   const meetings = Array.from({length:12}, (_, i) => { const d0 = iso(wk(0) + (i % 5) * DAY);
