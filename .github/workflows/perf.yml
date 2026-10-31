@@ -19,8 +19,8 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: bash ./build.sh
-      # S and M on every change; L and XL run by hand (npm run perf -- --sizes L,XL). Budgets for this runner are in budgets-ci.json.
-      # Report only: a missed budget shows in the summary below but doesn't fail the check.
-      - run: node test/perf/run.js --sizes S,M --cpu 1 --runs 3 --budgets test/perf/budgets-ci.json --out perf-results.json --report perf-report.html --report-only
+      # S, M and M after a year of use (M-1y) on every change; L, XL and two years run by hand (npm run perf -- --sizes L,XL,L-2y).
+      # Budgets for this runner are in budgets-ci.json. Report only: a missed budget shows in the summary but doesn't fail the check.
+      - run: node test/perf/run.js --sizes S,M,M-1y --cpu 1 --runs 3 --budgets test/perf/budgets-ci.json --out perf-results.json --report perf-report.html --report-only
       - if: always()
         run: node test/perf/summary.js perf-results.json >> "$GITHUB_STEP_SUMMARY"

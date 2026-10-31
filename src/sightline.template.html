@@ -2019,7 +2019,8 @@ const calmMotion = () => document.hidden || !!(window.matchMedia && matchMedia("
 // ================= calendar (UTC day math, no DST drift) =================
 const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const dayNum = (y,m,d) => Math.floor(Date.UTC(y,m-1,d)/86400000);
-const isoToDay = iso => { const [y,m,d] = iso.split("-").map(Number); return dayNum(y,m,d); };
+const isoMemo = new Map();          // the same few thousand dates are read on every draw: parse each once
+const isoToDay = iso => { let n = isoMemo.get(iso); if (n === undefined){ const [y,m,d] = iso.split("-").map(Number); n = dayNum(y,m,d); if (isoMemo.size > 50000) isoMemo.clear(); isoMemo.set(iso, n); } return n; };
 const todayDay = () => { const t = new Date(); return dayNum(t.getFullYear(), t.getMonth()+1, t.getDate()); };
 const dayToDate = n => new Date(n*86400000);
 const fmtDay = n => { const d = dayToDate(n); return `${MON[d.getUTCMonth()]} ${d.getUTCDate()}`; };
@@ -2782,11 +2783,13 @@ function applyOps(plan, ops){
 }
 
 // ================= working days + tasks =================
-const dow = n => dayToDate(n).getUTCDay();                       // 0 = Sunday
+const dow = n => { const k = Math.floor(n); return ((k + 4) % 7 + 7) % 7; };   // 0 = Sunday; day 0 (1970-01-01) was a Thursday. Arithmetic, not a Date: the day loops ask millions of times
 const isWeekend = n => { const w = dow(n); return w === 0 || w === 6; };
 const mondayOf = n => n - ((dow(n)+6) % 7);
 const dayToIso = n => { const x = dayToDate(n); return `${x.getUTCFullYear()}-${String(x.getUTCMonth()+1).padStart(2,"0")}-${String(x.getUTCDate()).padStart(2,"0")}`; };
-function holidaySet(d){ return new Set((d.holidays||[]).map(x=>isoToDay(x.date))); }
+const holMemo = new WeakMap();      // per holidays list, rebuilt when its dates change: capacity asks once per person per day
+function holidaySet(d){ const list = d.holidays || [], key = list.map(x=>x.date).join(); let m = holMemo.get(list);
+  if (!m || m.key !== key){ m = {key, set:new Set(list.map(x=>isoToDay(x.date)))}; if (d.holidays) holMemo.set(list, m); } return m.set; }
 const isWork = (n, hs) => !isWeekend(n) && !hs.has(n);
 function nextWork(n, hs){ let k = 0; while (!isWork(n,hs) && k++ < 1200) n++; return n; }
 function prevWork(n, hs){ let k = 0; while (!isWork(n,hs) && k++ < 1200) n--; return n; }
@@ -3163,7 +3166,15 @@ function workItems(){ const out = []; S.bars.forEach(b=>{ if (b.kind === "waitin
 const isBlocked = x => !!(x && x.blocked && x.blocked.reason);
 function blockedInside(b){ let n = 0; [b, ...descendantsOf(b.id)].forEach(x=>{ if (x !== b && isLeafBar(x) && isBlocked(x)) n++; (x.tasks||[]).forEach(t=>{ if (isBlocked(t)) n++; }); }); return n; }
 const waitName = v => personById(v)?.name || v || "";
-const updatesFor = key => (S.updates||[]).filter(u=>u.item === key).sort((a,b)=>a.at < b.at ? 1 : a.at > b.at ? -1 : 0);
+// Updates by item, newest first: one pass over the log instead of one per item. Rebuilt when the list, its length or its
+// last entry changes (adding, deleting and replacing all do); an edit in place changes only text the index points to.
+const updMemo = {list:null, n:-1, last:null, by:new Map()};
+function updatesIndex(){ const L = S.updates || [], last = L.length ? L[L.length - 1] : null;
+  if (updMemo.list !== L || updMemo.n !== L.length || updMemo.last !== last){ const by = new Map();
+    L.forEach(u=>{ let a = by.get(u.item); if (!a) by.set(u.item, a = []); a.push(u); });
+    by.forEach(a=>a.sort((x,y)=>x.at < y.at ? 1 : x.at > y.at ? -1 : 0)); Object.assign(updMemo, {list:L, n:L.length, last, by}); }
+  return updMemo.by; }
+const updatesFor = key => (updatesIndex().get(key) || []).slice();
 function addUpdate(s, key, text){ s.updates = s.updates || []; s.updates.push({id:newId("upd"), item:key, at:new Date().toISOString(), by:meId() || "", text:String(text).slice(0,1000)}); }
 const stampDay = iso => { const d = new Date(iso); return isNaN(d) ? null : isoToDay(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`); };
 const jiraUrl = key => S.meta.jiraBase && key ? S.meta.jiraBase + encodeURIComponent(key) : "";

@@ -1,5 +1,8 @@
 // Synthetic plans for the performance harness: fixed seeds, named sizes, invented names only.
-// node test/perf/gen.js M [seed] [outDir]  writes perf-M.json and perf-M-status.json
+// node test/perf/gen.js M [seed] [outDir] [years]  writes perf-M.json and perf-M-status.json (perf-M-2y.json with years of use)
+// A size is how much work is planned at once; years adds what a team piles up using the plan that long: finished work,
+// updates, notes, decisions and risks, snapshots, status updates, sprint commitments, meetings, saved views, a full
+// Activity log, and who-added-what on everything. Ages are named M-1y, L-2y and so on.
 const fs = require("fs"), path = require("path");
 
 const SIZES = {
@@ -29,13 +32,15 @@ const VERBS = ["Rework","Add","Speed up","Harden","Split","Retire","Measure","Do
 const FIRST = ["Avery","Blake","Casey","Devon","Emery","Finley","Gray","Harper","Indigo","Jules","Kai","Logan","Morgan","Noel","Oakley","Parker","Quinn","Reese","Sage","Tatum","Umi","Vale","Wren","Yael","Zion"];
 const LAST = ["Stone","Ito","Moore","Lane","Park","Reed","Shaw","Vance","West","Young","Ford","Hale","Knox","Marsh","Nash","Price","Rowe","Shore","Tate","Wells"];
 
-function generate(size, seed = 1, today = TODAY){
-  const z = SIZES[size]; if (!z) throw new Error("Unknown size " + size + ". Use S, M, L or XL.");
+function generate(size, seed = 1, today = TODAY, years = 0){
+  { const m = /^([A-Z]+)-(\d+(?:\.\d+)?)y$/.exec(size); if (m){ size = m[1]; years = Number(m[2]); } }
+  const z = SIZES[size]; if (!z) throw new Error("Unknown size " + size + ". Use S, M, L or XL, with -1y or -2y for years of use.");
   const r = rng(seed * 7919 + size.length), pick = a => a[Math.floor(r() * a.length)], int = (lo, hi) => lo + Math.floor(r() * (hi - lo + 1));
   const phrase = () => pick(VERBS) + " " + pick(WORDS) + " " + pick(WORDS);
-  const weeks = Math.min(z.weeks, MAX_WEEKS);
-  // today sits a third of the way in, so the sprint presets have work on both sides
-  const todayMs = day(today), startMon = todayMs - Math.round(weeks / 3) * 7 * DAY;
+  // A plan in use for years runs to the 104-week cap with today late in it: the past fills the plan, a few months stay ahead.
+  const weeks = years ? MAX_WEEKS : Math.min(z.weeks, MAX_WEEKS), past = years ? Math.min(MAX_WEEKS - 26, Math.round(52 * years)) : Math.round(weeks / 3);
+  // without years, today sits a third of the way in, so the sprint presets have work on both sides
+  const todayMs = day(today), startMon = todayMs - past * 7 * DAY;
   const start = iso(startMon - ((new Date(startMon).getUTCDay() + 6) % 7) * DAY);
   const s0 = day(start), wk = w => s0 + w * 7 * DAY;
 
@@ -55,19 +60,20 @@ function generate(size, seed = 1, today = TODAY){
 
   const bars = [], issues = {}, rollups = {}; let key = 100;
   const epicBars = [];
-  for (let i = 0; i < z.initiatives; i++){
-    const lane = lanes[i % lanes.length].id, st = int(0, Math.max(0, weeks - 4)), span = Math.min(weeks - st, int(1, 12));
+  const doneBars = years ? Math.round(z.initiatives * 0.75 * years) : 0, doneTasks = years ? Math.round(z.tasks * 0.75 * years) : 0;
+  for (let i = 0; i < z.initiatives + doneBars; i++){
+    const old = i >= z.initiatives, lane = lanes[i % lanes.length].id, st = old ? int(0, Math.max(0, past - 4)) : years ? int(Math.max(0, past - 12), weeks - 4) : int(0, Math.max(0, weeks - 4)), span = Math.min(weeks - st, int(1, 12));
     const long = r() < 0.1, label = long ? phrase() + ", " + Array.from({length:12}, phrase).join(", ") : phrase();
-    const b = {id:"b" + i, lane, start:st, span:Math.max(1, span), label:label.slice(0, 280), kind:"work", owners:[pick(people).id, pick(people).id], jira:"", status:pick(["notstarted","inprogress","inprogress","done"]), dependsOn:[], tasks:[]};
-    if (r() < 0.6){ const k = "ABC-" + (key++); b.epics = [k]; epicBars.push(b); issues[k] = {summary:b.label.slice(0, 120), status:"In Progress", category:"inprogress", type:"Epic", isEpic:true}; }
+    const b = {id:"b" + i, lane, start:st, span:Math.max(1, span), label:label.slice(0, 280), kind:"work", owners:[pick(people).id, pick(people).id], jira:"", status:old ? "done" : pick(["notstarted","inprogress","inprogress","done"]), dependsOn:[], tasks:[]};
+    if (r() < 0.6 && !old){ const k = "ABC-" + (key++); b.epics = [k]; epicBars.push(b); issues[k] = {summary:b.label.slice(0, 120), status:"In Progress", category:"inprogress", type:"Epic", isEpic:true}; }
     if (r() < 0.03) b.parked = true;
     bars.push(b);
   }
   // deep dependency chains: every 25th initiative starts a chain of up to 20
   for (let i = 0; i < bars.length; i += 25) for (let j = 1; j < 20 && i + j < bars.length; j++) bars[i + j].dependsOn = [bars[i + j - 1].id];
-  for (let t = 0; t < z.tasks; t++){
-    const b = bars[t % bars.length], a = wk(b.start) + int(0, Math.max(0, b.span * 5 - 1)) * DAY;
-    b.tasks.push({id:"t" + t, label:phrase(), start:iso(a), days:int(1, 10), status:pick(["notstarted","inprogress","done"]), owners:[pick(people).id], jira:""});
+  for (let t = 0; t < z.tasks + doneTasks; t++){
+    const old = t >= z.tasks, b = old ? bars[z.initiatives + (t % Math.max(1, doneBars))] : bars[t % z.initiatives], a = wk(b.start) + int(0, Math.max(0, b.span * 5 - 1)) * DAY;
+    b.tasks.push({id:"t" + t, label:phrase(), start:iso(a), days:int(1, 10), status:old ? "done" : pick(["notstarted","inprogress","done"]), owners:[pick(people).id], jira:""});
   }
 
   // Jira stories: spread over the epics, across sprints, some unestimated, some with no sprint, some abandoned
@@ -109,18 +115,69 @@ function generate(size, seed = 1, today = TODAY){
   const decisions = Array.from({length:Math.max(4, Math.round(z.initiatives / 10))}, (_, i) => ({id:"d" + i, text:"Decide " + phrase(), state:i % 3 ? "open" : "decided", owners:[pick(people).id], due:iso(wk(int(0, weeks - 1))), item:bars[i % bars.length].id}));
   const risks = Array.from({length:Math.max(4, Math.round(z.initiatives / 20))}, (_, i) => ({id:"r" + i, sev:pick(["high","med","low"]), text:"Risk to " + phrase(), owners:[pick(people).id], item:bars[(i * 3) % bars.length].id}));
 
-  const plan = {meta:{title:"Performance plan " + size, planId:"perf-" + size + "-" + seed, start, weeks, sprintWeeks:2, jiraBase:"https://jira.example.com/browse/", jiraSkip:unsorted.slice(0, 5)},
-    people, lanes, bars, milestones, gates:[], decisions, risks, baseline:null, sprints, notes};
+  const aged = years ? age({r, pick, int, phrase, people, lanes, bars, milestones, notes, decisions, risks, sprints, jsprints, issues, unsorted, wk, todayMs, past, weeks, years}) : {};
+
+  const plan = {meta:{title:"Performance plan " + size + (years ? " after " + years + (years === 1 ? " year" : " years") : ""), planId:"perf-" + size + "-" + seed, start, weeks, sprintWeeks:2, jiraBase:"https://jira.example.com/browse/", jiraSkip:unsorted.slice(0, 5)},
+    people, lanes, bars, milestones, gates:[], decisions, risks, baseline:null, sprints, notes, ...aged};
   const status = {kind:"sightline-jira-status", version:1, generatedAt:today + "T08:00:00Z", jiraBase:"https://jira.example.com/browse/", missing:[], issues, rollups, sprints:jsprints,
     board:{id:7, name:"Team board", columns:[{name:"To Do", statuses:["To Do"]}, {name:"In Progress", statuses:["In Progress"]}, {name:"Code Review", statuses:["Code Review"]}, {name:"QA", statuses:["QA"]}, {name:"Done", statuses:["Done"]}]}};
-  return {plan, status, asked:z, weeks, today};
+  return {plan, status, asked:{...z, ...(years ? {years, doneInitiatives:doneBars, doneTasks} : {})}, weeks, today};
+}
+
+// What a plan piles up in use, at the rates of a team that uses it every day. Each collection stops at the page's own cap.
+function age({r, pick, int, phrase, people, lanes, bars, milestones, notes, decisions, risks, sprints, jsprints, issues, unsorted, wk, todayMs, past, weeks, years}){
+  const W = Math.round(52 * years), at = (wkAgo, h = 10) => new Date(todayMs - wkAgo * 7 * DAY + h * 3600000).toISOString();
+  const by = () => pick(people).id, stamp = (wkAgo) => ({by:by(), at:at(wkAgo, int(8, 18))});
+  const longText = n => Array.from({length:n}, phrase).join(". ") + ".";
+  // finished work and old notes, decisions and risks: added long ago, edited since
+  const ago = w => Math.max(0, past - w);
+  for (const b of bars){ b.added = stamp(ago(b.start)); if (r() < 0.7) b.edited = stamp(Math.max(0, ago(b.start) - int(0, 8)));
+    for (const t of b.tasks){ t.added = stamp(ago(b.start)); if (r() < 0.5) t.edited = stamp(Math.max(0, ago(b.start) - int(0, 4))); } }
+  for (let i = 0; i < W * 6; i++){ const b = pick(bars), w = int(0, W - 1);
+    notes.push({id:"na" + i, text:longText(int(1, 4)).slice(0, 500), date:iso(todayMs - w * 7 * DAY), lane:b.lane, author:by(), on:"bar:" + b.id, added:stamp(w)}); }
+  for (let i = 0; i < W * 3; i++){ const w = int(0, W - 1), open = w < 6 && r() < 0.5;
+    decisions.push({id:"da" + i, text:"Decide " + phrase() + ". " + longText(int(0, 3)), state:open ? "open" : "decided", owners:[by()], due:iso(todayMs - w * 7 * DAY), item:pick(bars).id, added:stamp(w)}); }
+  for (let i = 0; i < W; i++){ const w = int(0, W - 1);
+    risks.push({id:"ra" + i, sev:pick(["high","med","low"]), text:"Risk to " + phrase() + ". " + longText(int(0, 2)), owners:[by()], item:pick(bars).id, added:stamp(w)}); }
+  // dated updates on items: two a person a week, the page keeps 20,000
+  const items = bars.flatMap(b => ["bar:" + b.id, ...b.tasks.map(t => "task:" + t.id)]);
+  const updates = Array.from({length:Math.min(20000, people.length * 2 * W)}, (_, i) => ({id:"u" + i, item:pick(items), at:at(int(0, W - 1), int(8, 18)), by:by(), text:longText(int(1, 3)).slice(0, 1000)}));
+  // twelve snapshots, the most the page keeps, each a copy of every item
+  const snapInfo = () => { const b = {}, t = {}, m = {};
+    for (const x of bars){ b[x.id] = [x.label.slice(0, 120), iso(wk(x.start)), iso(wk(x.start + x.span) - DAY), x.status, x.lane, 0];
+      for (const k of x.tasks) t[k.id] = [k.label, k.start, iso(day(k.start) + (k.days - 1) * DAY), k.status]; }
+    for (const x of milestones) m[x.id] = [x.what, iso(wk(Math.floor(x.at)))]; return {b, t, m, dv:{}}; };
+  const snapshots = Array.from({length:Math.min(12, Math.ceil(W / 6))}, (_, i) => ({id:"snap" + i, name:"Quarter review " + (i + 1), takenAt:at(Math.round(W * (1 - i / 12)), 15), by:by(), base:{}, info:snapInfo()}));
+  // weekly status updates (the page keeps 26) and a commitment for every sprint (26 kept, up to 500 issues each)
+  const sections = () => Object.fromEntries(["ontrack","changed","risk","decisions","next"].map(k => [k, longText(int(2, 8)).slice(0, 4000)]));
+  const reports = Array.from({length:Math.min(26, W)}, (_, i) => ({id:"rep" + i, at:at(i, 16), by:by(), status:pick(["ontrack","ontrack","atrisk"]), title:"Week " + (W - i), sections:sections()}));
+  const keys = Object.keys(issues).filter(k => !issues[k].isEpic);
+  const closed = jsprints.filter(s => s.state !== "future").slice(-26);
+  const commitments = closed.map((s, i) => ({id:"cmt" + i, sprint:s.id, name:s.name, at:s.start + "T09:00:00.000Z", by:by(), goal:phrase(), points:int(20, 80), capacity:int(40, 90),
+    keys:Array.from({length:int(20, Math.min(500, Math.max(20, Math.round(keys.length / 26))))}, () => [pick(keys), pick([1,2,3,5,8])]), note:""}));
+  // meetings that repeat for years: skipped weeks and moved ones pile up (the page keeps 300 of each)
+  const meetings = Array.from({length:12}, (_, i) => { const d0 = iso(wk(0) + (i % 5) * DAY);
+    return {id:"meet" + i, title:pick(["Standup","Planning","Review","Retro","Sync","Demo"]) + " " + (i + 1), date:d0, time:"09:30", end:"10:00",
+      recur:{freq:"weekly", every:1, days:[1 + (i % 5)], ends:"never"}, skip:Array.from({length:Math.min(300, W * 2)}, (_, k) => iso(wk(0) + (k * 7 + (i % 5)) * DAY)),
+      moves:Array.from({length:Math.min(300, W)}, (_, k) => ({from:iso(wk(0) + (k * 14 + (i % 5)) * DAY), to:iso(wk(0) + (k * 14 + (i % 5) + 1) * DAY), time:"11:00", end:"11:30"})),
+      attendees:people.slice(i * 3, i * 3 + 8).map(p => p.id), groups:[], lane:lanes[i % lanes.length].id, note:phrase()}; });
+  const holidays = Array.from({length:Math.ceil(10 * (years + 1))}, (_, i) => ({date:iso(wk(0) + Math.round(i * 36.5) * DAY), name:"Holiday " + (i + 1)}));
+  const views = Array.from({length:20}, (_, i) => ({id:"view" + i, name:"View " + (i + 1) + " " + pick(WORDS), def:{filter:{people:[by()], lanes:[pick(lanes).id], q:pick(WORDS)}, zoom:i % 3 ? "weeks" : "days", rows:"lanes"}}));
+  // the last 30 days of edits, at the page's cap: 1,000 records within 256 KB
+  const changes = []; let bytes = 2;
+  for (let i = 0; i < 1000; i++){ const b = pick(bars), c = {id:"chg" + i, by:by(), at:new Date(todayMs - (1000 - i) * 30 * DAY / 1000).toISOString(), what:pick(["status","dates","label","owners"]) + " on " + b.label.slice(0, 40),
+      ops:[{type:"bars", op:"set", id:b.id, field:"status", prev:"notstarted", value:"inprogress"}]};
+    bytes += JSON.stringify(c).length + 1; if (bytes > 262144) break; changes.push(c); }
+  // and Jira issues the team skipped, years of them
+  unsorted.push(...keys.slice(0, Math.min(2000, keys.length)).filter((k, i) => i % 9 === 0));
+  return {updates, snapshots, reports, commitments, meetings, holidays, views, changes};
 }
 
 module.exports = {generate, SIZES, TODAY};
 
 if (require.main === module){
-  const [size = "S", seed = "1", out = "."] = process.argv.slice(2);
-  const g = generate(size, Number(seed));
+  const [size = "S", seed = "1", out = ".", years = "0"] = process.argv.slice(2);
+  const g = generate(size, Number(seed), TODAY, Number(years));
   fs.mkdirSync(out, {recursive:true});
   fs.writeFileSync(path.join(out, `perf-${size}.json`), JSON.stringify(g.plan));
   fs.writeFileSync(path.join(out, `perf-${size}-status.json`), JSON.stringify(g.status));

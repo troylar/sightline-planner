@@ -133,10 +133,13 @@ async function load(page, g){
   return page.evaluate(async ({plan, status}) => { const P = __perf; P.statusText = status; P.n = 1;
     try { UI.noWelcome = true; } catch(e){}
     const h = P.fileHandle("perf-plan.json", plan), dir = P.dirHandle("jira", {"status.json":status});
-    const r = await P.timed(async () => { await adopt(h, true); if (status.length <= 5 * 1024 * 1024) await readJiraDir(dir, true); });
+    // a plan past what a save may write opens read-only, so edits would time refusals: measure it in memory instead
+    const tooBig = typeof overLimit === "function" && !!overLimit(plan, 0);
+    const r = await P.timed(async () => { if (tooBig){ S = normalize(JSON.parse(plan), false); resetHistory(); render(); } else await adopt(h, true); if (status.length <= 5 * 1024 * 1024) await readJiraDir(dir, true); });
     try { setMe(S.people[0].id); if (!file.holdLock) await startEditing(); } catch(e){}
     let notes = "";
-    if (!file.handle){        // past the page's limit on values in one file (MAX_NODES): measure the drawing only
+    if (tooBig){ notes = "past what a save may write (" + overLimit(plan, 0).replace(/^Not saved: /, "").split(/\.\s/)[0] + "): opened in memory, not as a file; "; }
+    else if (!file.handle){        // past what this copy opens (an older build): measure the drawing only
       try { notes = "the plan file was refused (" + (document.querySelector(".banner, #linkProblem")?.textContent || "").trim().slice(0, 80) + "): loaded in memory; "; } catch(e){}
       S = normalize(JSON.parse(plan), false); resetHistory(); render(); }
     if (status.length > 5 * 1024 * 1024){ JIRA = JSON.parse(status); JIRA.rollupsTruncated = false; render(); notes += "the Jira file is over 5 MB: loaded in memory, past the page's own checks"; }
@@ -151,7 +154,7 @@ async function main(){
   for (const size of SIZES_RUN){
     const g = generate(size, SEED);
     for (const cpu of CPUS){
-      const runs = size === "L" || size === "XL" ? Math.min(RUNS, 3) : RUNS;
+      const runs = /^(L|XL)/.test(size) || /-[0-9.]+y$/.test(size) ? Math.min(RUNS, 3) : RUNS;
       const acc = {};
       const add = (s, r, m0, m1, nodes) => { const a = acc[s.id] ||= {samples:[], fps:[], dropped:[], worst:[], longs:[], layouts:[], recalcs:[], heap:[], nodes:[], notes:new Set(), skip:""};
         if (r.skip){ a.skip = r.skip; return; }

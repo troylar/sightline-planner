@@ -925,6 +925,20 @@ const until=async(what,f,ms=2000)=>{ const t=Date.now(); while(!f() && Date.now(
     ev(`composerDrafts.clear(); addUpdate(S, "task:${tk2}", "Started"); renderSide()`); await wait(5);
     ok("QB5: a box with updates shows them and the add field, not one line", !st()[0].q && d.querySelectorAll("#side .ulog li").length >= 1, JSON.stringify(st()));
   }
+  { // the holiday set and day parsing are cached across draws: an edit in place, an added and a removed holiday all show at once
+    const r = ev(`(()=>{ const P = clone(S); P.holidays = [{date:"2026-10-12", name:"A"}]; const n = isoToDay("2026-10-12"), m = isoToDay("2026-10-13");
+      const a = holidaySet(P).has(n); P.holidays[0].date = "2026-10-13"; const b = holidaySet(P).has(m) && !holidaySet(P).has(n);
+      P.holidays.push({date:"2026-10-12", name:"B"}); const c = holidaySet(P).has(n); P.holidays.splice(0, 2); const e = holidaySet(P).size === 0;
+      return [a, b, c, e, isoToDay("2026-10-12") === n, isoToDay("2026-10-12") === dayNum(2026, 10, 12)].join(); })()`);
+    const u = ev(`(()=>{ const was = S.updates, key = "bar:" + S.bars[0].id, n0 = updatesFor(key).length; S.updates = [...(S.updates || [])];
+      addUpdate(S, key, "one"); const a = updatesFor(key).length === n0 + 1 && updatesFor(key)[0].text === "one";
+      S.updates[S.updates.length - 1].text = "edited"; const b = updatesFor(key)[0].text === "edited";
+      S.updates.splice(S.updates.length - 1, 1); const c = updatesFor(key).length === n0;
+      updatesFor(key).push({item:key}); const e = updatesFor(key).length === n0; S.updates = was; return [a, b, c, e].join(); })()`);
+    ok("HC2: an item's updates follow adds, edits and deletes, and callers can't change the index", u === "true,true,true,true", u);
+    const dw = ev(`(()=>{ const bad = []; for (let n = -40000; n <= 40000; n += 0.5) if (dow(n) !== new Date(n * 86400000).getUTCDay()) bad.push(n); return bad.length + ":" + bad.slice(0, 3).join(); })()`);
+    ok("HC3: the weekday of every day from 1860 to 2079 matches the calendar", dw === "0:", dw);
+    ok("HC1: holidays edited, added or removed in place count at once, and dates read the same", r === "true,true,true,true,true,true", r); }
   ok("no runtime errors", w.errs.length===0, w.errs.join(" | "));
   console.log(R.join("\n")); const f=R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length-f}/${R.length} passed`); process.exit(f ? 1 : 0);
 })();
