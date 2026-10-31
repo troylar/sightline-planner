@@ -57,7 +57,74 @@ async function page(fileText){
     const big = JSON.parse(plan); big.notes = Array.from({length:1800}, (_, i)=>({id:"n" + i, lane:big.lanes[0].id, date:big.meta.start, text:"x".repeat(1500), author:"", color:"yellow"}));
     const txt = JSON.stringify(big); ev(`window.BIG = ${JSON.stringify(txt)}`);
     ok("C1: a plan between 2 and 5 MB can be opened", txt.length > 2.2e6 && ev("(()=>{ try { return parseText(BIG).notes.length > 0; } catch(e){ return e.message; } })()") === true);
-    ok("C1: but saving stays under 2 MB, so every copy can open it", ev("overLimit(BIG) > 0") === true); });
+    ok("C1: but saving stays under 2 MB, so every copy can open it", !!ev("overLimit(BIG)")); });
+
+  // Under 2 MB but more values than a reader accepts (MAX_NODES): a save must refuse it, or nobody can open the plan again.
+  const VC = `window.__vc = v => { let n = 0; (function walk(x){ n++; if (x && typeof x === "object") for (const k of Object.keys(x)) walk(x[k]); })(v); return n; }`;   // counted here, so the check runs on older builds too
+  const snapsOf = n => `(n => ({id:"snap" + n, name:"Review " + n, takenAt:new Date().toISOString(), by:"", base:{}, info:{b:Object.fromEntries(Array.from({length:n}, (_, i)=>["x" + i, ["Item " + i, "2026-10-01", "2026-10-09", "done", "", 0]])), t:{}, m:{}, dv:{}}}))`;
+  await sec(async ()=>{ const {d, ev, handle} = await page();
+    ev(VC); await ev("startEditing(false)"); await wait(30);
+    ev(`commit(s=>{ const mk = ${snapsOf()}; s.snapshots = [mk(4600), mk(4601)]; s.snapshots[1].id = "snap-b"; })`);
+    const w0 = handle.writes, size = ev(`new Blob([serialize(planOfRecord(S), "plan.json")]).size`), values = ev("__vc(portablePlan(planOfRecord(S)))");
+    await ev("save()"); await wait(50);
+    const st = d.querySelector("#status")?.textContent || "";
+    ok("C2: a plan under 2 MB with more entries than a reader accepts isn't saved", size < ev("MAX_BYTES") && values > ev("MAX_NODES") && handle.writes === w0, `${size} bytes, ${values} values, ${handle.writes - w0} writes`);
+    ok("C2: so the file on disk still opens", ev(`(()=>{ try { parseText(${JSON.stringify(handle._text)}); return true; } catch(e){ return e.message; } })()`) === true);
+    ok("C2: and the page says why, naming what takes the room", /more than 60,000 entries/.test(st) && /snapshots/.test(st), st.slice(0, 200));
+    ev(`UI.planTab = "activity"; setWs("plan"); render();`); await wait(10);
+    const t = d.querySelector("#planSize")?.textContent || "";
+    ok("C3: the plan-size readout counts entries when that's the closer limit", /Plan file: [\d,]+ of 60,000 entries/.test(t) && /Snapshots [\d,]+ entries/.test(t) && d.querySelector("#planSize").classList.contains("bad"), t.slice(0, 240)); });
+
+  await sec(async ()=>{ const {d, ev, handle} = await page();
+    ev(VC); await ev("startEditing(false)"); await wait(30);
+    // fill the plan to just under the limit, leaving less room than one more snapshot takes
+    const fill = ev(`(()=>{ const one = __vc(snapOf("probe")), base = __vc(portablePlan(planOfRecord(S))), mk = ${snapsOf()};
+      const s1 = mk(0), empty = __vc(s1); const n = Math.floor((MAX_NODES - base - empty - Math.floor(one / 2)) / 7);
+      commit(s=>{ s.snapshots = [mk(n)]; }); return {one, n, now:__vc(portablePlan(planOfRecord(S)))}; })()`);
+    await ev("save()"); await wait(50); const w0 = handle.writes;
+    const r = await ev(`saveSnapshot("One more")`); await wait(30); const st = d.querySelector("#status")?.textContent || "";
+    ok("C4: a snapshot that would put the plan over the limit isn't taken", r === false && ev("S.snapshots.length") === 1 && /^No snapshot saved: with it, the plan would hold more than 60,000 entries/.test(st) && /try again\.$/.test(st), JSON.stringify(fill) + " " + st.slice(0, 160));
+    const unwritten = handle.writes === w0; ev(`commit(s=>{ s.bars[0].label = "Saved after"; })`); await ev("save()"); await wait(40);
+    ok("C4: and the plan still saves", unwritten && handle.writes === w0 + 1 && ev(`(()=>{ try { return parseText(file.handle._text).bars[0].label; } catch(e){ return e.message; } })()`) === "Saved after"); });
+
+  // A file right at the limit: marking it as being edited must not push it over.
+  await sec(async ()=>{ const probe = await page(); probe.ev(VC);
+    const K = 4;   // a snapshot keeps at most 5,000 items, so the filler is spread over four
+    const build = (n, hol) => { const j = JSON.parse(plan); j.snapshots = Array.from({length:K}, (_, i)=>({...probe.ev(`(${snapsOf()})(${Math.floor(n / K) + (i < n % K ? 1 : 0)})`), id:"snap-" + i}));
+      j.holidays = Array.from({length:hol}, (_, i)=>({date:new Date(Date.UTC(2030, 0, 1 + i)).toISOString().slice(0, 10), name:"h"})); return JSON.stringify(j, null, 2); };
+    const count = t => probe.ev(`__vc(portablePlan(parseText(${JSON.stringify(t)})))`);
+    const v0 = count(build(0, 0)), want = 59999, d0 = want - v0, h = ((d0 % 7) * 5) % 7, n = (d0 - 3 * h) / 7, text = build(n, h), v = count(text);
+    const {d, ev, handle} = await page(text); ev(VC);
+    await ev("startEditing(false)"); await wait(50); const st = d.querySelector("#status")?.textContent || "";
+    ok("C6: a plan at the limit isn't marked as being edited when the mark would push it over", v === want && handle.writes === 0 && /^Couldn't start editing/.test(st), `${v} entries, ${handle.writes} writes: ${st.slice(0, 140)}`);
+    ok("C6: so every copy can still open it", ev(`__vc(JSON.parse(file.handle._text))`) <= 60000); });
+
+  await sec(async ()=>{ const {d, ev} = await page(); ev(VC);
+    await ev("startEditing(false)"); await wait(30);
+    // room for the snapshot itself, but not for the Activity record the save adds with it
+    const fill = ev(`(()=>{ const one = __vc(snapOf("probe")), base = __vc(portablePlan(planOfRecord(S))), mk = ${snapsOf()}, empty = __vc(mk(0));
+      const n = Math.floor((MAX_NODES - 64 - base - empty - one - Math.floor(one / 2)) / 7); commit(s=>{ s.snapshots = [mk(n)]; }); return {one, now:__vc(portablePlan(planOfRecord(S)))}; })()`);
+    const r = await ev(`saveSnapshot("Edge")`); await wait(30); const st = d.querySelector("#status")?.textContent || "";
+    ok("C7: a snapshot is refused when its Activity record would put the save over", r === false && ev("S.snapshots.length") === 1 && /^No snapshot saved/.test(st), JSON.stringify(fill) + " " + st.slice(0, 120)); });
+
+  // A file already over the limit (saved before 1.175.5) can be brought back down: deleting snapshots saves while it shrinks.
+  await sec(async ()=>{ const probe = await page();
+    const j = JSON.parse(plan); j.snapshots = Array.from({length:6}, (_, i)=>({...probe.ev(`(${snapsOf()})(1700)`), id:"snap-" + i, name:"Review " + i}));
+    const {d, ev, handle} = await page(JSON.stringify(j, null, 2)); ev(VC);
+    const count = () => ev(`__vc(JSON.parse(file.handle._text))`), del = id => ev(`quickSave("deleted snapshot", s=>{ s.snapshots = (s.snapshots || []).filter(z=>z.id !== "${id}"); })`);
+    const c0 = count(); await del("snap-0"); await wait(40); const c1 = count();
+    ok("C8: in a plan over the limit, deleting a snapshot saves even though it's still over", c0 > 60000 && c1 > 60000 && c1 < c0 && handle.writes === 1, `${c0} -> ${c1}, ${handle.writes} writes: ${(d.querySelector("#status")?.textContent || "").slice(0, 120)}`);
+    await del("snap-1"); await wait(40); const c2 = count();
+    await ev("startEditing(false)"); await wait(50);
+    ok("C8: and once it fits, editing starts again", c2 <= 60000 && ev("editable()") === true, `${c2} entries: ${(d.querySelector("#status")?.textContent || "").slice(0, 120)}`);
+    const before = handle.writes; ev(`commit(s=>{ s.snapshots.push({...s.snapshots[0], id:"grow"}); })`); await ev("save()"); await wait(40);
+    ok("C8: a save that grows a plan back over is still refused", handle.writes === before && /more than 60,000 entries/.test(d.querySelector("#status")?.textContent || "")); });
+
+  await sec(async ()=>{ const {ev} = await page();
+    const j = JSON.parse(plan); j.notes = Array.from({length:12000}, (_, i)=>({id:"v" + i, lane:j.lanes[0].id, date:j.meta.start, text:"n", author:"", color:"yellow", tags:["a", "b", "c"]}));
+    ev(`window.MANY = ${JSON.stringify(JSON.stringify(j))}`);
+    ok("C5: a plan with more than 60,000 entries still opens, so a later copy can raise what it writes", ev("(()=>{ try { return parseText(MANY).notes.length; } catch(e){ return e.message; } })()") === 12000);
+    ok("C5: and a save still keeps to the old limit", /more than 60,000 entries/.test(ev(`overLimit(serialize(parseText(MANY), "plan.json"))`))); });
 
   await sec(async ()=>{ const {ev} = await page();
     const r = ev(`(()=>{ const base = clone(S), mine = clone(S), theirs = clone(S);

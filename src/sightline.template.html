@@ -1819,7 +1819,8 @@ const STORE_LOCAL = "timeline-planner-local";           // plan when no file is 
 const STORE_SEEN = "timeline-planner-seen";             // per plan, this browser only: when you last visited and a daily summary of Jira
 const STORE_DRAFT = "timeline-planner-draft";           // recovery draft of unsaved edits to a linked file
 const LEGACY_KEYS = ["timeline-planner-v2","timeline-planner-v1"];
-const MAX_BYTES = 2 * 1024 * 1024, MAX_READ_BYTES = 5 * 1024 * 1024, MAX_DEPTH = 24, MAX_NODES = 60000;   // write up to 2 MB (what copies before 1.19 can open); read up to 5 MB
+const MAX_BYTES = 2 * 1024 * 1024, MAX_READ_BYTES = 5 * 1024 * 1024, MAX_DEPTH = 24, MAX_NODES = 60000, MAX_READ_NODES = 400000;   // write up to 2 MB (what copies before 1.19 can open); read up to 5 MB
+// Values in one plan the same way: write up to 60,000 (what copies before 1.175.5 can open), read up to 400,000, so a later copy can raise the write limit.
 // Plan format. SCHEMA changes only for a change older copies can't read; new optional parts are named in meta.features,
 // and a copy that finds one it doesn't know opens the plan read-only instead of saving over what it can't see.
 const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1", "stories1", "skills1", "aiHint1", "msStory1", "descriptions1", "laneIds1", "cardLayout1", "hideWhy1", "captures1", "captureAgain1", "rough1"];
@@ -2187,11 +2188,11 @@ function normViewDef(v){ v = v && typeof v === "object" ? v : {}; const zoom = v
   return {filter:{...normFilter(v.filter), linked:[], linkMode:"only", linkDir:"both", linkSide:false}, zoom, dayZoom: zoom === "days" && Number.isInteger(v.dayZoom) && v.dayZoom >= 0 && v.dayZoom < 6 ? v.dayZoom : null, ...(Number.isInteger(v.zoomN) && v.zoomN >= 0 && v.zoomN <= 200 ? {zoomN:v.zoomN} : {}), ws: v.ws === "people" ? "people" : "timeline",
     rows: ["people","epics"].includes(v.rows) ? v.rows : "lanes", labelW: normLW(v.labelW), notes: NOTE_MODES.some(x=>x[0]===v.notes) ? v.notes : "all", ...(v.layer === "jira" || v.layer === "mine" ? {layer:v.layer} : {}), ...(normKinds(v.hide).length ? {hide:normKinds(v.hide)} : {})}; }
 const normViews = arr => (Array.isArray(arr) ? arr : []).filter(v=>v && typeof v === "object").slice(0,50);
-function checkShape(obj){
+function checkShape(obj, max = MAX_READ_NODES){
   // size/depth/cycle guard for anything parsed from outside
   const seen = new WeakSet(); let nodes = 0;
   (function walk(v, depth){
-    if (++nodes > MAX_NODES) throw new Error("File is too large to load.");
+    if (++nodes > max) throw new Error("File is too large to load.");
     if (depth > MAX_DEPTH) throw new Error("File is nested too deeply.");
     if (v && typeof v === "object"){
       if (seen.has(v)) throw new Error("File contains a reference loop.");
@@ -3523,9 +3524,22 @@ function parseText(text){
   if (!Array.isArray(obj.lanes) || !obj.lanes.length) throw new Error("No workstreams found. Is this a timeline file from this app?");
   return normalize(obj, true);
 }
-// The read limit is in bytes (file.size), so the write check is in bytes too: never write a file this app would refuse to reopen.
-function overLimit(text){ const n = new Blob([text]).size; return n > MAX_BYTES ? n : 0; }
-const limitMsg = n => `Not saved: the plan would be ${(n/1048576).toFixed(1)} MB, over the 2 MB every copy of Sightline can open. Delete old updates or notes, then save.`;
+// Never write a file this app would refuse to reopen: the read checks bytes (file.size) and then the shape (checkShape),
+// and a plan well under 2 MB can still hold more values than MAX_NODES, the most every copy reads. Returns why it can't be written, or "".
+function overLimit(text, room = 64, was = ""){ const n = new Blob([text]).size, t = text.trim();   // room: entries a save leaves free, so marking the file as being edited still fits
+  let obj = null; try { obj = t[0] === "{" ? JSON.parse(t) : jsyaml.load(t, {schema: jsyaml.JSON_SCHEMA}); } catch(e){}
+  // was: the file this write replaces. A plan already over a limit may still shrink toward it (deleting a snapshot), never grow.
+  const prior = () => { const w = String(was || "").trim(); if (!w) return null; try { return w[0] === "{" ? JSON.parse(w) : jsyaml.load(w, {schema: jsyaml.JSON_SCHEMA}); } catch(e){ return null; } };
+  const most = () => { if (!obj || typeof obj !== "object") return ""; const k = n > MAX_BYTES ? x => utf8Len(JSON.stringify(x)) : valueCount;
+    const top = SIZE_PARTS.map(([key, label])=>({label, n:k(obj[key] || [])})).sort((a, b)=>b.n - a.n)[0];
+    return top && top.n ? ` Most of it is ${top.label.toLowerCase()}.` : ""; };
+  if (n > MAX_BYTES){ if (was && n <= new Blob([was]).size) return "";
+    return `Not saved: the plan would be ${(n/1048576).toFixed(1)} MB, over the 2 MB every copy of Sightline can open.${most()} Delete what's no longer needed, then save.`; }
+  if (!obj) return "";
+  try { checkShape(obj, MAX_NODES - room); } catch(e){ const p = prior(), bare = x => valueCount({...x, changes:null}); if (p && typeof p === "object" && bare(obj) <= bare(p)) return "";   // the Activity record of the delete itself doesn't count against it (pruneChanges caps that log)
+    return `Not saved: the plan would hold more than ${MAX_NODES.toLocaleString("en-US")} entries, more than older copies of Sightline can open.${most()} Delete what's no longer needed, then save.`; }
+  return ""; }
+function valueCount(v){ let n = 0; (function walk(x){ n++; if (x && typeof x === "object") for (const k of Object.keys(x)) walk(x[k]); })(v); return n; }
 // ================= storage =================
 // Where the plan lives, behind one interface (vision.md: a database later). Today: FileStore (a shared JSON or YAML
 // file) and LocalStore (this browser only). The page's save, quick-update and merge logic call these, never the file
@@ -3837,7 +3851,7 @@ function quickSave(what, mutate, tries = 0, ops = null, isUndo = false, fromSayg
     if (!realOps(myOps).length){ installPlan(plan, now, hd); sel = keepSel; render(); planChanged("quick"); setStatus(`Nothing changed, so nothing was saved: ${what}`); return true; }   // never a new revision for nothing
     const out = clone(S); { const rec = changeRecord(what, myOps, mutate && mutate.via); if (rec) out.changes = pruneChanges([...(out.changes || []), rec]); } out.meta.revision = (plan.meta.revision||0) + 1; out.meta.savedAt = new Date().toISOString(); out.meta.lock = theirLock;
     const text = serialize(out, hd.name);
-    { const n = overLimit(text); if (n){ installPlan(plan, now, hd); sel = keepSel; render(); setStatus(limitMsg(n)); return false; } }
+    { const n = overLimit(text, 64, now); if (n){ installPlan(plan, now, hd); sel = keepSel; render(); setStatus(n); return false; } }
     let res; try { res = await FileStore.apply(hd, now, text, cur=>backupBeforeUpgrade(hd, cur)); }
     catch(e){ setStatus("Couldn't save: " + e.message); installPlan(plan, now, hd); sel = keepSel; render(); return false; }
     if (res !== "ok"){ installPlan(plan, now, hd); sel = keepSel;
@@ -3974,7 +3988,7 @@ async function writeMine(hd, keepLock){
   const out = withRec(clone(planOfRecord(S))); out.meta.revision = (S.meta.revision||0) + 1; out.meta.savedAt = new Date().toISOString();
   out.meta.lock = keepLock ? {by:myName()||"Someone", id:SESSION, at:new Date().toISOString()} : null;
   let text; try { text = serialize(out, hd.name); } catch(e){ setStatus("Not saved: " + e.message + "."); return false; }
-  { const n = overLimit(text); if (n){ setStatus(limitMsg(n)); return false; } }
+  { const n = overLimit(text, 64, file.baseText); if (n){ setStatus(n); return false; } }
   try {
     let res = await writeIfUnchanged(hd, file.baseText, text);
     if (res === "changed"){                          // a teammate's quick update landed a moment ago: merge it and try once more
@@ -3983,7 +3997,7 @@ async function writeMine(hd, keepLock){
       if (!(theirs && rebaseOnto(theirs, cur))){ setStatus("Not saved: the file changed while saving. Your edits are kept; save again."); return false; }
       const out2 = withRec(clone(planOfRecord(S))); out2.meta.revision = (S.meta.revision||0) + 1; out2.meta.savedAt = out.meta.savedAt; out2.meta.lock = out.meta.lock;
       Object.assign(out, out2); text = serialize(out, hd.name);
-      { const n = overLimit(text); if (n){ setStatus(limitMsg(n)); return false; } }
+      { const n = overLimit(text, 64, cur); if (n){ setStatus(n); return false; } }
       res = await writeIfUnchanged(hd, file.baseText, text);
     }
     if (res !== "ok"){ setStatus("Not saved: someone saved at the same moment. Your edits are kept; save again."); return false; }
@@ -4072,13 +4086,13 @@ async function reviewAnotherCopy(){
       if (tooNew(plan) || (lock && !lock.mine && !lock.expired)){ reject("The shared file is newer or someone else is editing."); return; }
       const recovered = clone(candidate); recovered.meta = clone(plan.meta); // never import another copy's identity, settings, schema or lock
       try { normalize(clone(recovered), true); } catch(e){ reject("The copy is incompatible with the shared plan settings: " + e.message); return; }
-      const n = overLimit(serialize(recovered, hd.name)); if (n){ setStatus(limitMsg(n)); return; }
+      const n = overLimit(serialize(recovered, hd.name)); if (n){ setStatus(n); return; }
       if (!(await hasPerm(hd,"readwrite")) && !(await askPerm(hd,"readwrite"))){ reject("Permission to edit the shared file was denied."); return; }
       if (!useCurrent()){ reject("Your plan changed while requesting permission."); return; }
       if (!preserve()){ setStatus("Could not download both backups. Keep both files before recovering."); return; }
       plan.meta.lock = {by:name,id:SESSION,at:new Date().toISOString()};
       const lockedText = serialize(plan, hd.name);
-      const lockSize = overLimit(lockedText); if (lockSize){ setStatus(limitMsg(lockSize)); return; }
+      const lockSize = overLimit(lockedText); if (lockSize){ setStatus(lockSize); return; }
       const rollbackLock = async () => {
         try {
           const latest = await readFile(hd);
@@ -4122,6 +4136,7 @@ function startEditing(takeOver){
     if (now !== file.baseText && file.dirty){ showConflict(plan, now, "The file changed before you started editing."); return; }
     plan.meta.lock = {by:name, id:SESSION, at:new Date().toISOString()};
     const text = serialize(plan, hd.name);
+    { const over = overLimit(text, 0); if (over){ setStatus(over.replace(/^Not saved: the plan would/, "Couldn't start editing: marked as being edited, the plan would").replace(/ Delete what's no longer needed, then save\.$/, " Delete an old snapshot (Snapshots works without editing), then try again.")); return; } }
     try { const r = await writeIfUnchanged(hd, now, text); if (r !== "ok"){ setStatus("Someone saved at the same moment. Click Start editing again."); return; } }
     catch(e){ setStatus("Couldn't mark the file as being edited: " + e.message); return; }
     if (file.dirty){ S.meta.lock = plan.meta.lock; file.baseText = text; file.baseHash = hashText(text); file.lastCheck = Date.now(); flushPersist(); }
@@ -11744,6 +11759,9 @@ function saveSnapshot(name){
   name = String(name || "").trim().slice(0, 60) || `Snapshot, ${fmtDay(todayDay())}`;
   if ((S.snapshots || []).length >= SNAP_MAX){ setStatus(`A plan keeps up to ${SNAP_MAX} snapshots. Delete an old one first.`); return Promise.resolve(false); }
   const sn = snapOf(name);          // what's on screen now, Jira's dates included
+  { let over = ""; try { const rec = changeRecord(`snapshot: ${name}`, [{op:"add", type:"snapshots", id:sn.id, value:sn}]);   // the save also logs it in Activity
+      over = overLimit(serialize(planOfRecord({...S, snapshots:[...(S.snapshots || []), sn], changes:pruneChanges([...(S.changes || []), ...(rec ? [rec] : [])])}), (file.handle && file.handle.name) || "plan.json")); } catch(e){}
+    if (over){ setStatus(over.replace(/^Not saved: the plan would/, "No snapshot saved: with it, the plan would").replace(/then save\.$/, "then try again.")); return Promise.resolve(false); } }   // a snapshot is a copy of every item: refuse it before it makes the plan unsavable
   return quickSave(`snapshot: ${name}`, s=>{ s.snapshots = s.snapshots || []; if (s.snapshots.length >= SNAP_MAX) return NOCHANGE; s.snapshots.push(sn); })
     .then(ok=>{ if (ok){ UI.snapCmp = sn.id; saveUI(); render(); setStatus(`Saved the snapshot "${name}".`); } return ok; });
 }
@@ -11865,16 +11883,18 @@ function renderTags(){
 // How big the plan file is against what a save can write (2 MB), and what takes the room, so growth is seen early.
 const SIZE_PARTS = [["changes","Activity (change log)"],["bars","Initiatives and tasks"],["deliverables","Deliverables"],["snapshots","Snapshots"],["reports","Status updates"],["commitments","Sprint commitments"],["notes","Notes"],["updates","Updates"],["meetings","Meetings"],["proposals","Jira proposals"],["jiraItems","Jira tags"],["people","People"],["views","Saved views"]];
 function utf8Len(t){ if (typeof TextEncoder !== "undefined") return new TextEncoder().encode(t).length; let n = 0; for (let i = 0; i < t.length; i++){ const c = t.charCodeAt(i); n += c < 0x80 ? 1 : c < 0x800 ? 2 : c >= 0xd800 && c < 0xdc00 ? (i++, 4) : 3; } return n; }
-function planSize(){ const bytes = x => utf8Len(JSON.stringify(x == null ? null : x));
-  let total = 0; try { total = utf8Len(serialize(planOfRecord(S), (file.handle && file.handle.name) || "plan.json")); } catch(e){ total = bytes(S); }
-  const parts = SIZE_PARTS.map(([k, label])=>({k, label, n:bytes(S[k] || [])})).filter(x=>x.n > 400).sort((a, b)=>b.n - a.n);
-  return {total, max:MAX_BYTES, pct:Math.round(total / MAX_BYTES * 100), parts}; }
+function planSize(){ const bytes = x => utf8Len(JSON.stringify(x == null ? null : x)), rec = planOfRecord(S);
+  let total = 0; try { total = utf8Len(serialize(rec, (file.handle && file.handle.name) || "plan.json")); } catch(e){ total = bytes(S); }
+  const values = valueCount(portablePlan(rec)), byValues = values / MAX_NODES > Math.max(0.5, total / MAX_BYTES);   // entries, once they're the closer of the two limits and past half
+  const parts = SIZE_PARTS.map(([k, label])=>({k, label, n:bytes(S[k] || []), v:valueCount(S[k] || [])})).filter(x=>x.n > 400).sort((a, b)=>byValues ? b.v - a.v : b.n - a.n);
+  return {total, max:MAX_BYTES, values, maxValues:MAX_NODES, byValues, pct:Math.round((byValues ? values / MAX_NODES : total / MAX_BYTES) * 100), parts}; }
 const kb = n => n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1048576).toFixed(1)} MB`;
-function planSizeLine(){ const P = planSize(), big = P.total > 1024 * 1024, full = P.total > MAX_BYTES * 0.9;
+function planSizeLine(){ const P = planSize(), big = P.pct > 50, full = P.pct > 90, num = n => n.toLocaleString("en-US");
   return h("div",{class:"psize" + (full ? " bad" : big ? " warn" : ""),id:"planSize"},
-    h("div",{class:"qrow"}, h("b",{}, `Plan file: ${kb(P.total)} of ${kb(P.max)}`), h("span",{class:"hint"}, `(${P.pct}%)`), h("i",{class:"psbar","aria-hidden":"true"}, h("b",{style:{width:Math.min(100, P.pct) + "%"}}))),
-    h("p",{class:"hint"}, "Largest: " + P.parts.slice(0, 4).map(x=>`${x.label} ${kb(x.n)}`).join(" · ") + "."),
-    big ? h("p",{class:"hint"}, full ? "Almost full: saves stop at 2 MB. Park or delete finished work, or trim old notes." : "Getting large: every save reads and writes the whole file, so saves on a synced drive slow down as it grows.") : null); }
+    h("div",{class:"qrow"}, h("b",{}, P.byValues ? `Plan file: ${num(P.values)} of ${num(P.maxValues)} entries` : `Plan file: ${kb(P.total)} of ${kb(P.max)}`), h("span",{class:"hint"}, `(${P.pct}%)`), h("i",{class:"psbar","aria-hidden":"true"}, h("b",{style:{width:Math.min(100, P.pct) + "%"}}))),
+    P.byValues ? h("p",{class:"hint"}, `${kb(P.total)} of ${kb(P.max)}. A plan can hold up to ${num(P.maxValues)} entries (each name, date and setting is one), and that's the limit this plan is closer to.`) : null,
+    h("p",{class:"hint"}, "Largest: " + P.parts.slice(0, 4).map(x=>`${x.label} ${P.byValues ? num(x.v) + " entries" : kb(x.n)}`).join(" · ") + "."),
+    big ? h("p",{class:"hint"}, full ? `Almost full: saves stop at ${P.byValues ? num(P.maxValues) + " entries" : "2 MB"}. Delete old snapshots, park or delete finished work, or trim old notes.` : "Getting large: every save reads and writes the whole file, so saves on a synced drive slow down as it grows.") : null); }
 function renderActivity(){
   const host = $("#activityWs"); if (!host) return;
   const who = UI.actBy || "", list = (S.changes || []).filter(c=>!who || c.by === who).slice().sort((a, z)=>z.at < a.at ? -1 : z.at > a.at ? 1 : 0);
@@ -16125,7 +16145,7 @@ function planningGuideSave(){
     else if (index >= 0) candidate.planningGuide[index].text = text;
     else candidate.planningGuide.push({id, text});
   });
-  try { normalize(clone(candidate), true); if (overLimit(serialize(planOfRecord(candidate), "plan.json"))) throw new Error("The plan exceeds the 2 MB write limit."); }
+  try { normalize(clone(candidate), true); { const over = overLimit(serialize(planOfRecord(candidate), "plan.json")); if (over) throw new Error(over.replace(/^Not saved: /, "")); } }
   catch(e){ setStatus("Couldn't save the planning guide: " + e.message + " Your draft is kept."); return false; }
   const changed = commit(s=>{ s.planningGuide = candidate.planningGuide; }, {text:true,norender:true});
   if (!changed) return false;
@@ -16720,7 +16740,7 @@ async function newSharedPlan(){
     stopAuto();
     const plan = clone(planOfRecord(S)); plan.meta.lock = null;
     const text = serialize(plan, hd.name);
-    { const n = overLimit(text); if (n){ setStatus(limitMsg(n)); return false; } }
+    { const n = overLimit(text); if (n){ setStatus(n); return false; } }
     try { const w = await hd.createWritable(); await w.write(text); await w.close(); } catch(e){ setStatus("Couldn't write the file: " + e.message); return false; }
     let parsed; try { const back = await readFile(hd); if (back !== text) throw new Error("The file changed while it was being created. Open it to review the latest contents."); parsed = parseText(back); } catch(e){ setStatus("Couldn't read the new file back: " + e.message); return false; }
     installPlan(parsed, text, hd);
