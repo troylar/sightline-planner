@@ -163,6 +163,31 @@ const near = (a, b) => Math.abs(a - b) <= 3;
       const n1 = await p4.evaluate(()=>({at:[$("#gscroll").scrollLeft, $("#gscroll").scrollTop], sel:sel && sel.id}));
       ok("B21 opening another item while Back is still putting the chart back: the chart is not pulled back to the old place", n1.sel === "bx28" && !(near(n1.at[0], s0[0]) && near(n1.at[1], s0[1])), JSON.stringify({s0, n1}));
       await p4.close(); }
+    // Back straight after opening an item (or J, or .), before the chart has scrolled to it: that scroll doesn't land afterwards
+    { const p5 = await b.newPage({viewport:{width:1400, height:700}}); p5.on("pageerror", e=>errs.push(String(e)));
+      await p5.clock.install({time:new Date("2026-10-28T12:00:00")});   // B24's . goes to the sprint we're in: one inside the sample plan
+      await p5.goto("file://" + HTML); await p5.waitForTimeout(250);
+      await p5.evaluate(FIX=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); localStorage.clear(); S = normalize(JSON.parse(FIX), false); file.handle = null;
+        for (let i = 0; i < 30; i++) S.bars.push({...clone(S.bars[0]), id:"bx" + i, label:"Extra initiative " + i, tasks:[], jira:"", epics:[]});
+        goWs("timeline"); render(); select("bar", S.bars[1].id); }, FIX);
+      await p5.waitForTimeout(450);
+      // On a machine slow enough that Back runs before the scroll to what you opened: the timers that scroll are held 300ms,
+      // Back runs, then they fire
+      const slow = ([fn, ...args]) => p5.evaluate(([fn, args]) => { const st = window.setTimeout; window.setTimeout = (f, ms, ...x) => st(f, 300, ...x);
+        try { window[fn](...args); } finally { window.setTimeout = st; } history.back(); }, [fn, args]);
+      const late = async (label, act) => {
+        await p5.evaluate(()=>{ goTo("bar", "bx28"); }); await p5.waitForTimeout(450);
+        await p5.evaluate(()=>{ const g = $("#gscroll"); g.scrollLeft = 0; g.scrollTop = 0; }); await p5.waitForTimeout(450);
+        await p5.evaluate(()=>select("bar", "bx3")); await p5.waitForTimeout(450);   // steps with the chart at the top, to go Back onto
+        await p5.evaluate(()=>select("bar", "bx28")); await p5.waitForTimeout(450);
+        const a0 = await p5.evaluate(()=>[$("#gscroll").scrollLeft, $("#gscroll").scrollTop]);
+        await slow(act); await p5.waitForTimeout(1500);
+        const a1 = await p5.evaluate(()=>({at:[$("#gscroll").scrollLeft, $("#gscroll").scrollTop], sel:sel && sel.id}));
+        ok(label, near(a1.at[0], a0[0]) && near(a1.at[1], a0[1]), JSON.stringify({a0, a1})); };
+      await late("B22 Back before the chart has scrolled to the item just opened: the chart stays where Back put it", ["goTo", "bar", "bx29"]);
+      await late("B23 Back before J has scrolled to the next item: the chart stays where Back put it", ["stepItem", 1]);
+      await late("B24 Back before . has scrolled to today: the chart stays where Back put it", ["jumpToday"]);
+      await p5.close(); }
     ok("B17 no page errors on the narrow windows", !errs.length, errs.slice(0, 2).join(" | "));
 
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 300)); }
