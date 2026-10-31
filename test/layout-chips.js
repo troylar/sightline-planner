@@ -165,6 +165,8 @@ function contrast(sel){
     // the status text keeps its row, whole. Closed, it's one row too.
     for (const theme of ["light", "dark"]){
       const page = await b.newPage({viewport:{width:1400, height:800}}); page.on("pageerror", e=>errs.push(String(e)));
+      // a weekday inside the sample plan's S2, so the status text says where in the sprint today is (on a weekend or past the plan it's empty)
+      await page.clock.install({time:new Date("2026-10-28T12:00:00")});
       await page.goto("file://" + HTML); await page.evaluate(t=>{ localStorage.clear(); localStorage.setItem("timeline-planner-theme", t); }, theme); await page.goto("file://" + HTML); await page.waitForTimeout(300);
       await page.evaluate(FIX=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); loadExternal(FIX, "sample"); }, FIX); await page.waitForTimeout(200); await page.keyboard.press("Escape"); await page.waitForTimeout(100);
       const bar = () => page.evaluate(()=>{ const w = document.querySelector("#wsbar"), sl = document.querySelector("#scopeLine"), wr = document.querySelector("#wsright"), r = x => x.getBoundingClientRect();
