@@ -939,6 +939,47 @@ const until=async(what,f,ms=2000)=>{ const t=Date.now(); while(!f() && Date.now(
     const dw = ev(`(()=>{ const bad = []; for (let n = -40000; n <= 40000; n += 0.5) if (dow(n) !== new Date(n * 86400000).getUTCDay()) bad.push(n); return bad.length + ":" + bad.slice(0, 3).join(); })()`);
     ok("HC3: the weekday of every day from 1860 to 2079 matches the calendar", dw === "0:", dw);
     ok("HC1: holidays edited, added or removed in place count at once, and dates read the same", r === "true,true,true,true,true,true", r); }
+  // --- dragging on a big plan: nothing during a move may force the whole chart to lay out again ---
+  { ev(`S = normalize({meta:{start:"2026-10-05",weeks:12},lanes:[{id:"a",name:"A"},{id:"b",name:"B"}],people:[],bars:[{id:"dg1",lane:"a",start:1,span:2,label:"Drag me"},{id:"dg2",lane:"b",start:1,span:2,label:"Stay"}],gates:[],sprints:[{name:"S0",weeks:12}]}); sel = null; setRows("lanes"); render(); setZoom("weeks"); render(); UI.filter = normFilter({});`);
+    const G = () => d.querySelector('#gantt [data-key="bar:dg1"]'), laneEl = () => G().closest(".lane[data-lane]"), had = d.elementFromPoint; let looks = 0, under = () => null;
+    d.elementFromPoint = () => { looks++; return under(); }; under = () => G();
+    ev(`startDrag({button:0,preventDefault(){},stopPropagation(){},currentTarget:document.querySelector('#gantt [data-key="bar:dg1"]'),target:document.querySelector('#gantt [data-key="bar:dg1"]'),clientX:0,clientY:0,pointerId:1}, "bar", "dg1", "move")`);
+    ev(`drag.w = S.meta.weeks * 100`);   // 100 pixels a week; jsdom has no layout
+    const moveTo = x => ev(`onDrag({clientX:${x},clientY:0,shiftKey:false})`), left0 = G().style.left;
+    looks = 0; moveTo(200);
+    ok("DG1 one look under the pointer for each move", looks === 1, "looks " + looks);
+    ok("DG2 a moved bar slides without changing its place in the layout", G().style.left === left0 && G().style.transform === "translateX(200px)", G().style.left + " / " + G().style.transform);
+    ok("DG3 the row under the pointer lights up", laneEl().classList.contains("dragover"));
+    const seen = new w.MutationObserver(()=>{}); seen.observe(laneEl(), {attributes:true, attributeFilter:["class"]});
+    const tipKids = [...d.querySelector("#dragtip").children], stText = d.querySelector("#status").firstChild;
+    moveTo(205);   // the same half-week step
+    ok("DG4 staying over the same row doesn't touch its styles", seen.takeRecords().length === 0); seen.disconnect();
+    ok("DG5 a drag tip that says the same thing isn't rebuilt", tipKids.length > 0 && tipKids.every((n, i)=>n === d.querySelector("#dragtip").children[i]));
+    ok("DG6 a status that says the same thing isn't rewritten", d.querySelector("#status").firstChild === stText);
+    ok("DG7 the tip still follows the pointer", parseFloat(d.querySelector("#dragtip").style.left) === Math.min(205 + 16, w.innerWidth - 8));
+    moveTo(400);
+    ok("DG8 a tip with new dates is redrawn", d.querySelector("#dragtip .d").textContent === `${ev('wkDate(barById("dg1").start)')} → ${ev('endDate(barById("dg1"))')}` && ev('barById("dg1").start') === 5);
+    under = () => d.querySelector('#gantt .lane[data-lane="b"]'); moveTo(405);
+    ok("DG9 moving to another row moves the highlight", d.querySelectorAll(".lane.dragover").length === 1 && d.querySelector(".lane.dragover").dataset.lane === "b");
+    under = () => G(); ev(`onUp({clientX:405,clientY:0})`);
+    ok("DG10 the drop draws the bar at its new start, in its row, with nothing left over", ev('barById("dg1").start') === 5 && !G().style.transform && G().style.left === `calc(${5 / ev("S.meta.weeks") * 100}% + 2px)` && !d.querySelector(".lane.dragover") && d.querySelector("#dragtip").hidden, G().style.left);
+    ev(`startDrag({button:0,preventDefault(){},stopPropagation(){},currentTarget:document.querySelector('#gantt [data-key="bar:dg1"]'),target:document.querySelector('#gantt [data-key="bar:dg1"]'),clientX:0,clientY:0,pointerId:1}, "bar", "dg1", "move"); drag.w = S.meta.weeks * 100; onDrag({clientX:200,clientY:0,shiftKey:false}); onCancel()`);
+    ok("DG11 canceling a drag puts the bar back with no slide left on it", ev('barById("dg1").start') === 5 && !G().style.transform);
+    d.elementFromPoint = had;
+    // Each measure after a change forces a layout: count them with four names that don't fit.
+    ev(`S = normalize({meta:{start:"2026-10-05",weeks:12},lanes:[{id:"a",name:"A"}],people:[],bars:[{id:"sp1",lane:"a",start:0,span:1,label:"Alpha · one long name here"},{id:"sp2",lane:"a",start:2,span:1,label:"Beta · one long name here"},{id:"sp3",lane:"a",start:4,span:1,label:"Gamma · one long name here"},{id:"sp4",lane:"a",start:6,span:1,label:"Delta one long name with no break"}],gates:[],sprints:[{name:"S0",weeks:12}]}); render()`);
+    const P = w.HTMLElement.prototype, E = w.Element.prototype; let dirty = false, flushes = 0;
+    const sw = Object.getOwnPropertyDescriptor(E, "scrollWidth"), cw = Object.getOwnPropertyDescriptor(E, "clientWidth"), gb = E.getBoundingClientRect, tc = Object.getOwnPropertyDescriptor(w.Node.prototype, "textContent");
+    Object.defineProperty(E, "scrollWidth", {configurable:true, get(){ if (dirty){ flushes++; dirty = false; } return this.classList.contains("nm") ? (this.textContent.length > 8 ? 200 : 40) : 0; }});
+    Object.defineProperty(E, "clientWidth", {configurable:true, get(){ return this.classList.contains("nm") ? 60 : 0; }});
+    E.getBoundingClientRect = function(){ const n = this.dataset && this.dataset.peekId ? +this.dataset.peekId.slice(2) : 0; return n ? {left:(n - 1) * 300, right:(n - 1) * 300 + 80, top:0, bottom:26, width:80, height:26} : {left:0, right:2000, top:0, bottom:26, width:2000, height:26}; };
+    Object.defineProperty(w.Node.prototype, "textContent", {configurable:true, get(){ return tc.get.call(this); }, set(v){ if (this.classList && this.classList.contains("nm")) dirty = true; tc.set.call(this, v); }});
+    const nm = id => d.querySelector(`#gantt [data-key="bar:${id}"] .nm`).textContent, zoomWas = ev("UI.zoom"); ev("UI.zoom = 'weeks'"); ev("spillLabels()");
+    ok("DG12 fitting four names forces only a few layouts, not one for each name", flushes <= 2, "flushes " + flushes);
+    ok("DG13 a name that fits when shortened is shortened", nm("sp1") === "Alpha" && d.querySelector('#gantt [data-key="bar:sp1"]').classList.contains("shortname") && !d.querySelector('#gantt .spill[data-peek-id="sp1"]'), nm("sp1"));
+    ok("DG14 a name that still doesn't fit keeps its full text and moves beside its short bar", nm("sp4") === "Delta one long name with no break" && !d.querySelector('#gantt [data-key="bar:sp4"]').classList.contains("shortname") && d.querySelector('#gantt [data-key="bar:sp4"]').classList.contains("spilled") && d.querySelector('#gantt .spill[data-peek-id="sp4"]')?.textContent === nm("sp4"), nm("sp4"));
+    Object.defineProperty(w.Node.prototype, "textContent", tc); E.getBoundingClientRect = gb;
+    sw ? Object.defineProperty(E, "scrollWidth", sw) : delete E.scrollWidth; cw ? Object.defineProperty(E, "clientWidth", cw) : delete E.clientWidth; ev(`UI.zoom = ${JSON.stringify(zoomWas)}`); }
   ok("no runtime errors", w.errs.length===0, w.errs.join(" | "));
   console.log(R.join("\n")); const f=R.filter(r=>r.startsWith("FAIL")).length; console.log(`\n${R.length-f}/${R.length} passed`); process.exit(f ? 1 : 0);
 })();

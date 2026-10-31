@@ -2010,7 +2010,7 @@ function syncHeaderGeometry(){
     const value = el.offsetHeight + "px"; if (style.getPropertyValue(property) !== value) style.setProperty(property, value);
   }
 }
-function setStatus(t, fromStrip){ const el = $("#status"); const same = el.textContent === t; el.textContent = t; el.title = t; statusAt = Date.now(); statusFromStrip = !!fromStrip; if (typeof ResizeObserver === "undefined") syncHeaderGeometry();
+function setStatus(t, fromStrip){ const el = $("#status"); const same = el.textContent === t; if (!same){ el.textContent = t; el.title = t; } statusAt = Date.now(); statusFromStrip = !!fromStrip; if (typeof ResizeObserver === "undefined") syncHeaderGeometry();
   if (!fromStrip && !same && t && el.animate && !calmMotion()) el.animate([{opacity:.3, transform:"translateY(2px)"}, {opacity:1, transform:"none"}], {duration:160, easing:EASE}); }
 // Motion answers what a person did. Reduced motion turns it off; so does a page nobody can see.
 const EASE = "cubic-bezier(.2,.7,.2,1)";
@@ -10527,26 +10527,35 @@ function spillLabels(){
   g.querySelectorAll(".spill").forEach(x=>x.remove()); g.querySelectorAll(".bar.spilled").forEach(x=>x.classList.remove("spilled"));   // idempotent: several redraws may queue this
   cutTags([g]);
   if (UI.zoom === "days") return;
-  g.querySelectorAll(".track").forEach(track=>{
+  // Read everything, then write everything: a name swapped and measured bar by bar forces a layout of the chart for each one.
+  const tracks = [...g.querySelectorAll(".track")].map(track=>{
     const bars = [...track.querySelectorAll(":scope > .bar[data-peek-type]")];
-    if (!bars.length) return;
-    const tr = track.getBoundingClientRect(); if (!tr.width) return;
-    const rects = bars.map(el=>({el, r:el.getBoundingClientRect()}));
-    rects.forEach(({el, r})=>{
-      const nm = el.querySelector(".nm"); if (!nm || nm.scrollWidth <= nm.clientWidth + 1) return;
-      const full = nm.textContent, b = el.dataset.peekType === "bar" ? barById(el.dataset.peekId) : null, short = b && !(b.chartName || "").trim() ? suggestChartName(b) : "";
-      if (short){ nm.textContent = (full.startsWith("✓ ") ? "✓ " : "") + short; el.classList.add("shortname"); if (nm.scrollWidth <= nm.clientWidth + 1) return; nm.textContent = full; el.classList.remove("shortname"); }   // the name before " · " or ":" usually fits; the hover card has the rest
-      if (r.width > 110 || nm.clientWidth / nm.scrollWidth > 0.4) return;   // only short bars that show little of their name; wider bars keep the name inside (hover shows the rest)
-      const text = nm.textContent, need = textW(text) + 14;
-      const next = rects.filter(o=>o.el !== el && Math.abs(o.r.top - r.top) < 4 && o.r.left >= r.right - 1).reduce((m,o)=>Math.min(m, o.r.left), tr.right);
-      const blocked = [...track.querySelectorAll(":scope > .addbtn")].some(a=>{ const ar = a.getBoundingClientRect(); return Math.abs(ar.top - r.top) < 14 && ar.left >= r.right - 1 && ar.left < r.right + need; });
-      if (blocked || next - r.right < need) return;
-      const sp = h("span",{class:"spill","data-peek-type":el.dataset.peekType,"data-peek-id":el.dataset.peekId,"aria-hidden":"true",
-        style:{left:(r.right - tr.left + 5) + "px", top:(r.top - tr.top) + "px"}}, text);
-      sp.addEventListener("click", ()=>el.click());
-      sp.addEventListener("dblclick", e=>{ e.stopPropagation(); el.dispatchEvent(new MouseEvent("dblclick",{bubbles:true})); });
-      track.append(sp); el.classList.add("spilled");
-    });
+    if (!bars.length) return null;
+    const tr = track.getBoundingClientRect(); if (!tr.width) return null;
+    const t = {track, tr}; t.rects = bars.map(el=>({el, r:el.getBoundingClientRect(), t}));
+    return t;
+  }).filter(Boolean);
+  const over = tracks.flatMap(t=>t.rects).filter(x=>{ x.nm = x.el.querySelector(".nm"); return x.nm && x.nm.scrollWidth > x.nm.clientWidth + 1; });
+  const tried = over.filter(x=>{
+    const full = x.nm.textContent, b = x.el.dataset.peekType === "bar" ? barById(x.el.dataset.peekId) : null, short = b && !(b.chartName || "").trim() ? suggestChartName(b) : "";
+    if (!short) return false;
+    x.full = full; x.nm.textContent = (full.startsWith("✓ ") ? "✓ " : "") + short; x.el.classList.add("shortname");   // the name before " · " or ":" usually fits; the hover card has the rest
+    return true;
+  });
+  tried.forEach(x=>{ x.fits = x.nm.scrollWidth <= x.nm.clientWidth + 1; });
+  tried.forEach(x=>{ if (!x.fits){ x.nm.textContent = x.full; x.el.classList.remove("shortname"); } });
+  const spills = over.filter(x=>!x.fits && x.r.width <= 110 && x.nm.clientWidth / x.nm.scrollWidth <= 0.4).map(({el, r, nm, t})=>{   // only short bars that show little of their name; wider bars keep the name inside (hover shows the rest)
+    const text = nm.textContent, need = textW(text) + 14;
+    const next = t.rects.filter(o=>o.el !== el && Math.abs(o.r.top - r.top) < 4 && o.r.left >= r.right - 1).reduce((m,o)=>Math.min(m, o.r.left), t.tr.right);
+    const blocked = [...t.track.querySelectorAll(":scope > .addbtn")].some(a=>{ const ar = a.getBoundingClientRect(); return Math.abs(ar.top - r.top) < 14 && ar.left >= r.right - 1 && ar.left < r.right + need; });
+    return blocked || next - r.right < need ? null : {el, r, t, text};
+  }).filter(Boolean);
+  spills.forEach(({el, r, t, text})=>{
+    const sp = h("span",{class:"spill","data-peek-type":el.dataset.peekType,"data-peek-id":el.dataset.peekId,"aria-hidden":"true",
+      style:{left:(r.right - t.tr.left + 5) + "px", top:(r.top - t.tr.top) + "px"}}, text);
+    sp.addEventListener("click", ()=>el.click());
+    sp.addEventListener("dblclick", e=>{ e.stopPropagation(); el.dispatchEvent(new MouseEvent("dblclick",{bubbles:true})); });
+    t.track.append(sp); el.classList.add("spilled");
   });
 }
 function renderLoad(){
@@ -11054,17 +11063,21 @@ function startDrag(e,type,id,mode){
   el.addEventListener("pointercancel", onCancel);
   el.addEventListener("lostpointercapture", onCancel);
 }
+let tipShown = null;   // what the tip says and how big that is: most moves say the same thing, and measuring it costs a layout
 function tip(e, parts){
-  const t = $("#dragtip"); t.replaceChildren(...parts.filter(Boolean)); t.hidden = false;
-  const x = Math.min(e.clientX + 16, innerWidth - t.offsetWidth - 8), y = Math.min(e.clientY + 20, innerHeight - t.offsetHeight - 8);
+  const t = $("#dragtip"), kept = parts.filter(Boolean), key = kept.map(p=>p.className + "\n" + p.textContent).join("\n\n");
+  if (!tipShown || tipShown.key !== key){ t.replaceChildren(...kept); t.hidden = false; tipShown = {key, w:t.offsetWidth, h:t.offsetHeight}; }
+  const x = Math.min(e.clientX + 16, innerWidth - tipShown.w - 8), y = Math.min(e.clientY + 20, innerHeight - tipShown.h - 8);
   t.style.left = x + "px"; t.style.top = y + "px";
 }
-function hideTip(){ $("#dragtip").hidden = true; }
+function hideTip(){ $("#dragtip").hidden = true; tipShown = null; }
 function cancelGestures(){ if (drag) onCancel(); if (tdrag) onTaskCancel(); }
 function onDrag(e){
   if (!drag) return;
   if (!editable()){ onCancel(); return; }
   drag.touched = true;                    // from here the item and its element may have moved, even under the threshold
+  let hit;                                // one look under the pointer per move: each look can force a layout of the whole chart
+  const under = () => hit === undefined ? (hit = document.elementFromPoint(e.clientX, e.clientY) || null) : hit;
   if (drag.type === "bar" && drag.p0 == null) drag.p0 = depProblems(barById(drag.id)).length;
   const W = S.meta.weeks, dw = (e.clientX - drag.x0) / drag.w * W;
   if (Math.abs(e.clientX - drag.x0) > 3) drag.moved = true;
@@ -11074,20 +11087,23 @@ function onDrag(e){
     if (drag.mode === "move") b.start = Math.max(0, Math.min(W - o.span, snap(q(o.start + dw))));
     else if (drag.mode === "r") b.span = Math.max(.5, Math.min(W - o.start, snap(q(o.span + dw))));
     else { const ns = Math.max(0, Math.min(o.start + o.span - .5, snap(q(o.start + dw)))); b.span = snap(o.start + o.span - ns); b.start = ns; }
-    drag.el.style.left = `calc(${b.start/W*100}% + 2px)`; drag.el.style.width = `calc(${(Math.min(W, visEndW(b)) - b.start)/W*100}% - 4px)`;
-    if (drag.mode === "move" && drag.carry){ const px = (b.start - o.start)/W*drag.w; drag.carry.forEach(n=>{ n.style.transform = `translateX(${px}px)`; }); }
+    const width = `calc(${(Math.min(W, visEndW(b)) - b.start)/W*100}% - 4px)`;
+    if (drag.width !== width){ drag.el.style.width = width; drag.width = width; }
+    if (drag.mode === "move"){ const px = (b.start - o.start)/W*drag.w, slide = `translateX(${px}px)`;   // sliding needs no layout; the drop draws it in its new place
+      drag.el.style.transform = slide; (drag.carry || []).forEach(n=>{ n.style.transform = slide; }); }
+    else drag.el.style.left = `calc(${b.start/W*100}% + 2px)`;
     if (drag.mode === "move" && drag.fromPerson === undefined) nestHover(e, b);
     const probs = depProblems(b);
     setStatus(probs.length ? `Warning: starts before "${(probs[0].label||"").slice(0,40)}" ends (${endDate(probs[0])})` : `${wkDate(b.start)} → ${endDate(b)}`);
     if (drag.moved || drag.fromPerson !== undefined){
-      const days = Math.round((b.start - o.start)*7), overL = document.elementFromPoint(e.clientX, e.clientY)?.closest(".lane[data-lane]");
+      const days = Math.round((b.start - o.start)*7), overL = under()?.closest(".lane[data-lane]");
       const toLane = drag.mode==="move" && overL && overL.dataset.lane && overL.dataset.lane !== b.lane ? S.lanes.find(l=>l.id===overL.dataset.lane) : null;
       tip(e, [h("span",{class:"d"}, `${wkDate(b.start)} → ${endDate(b)}`),
         hasKids(b) && days ? h("div",{}, `Moves ${descendantsOf(b.id).length} sub-initiative${descendantsOf(b.id).length===1?"":"s"} with it, ${days>0?"+":""}${days} days`)
           : derived(b) && days ? h("div",{}, `Moves ${b.tasks.length} task${b.tasks.length===1?"":"s"} ${days>0?"+":""}${days} days`) : null,
         drag.nestTo ? h("div",{class:"g"}, `Release to put it inside "${chartLabel(barById(drag.nestTo)).slice(0,36)}"`) : drag.hoverId ? h("div",{}, `Hold to put it inside "${chartLabel(barById(drag.hoverId)).slice(0,36)}"…`) : null,
         toLane ? h("div",{}, `→ ${toLane.name}`) : null,
-        (()=>{ if (drag.fromPerson === undefined) return null; const op2 = document.elementFromPoint(e.clientX, e.clientY)?.closest(".lane[data-person]"); if (!op2 || op2.dataset.person === drag.fromPerson) return null; const pp = personById(op2.dataset.person); return h("div",{class:"g"}, op2.dataset.person === "none" ? `→ Unassign ${personName(drag.fromPerson)}` : `→ Reassign from ${personName(drag.fromPerson)} to ${pp ? pp.name : "them"}`); })(),
+        (()=>{ if (drag.fromPerson === undefined) return null; const op2 = under()?.closest(".lane[data-person]"); if (!op2 || op2.dataset.person === drag.fromPerson) return null; const pp = personById(op2.dataset.person); return h("div",{class:"g"}, op2.dataset.person === "none" ? `→ Unassign ${personName(drag.fromPerson)}` : `→ Reassign from ${personName(drag.fromPerson)} to ${pp ? pp.name : "them"}`); })(),
         probs.length ? h("div",{class:"w"}, `⚠ Starts before "${(probs[0].label||"").slice(0,36)}" ends`) : drag.p0 ? h("div",{class:"g"}, "✓ No longer starts too early") : null,
         h("small",{}, e.shiftKey ? "Fine steps" : "Hold Shift for fine steps")]);
     }
@@ -11098,9 +11114,8 @@ function onDrag(e){
     setStatus(wkDate(m[k]));
     if (drag.moved) tip(e, [h("span",{class:"d"}, fmtDay(atToDay(m[k]))), h("small",{}, "The label updates when you drop")]);
   }
-  document.querySelectorAll(".lane.dragover").forEach(n=>n.classList.remove("dragover"));
-  const over = document.elementFromPoint(e.clientX, e.clientY)?.closest(drag.fromPerson !== undefined ? ".lane[data-person]" : ".lane[data-lane]");
-  if (over && drag.mode==="move") over.classList.add("dragover");
+  const over = drag.mode === "move" ? under()?.closest(drag.fromPerson !== undefined ? ".lane[data-person]" : ".lane[data-lane]") || null : null;
+  if (over !== drag.lit){ document.querySelectorAll(".lane.dragover").forEach(n=>n.classList.remove("dragover")); if (over) over.classList.add("dragover"); drag.lit = over; }
 }
 // Hovering a dragged initiative over another one for a moment offers to nest it there.
 function nestHover(e, b){

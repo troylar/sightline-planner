@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.177.0",
+  "date": "2026-10-31",
+  "headline": "Dragging on big plans follows your pointer",
+  "changes": [
+    {
+      "kind": "improved",
+      "area": "Timeline",
+      "title": "Dragging on big plans follows your pointer",
+      "before": "On a big plan, or one with a long history, an initiative lagged behind the pointer while you dragged it, because every small move made the browser work out the whole chart again.",
+      "now": "An initiative slides with your pointer, with far fewer stutters on the biggest plans. Dropping it still takes about as long as before on those plans, up to a second or so, because the whole chart is redrawn.",
+      "where": "Timeline, dragging an initiative"
+    }
+  ]
+},
+{
   "version": "1.176.0",
   "date": "2026-10-31",
   "headline": "Plans with a long history draw faster",
