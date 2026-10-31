@@ -6468,7 +6468,7 @@ function backWhereIWas(r){ const live = liveBacks(), b = r ? (live.includes(r) ?
   backs = backs.filter(x=>x.plan === S.meta.planId && live.indexOf(x) < live.indexOf(b) && live.includes(x));   // it, and anything newer
   stepLeave(); snapApply(b);
   try { pushPlace("#" + encodeNav(b.nav)); noteStep(placeId, b); } catch(e){}   // its own step, so Back from here goes to the item again
-  applyNav(b.nav); placeHold = true; restorePlace(b.place, ++placeGen);
+  applyNav(b.nav); placeHold = true; backGen++; restorePlace(b.place, ++placeGen);
   backPrune(); render();
   const f = b.focus && document.getElementById(b.focus); if (f) f.focus({preventScroll:true}); else focusShown();
   setStatus("Back where you were."); showSay("Back where you were."); return true; }
@@ -6545,7 +6545,7 @@ let navGo = false, navHold = false, recentSel = ""; const navStep = () => { navG
 // a new step starts from what's on screen. Each step has an id, and its place is kept in memory as well as in the browser's
 // history entry (written a moment after scrolling stops), so going back right after a scroll still keeps it. Never in the
 // address or the plan, so a copied link opens clean.
-let place = {}, placeT = 0, placeHold = false, placeGen = 0, placeId = "";
+let place = {}, placeT = 0, placeHold = false, placeGen = 0, placeId = "", backGen = 0;   // backGen: how many times Back or Forward has run
 const places = new Map(), newPlaceId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 function placeNow(){
   const p = {"":[Math.round(window.scrollX), Math.round(window.scrollY)]}; let n = 0;
@@ -6579,7 +6579,7 @@ window.addEventListener("popstate", ()=>{
   setStatus(""); statusAt = 0;   // what the last action said is about the step you left (applyNav can still speak for this one)
   clearTimeout(placeT); places.set(placeId, place);                  // the step you left keeps a scroll made just now, in memory
   stepLeave(); placeId = history.state && history.state.pid || newPlaceId(); if (history.state && Number.isFinite(history.state.d)) depths.set(placeId, history.state.d); const p = places.get(placeId) || history.state && history.state.place;
-  const gen = ++placeGen; placeHold = !!p; place = p ? {...p} : {};
+  const gen = ++placeGen; backGen++; placeHold = !!p; place = p ? {...p} : {};
   const st = parseNav(location.hash), home = backOnPop(); applyNav(st); if (p) restorePlace(p, gen); if (home) setStatus("Back where you were."); });
 const linkHere = () => { const u = location.href; (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(()=>setStatus("Link copied. It opens this place in this plan."), ()=>{ window.prompt("Copy this link:", u); }); };
 // ================= filters (what's shown; calculations always use the whole plan) =================
@@ -7578,7 +7578,8 @@ function goTo(kind, id, always){
 }
 const findName = (kind, id) => starLabel(kind, id) || "this item";
 function reveal(kind, id){
-  const scrollTo = sel0 => setTimeout(()=>{ const el = document.querySelector(sel0); if (el){ el.scrollIntoView({block:"center", inline:"center", behavior:"smooth"}); el.classList.add("flash"); setTimeout(()=>el.classList.remove("flash"), 1600); } }, 60);
+  const bg = backGen;   // gone Back or Forward before the scroll runs: you've left this item, so leave the place Back put back alone
+  const scrollTo = sel0 => setTimeout(()=>{ const el = bg === backGen && document.querySelector(sel0); if (el){ el.scrollIntoView({block:"center", inline:"center", behavior:"smooth"}); el.classList.add("flash"); setTimeout(()=>el.classList.remove("flash"), 1600); } }, 60);
   const unfold = b => { ancestorsOf(b).forEach(a=>{ delete UI.collapsed[a.id]; }); saveUI(); };
   { const b = kind === "bar" ? barById(id) : kind === "task" ? taskById(id)?.b : kind === "story" ? storyByKey(id)?.b : null, t = kind === "task" ? taskById(id)?.t : null, x = kind === "story" ? storyByKey(id) : null;
     const done = kind === "bar" ? !!b && effStatus(b) === "done" : t ? t.status === "done" : x ? x.status === "done" : false;

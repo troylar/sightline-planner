@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.175.3",
+  "date": "2026-10-30",
+  "headline": "Back right after opening an item",
+  "changes": [
+    {
+      "kind": "fixed",
+      "area": "Timeline",
+      "title": "Going back quickly no longer jumps to the item you left",
+      "before": "If you went Back a moment after opening an item, the chart could put you where you were and then slide down to the item you had just left.",
+      "now": "Back puts the chart where you were and it stays there, however quickly you go back.",
+      "where": "The browser's Back and Forward, and Back to where I was"
+    }
+  ]
+},
+{
   "version": "1.175.2",
   "date": "2026-10-30",
   "headline": "Back finds your place on a busy computer",

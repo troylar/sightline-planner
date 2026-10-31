@@ -163,6 +163,20 @@ const near = (a, b) => Math.abs(a - b) <= 3;
       const n1 = await p4.evaluate(()=>({at:[$("#gscroll").scrollLeft, $("#gscroll").scrollTop], sel:sel && sel.id}));
       ok("B21 opening another item while Back is still putting the chart back: the chart is not pulled back to the old place", n1.sel === "bx28" && !(near(n1.at[0], s0[0]) && near(n1.at[1], s0[1])), JSON.stringify({s0, n1}));
       await p4.close(); }
+    // Back straight after opening an item, before the chart has scrolled to it: the scroll to it doesn't land afterwards
+    { const p5 = await b.newPage({viewport:{width:1400, height:700}}); p5.on("pageerror", e=>errs.push(String(e)));
+      await p5.goto("file://" + HTML); await p5.waitForTimeout(250);
+      await p5.evaluate(FIX=>{ askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); localStorage.clear(); S = normalize(JSON.parse(FIX), false); file.handle = null;
+        for (let i = 0; i < 30; i++) S.bars.push({...clone(S.bars[0]), id:"bx" + i, label:"Extra initiative " + i, tasks:[], jira:"", epics:[]});
+        goWs("timeline"); render(); select("bar", S.bars[1].id); }, FIX);
+      await p5.waitForTimeout(450);
+      await p5.evaluate(()=>{ const g = $("#gscroll"); g.scrollLeft = 120; g.scrollTop = 40; }); await p5.waitForTimeout(450);
+      const q0 = await p5.evaluate(()=>[$("#gscroll").scrollLeft, $("#gscroll").scrollTop]);
+      await p5.evaluate(()=>{ goTo("bar", "bx28"); history.back(); });   // inside the 60ms before the chart scrolls to it
+      await p5.waitForTimeout(1500);
+      const q1 = await p5.evaluate(()=>({at:[$("#gscroll").scrollLeft, $("#gscroll").scrollTop], sel:sel && sel.id}));
+      ok("B22 Back before the chart has scrolled to the item just opened: the chart stays where Back put it", q1.sel === "m2" && near(q1.at[0], q0[0]) && near(q1.at[1], q0[1]), JSON.stringify({q0, q1}));
+      await p5.close(); }
     ok("B17 no page errors on the narrow windows", !errs.length, errs.slice(0, 2).join(" | "));
 
   } catch(e){ ok("ran without throwing", false, String(e && e.stack || e).slice(0, 300)); }
