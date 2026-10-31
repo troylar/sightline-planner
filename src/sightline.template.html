@@ -7642,7 +7642,7 @@ function reveal(kind, id){
   if (kind === "type"){ UI.planTab = "types"; UI.ws = "plan"; select("type", id); return; }
   if (kind === "person" || kind === "lane"){ select(kind, id); return; }
   if (kind === "release"){ UI.ws = "timeline"; select("release", id); scrollTo(`#gantt [data-rel="${id}"]`); return; }
-  if (kind === "decision" || kind === "risk"){ UI.planTab = kind + "s"; setWs("plan"); setTimeout(()=>{ const i = S[kind+"s"].findIndex(x=>x.id===id); const row = $("#t-"+kind+"s")?.querySelectorAll("tbody tr")[i]; if (row){ row.scrollIntoView({block:"center"}); row.classList.add("flash"); } }, 60); }
+  if (kind === "decision" || kind === "risk"){ UI.planTab = kind + "s"; setWs("plan"); setTimeout(()=>{ if (!still()) return; const i = S[kind+"s"].findIndex(x=>x.id===id); const row = $("#t-"+kind+"s")?.querySelectorAll("tbody tr")[i]; if (row){ row.scrollIntoView({block:"center"}); row.classList.add("flash"); } }, 60); }
 }
 $("#findBtn").onclick = e=>{ e.stopPropagation(); $("#findPop").hidden ? openFind() : closeFind(); };
 $("#findIn").addEventListener("input", e=>renderFind(e.target.value));
