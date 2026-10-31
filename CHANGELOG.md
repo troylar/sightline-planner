@@ -8,7 +8,7 @@ Dragging on big plans follows your pointer.
 
 ### Improved
 
-- **Dragging on big plans follows your pointer** (Timeline). An initiative slides with your pointer, with far fewer stutters on the biggest plans. Dropping it still takes about as long as before on those plans, up to a second or so, because the whole chart is redrawn. *Where:* Timeline, dragging an initiative
+- **Dragging on big plans follows your pointer** (Timeline). An initiative slides with your pointer, with fewer than half as many stutters on the biggest plans. Dropping it still takes as long as it did before on those plans, because the whole chart is redrawn. *Where:* Timeline, dragging an initiative
 
 ## 1.176.0 · Oct 31, 2026
 
