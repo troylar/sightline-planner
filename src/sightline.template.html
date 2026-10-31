@@ -6197,7 +6197,8 @@ function scrollViewTo(day){
 // "." in either zoom: Days shows this week; Weeks shows the sprint we're in (or the next one), so its band is on screen.
 function jumpToday(){ if (UI.ws !== "timeline") setWs("timeline"); const still = sinceBack();
   setTimeout(()=>{ if (!still()) return; const t = todayDay();
-    if (chosenSprint()){ const n = nowSprint(); if (n) return chooseSprint(n.a); }   // a sprint is chosen: the one we're in, or the next if (UI.zoom === "days") return dayScrollTo(Math.max(startDay(), mondayOf(t)));
+    if (chosenSprint()){ const n = nowSprint(); if (n) return chooseSprint(n.a); }   // a sprint is chosen: the one we're in, or the next
+    if (UI.zoom === "days") return dayScrollTo(Math.max(startDay(), mondayOf(t)));
     const n = nowSprint(); scrollViewTo(Math.max(startDay(), n ? n.a : sprintStartOf(t))); }, 0); }
 function viewPage(dir){ if (chosenSprint()) return stepSprint(dir); if (UI.zoom === "days") return dayPage(dir); const sc = $("#gscroll"); if (sc) sc.scrollLeft += dir * Math.max(80, sc.clientWidth - UI.labelW.weeks - 40); }
 const cols0 = () => DV ? DV.cols[0] : startDay();

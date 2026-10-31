@@ -83,6 +83,13 @@ async function open(iso, fresh){
     ok("L4 a link with a bad sprint is ignored", !Q.ev("UI.zoomSp"));
     ok("Z2 no page errors", !Q.w.errs.length, Q.w.errs.join(" | "));
 
+    // In Days with no sprint chosen, . goes to this week, not the start of the sprint we're in (1.121.0 to 1.175.3 went to the sprint)
+    const W = await open("2026-11-04");   // a Wednesday in Sprint 43's second week (Oct 26 – Nov 6)
+    W.ev("setZoom('days'); UI.zoomSp = null; render(); window.dwent = []; const __ds = dayScrollTo; dayScrollTo = (day, o) => { window.dwent.push(day); return __ds(day, o); }");
+    W.key("."); await wait(20);
+    const dw = W.J("window.dwent");
+    ok("T3 in Days, . goes to this week's Monday, not the sprint's first day", !W.ev("UI.zoomSp") && dw[dw.length - 1] === W.day("2026-11-02"), JSON.stringify({went:dw, monday:W.day("2026-11-02"), sprint:W.day("2026-10-26")}));
+
     // One-click presets: This sprint, This + next, Next 3 and Fit, from the sprint we're in (or the next between sprints).
     const F = await open("2026-10-07"), pb = k => F.d.querySelector(`.zpresets [data-preset="${k}"]`), pressed = () => [...F.d.querySelectorAll(".zpresets .zp")].filter(b=>b.getAttribute("aria-pressed") === "true").map(b=>b.dataset.preset).join(",");
     ok("Q1 the zoom control has This sprint, This + next, Next 3 and Fit, with Fit pressed at Fit", ["1","2","3","0"].map(k=>pb(k)?.getAttribute("aria-label")).join("|") === "This sprint|This + next|Next 3|Fit" && pressed() === "0", pressed());
