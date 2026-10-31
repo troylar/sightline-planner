@@ -6003,8 +6003,8 @@ function stepItem(dir){
   const n = i < 0 ? (dir > 0 ? 0 : stops.length - 1) : Math.min(stops.length - 1, Math.max(0, i + dir));
   if (n === i){ navSay(dir > 0 ? "Last item" : "First item"); return; }
   const {id, el} = stops[n], t = id.slice(0, id.indexOf(":")), x = id.slice(id.indexOf(":") + 1), occ = el.dataset.key;
-  select(t, x); navSay(`${n + 1} of ${stops.length}`);
-  setTimeout(()=>{ const e2 = (occ && document.querySelector(`#gantt [data-key="${CSS.escape(occ)}"]`)) || document.querySelector(`#gantt [data-sel="${CSS.escape(id)}"]`); e2?.scrollIntoView({block:"nearest", inline:"nearest"}); e2?.focus({preventScroll:true}); }, 0);
+  select(t, x); navSay(`${n + 1} of ${stops.length}`); const still = sinceBack();
+  setTimeout(()=>{ if (!still()) return; const e2 = (occ && document.querySelector(`#gantt [data-key="${CSS.escape(occ)}"]`)) || document.querySelector(`#gantt [data-sel="${CSS.escape(id)}"]`); e2?.scrollIntoView({block:"nearest", inline:"nearest"}); e2?.focus({preventScroll:true}); }, 0);
 }
 // J / K on Today, Sprint and Capacity: move keyboard focus through what's drawn, in page order, without opening anything
 // (Enter does that). Timeline and List select as they go (stepItem).
@@ -6195,8 +6195,8 @@ function scrollViewTo(day){
   sc.scrollLeft = Math.max(0, (day - startDay()) / (S.meta.weeks * 7) * tw);
 }
 // "." in either zoom: Days shows this week; Weeks shows the sprint we're in (or the next one), so its band is on screen.
-function jumpToday(){ if (UI.ws !== "timeline") setWs("timeline");
-  setTimeout(()=>{ const t = todayDay();
+function jumpToday(){ if (UI.ws !== "timeline") setWs("timeline"); const still = sinceBack();
+  setTimeout(()=>{ if (!still()) return; const t = todayDay();
     if (chosenSprint()){ const n = nowSprint(); if (n) return chooseSprint(n.a); }   // a sprint is chosen: the one we're in, or the next if (UI.zoom === "days") return dayScrollTo(Math.max(startDay(), mondayOf(t)));
     const n = nowSprint(); scrollViewTo(Math.max(startDay(), n ? n.a : sprintStartOf(t))); }, 0); }
 function viewPage(dir){ if (chosenSprint()) return stepSprint(dir); if (UI.zoom === "days") return dayPage(dir); const sc = $("#gscroll"); if (sc) sc.scrollLeft += dir * Math.max(80, sc.clientWidth - UI.labelW.weeks - 40); }
@@ -6546,6 +6546,8 @@ let navGo = false, navHold = false, recentSel = ""; const navStep = () => { navG
 // history entry (written a moment after scrolling stops), so going back right after a scroll still keeps it. Never in the
 // address or the plan, so a copied link opens clean.
 let place = {}, placeT = 0, placeHold = false, placeGen = 0, placeId = "", backGen = 0;   // backGen: how many times Back or Forward has run
+// For a scroll that runs a moment later: once Back or Forward has run since, you've left that place, so it must not move the one Back put back
+const sinceBack = () => { const g = backGen; return () => g === backGen; };
 const places = new Map(), newPlaceId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 function placeNow(){
   const p = {"":[Math.round(window.scrollX), Math.round(window.scrollY)]}; let n = 0;
@@ -7578,8 +7580,8 @@ function goTo(kind, id, always){
 }
 const findName = (kind, id) => starLabel(kind, id) || "this item";
 function reveal(kind, id){
-  const bg = backGen;   // gone Back or Forward before the scroll runs: you've left this item, so leave the place Back put back alone
-  const scrollTo = sel0 => setTimeout(()=>{ const el = bg === backGen && document.querySelector(sel0); if (el){ el.scrollIntoView({block:"center", inline:"center", behavior:"smooth"}); el.classList.add("flash"); setTimeout(()=>el.classList.remove("flash"), 1600); } }, 60);
+  const still = sinceBack();
+  const scrollTo = sel0 => setTimeout(()=>{ const el = still() && document.querySelector(sel0); if (el){ el.scrollIntoView({block:"center", inline:"center", behavior:"smooth"}); el.classList.add("flash"); setTimeout(()=>el.classList.remove("flash"), 1600); } }, 60);
   const unfold = b => { ancestorsOf(b).forEach(a=>{ delete UI.collapsed[a.id]; }); saveUI(); };
   { const b = kind === "bar" ? barById(id) : kind === "task" ? taskById(id)?.b : kind === "story" ? storyByKey(id)?.b : null, t = kind === "task" ? taskById(id)?.t : null, x = kind === "story" ? storyByKey(id) : null;
     const done = kind === "bar" ? !!b && effStatus(b) === "done" : t ? t.status === "done" : x ? x.status === "done" : false;
@@ -16002,8 +16004,8 @@ function storiesField(b){
     quick && x.state !== "abandoned" ? h("button",{type:"button",class:"linkish sw","data-sw":x.key,"aria-label":`${x.off ? "Switch on" : "Switch off"}: ${x.key}`,onclick:()=>storyOff(b.id, [x.key], x.off)}, x.off ? "Switch on" : "Switch off") : null);
   const grp = (title, list, hint, openIt) => list.length ? h("details",{class:"sgroup", open:openIt}, h("summary",{}, `${title} (${list.length})`, hint ? h("span",{class:"hint"}, " · " + hint) : null), h("ul",{class:"storylist"}, ...list.map(row))) : null;
   const drawn = all.filter(x=>x.drawn).length;
-  const seeBtn = drawn && UI.zoom !== "days" ? h("button",{type:"button",class:"btn",id:"f-stories-days",onclick:()=>{ delete UI.collapsed[b.id]; setZoom("days"); dayScrollTo(Math.min(...all.filter(x=>x.drawn).map(x=>x.s))); select("bar", b.id);
-    setTimeout(()=>document.querySelector(`#gantt [data-orow="${b.id}"]`)?.scrollIntoView({block:"center"}), 60); }}, `See ${drawn} on the timeline (Days)`) : null;
+  const seeBtn = drawn && UI.zoom !== "days" ? h("button",{type:"button",class:"btn",id:"f-stories-days",onclick:()=>{ delete UI.collapsed[b.id]; setZoom("days"); dayScrollTo(Math.min(...all.filter(x=>x.drawn).map(x=>x.s))); select("bar", b.id); const still = sinceBack();
+    setTimeout(()=>still() && document.querySelector(`#gantt [data-orow="${b.id}"]`)?.scrollIntoView({block:"center"}), 60); }}, `See ${drawn} on the timeline (Days)`) : null;
   return h("div",{class:"field stories",id:"f-stories"}, h("span",{class:"flabel"}, `Jira stories (${on.length}${off.length ? ` of ${on.length + off.length}` : ""})`), seeBtn,
     h("p",{class:"hint"}, "Sprints set their dates and Jira sets their status. Switch off the ones that don't matter to this plan now: they leave the timeline and the progress count, and Jira isn't changed."),
     grp("In a sprint", sched, "", sched.length <= 12),
