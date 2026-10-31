@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.176.0",
+  "date": "2026-10-31",
+  "headline": "Plans with a long history draw faster",
+  "changes": [
+    {
+      "kind": "improved",
+      "area": "Timeline",
+      "title": "Plans with a long history draw faster",
+      "before": "A plan used for a year or more, with thousands of updates and holidays on the calendar, got slower with every redraw: switching zoom, filtering, dragging or undoing on a big plan could take most of a second.",
+      "now": "Redraws on a plan with a year of history take about a third less time, and on any plan about a sixth less. Each date is read once, the holiday calendar is worked out once, and Today finds an item's updates without reading the whole log.",
+      "where": "Timeline, Today and every view"
+    }
+  ]
+},
+{
   "version": "1.175.5",
   "date": "2026-10-31",
   "headline": "A save never makes the plan impossible to open",
