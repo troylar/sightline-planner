@@ -193,6 +193,15 @@ const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), stats 
     const future = X(`histParse(JSON.stringify({...histEmpty(P, "2026-Q1"), updates:[up("f1","2026-01-05T00:00:00Z","edit from 2099","2099-01-01T00:00:00Z"), up("f2","2026-01-05T00:00:00Z","fine")], removed:{f3:{by:"x", at:"2099-01-01T00:00:00Z"}}}), P, "2026-Q1")`);
     ok("H36 an edit or removal dated far in the future is refused, so it can't win every merge", future && future.updates.map(x=>x.id).join() === "f2" && !Object.keys(future.removed).length && future.unreadable === 2, JSON.stringify(future && [future.updates.map(x=>x.id), future.unreadable]));
 
+    // A part this copy can't fully read: adding an entry still works when its entries are out of date order, or one is hidden by its own removal.
+    const beside = async (name, updates, removed) => { X(`window.Dx = mkDir(); window.oddx = JSON.stringify({...histEmpty(P, "2026-Q1"), extra:true, updates:${JSON.stringify(updates)}, removed:${JSON.stringify(removed)}}); putFile(Dx, P, "2026-Q1.json", oddx);`);
+      return await A(`HistoryStore.write(Dx, P, "2026-Q1", {...histEmpty(P, "2026-Q1"), updates:[up("n1","2026-01-05T00:00:00Z","mine")]}).then(r=>[r.ok || r.error, Object.keys(filesIn(Dx, P)).join(), filesIn(Dx, P)["2026-Q1.json"] === oddx])`); };
+    const good = r => Array.isArray(r) && r[0] === true && r[1] === "2026-Q1.json,2026-Q1.2.json" && r[2] === true;
+    const outOfOrder = await beside("order", [X(`up("b1","2026-01-09T00:00:00Z","later, listed first")`), X(`up("a1","2026-01-02T00:00:00Z","earlier")`)], {});
+    ok("H37 adding an entry beside a part this copy can't fully read works when that part's entries are out of date order", good(outOfOrder), JSON.stringify(outOfOrder));
+    const hidden = await beside("hidden", [X(`up("h1","2026-01-03T00:00:00Z","hidden by its removal")`)], {h1:{by:"blake", at:"2026-01-04T00:00:00Z"}});
+    ok("H38 …and when that part holds an entry its own removal hides", good(hidden), JSON.stringify(hidden));
+
     const noId = await A(`HistoryStore.write(D, "", "2026-Q1", histEmpty("", "2026-Q1"), {create:true}).catch(e=>({thrown:e.message}))`);
     ok("H19 a plan with no id never gets a history folder", noId && /no id/.test(noId.thrown || noId.error || "") && !X(`D.kids.get("history").dir.has("")`), JSON.stringify(noId));
     ok("no runtime errors", w.errs.length === 0, w.errs.join(" | "));

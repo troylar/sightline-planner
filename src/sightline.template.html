@@ -3736,7 +3736,8 @@ const HistoryStore = {
       // Parts that only gain entries are written before parts that lose any, so an entry moving between parts is never in neither.
       const ids = t => { try { const o = JSON.parse(t); return HIST_KINDS.flatMap(k=>o[k].map(x=>k + ":" + x.id)); } catch(e){ return []; } };
       const loses = i => { const was = (now.texts || [])[i]; if (!was) return 0; const keep = new Set(ids(texts[i])); return ids(was).some(k=>!keep.has(k)) ? 1 : 0; };
-      const same = i => { const was = (now.parts || [])[i]; if (!was) return false; try { const o = JSON.parse(texts[i]); return HIST_KINDS.every(k=>JSON.stringify(o[k]) === JSON.stringify(was[k])) && JSON.stringify(o.removed) === JSON.stringify(was.removed); } catch(e){ return false; } };
+      const shown = f => { const m = histMerge(histEmpty(planId, quarter), f); return JSON.stringify([HIST_KINDS.map(k=>m[k]), Object.keys(m.removed).sort().map(id=>[id, m.removed[id]])]); };   // what a part holds, in one order
+      const same = i => { const was = (now.parts || [])[i]; if (!was) return false; try { return shown(JSON.parse(texts[i])) === shown(was); } catch(e){ return false; } };
       const change = texts.map((t, i)=>(now.texts || [])[i] === t || (locked.has(i) && same(i)) ? -1 : i).filter(i=>i >= 0).sort((a, b)=>loses(a) - loses(b) || a - b);   // a part this copy can't fully read is left alone unless its entries change
       const blocked = change.filter(i=>locked.has(i));
       if (blocked.length) return {error:`${blocked.map(i=>histName(quarter, i)).join(", ")} ${blocked.length === 1 ? "has" : "have"} entries this copy of Sightline can't read, so it won't write over ${blocked.length === 1 ? "it" : "them"}`};
