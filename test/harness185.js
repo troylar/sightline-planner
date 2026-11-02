@@ -167,14 +167,16 @@ const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), stats 
     ok("H31 a quarter in one file applies its own removals when read", onePart === 0, String(onePart));
 
     X(`window.D10 = mkDir(); window.odd = JSON.stringify({...histEmpty(P, "2026-Q1"), decisions:[{id:"d1"}], updates:[up("n1","2026-01-05T00:00:00","no time zone"), up("ok1","2026-01-05T00:00:00Z","fine")]}); putFile(D10, P, "2026-Q1.json", odd);`);
-    const unk = await A(`Promise.all([HistoryStore.read(D10, P, "2026-Q1"), HistoryStore.write(D10, P, "2026-Q1", {...histEmpty(P, "2026-Q1"), updates:[up("u1","2026-01-07T00:00:00Z","mine")]})]).then(([r, w])=>[r.file.updates.map(x=>x.id).join(","), (r.unreadable || []).join(), w.error || "written"])`);
-    ok("H32 a part with entries or lists this copy can't read is read for what it can, and never written over", Array.isArray(unk) && unk[0] === "ok1" && unk[1] === "2026-Q1.json" && /2026-Q1.json has entries this copy of Sightline can't read/.test(unk[2]) && X(`filesIn(D10, P)["2026-Q1.json"] === odd`), JSON.stringify(unk));
+    const unk = await A(`(async ()=>{ const r = await HistoryStore.read(D10, P, "2026-Q1"), w = await HistoryStore.write(D10, P, "2026-Q1", {...histEmpty(P, "2026-Q1"), updates:[up("u1","2026-01-07T00:00:00Z","mine")]});
+      const e = await HistoryStore.write(D10, P, "2026-Q1", {...histEmpty(P, "2026-Q1"), updates:[up("ok1","2026-01-05T00:00:00Z","my edit","2026-01-08T00:00:00Z")]});
+      return [r.file.updates.map(x=>x.id).join(","), (r.unreadable || []).join(), w.ok, Object.keys(filesIn(D10, P)).join(), JSON.parse(filesIn(D10, P)["2026-Q1.2.json"] || "{}").updates?.map(x=>x.id).join(), e.error || "written"]; })()`);
+    ok("H32 a part with entries or lists this copy can't read is read for what it can and never written over: new entries go in a new part, and an edit to an entry in it is refused", Array.isArray(unk) && unk[0] === "ok1" && unk[1] === "2026-Q1.json" && unk[2] === true && unk[3] === "2026-Q1.json,2026-Q1.2.json" && unk[4] === "u1" && /2026-Q1.json has entries this copy of Sightline can't read/.test(unk[5]) && X(`filesIn(D10, P)["2026-Q1.json"] === odd`), JSON.stringify(unk));
 
     X(`window.D11 = mkDir(); window.ahead = up("a1", new Date(Date.now() + 4 * 60000).toISOString().replace(/\.\d+Z$/, "Z"), "from a computer whose clock is ahead"); window.aq = histQuarter(ahead.at); putFile(D11, P, aq + ".json", JSON.stringify({...histEmpty(P, aq), updates:[ahead]}));`);
     const skew = await A(`(async ()=>{ const naive = await HistoryStore.write(D11, P, aq, {...histEmpty(P, aq), removed:{a1:{by:"avery", at:new Date().toISOString()}}});
       const fixed = await HistoryStore.write(D11, P, aq, {...histEmpty(P, aq), removed:{a1:histRemoval("updates", ahead, "avery")}});
-      const r = await HistoryStore.read(D11, P, aq); return [naive.error || "ok", fixed.ok, r.file.updates.length]; })()`);
-    ok("H33 a removal that wouldn't hide its entry (a teammate's clock is ahead) is refused, and histRemoval stamps one that does", Array.isArray(skew) && /older than the entry it removes \(a1\)/.test(skew[0]) && skew[1] === true && skew[2] === 0, JSON.stringify(skew));
+      const r = await HistoryStore.read(D11, P, aq); return [naive.ok, (naive.kept || []).join(), fixed.ok, (fixed.kept || []).join(), r.file.updates.length]; })()`);
+    ok("H33 a removal that doesn't hide its entry (a teammate's clock is ahead, or their undo came later) saves and says the entry was kept; histRemoval stamps one that hides it", JSON.stringify(skew) === '[true,"a1",true,"",0]', JSON.stringify(skew));
 
     X(`window.D12 = mkDir(); putFile(D12, P, "2026-Q1.json", JSON.stringify({...histEmpty(P, "2026-Q1"), updates:[up("p1","2026-01-02T00:00:00Z","in the part")]}));
       putFile(D12, P, "2026-Q1.02.json", JSON.stringify({...histEmpty(P, "2026-Q1"), updates:[up("z1","2026-01-03T00:00:00Z","in an odd name")]}));
@@ -183,6 +185,13 @@ const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), stats 
     const copies = await A(`(async ()=>{ const r = await HistoryStore.read(D12, P, "2026-Q1"); const w = await HistoryStore.write(D12, P, "2026-Q1", {...histEmpty(P, "2026-Q1"), updates:[up("u1","2026-01-05T00:00:00Z","mine")]});
       return [r.file.updates.map(x=>x.id).join(","), r.copies.sort().join(","), w.ok, JSON.parse(filesIn(D12, P)["2026-Q1.json"]).updates.map(x=>x.id).join(","), filesIn(D12, P)["2026-Q1-DESKTOP-ABC.json"] === copyText]; })()`);
     ok("H34 another file named for the quarter (a sync conflict copy, a part with a leading zero) is read and merged, its entries are saved into the parts, and it is never written", Array.isArray(copies) && copies[0] === "p1,z1,c1" && copies[1] === "2026-Q1-DESKTOP-ABC.json,2026-Q1.02.json" && copies[2] === true && copies[3] === "p1,z1,c1,u1" && copies[4] === true, JSON.stringify(copies));
+
+    X(`window.D13 = mkDir(); putFile(D13, P, "2026-Q1.json", JSON.stringify({...histEmpty(P, "2026-Q1"), updates:[up("p1","2026-01-02T00:00:00Z","in the part")]})); putFile(D13, P, "2026-Q1 notes.json", "my own notes, not JSON"); putFile(D13, P, "2026-Q1-DESKTOP-XYZ.json", "");`);
+    const stray = await A(`(async ()=>{ const r = await HistoryStore.read(D13, P, "2026-Q1"), w = await HistoryStore.write(D13, P, "2026-Q1", {...histEmpty(P, "2026-Q1"), updates:[up("u1","2026-01-05T00:00:00Z","mine")]});
+      return [r.file && r.file.updates.map(x=>x.id).join(","), (r.ignored || []).length, w.ok, filesIn(D13, P)["2026-Q1 notes.json"]]; })()`);
+    ok("H35 another file named for the quarter that isn't its history (someone's notes, an empty conflict copy) is named and left alone, and never blocks the quarter", Array.isArray(stray) && stray[0] === "p1" && stray[1] === 2 && stray[2] === true && stray[3] === "my own notes, not JSON", JSON.stringify(stray));
+    const future = X(`histParse(JSON.stringify({...histEmpty(P, "2026-Q1"), updates:[up("f1","2026-01-05T00:00:00Z","edit from 2099","2099-01-01T00:00:00Z"), up("f2","2026-01-05T00:00:00Z","fine")], removed:{f3:{by:"x", at:"2099-01-01T00:00:00Z"}}}), P, "2026-Q1")`);
+    ok("H36 an edit or removal dated far in the future is refused, so it can't win every merge", future && future.updates.map(x=>x.id).join() === "f2" && !Object.keys(future.removed).length && future.unreadable === 2, JSON.stringify(future && [future.updates.map(x=>x.id), future.unreadable]));
 
     const noId = await A(`HistoryStore.write(D, "", "2026-Q1", histEmpty("", "2026-Q1"), {create:true}).catch(e=>({thrown:e.message}))`);
     ok("H19 a plan with no id never gets a history folder", noId && /no id/.test(noId.thrown || noId.error || "") && !X(`D.kids.get("history").dir.has("")`), JSON.stringify(noId));
