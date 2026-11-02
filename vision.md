@@ -182,19 +182,25 @@ authorization; the token holder decides.
 A plan in daily use piles up history: snapshots, saved status updates, the dated updates on each item, and the
 Activity log. After a year that history is most of the file, and the file reaches the size limit. So the plan file
 holds what the team is planning now, and history lives in history files in a folder beside the plan, one file per
-period (for example a quarter).
+calendar quarter. Each entry goes in the quarter of its own date, so every copy files it the same way. The edit lock,
+backups, drafts and the Jira files are not history.
 
 - **The plan file is enough to plan.** Opening, drawing and saving the plan never wait on history. The plan keeps
-  what it needs to draw today, such as each item's latest update; older entries are in the history files.
-- **Missing history is said, never shown as empty.** When a history file is missing, late or can't be read, the page
-  says which period it couldn't read ("History for Jan to Mar wasn't found"). It never treats that history as deleted
-  and never writes over it.
+  what it needs to draw today, such as each item's latest update and the newest snapshot and status update; older
+  entries are in the history files. The sync script reads only the plan file.
+- **Missing history is named, never shown as empty.** When a history file is missing, late or can't be read, the page
+  says which quarter it couldn't read ("History for Jan to Mar wasn't found"). It never treats that history as
+  deleted, never writes a quarter it couldn't read, and never starts a new file for a past quarter.
 - **History follows the plan's rules.** Entries record who added them and when, merge with teammates' entries, never
-  overwrite a teammate's, and are checked against the size limit before anything is written. A history file is
-  shared like the plan file (principle 11).
-- **Moving history out never loses it.** A plan's first save in this format writes the history files, reads them back,
-  and only then takes that history out of the plan file. The old file is saved as a backup first. Copies of Sightline
-  from before this change open the plan read-only and say why.
+  overwrite a teammate's, and are checked against the size limit before anything is written. The plan's edit lock
+  covers its history files, undo works on history like any other change, and saving as a new shared plan copies its
+  history. A history file is shared like the plan file (principle 11).
+- **History never blocks the plan.** If the history folder isn't available, history stays in the plan file and the
+  page says so. A history file that would pass the size limit is split, never refused.
+- **Moving history out never loses it.** An entry leaves the plan file only after its history file is written and read
+  back; if that write fails, the entry stays in the plan and the page says why. This holds for every save. The first
+  save in this format saves the old file as a backup before anything moves. Copies of Sightline from before this
+  change open the plan read-only and say why.
 
 ## Not in scope (for now)
 
@@ -230,8 +236,8 @@ period (for example a quarter).
 - Is a note's text editable only by its author? Recommended: the page asks before editing someone else's words, and
   says plainly that this is a courtesy, not a lock.
 - Should one person's hidden choices follow them across computers?
-- Finished work in a long-lived plan: a plan covers at most two years, and on the biggest plans finished initiatives
-  and tasks alone can reach the size limit. Should a plan roll forward, moving finished work into its history?
+- Finished work in a long-lived plan: on the biggest plans that run two years, finished initiatives and tasks alone
+  can reach the size limit. Should a plan roll forward, moving finished work into its history?
   Decide after history files ship.
 - Projects and platforms: tie people, groups and work to what they build on, own or use. Deferred until captured
   requests show which of those relationships a planning view needs; a plain project tag can't tell them apart.
