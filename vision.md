@@ -190,7 +190,8 @@ backups, drafts and the Jira files are not history.
   entries are in the history files. The sync script reads only the plan file.
 - **Missing history is named, never shown as empty.** When a history file is missing, late or can't be read, the page
   says which quarter it couldn't read ("History for Jan to Mar wasn't found"). It never treats that history as
-  deleted, never writes a quarter it couldn't read, and never starts a new file for a past quarter.
+  deleted and never writes a quarter it couldn't read. It starts a new file for a past quarter only to move entries
+  out of the plan file, and only after checking that no file for that quarter exists.
 - **History follows the plan's rules.** Entries record who added them and when, merge with teammates' entries, never
   overwrite a teammate's, and are checked against the size limit before anything is written. The plan's edit lock
   covers its history files, undo works on history like any other change, and saving as a new shared plan copies its
