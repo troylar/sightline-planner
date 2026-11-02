@@ -3620,8 +3620,9 @@ function histGroup(src){ const out = {};
   return out; }
 // Keep only entries that belong in this quarter's file: an object, a good id, a date with its time zone in this quarter.
 // The same id twice keeps the version a merge would. Returns the cleaned file and how many entries were left out.
+const HIST_KEYS = new Set(["sightlineHistory", "planId", "quarter", "removed", ...HIST_KINDS]);   // a new kind of entry needs a new HIST_FORMAT, so older copies refuse the file instead of dropping it
 function histClean(o, planId, quarter){
-  const f = histEmpty(planId, quarter); let dropped = 0;
+  const f = histEmpty(planId, quarter); let dropped = Object.keys(o).filter(k=>!HIST_KEYS.has(k)).length;
   for (const kind of HIST_KINDS){ const by = new Map();
     for (const x of Array.isArray(o[kind]) ? o[kind] : []){
       if (!x || typeof x !== "object" || Array.isArray(x) || !HIST_ID.test(String(x.id)) || histQuarter(histAt(kind, x)) !== quarter){ dropped++; continue; }
@@ -3643,7 +3644,10 @@ function histParse(text, planId, quarter){
   if (o.sightlineHistory > HIST_FORMAT) throw new Error("a newer copy of Sightline wrote it");
   if (o.planId !== planId) throw new Error("it belongs to another plan");
   if (o.quarter !== quarter) throw new Error(`it's for ${String(o.quarter).slice(0, 20)}, not ${quarter}`);
-  return histClean(o, planId, quarter).file; }
+  const c = histClean(o, planId, quarter); if (c.dropped) c.file.unreadable = c.dropped;   // kept out of the merge, and the part is never written over
+  return c.file; }
+// A removal stamped after the entry's newest version, even when this computer's clock is behind the one that wrote it.
+const histRemoval = (kind, x, by) => ({by:by || "", at:new Date(Math.max(Date.now(), histNewest(kind, x) + 1)).toISOString()});
 // Merge two copies of one quarter. Every entry from either side is kept unless a removal is newer than its newest version.
 function histMerge(theirs, mine){
   const f = histEmpty(theirs.planId, theirs.quarter);
@@ -3681,7 +3685,9 @@ function histHas(back, merged){
 // Reading and writing a quarter in the folder the plan is in. read() gives {file, parts, texts} (each part as read),
 // {missing:true} when the quarter has no file, or {error} saying why it can't be read. write() merges mine into what's
 // there now, writes the parts that change, and reads them back; it never creates a quarter's file unless asked to
-// (create), never writes a quarter it couldn't read, and refuses entries that don't belong in that quarter.
+// (create), never writes a quarter it couldn't read, and refuses entries that don't belong in that quarter. An ok is
+// what this computer read back, not a promise: another copy working from an older read, or a sync service, can still
+// replace the file. So whatever moves entries out of the plan keeps them there until a later read still shows them.
 const HistoryStore = {
   async folder(dir, planId, create){
     if (!HIST_ID.test(String(planId || ""))) throw new Error("the plan has no id");
@@ -3691,19 +3697,25 @@ const HistoryStore = {
     if (!HIST_Q.test(quarter)) return {error:"that isn't a quarter"};
     let folder; try { folder = await HistoryStore.folder(dir, planId, false); }
     catch(e){ return e.name === "NotFoundError" ? {missing:true} : {error:e.message || String(e)}; }
-    const found = new Map(), pat = /^(\d{4}-Q[1-4])(?:\.(\d{1,3}))?\.json$/;
-    try { for await (const hd of folder.values()){ const m = pat.exec(hd.name); if (!m || m[1] !== quarter) continue;
-      const i = m[2] === undefined ? 0 : Number(m[2]) - 1; if (i < 1 && m[2] !== undefined) return {error:`${hd.name} isn't a name Sightline uses`}; if (hd.kind !== "file") return {error:`${hd.name} is a folder`}; found.set(i, hd); } }
+    // Parts are <quarter>.json, <quarter>.2.json, ...; any other .json starting with the quarter (a sync service's
+    // conflict copy, such as 2026-Q1-DESKTOP-ABC.json) is read and merged in, never written.
+    const found = new Map(), extra = [], pat = /^(\d{4}-Q[1-4])(?:\.([2-9]|[1-9]\d{1,2}))?\.json$/;
+    try { for await (const hd of folder.values()){ if (!hd.name.startsWith(quarter) || !/\.json$/i.test(hd.name)) continue;
+      if (hd.kind !== "file") return {error:`${hd.name} is a folder`}; const m = pat.exec(hd.name);
+      if (m && m[1] === quarter) found.set(m[2] === undefined ? 0 : Number(m[2]) - 1, hd); else extra.push(hd); } }
     catch(e){ return {error:`couldn't list ${planId}'s history: ${e.message || e}`}; }
-    if (!found.size) return {missing:true};
+    if (!found.size && !extra.length) return {missing:true};
     if (found.size > HIST_MAX_PARTS) return {error:`${quarter} has more than ${HIST_MAX_PARTS} history files`};
-    const parts = [], texts = [];
-    for (let i = 0; i < found.size; i++){ const hd = found.get(i), name = histName(quarter, i); if (!hd) return {error:`${name} is missing, so the rest of ${quarter} can't be trusted`};
-      let text; try { const f = await hd.getFile(); if (f.size > MAX_READ_BYTES) return {error:`${name} is larger than 5 MB`}; text = await f.text(); }
+    const parts = [], texts = [], copies = [], copyParts = [], unreadable = [];
+    const one = async (hd, name) => { let text; try { const f = await hd.getFile(); if (f.size > MAX_READ_BYTES) return {error:`${name} is larger than 5 MB`}; text = await f.text(); }
       catch(e){ return {error:`couldn't read ${name}: ${e.message || e}`}; }
-      try { parts.push(histParse(text, planId, quarter)); } catch(e){ return {error:`${name} can't be used: ${e.message}`}; }
-      texts.push(text); }
-    return {file:parts.reduce((a, b)=>histMerge(a, b)), parts, texts}; },
+      try { const p = histParse(text, planId, quarter); if (p.unreadable) unreadable.push(name); return {p, text}; } catch(e){ return {error:`${name} can't be used: ${e.message}`}; } };
+    for (let i = 0; i < Math.max(...found.keys(), -1) + 1; i++){ const hd = found.get(i), name = histName(quarter, i); if (!hd) return {error:`${name} is missing, so the rest of ${quarter} can't be trusted`};
+      const r = await one(hd, name); if (r.error) return r; parts.push(r.p); texts.push(r.text); }
+    for (const hd of extra){ const r = await one(hd, hd.name); if (r.error) return r; copies.push(hd.name); copyParts.push(r.p); }
+    const all = [...parts, ...copyParts];
+    if (all.length > HIST_MAX_PARTS) return {error:`${quarter} has more than ${HIST_MAX_PARTS} history files`};
+    return {file:all.reduce((a, b)=>histMerge(a, b), histEmpty(planId, quarter)), parts, texts, copies, unreadable}; },
   async write(dir, planId, quarter, mine, opts = {}){
     if (!HIST_Q.test(quarter)) return {error:"that isn't a quarter"};
     const {file:clean, dropped} = histClean(mine || {}, planId, quarter);
@@ -3712,7 +3724,10 @@ const HistoryStore = {
       const now = await HistoryStore.read(dir, planId, quarter);
       if (now.error) return {error:now.error};
       if (now.missing && !opts.create) return {error:`there's no history file for ${quarter}`};
+      if ((now.unreadable || []).length) return {error:`${now.unreadable.join(", ")} ${now.unreadable.length === 1 ? "has" : "have"} entries this copy of Sightline can't read, so it won't write ${quarter}`};
       const merged = histMerge(now.missing ? histEmpty(planId, quarter) : now.file, clean);
+      const stuck = Object.keys(clean.removed).filter(id=>HIST_KINDS.some(k=>merged[k].some(x=>x.id === id)));
+      if (stuck.length) return {error:`${stuck.length === 1 ? "a removal is" : stuck.length + " removals are"} older than the entry ${stuck.length === 1 ? "it removes" : "they remove"} (${stuck.slice(0, 3).join(", ")}), so ${stuck.length === 1 ? "it" : "they"} wouldn't hide ${stuck.length === 1 ? "it" : "them"}`};
       let texts; try { texts = histLayout(merged, now.parts || []); } catch(e){ return {error:e.message}; }
       // Parts that only gain entries are written before parts that lose any, so an entry moving between parts is never in neither.
       const ids = t => { try { const o = JSON.parse(t); return HIST_KINDS.flatMap(k=>o[k].map(x=>k + ":" + x.id)); } catch(e){ return []; } };
