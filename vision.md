@@ -102,6 +102,7 @@ Each principle is a test a change can pass or fail.
 | Effort ranges, skills, workstream shares, scenarios | Plan | Sightline | Added here, with who added them |
 | Forecast finishes, critical chain, workstream load | Computed by Sightline from the plan's inputs and Jira's facts | Inputs in Jira and Sightline | Likely and high finish, with the reason for each wait and what the forecast assumed |
 | Saved team views and tag colors | Plan | Sightline | Named views; tag style |
+| History: snapshots, saved status updates, older item updates, the Activity log | Plan, kept in history files beside it | Sightline | By period, with who added each entry; a period that couldn't be read is named |
 | Captured requests and ideas: what was raised, its capture type, who asked, its source and meeting date, and what became of it | Plan | Sightline | Added here, with who added them and who asked |
 | How long a captured item has been open, and what it was handed off to | Computed by Sightline from the plan | Inputs in Sightline | Age from when it was added; unknown shown as unknown |
 | What I've hidden from my own view | The viewer | That viewer's browser | View indicator with hidden counts |
@@ -176,14 +177,40 @@ value by ID (a sprint's ID, a user's key, a label to add or remove), the value i
 why, its review state, and what happened when it was applied. An approval recorded in a shared file is advice, not
 authorization; the token holder decides.
 
+## The plan and its history
+
+A plan in daily use piles up history: snapshots, saved status updates, the dated updates on each item, and the
+Activity log. After a year that history is most of the file, and the file reaches the size limit. So the plan file
+holds what the team is planning now, and history lives in history files in a folder beside the plan, one file per
+calendar quarter. Each entry goes in the quarter of its own date, so every copy files it the same way. The edit lock,
+backups, drafts and the Jira files are not history.
+
+- **The plan file is enough to plan.** Opening, drawing and saving the plan never wait on history. The plan keeps
+  what it needs to draw today, such as each item's latest update and the newest snapshot and status update; older
+  entries are in the history files. The sync script reads only the plan file.
+- **Missing history is named, never shown as empty.** When a history file is missing, late or can't be read, the page
+  says which quarter it couldn't read ("History for Jan to Mar wasn't found"). It never treats that history as
+  deleted and never writes a quarter it couldn't read. It starts a new file for a past quarter only to move entries
+  out of the plan file, and only after checking that no file for that quarter exists.
+- **History follows the plan's rules.** Entries record who added them and when, merge with teammates' entries, never
+  overwrite a teammate's, and are checked against the size limit before anything is written. The plan's edit lock
+  covers its history files, undo works on history like any other change, and saving as a new shared plan copies its
+  history. A history file is shared like the plan file (principle 11).
+- **History never blocks the plan.** If the history folder isn't available, history stays in the plan file and the
+  page says so. A history file that would pass the size limit is split, never refused.
+- **Moving history out never loses it.** An entry leaves the plan file only after its history file is written and read
+  back; if that write fails, the entry stays in the plan and the page says why. This holds for every save. The first
+  save in this format saves the old file as a backup before anything moves. Copies of Sightline from before this
+  change open the plan read-only and say why.
+
 ## Not in scope (for now)
 
 - Editing Jira from the page, or any browser connection to Jira.
 - Verified identity, permissions, or private content inside a shared plan.
 - Treating plan timeboxes as Jira sprints, or plan copies as Jira facts.
 - Guessing at Jira history the sync can't see.
-- A server. Sightline stays one HTML file, a plan file, and a sync script. Apps reach it through files in a folder
-  the person granted, never over a network.
+- A server. Sightline stays one HTML file, a plan file with its history files, and a sync script. Apps reach it
+  through files in a folder the person granted, never over a network.
 
 ## Decisions
 
@@ -199,6 +226,8 @@ authorization; the token holder decides.
 - Meeting requests and ideas are captured as roadmap ideas with a capture type, who asked and what became of
   them, kept apart from delivery stage. Requesters are existing people and groups; there is no separate list of
   teams yet.
+- History (snapshots, saved status updates, older item updates, the Activity log) lives in history files beside the
+  plan, one per period; the plan file holds what's being planned now.
 
 **Open**
 
@@ -208,6 +237,9 @@ authorization; the token holder decides.
 - Is a note's text editable only by its author? Recommended: the page asks before editing someone else's words, and
   says plainly that this is a courtesy, not a lock.
 - Should one person's hidden choices follow them across computers?
+- Finished work in a long-lived plan: on the biggest plans that run two years, finished initiatives and tasks alone
+  can reach the size limit. Should a plan roll forward, moving finished work into its history?
+  Decide after history files ship.
 - Projects and platforms: tie people, groups and work to what they build on, own or use. Deferred until captured
   requests show which of those relationships a planning view needs; a plain project tag can't tell them apart.
 
