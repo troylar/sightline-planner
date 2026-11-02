@@ -11,8 +11,9 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
 const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), stats = {writes:0};
   const nf = n => { const e = new Error(n + " not found"); e.name = "NotFoundError"; return e; };
   const fileH = (n, rec) => ({kind:"file", name:n, getFile: async () => ({size:new Blob([rec.text]).size, text: async () => rec.text}),
-    createWritable: async () => { let buf = ""; return {write: async t => { buf += t; }, close: async () => { rec.text = buf; stats.writes++; if (window.onClose) window.onClose(n); }}; }});
+    createWritable: async () => { let buf = ""; return {write: async t => { if (window.failWrite && window.failWrite(n)){ const e = new Error("not enough space"); e.name = "QuotaExceededError"; throw e; } buf += t; }, abort: async () => {}, close: async () => { rec.text = buf; stats.writes++; if (window.onClose) window.onClose(n); }}; }});
   const dirH = (n, map) => ({kind:"directory", name:n, kids:map, stats,
+    values: async function*(){ for (const [k, v] of map) yield v.dir ? {kind:"directory", name:k} : fileH(k, v); },
     getDirectoryHandle: async (k, o) => { let v = map.get(k); if (!v){ if (!(o && o.create)) throw nf(k); v = {dir:new Map()}; map.set(k, v); } if (!v.dir) throw new Error(k + " is a file"); return dirH(k, v.dir); },
     getFileHandle: async (k, o) => { let v = map.get(k); if (!v){ if (!(o && o.create)) throw nf(k); v = {text:""}; map.set(k, v); } if (v.dir) throw new Error(k + " is a folder"); return fileH(k, v); }});
   return dirH(name, kids); };
@@ -41,8 +42,8 @@ const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), stats 
       return [why("{nope"), why("[]"), why(JSON.stringify({...good, sightlineHistory:2})), why(JSON.stringify({...good, planId:"p-other"})), why(JSON.stringify({...good, quarter:"2026-Q2"})), why(JSON.stringify({planId:P, quarter:"2026-Q1"})), why(JSON.stringify(good))]; })()`);
     ok("H3 a file that isn't JSON, a newer format, another plan's file or another quarter's is refused with the reason, never guessed at", Array.isArray(refuse) && refuse[0] === "it isn't valid JSON" && refuse[1] === "it isn't a Sightline history file" && refuse[2] === "a newer copy of Sightline wrote it" && refuse[3] === "it belongs to another plan" && /for 2026-Q2, not 2026-Q1/.test(refuse[4]) && refuse[5] === "it isn't a Sightline history file" && refuse[6] === "read", JSON.stringify(refuse));
     const cleaned = X(`(()=>{ const f = histParse(JSON.stringify({sightlineHistory:1, planId:P, quarter:"2026-Q1", updates:[up("u1","2026-01-05T00:00:00Z","a"), up("u1","2026-01-06T00:00:00Z","dup"), up("u2","2026-04-05T00:00:00Z","next quarter"), up("constructor","2026-01-05T00:00:00Z","x"), "text", null, [1]],
-      removed:{u9:{by:"avery", at:"2026-01-07T00:00:00Z"}, __proto__x:{at:"bad"}, "bad id":{at:"2026-01-07T00:00:00Z"}}}), P, "2026-Q1"); return [f.updates.map(x=>x.text).join(","), Object.keys(f.removed).join(","), Object.getPrototypeOf(f.removed) === Object.prototype]; })()`);
-    ok("H4 a read keeps only good entries for that quarter: no repeats, no other quarter's, no odd ids; removals need a date", Array.isArray(cleaned) && cleaned[0] === "a" && cleaned[1] === "u9" && cleaned[2] === true, JSON.stringify(cleaned));
+      removed:{u9:{by:"avery", at:"2026-01-07T00:00:00Z"}, __proto__x:{at:"bad"}, "bad id":{at:"2026-01-07T00:00:00Z"}}}), P, "2026-Q1"); return [f.updates.map(x=>x.text).join(","), Object.keys(f.removed).join(","), Object.getPrototypeOf(f.removed) === null]; })()`);
+    ok("H4 a read keeps only good entries for that quarter: one copy of an id, no other quarter's, no odd ids; removals need a date and can't reach built-in names", Array.isArray(cleaned) && cleaned[0] === "dup" && cleaned[1] === "u9" && cleaned[2] === true, JSON.stringify(cleaned));
 
     const m = X(`(()=>{ const T = {...histEmpty(P, "2026-Q1"), updates:[up("u1","2026-01-05T00:00:00Z","theirs"), up("u2","2026-01-06T00:00:00Z","their edit","2026-01-09T00:00:00Z"), up("u3","2026-01-07T00:00:00Z","only theirs")]},
       M = {...histEmpty(P, "2026-Q1"), updates:[up("u1","2026-01-05T00:00:00Z","mine, same id, no edit"), up("u2","2026-01-06T00:00:00Z","my older edit","2026-01-08T00:00:00Z"), up("u4","2026-01-04T00:00:00Z","only mine"), up("u5","2026-01-08T00:00:00Z","mine, newer edit","2026-01-10T00:00:00Z")], removed:{u3:{by:"avery", at:"2026-01-10T00:00:00Z"}}};
@@ -53,17 +54,17 @@ const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), stats 
 
     const split = X(`(()=>{ const f = histEmpty(P, "2026-Q3"), pad = "x".repeat(3000);
       for (let i = 0; i < 1500; i++) f.updates.push(up("u" + i, new Date(Date.UTC(2026, 6, 1) + i * 60000).toISOString(), pad));
-      const parts = histParts(f), back = parts.map(t=>histParse(t, P, "2026-Q3")).reduce((a, b)=>histMerge(a, b));
+      const parts = histLayout(f, []), back = parts.map(t=>histParse(t, P, "2026-Q3")).reduce((a, b)=>histMerge(a, b));
       return [parts.length, Math.max(...parts.map(t=>new Blob([t]).size)) <= MAX_BYTES, parts.every(t=>valueCount(JSON.parse(t)) <= MAX_NODES), back.updates.length, back.updates[0].id, back.updates[1499].id]; })()`);
     ok("H7 a big quarter splits into parts that each fit the plan's write limits, and reading them all back gives every entry in order", Array.isArray(split) && split[0] >= 3 && split[1] && split[2] && split[3] === 1500 && split[4] === "u0" && split[5] === "u1499", JSON.stringify(split));
-    const huge = X(`(()=>{ try { histParts({...histEmpty(P, "2026-Q3"), snapshots:[{id:"s1", takenAt:"2026-07-01T00:00:00Z", name:"x".repeat(6 * 1024 * 1024)}]}); return "split"; } catch(e){ return e.message; } })()`);
+    const huge = X(`(()=>{ try { histLayout({...histEmpty(P, "2026-Q3"), snapshots:[{id:"s1", takenAt:"2026-07-01T00:00:00Z", name:"x".repeat(6 * 1024 * 1024)}]}, []); return "split"; } catch(e){ return e.message; } })()`);
     ok("H8 one entry bigger than a history file can be read back with is refused, not written", /snapshot entry from 2026-Q3 is too large/.test(huge), huge);
 
     X(`window.D = mkDir();`);
     const noCreate = await A(`HistoryStore.write(D, P, "2026-Q1", {...histEmpty(P, "2026-Q1"), updates:[up("u1","2026-01-05T00:00:00Z","a")]})`);
     ok("H9 a quarter with no file isn't started unless the caller asks to, and nothing is written", noCreate && /no history file for 2026-Q1/.test(noCreate.error) && X(`filesIn(D, P)`) === null && X(`D.stats.writes`) === 0, JSON.stringify(noCreate));
     const made = await A(`HistoryStore.write(D, P, "2026-Q1", {...histEmpty(P, "2026-Q1"), updates:[up("u1","2026-01-05T00:00:00Z","a")]}, {create:true})`);
-    const read1 = await A(`HistoryStore.read(D, P, "2026-Q1").then(r=>[Object.keys(r.texts).join(","), r.file.updates.map(x=>x.text).join(",")])`);
+    const read1 = await A(`HistoryStore.read(D, P, "2026-Q1").then(r=>[Object.keys(filesIn(D, P)).join(","), r.file.updates.map(x=>x.text).join(",")])`);
     ok("H10 asked to, it starts history/<planId>/2026-Q1.json, and reading it back gives the entry", made && made.ok && Array.isArray(read1) && read1[0] === "2026-Q1.json" && read1[1] === "a" && Object.keys(X(`filesIn(D, P)`)).join() === "2026-Q1.json", JSON.stringify([made, read1]));
     const missing = await A(`Promise.all([HistoryStore.read(D, P, "2025-Q4"), HistoryStore.read(D, "p-nofolder", "2026-Q1"), HistoryStore.read(D, P, "2026-Q5")])`);
     ok("H11 a quarter or plan with no files reads as missing, not as empty history; a bad quarter is an error", Array.isArray(missing) && missing[0].missing && missing[1].missing && /isn't a quarter/.test(missing[2].error), JSON.stringify(missing));
@@ -100,14 +101,66 @@ const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), stats 
     const afterRm = await A(`HistoryStore.read(D2, P, "2026-Q1").then(r=>[r.file.updates.map(x=>x.id).join(","), Object.keys(r.file.removed).join(",")])`);
     ok("H17b a removal that a crossing write lost is written again, so the entry stays removed", rmRace === true && Array.isArray(afterRm) && afterRm[0] === "t1,u1" && afterRm[1] === "t2", JSON.stringify([rmRace, afterRm]));
 
-    // Shrinking: a quarter that needed two parts and now needs one empties the second part instead of deleting it.
+    // Removing almost everything from a quarter that needed two parts: each removal sits in the part its entry was in, and no file is deleted.
     X(`window.D3 = mkDir(); window.big = histEmpty(P, "2026-Q3"); for (let i = 0; i < 900; i++) big.updates.push(up("u" + i, new Date(Date.UTC(2026, 6, 1) + i * 60000).toISOString(), "x".repeat(3000)));`);
     await A(`HistoryStore.write(D3, P, "2026-Q3", big, {create:true})`);
     const n2 = Object.keys(X(`filesIn(D3, P)`)).length;
     X(`window.rm = histEmpty(P, "2026-Q3"); for (let i = 0; i < 899; i++) rm.removed["u" + i] = {by:"avery", at:"2026-09-01T00:00:00Z"};`);
-    const shrink = await A(`HistoryStore.write(D3, P, "2026-Q3", rm).then(r=>r.file.updates.map(x=>x.id).join(","))`);
-    const files3 = X(`Object.entries(filesIn(D3, P)).map(([k, t])=>k + ":" + JSON.parse(t).updates.length).join(" ")`);
-    ok("H18 a quarter that shrinks empties the parts it no longer needs rather than deleting files, and removals stay recorded", n2 >= 2 && shrink === "u899" && files3.split(" ").length === n2 && files3.split(" ").slice(1).every(x=>/:0$/.test(x)) && X(`Object.keys(JSON.parse(filesIn(D3, P)["2026-Q3.json"]).removed).length`) === 899, `${n2} parts; ${files3}`);
+    const shrink = await A(`HistoryStore.write(D3, P, "2026-Q3", rm).then(r=>r.ok && r.file.updates.map(x=>x.id).join(","))`);
+    const files3 = X(`Object.entries(filesIn(D3, P)).map(([k, t])=>{ const o = JSON.parse(t); return k + ":" + o.updates.length + "/" + Object.keys(o.removed).length; }).join(" ")`);
+    ok("H18 removals sit in the part their entry was in, so each part changes on its own; no file is deleted", n2 >= 2 && shrink === "u899" && files3.split(" ").length === n2 && X(`Object.values(filesIn(D3, P)).reduce((n, t)=>n + Object.keys(JSON.parse(t).removed).length, 0)`) === 899, `${n2} parts; ${files3}`);
+
+    // An edit that a crossing write put back to its older version is noticed and written again.
+    X(`window.D4 = mkDir(); putFile(D4, P, "2026-Q1.json", JSON.stringify({...histEmpty(P, "2026-Q1"), updates:[up("u1","2026-01-05T00:00:00Z","old text")]}));
+      window.raced = 0; window.onClose = n => { if (raced++ === 0) putFile(D4, P, n, JSON.stringify({...histEmpty(P, "2026-Q1"), updates:[up("u1","2026-01-05T00:00:00Z","old text")]})); };`);
+    const edit = await A(`HistoryStore.write(D4, P, "2026-Q1", {...histEmpty(P, "2026-Q1"), updates:[up("u1","2026-01-05T00:00:00Z","new text","2026-01-09T00:00:00Z")]}).then(r=>r.ok)`);
+    X(`window.onClose = null;`);
+    const edited = await A(`HistoryStore.read(D4, P, "2026-Q1").then(r=>r.file.updates[0].text)`);
+    ok("H20 an edit that a crossing write put back to the older text is written again, not reported saved", edit === true && edited === "new text", JSON.stringify([edit, edited, X(`raced`)]));
+
+    const wrongQ = await A(`HistoryStore.write(D4, P, "2026-Q1", {...histEmpty(P, "2026-Q1"), updates:[up("u2","2026-05-05T00:00:00Z","Q2's"), up("toString","2026-01-05T00:00:00Z","odd id")]})`);
+    ok("H21 entries that don't belong in that quarter are refused before anything is written", wrongQ && /2 entries don't belong in 2026-Q1/.test(wrongQ.error) && !/Q2's/.test(X(`filesIn(D4, P)["2026-Q1.json"]`)), JSON.stringify(wrongQ));
+    const names = await A(`Promise.all([HistoryStore.write(D4, P, "2026-Q1", {...histEmpty(P, "2026-Q1"), updates:[up("toString","2026-01-05T00:00:00Z","odd id")]}),
+      HistoryStore.write(D4, P, "2026-Q1", {...histEmpty(P, "2026-Q1"), updates:[up("u.valueOf:1","2026-01-05T00:00:00Z","a"), up("hasOwnPropertyX","2026-01-05T00:00:00Z","b")]})]).then(([a, b])=>[a.error || "ok", b.ok && b.file.updates.map(x=>x.id).join(",")])`);
+    ok("H22 an id that is a built-in name is refused with a reason, never dropped while reporting saved; ids that only contain one are kept", Array.isArray(names) && /1 entry doesn't belong/.test(names[0]) && /hasOwnPropertyX/.test(names[1]) && /u\.valueOf:1/.test(names[1]), JSON.stringify(names));
+
+    // Many removals and a few entries stay a handful of files, and a quarter that would need too many files is refused whole.
+    X(`window.D5 = mkDir(); window.many = histEmpty(P, "2026-Q2"); for (let i = 0; i < 25000; i++) many.removed["gone" + i] = {by:"avery", at:"2026-05-01T00:00:00Z"}; for (let i = 0; i < 300; i++) many.updates.push(up("k" + i, new Date(Date.UTC(2026, 3, 2) + i * 60000).toISOString(), "y".repeat(2000)));`);
+    const mres = await A(`HistoryStore.write(D5, P, "2026-Q2", many, {create:true}).then(r=>[r.ok, D5.stats.writes, Object.keys(filesIn(D5, P)).length])`);
+    const mback = await A(`HistoryStore.read(D5, P, "2026-Q2").then(r=>[r.file.updates.length, Object.keys(r.file.removed).length])`);
+    ok("H23 25,000 removals and 300 entries take a few files and one write each, and all read back", Array.isArray(mres) && mres[0] === true && mres[2] <= 3 && mres[1] === mres[2] && Array.isArray(mback) && mback[0] === 300 && mback[1] === 25000, JSON.stringify([mres, mback]));
+    X(`window.D6 = mkDir(); window.huge2 = histEmpty(P, "2026-Q2"); for (let i = 0; i < 101; i++) huge2.snapshots.push({id:"s" + i, takenAt:new Date(Date.UTC(2026, 3, 2) + i * 60000).toISOString(), name:"z".repeat(1900000)});`);
+    const tooMany = await A(`HistoryStore.write(D6, P, "2026-Q2", huge2, {create:true})`);
+    ok("H24 a quarter that would need more than 100 files is refused before any file is written", tooMany && /more than 100 files/.test(tooMany.error) && X(`D6.stats.writes`) === 0 && X(`filesIn(D6, P)`) === null, JSON.stringify(tooMany).slice(0, 200));
+
+    // A write that fails partway loses nothing: what was in each part is still in some part.
+    X(`window.D7 = mkDir(); window.two = histEmpty(P, "2026-Q3"); for (let i = 0; i < 700; i++) two.updates.push(up("v" + String(i).padStart(4, "0"), new Date(Date.UTC(2026, 6, 2) + i * 60000).toISOString(), "w".repeat(3000)));`);
+    await A(`HistoryStore.write(D7, P, "2026-Q3", two, {create:true})`);
+    X(`window.failWrite = n => n !== "2026-Q3.json";`);
+    const fail = await A(`HistoryStore.write(D7, P, "2026-Q3", {...histEmpty(P, "2026-Q3"), updates:[up("early","2026-07-01T00:00:00Z","older than all of them"), ...Array.from({length:400}, (_, i)=>up("n" + i, "2026-09-0" + (1 + i % 9) + "T00:00:00Z", "q".repeat(3000)))]})`);
+    X(`window.failWrite = null;`);
+    const kept = await A(`HistoryStore.read(D7, P, "2026-Q3").then(r=>r.error || r.file.updates.filter(x=>/^v/.test(x.id)).length)`);
+    ok("H25 a write that fails partway says why, and every entry that was saved before is still saved", fail && /couldn't save 2026-Q3's history: not enough space/.test(fail.error) && kept === 700, JSON.stringify([fail, kept]));
+
+    X(`window.D8 = mkDir(); putFile(D8, P, "2026-Q1.json", JSON.stringify(histEmpty(P, "2026-Q1"))); putFile(D8, P, "2026-Q1.3.json", JSON.stringify({...histEmpty(P, "2026-Q1"), updates:[up("t9","2026-01-02T00:00:00Z","a teammate's third part")]}));`);
+    const gap = await A(`Promise.all([HistoryStore.read(D8, P, "2026-Q1"), HistoryStore.write(D8, P, "2026-Q1", {...histEmpty(P, "2026-Q1"), updates:[up("u1","2026-01-05T00:00:00Z","mine")]})])`);
+    ok("H26 a part missing from the middle is named, and nothing is written past it", Array.isArray(gap) && /2026-Q1.2.json is missing/.test(gap[0].error) && /2026-Q1.2.json is missing/.test(gap[1].error) && /third part/.test(X(`filesIn(D8, P)["2026-Q1.3.json"]`)) && !X(`filesIn(D8, P)["2026-Q1.2.json"]`), JSON.stringify(gap));
+
+    const tz = X(`[histQuarter("2026-04-01T00:30:00"), histQuarter("April 1, 2026 00:30"), histQuarter("2026-04-01"), JSON.stringify(histMerge(histEmpty(P, "2026-Q1"), {...histEmpty(P, "2026-Q1"), updates:[up("a","2026-01-01T10:00:00+05:00","5am UTC"), up("b","2026-01-01T06:00:00Z","6am UTC")]}).updates.map(x=>x.id))]`);
+    ok("H27 a date without its time zone has no quarter (copies in different zones would disagree), and entries sort by the moment, not the text", Array.isArray(tz) && tz[0] === "" && tz[1] === "" && tz[2] === "" && tz[3] === '["a","b"]', JSON.stringify(tz));
+
+    const order = X(`(()=>{ const A1 = {...histEmpty(P, "2026-Q1"), updates:[up("u1","2026-01-05T00:00:00Z","one text")], removed:Object.assign(Object.create(null), {r1:{by:"avery", at:"2026-01-06T00:00:00Z"}})},
+      B1 = {...histEmpty(P, "2026-Q1"), updates:[up("u1","2026-01-05T00:00:00Z","another text")], removed:Object.assign(Object.create(null), {r1:{by:"blake", at:"2026-01-06T00:00:00Z"}})};
+      return JSON.stringify(histMerge(A1, B1)) === JSON.stringify(histMerge(B1, A1)); })()`);
+    ok("H28 two copies merge to the same result whichever is merged into which, even on a tie", order === true, String(order));
+    const dup = X(`histParse(JSON.stringify({...histEmpty(P, "2026-Q1"), updates:[up("u1","2026-05-01T00:00:00Z","wrong quarter"), up("u1","2026-01-05T00:00:00Z","first"), up("u1","2026-01-05T00:00:00Z","edited","2026-01-08T00:00:00Z")]}), P, "2026-Q1").updates.map(x=>x.text).join(",")`);
+    ok("H29 the same id twice in one file keeps its newest edit, and a copy from another quarter doesn't hide the good one", dup === "edited", dup);
+
+    const undo = X(`(()=>{ const was = up("u1","2026-01-05T00:00:00Z","text"), gone = {...histEmpty(P, "2026-Q1"), updates:[was], removed:Object.assign(Object.create(null), {u1:{by:"avery", at:"2026-01-07T00:00:00Z"}})};
+      const back = histMerge(gone, {...histEmpty(P, "2026-Q1"), updates:[{...was, edited:{by:"avery", at:"2026-01-08T00:00:00Z"}}]}), again = histMerge(back, gone);
+      const later = histMerge(again, {...histEmpty(P, "2026-Q1"), removed:Object.assign(Object.create(null), {u1:{by:"blake", at:"2026-01-09T00:00:00Z"}})});
+      return [histMerge(histEmpty(P, "2026-Q1"), gone).updates.length, back.updates.length, again.updates.length, later.updates.length]; })()`);
+    ok("H30 a removal hides only older versions: undo (an edit after it) brings the entry back, an old copy of the removal doesn't take it away again, a newer removal does", JSON.stringify(undo) === "[0,1,1,0]", JSON.stringify(undo));
 
     const noId = await A(`HistoryStore.write(D, "", "2026-Q1", histEmpty("", "2026-Q1"), {create:true}).catch(e=>({thrown:e.message}))`);
     ok("H19 a plan with no id never gets a history folder", noId && /no id/.test(noId.thrown || noId.error || "") && !X(`D.kids.get("history").dir.has("")`), JSON.stringify(noId));
