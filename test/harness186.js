@@ -73,13 +73,13 @@ const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), perm =
 
     X(`renderActivity()`);
     const probs = [...d.querySelectorAll("#histProblems li")].map(li=>li.textContent);
-    ok("B9 a quarter that can't be read is named with the reason in Activity, and the quarters that can are still read", probs.some(p=>/^2026-Q2: 2026-Q2\.json can't be used: it isn't valid JSON/.test(p)) && JSON.stringify(X(`hist.quarters`)) === JSON.stringify(["2026-Q1"]) && /1 quarter \(2026-Q1\)/.test(txt("#histRead")), JSON.stringify(probs) + txt("#histRead"));
-    ok("B10 a file a newer copy wrote beside a quarter is named too, not silently left out", probs.some(p=>/^2026-Q3: 2026-Q3-LAPTOP\.json can't be used: a newer copy of Sightline wrote it/.test(p)), JSON.stringify(probs));
+    ok("B9 a quarter that can't be read is named with the reason in Activity, and the quarters that can are still read", probs.some(p=>/^Apr to Jun 2026: 2026-Q2\.json can't be used: it isn't valid JSON/.test(p)) && JSON.stringify(X(`hist.quarters`)) === JSON.stringify(["2026-Q1"]) && /1 quarter \(Jan to Mar 2026\)/.test(txt("#histRead")), JSON.stringify(probs) + txt("#histRead"));
+    ok("B10 a file a newer copy wrote beside a quarter is named too, not silently left out", probs.some(p=>/^Jul to Sep 2026: 2026-Q3-LAPTOP\.json can't be used: a newer copy of Sightline wrote it/.test(p)), JSON.stringify(probs));
     X(`renderSnapshots(); renderReport();`);
     const notes = ["#snapWs", "#reportWs", "#activityWs"].map(s=>(d.querySelector(s + " .histmiss") || {}).textContent || "");
     X(`select("bar", BAR)`); await wait(5);
     const sideNote = (d.querySelector("[data-upd]") && d.querySelector("[data-upd]").closest(".field") || d).querySelector(".histmiss");
-    ok("B11 Snapshots, Status update, Activity and an item's updates each say history from 2026-Q2 and 2026-Q3 may be missing", notes.every(t=>/couldn't be read \(2026-Q2, 2026-Q3\)/.test(t)) && !!sideNote && /2026-Q2, 2026-Q3/.test(sideNote.textContent), JSON.stringify(notes));
+    ok("B11 Snapshots, Status update, Activity and an item's updates each say history from April to September 2026 may be missing, in months, not file names", notes.every(t=>/couldn't be read \(Apr to Jun 2026, Jul to Sep 2026\)/.test(t)) && !!sideNote && /Apr to Jun 2026, Jul to Sep 2026/.test(sideNote.textContent), JSON.stringify(notes));
 
     X(`TEAM.kids.get("history").dir.get(S.meta.planId).dir.delete("2026-Q2.json");
       putFile(TEAM, S.meta.planId, "2026-Q4.json", quarter("2026-Q4", {updates:[{id:"u-plan", item:"bar:" + BAR, at:"2026-10-22T10:00:00Z", by:"", text:"A newer edit, from the history file", edited:{by:"", at:"2026-10-24T10:00:00Z"}}]}));`);
@@ -118,7 +118,27 @@ const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), perm =
     ok("B19 Disconnect forgets the folder for this plan and shows only the plan's own history", !("histDir:p-hist02" in X(`KV`)) && X(`histOn()`) === false && !!d.querySelector("#histConnect") && !d.querySelector('#snapTable tr[data-snap="s-old"]'));
     X(`file.handle = null; renderSnapshots();`);
     ok("B20 a plan in this browser only (no file) never shows history files", X(`histOn()`) === false && !d.querySelector('#snapTable tr[data-snap="s-old"]'));
-    ok("B21 no page errors", !X(`errs.length`), X(`errs.join(" | ")`));
+    // Review round 1: the limit, odd entries, the first read, and time zones.
+    X(`S = normalize(JSON.parse(FIX), false); S.meta.planId = "p-hist02"; file.handle = PH; hist.plan = ""; TEAM.perm.state = "granted"; KV["histDir:p-hist02"] = TEAM;
+      S.snapshots = Array.from({length:SNAP_MAX - 2}, (_, i)=>({...snapOf("Plan " + i), id:"s-p" + i, takenAt:new Date(Date.UTC(2026, 9, 1 + i)).toISOString()}));
+      putFile(TEAM, S.meta.planId, "2026-Q1.json", quarter("2026-Q1", {snapshots:[1, 2, 3].map(i=>({...snapOf("Old " + i), id:"s-h" + i, takenAt:"2026-02-0" + i + "T10:00:00Z"})).concat([{id:"s-bad", name:"No info", takenAt:"2026-02-09T10:00:00Z"}]),
+        reports:[{id:"r-bad", at:"2026-02-02T10:00:00Z"}, {id:"r-east", at:"2026-02-03T09:00:00+05:00", status:"ontrack", title:"East", sections:{}}, {id:"r-utc", at:"2026-02-03T05:00:00Z", status:"ontrack", title:"UTC", sections:{}}],
+        updates:[{id:"u-bad", item:"bar:" + BAR, at:"2026-02-03T10:00:00Z", text:{toString:null}}, {id:"u-ok", item:"bar:" + BAR, at:"2026-02-03T11:00:00Z", text:"Fine"}],
+        changes:[{id:"c-bad", at:"2026-02-05T10:00:00Z", what:"odd ops", ops:"nope"}]}));
+      histRestore();`); await wait(30);
+    X(`renderSnapshots()`);
+    ok("B21 history snapshots don't count against the plan's snapshot limit, so Save snapshot stays available", X(`histList("snapshots").length`) > X(`SNAP_MAX`) && d.querySelector("#snapGo") && !d.querySelector("#snapGo").disabled && !/The limit is/.test(txt("#snapWs")), JSON.stringify([X(`histList("snapshots").length`), d.querySelector("#snapGo") && d.querySelector("#snapGo").disabled]));
+    X(`errs.length = 0;`); const cmp = d.querySelector('[data-snapcmp="s-bad"]'); cmp && cmp.click(); await wait(10); X(`renderSnapshots()`); const cmpText = txt("#snapWs");
+    X(`UI.repShow = "r-bad"; renderReport();`); const actRow = (X(`renderActivity()`), d.querySelector('#actList [data-change="c-bad"]')); if (actRow){ actRow.open = true; actRow.dispatchEvent(new w.Event("toggle")); } await wait(10);
+    X(`select("bar", BAR)`); await wait(5);
+    ok("B22 odd entries in a history file get the plan's own cleaning: comparing, showing and opening them doesn't break a page", !X(`errs.length`) && /Since "No info"/.test(cmpText) && !!d.querySelector("#repFrozen") && !!actRow && !d.querySelector('[data-upd="u-bad"]') && !!d.querySelector('[data-upd="u-ok"]'), JSON.stringify([X(`errs.join(" | ")`), /Since "No info"/.test(cmpText), !!d.querySelector("#repFrozen"), !!actRow, !!d.querySelector('[data-upd="u-bad"]'), !!d.querySelector('[data-upd="u-ok"]')]));
+    X(`renderReport()`); const order = [...d.querySelectorAll("#repTable tr[data-rep]")].map(r=>r.dataset.rep).filter(id=>id === "r-east" || id === "r-utc");
+    ok("B23 saved updates written in different time zones are listed by time, not by their text", JSON.stringify(order) === JSON.stringify(["r-utc", "r-east"]), JSON.stringify(order));
+    X(`let go; window.slowList = new Promise(r=>{ go = r; }); window.GO = go; hist.plan = ""; histRestore();`); await wait(10); X(`renderSnapshots(); renderReport();`);
+    const reading = ["#snapWs", "#reportWs"].map(sel=>txt(sel + " .histmiss"));
+    X(`window.slowList = null; GO();`); await wait(20);
+    ok("B24 while the history files are first being read, the lists say so instead of looking complete", reading.every(t=>/Reading the history files in Team plan/.test(t)), JSON.stringify(reading));
+    ok("B25 no page errors", !X(`errs.length`), X(`errs.join(" | ")`));
   } catch(e){ ok("harness completed", false, e.stack || e.message); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
 })();

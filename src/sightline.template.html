@@ -3173,7 +3173,7 @@ const updMemo = {list:null, n:-1, last:null, by:new Map()};
 function updatesIndex(){ const L = histList("updates"), last = L.length ? L[L.length - 1] : null;
   if (updMemo.list !== L || updMemo.n !== L.length || updMemo.last !== last){ const by = new Map();
     L.forEach(u=>{ let a = by.get(u.item); if (!a) by.set(u.item, a = []); a.push(u); });
-    by.forEach(a=>a.sort((x,y)=>x.at < y.at ? 1 : x.at > y.at ? -1 : 0)); Object.assign(updMemo, {list:L, n:L.length, last, by}); }
+    by.forEach(a=>a.sort(histNewestFirst("at"))); Object.assign(updMemo, {list:L, n:L.length, last, by}); }
   return updMemo.by; }
 const updatesFor = key => (updatesIndex().get(key) || []).slice();
 function addUpdate(s, key, text){ s.updates = s.updates || []; s.updates.push({id:newId("upd"), item:key, at:new Date().toISOString(), by:meId() || "", text:String(text).slice(0,1000)}); }
@@ -3758,6 +3758,17 @@ const HistoryStore = {
 // plan's own history. A quarter that can't be read is named wherever history is listed, never shown as empty.
 const hist = {dir:null, plan:"", hd:null, state:"off", gen:0, by:null, quarters:[], problems:[], reading:null, readAt:0};
 const HIST_KV = id => "histDir:" + id, HIST_QUARTERS = 400;
+const HIST_QN = ["Jan to Mar", "Apr to Jun", "Jul to Sep", "Oct to Dec"], histQName = q => { const m = HIST_Q.exec(q); return m ? `${HIST_QN[m[2] - 1]} ${m[1]}` : q; };
+const histNewestFirst = k => (a, b) => (Date.parse(b[k]) || 0) - (Date.parse(a[k]) || 0);   // stamps can carry different time zones, so compare times, not text
+// History files are untrusted like the plan: each entry gets the cleaning a plan's own gets in normalize (in batches within
+// its per-kind caps), so a well-formed file with odd entries can't break a view.
+function histTidy(by){
+  const out = {snapshots:[], reports:[], updates:[], changes:[], removed:by.removed}, who = v => /^[A-Za-z0-9_-]{0,48}$/.test(String(v == null ? "" : v)) ? String(v == null ? "" : v) : "";
+  const pass = (k, n) => { for (let i = 0; i < by[k].length; i += n) out[k].push(...normalize({meta:{...S.meta}, lanes:[{id:"h", name:"h"}], [k]:by[k].slice(i, i + n)}, false)[k]); };
+  pass("snapshots", SNAP_KEEP); pass("reports", REP_MAX); pass("changes", 1000); out.reports.forEach(r=>{ delete r.info; });
+  out.updates = by.updates.filter(u=>typeof u.item === "string" && u.item.length <= 200 && typeof u.text === "string" && u.text.trim())
+    .map(u=>({id:u.id, item:u.item, at:u.at, by:who(u.by), text:u.text.slice(0, 1000), ...(u.edited ? {edited:{by:who(u.edited.by), at:u.edited.at}} : {})}));
+  return out; }
 const histOn = () => !!(hist.by && file.handle && hist.hd === file.handle && hist.plan === S.meta.planId);
 async function histSameFolder(dir){ if (!file.handle) return false; try { return await (await dir.getFileHandle(file.handle.name)).isSameEntry(file.handle); } catch(e){ return false; } }
 async function histPerm(dir, ask){ try { if ((await dir.queryPermission({mode:"readwrite"})) === "granted") return true; return !!ask && (await dir.requestPermission({mode:"readwrite"})) === "granted"; } catch(e){ return false; } }
@@ -3777,14 +3788,15 @@ async function readHistory(){
       (r.unreadable || []).forEach(n=>problems.push({quarter:q, why:`${n} has entries this copy of Sightline can't read`}));
       quarters.push(q); HIST_KINDS.forEach(k=>by[k].push(...r.file[k]));
       for (const id of Object.keys(r.file.removed)) by.removed[id] = by.removed[id] ? histPickRm(by.removed[id], r.file.removed[id]) : r.file.removed[id]; }
-    return {by, problems, quarters}; })();
-  hist.reading = run; const out = await run;
+    return {by:histTidy(by), problems, quarters}; })();
+  hist.reading = run; if (!hist.by) render();   // the lists say history is still coming
+  const out = await run;
   if (hist.reading !== run || hist.dir !== dir || hist.plan !== plan || hist.hd !== hd) return;   // the plan or folder changed meanwhile
   Object.assign(hist, {reading:null, by:out.by, problems:out.problems, quarters:out.quarters, readAt:Date.now()}); hist.gen++; render(); }
 // Called whenever a plan is installed: a different plan or file starts from what this browser remembers for it.
 async function histRestore(){
   const plan = S.meta.planId, hd = file.handle;
-  if (hist.plan === plan && hist.hd === hd){ if (hist.state === "ready" && Date.now() - hist.readAt > 60000) readHistory(); return; }
+  if (hist.plan === plan && hist.hd === hd){ if (hist.state === "ready" && Date.now() - hist.readAt > 600000) readHistory(); return; }   // saves install the plan often; history is read again at most every ten minutes, or on Read again
   Object.assign(hist, {dir:null, plan, hd, state:"off", by:null, quarters:[], problems:[], reading:null, readAt:0}); hist.gen++;
   if (!hd) return;
   const dir = await kvGet(HIST_KV(plan)); if (!dir || !dir.getFileHandle || hist.plan !== plan || hist.hd !== hd || hist.dir) return;
@@ -3799,6 +3811,7 @@ async function connectHistFolder(){
   catch(e){ if (e.name === "AbortError") return; try { dir = await showDirectoryPicker({mode:"readwrite", id:"sightline-plan"}); } catch(_){ return; } }
   if (file.handle !== hd || S.meta.planId !== plan) return;
   if (!(await histSameFolder(dir))){ setStatus(`${dir.name} doesn't hold ${hd.name}. Choose the folder the plan file is in.`); return; }
+  if (file.handle !== hd || S.meta.planId !== plan) return;
   Object.assign(hist, {dir, plan, hd, state:"ready", by:null, quarters:[], problems:[], reading:null}); hist.gen++;
   kvSet(HIST_KV(plan), dir, true); setStatus(`Connected ${dir.name}. History files beside the plan are shown with the plan's own.`);
   await readHistory(); render(); }
@@ -3816,20 +3829,23 @@ function histList(kind){
   const m = histMemo.get(kind), last = mine[mine.length - 1];
   if (m && m.mine === mine && m.n === mine.length && m.last === last && m.gen === hist.gen) return m.list;
   const by = new Map(), loose = [], rm = hist.by.removed;
-  for (const x of hist.by[kind]) by.set(x.id, x);
+  for (const x of hist.by[kind]) by.set(x.id, by.has(x.id) ? histPick(by.get(x.id), x) : x);
   for (const x of mine){ if (!x || typeof x.id !== "string"){ loose.push(x); continue; } by.set(x.id, by.has(x.id) ? histPick(by.get(x.id), x) : x); }
   const list = [...by.values()].filter(x=>!rm[x.id] || histNewest(kind, x) > Date.parse(rm[x.id].at)).concat(loose);
   histMemo.set(kind, {mine, n:mine.length, last, gen:hist.gen, list}); return list; }
 // Ids of entries that are only in the history files: shown, but changed or deleted only from a copy that can save them there.
-function histOnlyIds(kind){ if (!histOn()) return new Set(); const mine = new Set((S[kind] || []).map(x=>x && x.id)); return new Set(histList(kind).filter(x=>x && !mine.has(x.id)).map(x=>x.id)); }
+const histAwayMemo = new Map();
+function histOnlyIds(kind){ if (!histOn()) return new Set(); const list = histList(kind), m = histAwayMemo.get(kind); if (m && m.list === list) return m.ids;
+  const mine = new Set((S[kind] || []).map(x=>x && x.id)), ids = new Set(list.filter(x=>x && !mine.has(x.id)).map(x=>x.id)); histAwayMemo.set(kind, {list, ids}); return ids; }
 // Where history is listed: what may be missing from it, and why. Null when nothing is.
 function histNotice(short){
   if (!file.handle || hist.hd !== file.handle || hist.plan !== S.meta.planId) return null;
   const go = " See Settings, then Activity.";
   if (hist.state === "paused") return h("p",{class:"msg warn histmiss"}, `History files in ${hist.dir.name} aren't shown until you reconnect the folder.` + (short ? "" : go));
   if (hist.state === "moved") return h("p",{class:"msg warn histmiss"}, `${hist.dir.name} no longer holds this plan, so its history files aren't shown.` + (short ? "" : go));
+  if (hist.state === "ready" && !hist.by) return h("p",{class:"msg histmiss"}, `Reading the history files in ${hist.dir.name}…`);
   if (hist.state !== "ready" || !hist.problems.length) return null;
-  const qs = [...new Set(hist.problems.map(p=>p.quarter).filter(Boolean))];
+  const qs = [...new Set(hist.problems.flatMap(p=>p.quarter.split(", ")).filter(Boolean))].map(histQName);
   return h("p",{class:"msg warn histmiss"}, `Some history couldn't be read${qs.length ? ` (${qs.join(", ")})` : ""}, so entries from then may be missing here.` + (short ? "" : go)); }
 function histLine(){
   if (!file.handle || !window.showDirectoryPicker) return null;
@@ -3843,8 +3859,8 @@ function histLine(){
     h("div",{class:"qrow"}, h("button",{type:"button",class:"btn primary",id:"histConnect",onclick:()=>connectHistFolder()}, "Connect the plan's folder…"), off));
   const q = hist.quarters, n = HIST_KINDS.reduce((a, k)=>a + (hist.by ? hist.by[k].length : 0), 0);
   return box(h("p",{class:"hint",id:"histRead"}, hist.reading && !hist.by ? `Reading ${name}…` : !q.length ? `${name} is connected. It has no history files for this plan yet.`
-      : `${name}, ${HIST_DIR}/${hist.plan}: ${q.length} quarter${q.length === 1 ? "" : "s"} (${q.length === 1 ? q[0] : q[0] + " to " + q[q.length - 1]}), ${n.toLocaleString("en-US")} entr${n === 1 ? "y" : "ies"}.`),
-    hist.problems.length ? h("ul",{class:"histprob",id:"histProblems"}, ...hist.problems.slice(0, 20).map(p=>h("li",{}, (p.quarter ? p.quarter + ": " : "") + p.why + "."))) : null,
+      : `${name}: history from ${q.length} quarter${q.length === 1 ? "" : "s"} (${q.length === 1 ? histQName(q[0]) : histQName(q[0]) + " through " + histQName(q[q.length - 1])}), ${n.toLocaleString("en-US")} entr${n === 1 ? "y" : "ies"}.`),
+    hist.problems.length ? h("ul",{class:"histprob",id:"histProblems"}, ...hist.problems.slice(0, 20).map(p=>h("li",{}, (p.quarter ? p.quarter.split(", ").map(histQName).join(", ") + ": " : "") + p.why + "."))) : null,
     hist.problems.length ? h("p",{class:"hint"}, "Entries in those files aren't shown, and Sightline won't write over them. A newer copy of Sightline may be able to read them.") : null,
     h("div",{class:"qrow"}, h("button",{type:"button",class:"btn",id:"histReload",onclick:()=>reconnectHistFolder()}, "Read again"), off)); }
 const activeStore = () => file.handle ? FileStore : LocalStore;
@@ -12036,12 +12052,12 @@ function saveSnapshot(name){
 }
 function renderSnapshots(){
   const host = $("#snapWs"); if (!host) return;
-  const list = histList("snapshots").slice().sort((a, b)=>a.takenAt < b.takenAt ? 1 : -1), can = !present && !tooNew(), away = histOnlyIds("snapshots");
+  const list = histList("snapshots").slice().sort(histNewestFirst("takenAt")), can = !present && !tooNew(), away = histOnlyIds("snapshots");
   const cmp = list.find(x=>x.id === UI.snapCmp) || null, onTl = id => S.baseline && S.baseline.snap === id;
   const inp = h("input",{id:"snapName","aria-label":"Snapshot name",maxlength:"60",placeholder:"e.g. Q4 commit",autocomplete:"off"});
   const form = can ? h("form",{class:"row",id:"snapAdd",onsubmit:e=>{ e.preventDefault(); saveSnapshot(inp.value); }},
-    inp, h("button",{type:"submit",class:"btn primary",id:"snapGo",disabled:list.length >= SNAP_MAX},"Save snapshot"),
-    list.length >= SNAP_MAX ? h("span",{class:"hint"}, `The limit is ${SNAP_MAX}. Delete one to save another.`) : null) : null;
+    inp, h("button",{type:"submit",class:"btn primary",id:"snapGo",disabled:(S.snapshots || []).length >= SNAP_MAX},"Save snapshot"),
+    (S.snapshots || []).length >= SNAP_MAX ? h("span",{class:"hint"}, `The limit is ${SNAP_MAX}. Delete one to save another.`) : null) : null;
   const row = x => h("tr",{"data-snap":x.id, class: cmp && cmp.id === x.id ? "selected" : null},
     h("td",{}, h("b",{}, x.name), away.has(x.id) ? h("span",{class:"hint histfrom",title:"Kept in the history files beside the plan"}, " · history file") : null, onTl(x.id) ? h("span",{class:"dvb dvb-ready",title:"The Timeline's slip marks compare with this one"}, "On the Timeline") : null),
     h("td",{}, x.takenAt ? `${fmtDay(isoToDay(x.takenAt.slice(0, 10)))}` : "", x.by ? h("span",{class:"hint"}, ` · ${personName(x.by)}`) : null),
@@ -12117,7 +12133,7 @@ function renderReport(){
   const can = !present && !tooNew(); let d = repDraft();
   if (!d){ d = {...reportDraft(), made:new Date().toISOString(), edited:false}; repPut(d); }
   const edit = patch => { const cur = repDraft() || d; repPut({...cur, ...patch, edited:true}, true); };
-  const past = histList("reports").slice().sort((a, b)=>a.at < b.at ? 1 : a.at > b.at ? -1 : 0), away = histOnlyIds("reports");
+  const past = histList("reports").slice().sort(histNewestFirst("at")), away = histOnlyIds("reports");
   const statusSel = h("select",{id:"repStatus","aria-label":"Overall status",onchange:e=>{ edit({status:e.target.value}); }}, ...REP_STATUS.map(([k, t])=>h("option",{value:k, selected:d.status === k}, t)));
   host.replaceChildren(...[h("div",{class:"jhead"}, h("h2",{}, "Status update"), h("p",{class:"hint",id:"repScope"}, "Whole plan. Timeline and personal filters do not narrow this update."), h("p",{class:"hint"}, "Edit this draft, then copy it into your email or chat. Save it to keep a frozen copy; the next update compares with it.")),
     h("div",{class:"row repbar"}, h("label",{for:"repStatus"}, "Overall"), statusSel,
@@ -12166,12 +12182,12 @@ function planSizeLine(){ const P = planSize(), big = P.pct > 50, full = P.pct > 
     big ? h("p",{class:"hint"}, full ? `Almost full: saves stop at ${P.byValues ? num(P.maxValues) + " entries" : "2 MB"}. Delete old snapshots, park or delete finished work, or trim old notes.` : "Getting large: every save reads and writes the whole file, so saves on a synced drive slow down as it grows.") : null); }
 function renderActivity(){
   const host = $("#activityWs"); if (!host) return;
-  const all = histList("changes"), away = histOnlyIds("changes"), who = UI.actBy || "", list = all.filter(c=>!who || c.by === who).slice().sort((a, z)=>z.at < a.at ? -1 : z.at > a.at ? 1 : 0);
+  const all = histList("changes"), away = histOnlyIds("changes"), who = UI.actBy || "", list = all.filter(c=>!who || c.by === who).slice().sort(histNewestFirst("at"));
   const people = [...new Set(all.map(c=>c.by))];
   const pick = h("select",{id:"actBy","aria-label":"Whose changes",onchange:e=>{ UI.actBy = e.target.value; saveUI(); renderActivity(); }},
     h("option",{value:"",selected:!who},"Everyone"), ...people.map(id=>h("option",{value:id,selected:who === id}, id ? personOrFormer(id) : "Not recorded")));
   const when = c => { const d = new Date(c.at); return isNaN(d) ? "" : `${fmtDay(isoToDay(d.toISOString().slice(0,10)))} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
-  host.replaceChildren(h("div",{class:"jhead"}, h("h2",{}, "Activity"), h("p",{class:"hint"}, "Every quick update and save, newest first: who, when, and what changed. It's a record kept in the plan file, so it's a guide, not proof.")),
+  host.replaceChildren(h("div",{class:"jhead"}, h("h2",{}, "Activity"), h("p",{class:"hint"}, `Every quick update and save, newest first: who, when, and what changed. It's a record kept in the plan file${histOn() ? " and its history files" : ""}, so it's a guide, not proof.`)),
     planSizeLine(), histLine(), histNotice(true),
     h("div",{class:"qrow"}, h("label",{for:"actBy"}, "Show "), pick, h("span",{class:"hint"}, `${list.length} change${list.length===1?"":"s"}` + (away.size ? ` · ${away.size} from the history files` : S.changes && S.changes.length ? " · the last 30 days" : ""))),
     list.length ? h("div",{class:"elist",id:"actList"}, ...list.slice(0, UI.actShown || 50).map(c=>h("details",{class:"actrow","data-change":c.id,ontoggle:e=>{ const d = e.currentTarget; if (!d.open || d.dataset.filled) return; d.dataset.filled = "1"; const ul = d.querySelector(".actops"); if (ul && c.ops) ul.replaceChildren(...describeUnsaved(c.ops).slice(0, 50).map(r=>h("li",{}, r.line))); }},
