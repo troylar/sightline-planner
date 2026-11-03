@@ -176,6 +176,13 @@ const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), perm =
     const mx = X(`(()=>{ const base = normalize(JSON.parse(FIX), false); base.meta.histParts = {"2026-Q1":1}; const mine = clone(base), theirs = clone(base);
       mine.meta.histParts = {"2026-Q1":2}; theirs.meta.histParts = {"2026-Q1":3, "2026-Q2":1}; return JSON.stringify(mergePlans(base, mine, theirs).plan.meta.histParts); })()`);
     ok("R7 a quarter's part count merges to the larger, since parts only grow", mx === JSON.stringify({"2026-Q1":3, "2026-Q2":1}), mx);
+    // Review round 2: the status update cap.
+    await A(`prime()`); await A(`saveNow(1)`);
+    X(`commit(s=>{ for (let i = 0; i < 25; i++) s.reports.push({id:"r-w" + i, at:daysAgo(3 + i), by:"", status:"ontrack", title:"Week " + i, sections:{}}); }); repPut({status:"ontrack", sections:{ontrack:"Fine"}});`);
+    const n26 = X(`S.reports.length`); await A(`saveReport()`);
+    ok("R8 saving a status update when 27 are in a plan that keeps history in files keeps them all, and records no removal", n26 === 27 && X(`S.reports.length`) === 28 && !X(`(S.meta.histGone || {})["r-old"]`), JSON.stringify([n26, X(`S.reports.length`), X(`JSON.stringify(S.meta.histGone)`)]));
+    X(`commit(s=>{ for (let i = 25; i < 200; i++) s.reports.push({id:"r-w" + i, at:daysAgo(3 + i), by:"", status:"ontrack", title:"Week " + i, sections:{}}); }); repPut({status:"ontrack", sections:{ontrack:"Again"}});`); await A(`saveReport()`);
+    ok("R9 past the plan's cap, the oldest are trimmed from the plan but never removed from the history files", X(`S.reports.length`) === 104 && X(`Object.keys(S.meta.histGone || {}).length`) === 0, JSON.stringify([X(`S.reports.length`), X(`JSON.stringify(S.meta.histGone)`)]));
     ok("M26 no page errors", !X(`errs.length`), X(`errs.join(" | ")`));
   } catch(e){ ok("harness completed", false, e.stack || e.message); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

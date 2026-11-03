@@ -1844,6 +1844,9 @@ const cleanAgain = L => { const seen = new Set(), out = [];
 const FOLLOW_FIELDS = ["next","waitingOn","escalateBy","decider"];     // optional on decisions and risks: left out until filled in
 const COMMIT_MAX = 26, COMMIT_KEYS = 500;                    // recorded sprint commitments kept; issues each
 const REP_MAX = 26, REP_TEXT = 4000;                         // saved status updates per plan (about six months weekly); characters per section
+// Once a plan keeps history in files, older status updates move there instead of being trimmed; the plan keeps up to two
+// years of them meanwhile (copies that can't move history leave them in the plan, within its size limit).
+const REP_HIST = 104, repCap = meta => meta && meta.histParts && Object.keys(meta.histParts).length ? REP_HIST : REP_MAX;
 const REP_STATUS = [["ontrack","On track"],["atrisk","At risk"],["offtrack","Off track"]];
 const REP_SECTIONS = [["ontrack","On track"],["changed","Changed"],["risk","At risk"],["decisions","Decisions needed"],["next","Next milestone"]];
 const SNAP_MAX = 12, SNAP_KEEP = 24, SNAP_ITEMS = 5000, SNAP_ID = /^(?!__proto__$|constructor$|prototype$)[A-Za-z0-9_.:-]{1,80}$/;                     // snapshots per plan; items each keeps
@@ -2460,7 +2463,7 @@ function normalize(input, strict){
     const cleanInfo = inf => ({b:map(inf.b, v=>[str(v[0]).slice(0, 120), day(v[1]), day(v[2]), st(v[3]), str(v[4]).slice(0, 60), v[5] ? 1 : 0]), t:map(inf.t, v=>[str(v[0]).slice(0, 120), day(v[1]), day(v[2]), st(v[3])]),
       m:map(inf.m, v=>[str(v[0]).slice(0, 120), day(v[1])]), dv:map(inf.dv, v=>[str(v[0]).slice(0, 120), ["idea","planned","done","dropped","split"].includes(v[1]) ? v[1] : "idea", str(v[2]).slice(0, 60)])});
     const ru = idMaker();
-    d.reports = arr("reports").filter(x=>x && typeof x === "object" && validStamp(x.at)).sort((a, b)=>a.at < b.at ? 1 : -1).slice(0, REP_MAX).map((x, i)=>{ const sc = x.sections && typeof x.sections === "object" ? x.sections : {};
+    d.reports = arr("reports").filter(x=>x && typeof x === "object" && validStamp(x.at)).sort((a, b)=>a.at < b.at ? 1 : -1).slice(0, repCap(normHistMeta(m))).map((x, i)=>{ const sc = x.sections && typeof x.sections === "object" ? x.sections : {};
       const o = {id:ru(x.id, "rep-" + (i + 1)), at:str(x.at), by:/^[A-Za-z0-9_-]{0,48}$/.test(str(x.by)) ? str(x.by) : "", status:REP_STATUS.some(y=>y[0] === x.status) ? x.status : "ontrack",
         title:str(x.title).slice(0, 120), sections:Object.fromEntries(REP_SECTIONS.map(([k])=>[k, str(sc[k]).slice(0, REP_TEXT)]))};
       if (i === 0 && x.info && typeof x.info === "object") o.info = cleanInfo(x.info);
@@ -2756,6 +2759,7 @@ function applyOps(plan, ops){
       else if (SET_FIELDS.meta.includes(o.field) && "prev" in o) p.meta[o.field] = setMerge(o.prev, o.value, p.meta[o.field]);
       else if (OBJ_FIELDS.includes(o.field) && "prev" in o) p.meta[o.field] = objMerge(o.prev, o.value, p.meta[o.field]);
       else if (o.field === "capRates" && "prev" in o){ const L = mergeRates(o.prev, o.value, p.meta.capRates); if (L.length) p.meta.capRates = L; else delete p.meta.capRates; }
+      else if (o.field === "histParts"){ const v = {...(o.value || {})}; Object.entries(p.meta.histParts || {}).forEach(([q, n])=>{ if (n > (v[q] || 0)) v[q] = n; }); p.meta.histParts = Object.keys(v).length ? v : undefined; }   // parts only grow
       else if (SYNC_META.includes(o.field)) p.meta[o.field] = clone(o.value); continue; }
     if (o.type === "task"){
       const f = findTask(o.id);
@@ -3918,11 +3922,13 @@ function histPatch(plan){
 // Deleting an entry here that a history file also holds: the plan remembers to write its removal there, so it doesn't
 // come back from the file. Called by commit with the plan before and after a person's own edit, never for a merge.
 // Any copy, folder connected or not, and whatever it last read: a quarter the plan names may hold the entry by now.
+const histTrimmed = new Set();   // entries a cap trimmed in this edit: not a person's deletion, so no removal reaches the files
 function histNoteGone(prev, next){
+  const trimmed = new Set(histTrimmed); histTrimmed.clear();
   const named = next.meta.histParts; if (!named) return;
   let gone = null;
   for (const k of HIST_MOVE){ if ((prev[k] || []).length === 0) continue; const now = new Set((next[k] || []).map(x=>x && x.id));
-    for (const x of prev[k] || []){ if (!x || now.has(x.id) || !HIST_ID.test(String(x.id))) continue;
+    for (const x of prev[k] || []){ if (!x || now.has(x.id) || trimmed.has(x.id) || !HIST_ID.test(String(x.id))) continue;
       const q = histQuarter(histAt(k, x)), y = hist.raw && hist.raw[k].get(x.id); if (!q || !(q in named)) continue;
       gone = gone || {...(next.meta.histGone || {})}; gone[x.id] = {q, ...histRemoval(k, y ? histPick(y, x) : x, meId() || "")}; } }
   if (gone) next.meta.histGone = gone; }
@@ -4397,7 +4403,7 @@ async function writeMine(hd, keepLock){
   out.meta.lock = keepLock ? {by:myName()||"Someone", id:SESSION, at:new Date().toISOString()} : null;
   let moved = histPatch(out);
   let text; try { text = serialize(out, hd.name); } catch(e){ setStatus("Not saved: " + e.message + "."); return false; }
-  { const n = overLimit(text, 64, file.baseText); if (n){ const go = keepLock && histMoveOn(); setStatus(n + (go ? " Older history is being copied to the history files; once it's there, a save in a few minutes can take it out of the plan file." : "")); if (go) histFlush(true); return false; } }
+  { const n = overLimit(text, 64, file.baseText); if (n){ const go = keepLock && histMoveOn(); setStatus(go ? "Not saved yet: the plan is at its size limit. Older history is being copied to the history files; save again in a few minutes and it will be taken out of the plan file, which makes room. Your edits are kept here." : n); if (go) histFlush(true); return false; } }
   const before = file.baseText;
   try {
     let res = await writeIfUnchanged(hd, file.baseText, text);
@@ -12269,7 +12275,7 @@ function repText(r, md){ const st = (REP_STATUS.find(x=>x[0] === r.status) || RE
 function saveReport(){
   const d = repDraft(); if (!d) return Promise.resolve(false);
   const at = new Date().toISOString(), r = {id:newId("rep"), at, by:meId() || "", status:d.status, title:repTitle(at), sections:Object.fromEntries(REP_SECTIONS.map(([k])=>[k, String(d.sections[k] || "").slice(0, REP_TEXT)])), info:snapOf("").info};
-  return quickSave(`status update: ${fmtDay(todayDay())}`, s=>{ s.reports = [r, ...(s.reports || []).map(x=>{ const {info, ...rest} = x; return rest; })].slice(0, REP_MAX); })
+  return quickSave(`status update: ${fmtDay(todayDay())}`, s=>{ const all = [r, ...(s.reports || []).map(x=>{ const {info, ...rest} = x; return rest; })], cap = repCap(s.meta); all.slice(cap).forEach(x=>histTrimmed.add(x.id)); s.reports = all.slice(0, cap); })
     .then(ok=>{ if (ok){ repPut(null); render(); setStatus("Saved the status update. The next one compares with it."); } return ok; });
 }
 function renderReport(){
