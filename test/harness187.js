@@ -11,8 +11,8 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
 const QN = ["Jan to Mar", "Apr to Jun", "Jul to Sep", "Oct to Dec"], histQNameJS = q => { const m = /^(\d{4})-Q([1-4])$/.exec(q); return m ? `${QN[m[2] - 1]} ${m[1]}` : q; };
 const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), perm = {state:"granted", onAsk:"granted", asked:0};
   const nf = n => { const e = new Error(n + " not found"); e.name = "NotFoundError"; return e; };
-  const fileH = (n, rec) => ({kind:"file", name:n, rec, queryPermission: async () => "granted", requestPermission: async () => "granted", isSameEntry: async o => !!o && o.rec === rec, getFile: async () => ({size:new Blob([rec.text]).size, text: async () => rec.text}),
-    createWritable: async () => { let buf = ""; return {write: async t => { buf += t; }, abort: async () => {}, close: async () => { rec.text = buf; }}; }});
+  const fileH = (n, rec) => ({kind:"file", name:n, rec, queryPermission: async () => "granted", requestPermission: async () => "granted", isSameEntry: async o => !!o && o.rec === rec, getFile: async () => ({size:new Blob([rec.text]).size, lastModified:rec.mod || 0, text: async () => rec.text}),
+    createWritable: async () => { let buf = ""; return {write: async t => { buf += t; }, abort: async () => {}, close: async () => { rec.text = buf; rec.mod = Date.now(); }}; }});
   const dirH = (n, map) => ({kind:"directory", name:n, kids:map, perm,
     queryPermission: async () => perm.state, requestPermission: async () => { perm.asked++; perm.state = perm.onAsk; return perm.state; },
     values: async function*(){ if (window.slowList) await window.slowList; for (const [k, v] of map) yield v.dir ? {kind:"directory", name:k} : fileH(k, v); },
@@ -41,22 +41,22 @@ const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), perm =
       window.HREAD = name => JSON.parse(TEAM.kids.get("history").dir.get("p-move01").dir.get(name).text);
       window.PLANFILE = () => JSON.parse(PH.rec.text);
       window.edit = n => commit(s=>{ s.meta.title = "Plan " + n; });
-      window.later = () => { hist.wrote.forEach((t, q)=>hist.wrote.set(q, t - HIST_SETTLE - 1000)); };   // as if five minutes had passed since this page wrote
+      window.later = () => { hist.wrote.forEach((t, q)=>hist.wrote.set(q, t - HIST_SETTLE - 1000)); const h = TEAM.kids.get("history"), p = h && h.dir.get("p-move01"); if (p) p.dir.forEach(r=>{ if (r.mod) r.mod -= HIST_SETTLE + 1000; }); };   // as if five minutes had passed since this page wrote
       window.showDirectoryPicker = async () => TEAM;
-      window.prime = async () => { S = normalize(JSON.parse(FIX), false); S.meta.planId = "p-move01"; delete S.meta.histParts; delete S.meta.histGone;
+      window.prime = async (o = {}) => { S = normalize(JSON.parse(FIX), false); S.meta.planId = "p-move01"; delete S.meta.histParts; delete S.meta.histGone;
         S.snapshots = [{...snapOf("Old one"), id:"s-old1", takenAt:daysAgo(60)}, {...snapOf("Old two"), id:"s-old2", takenAt:daysAgo(50)}, {...snapOf("Old but newest"), id:"s-new", takenAt:daysAgo(31)}];
         S.reports = [{id:"r-old", at:daysAgo(70), by:"", status:"ontrack", title:"Old update", sections:{}}, {id:"r-new", at:daysAgo(2), by:"", status:"ontrack", title:"New update", sections:{}}];
         S.updates = [{id:"u-1", item:"bar:" + BAR, at:daysAgo(80), by:"", text:"First"}, {id:"u-2", item:"bar:" + BAR, at:daysAgo(40), by:"", text:"Second"}, {id:"u-3", item:"bar:" + BAR, at:daysAgo(35), by:"", text:"Latest, though old"},
           {id:"u-4", item:"bar:" + BAR2, at:daysAgo(90), by:"", text:"Only update on another item"}];
-        PH.rec.text = serialize(S, "plan.json"); file.handle = PH; file.baseText = PH.rec.text; file.baseHash = hashText(PH.rec.text); file.holdLock = true; file.dirty = false; locked = false; resetHistory();
-        TEAM.kids.delete("history"); KV["histDir:p-move01"] = TEAM; hist.plan = ""; await histRestore(); render(); };
+        S = normalize(JSON.parse(serialize(S, "plan.json")), false); PH.rec.text = serialize(S, "plan.json"); file.handle = PH; file.baseText = PH.rec.text; file.baseHash = hashText(PH.rec.text); file.holdLock = o.lock !== false; file.dirty = false; locked = false; resetHistory();
+        TEAM.kids.delete("history"); if (o.before) o.before(); KV["histDir:p-move01"] = TEAM; hist.plan = ""; DL.length = 0; await histRestore(); await hist.flushing; render(); };
       window.saveNow = async n => { edit(n); const r = await writeMine(PH, true); await hist.flushing; return r; };`);
     await wait(5);
     await A(`prime()`);
     const mv = X(`JSON.stringify(histMovable(S).map(([k, x])=>x.id).sort())`);
     ok("M1 entries older than 30 days may move, except each item's latest update and the newest snapshot and status update", mv === JSON.stringify(["r-old", "s-old1", "s-old2", "u-1", "u-2"]), mv);
 
-    const r1 = await A(`saveNow(1)`);
+    const r1 = await A(`saveNow(1)`); const dl1 = X(`JSON.stringify(DL.map(x=>[x.name, JSON.parse(x.text).snapshots.length]))`), st1 = X(`$("#status").textContent`), meta1 = X(`JSON.stringify(PLANFILE().meta.histParts)`);
     const files1 = X(`JSON.stringify(HFILES())`), q1 = X(`histQuarter(daysAgo(60))`);
     const inPlan1 = X(`JSON.stringify([PLANFILE().snapshots.map(x=>x.id).sort(), PLANFILE().updates.map(x=>x.id).sort()])`);
     const held = X(`(()=>{ const h = HFILES().map(HREAD); return JSON.stringify(["snapshots", "reports", "updates"].map(k=>h.flatMap(f=>f[k].map(x=>x.id)).sort())); })()`);
@@ -66,13 +66,13 @@ const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), perm =
     ok("M4 Activity says what the save copied and that it leaves the plan file later", /copied 5 entries to/.test(txt("#histMove")) && /leave the plan file at a later save/.test(txt("#histMove")), txt("#histMove"));
 
     await A(`saveNow(2)`);
-    ok("M5 the next save, with no later read of the files, still keeps them in the plan file", X(`HFILES().length`) === 1 && X(`PLANFILE().snapshots.length`) === 3 && X(`PLANFILE().updates.length`) === 4 && !X(`PLANFILE().meta.histParts`), X(`JSON.stringify(PLANFILE().meta)`).slice(0, 300));
+    ok("M5 the next save, with no later read of the files, still keeps them in the plan file", X(`HFILES().length`) === 1 && X(`PLANFILE().snapshots.length`) === 3 && X(`PLANFILE().updates.length`) === 4 && X(`PLANFILE().meta.histParts[histQuarter(daysAgo(60))]`) === 1, X(`JSON.stringify(PLANFILE().meta)`).slice(0, 300));
     X(`later(); hist.readStart = 0;`); await A(`saveNow(3)`);   // this save reads the files again (late enough), and copies nothing new
     ok("M6 (setup) a later read of the files still shows them", X(`hist.raw.snapshots.has("s-old1") && hist.readStart > 0`) === true);
-    X(`DL.length = 0;`); const r4 = await A(`saveNow(4)`);
+    const r4 = await A(`saveNow(4)`);
     const pf = X(`JSON.stringify([PLANFILE().snapshots.map(x=>x.id).sort(), PLANFILE().reports.map(x=>x.id), PLANFILE().updates.map(x=>x.id).sort(), PLANFILE().meta.histParts, PLANFILE().meta.features])`);
     ok("M7 then a save takes them out of the plan file, keeps what the plan draws from, and records the quarter's files", r4 === true && JSON.stringify(JSON.parse(pf).slice(0, 3)) === JSON.stringify([["s-new"], ["r-new"], ["u-3", "u-4"]]) && JSON.parse(pf)[3][X(`histQuarter(daysAgo(60))`)] === 1 && JSON.parse(pf)[4].includes("histFiles1"), pf);
-    ok("M8 that first save in the new format downloads the plan file as it was, and says older copies open it read-only", X(`DL.length`) === 1 && /backup-before-history-files/.test(X(`DL[0].name`)) && X(`JSON.parse(DL[0].text).snapshots.length`) === 3 && /older than .* will open it read-only/.test(X(`$("#status").textContent`)), X(`JSON.stringify(DL.map(x=>x.name))`) + " " + X(`$("#status").textContent`));
+    ok("M8 the save that first copies history names the quarter it starts in the plan file (so every copy knows), downloads the file as it was, and says older copies open it read-only; only once", JSON.parse(dl1).length === 1 && /backup-before-history-files/.test(JSON.parse(dl1)[0][0]) && /older than .* will open it read-only/.test(st1) && JSON.parse(meta1)[X(`histQuarter(daysAgo(60))`)] === 0 && X(`DL.length`) === 1, dl1 + " " + st1 + " " + meta1);
     X(`renderSnapshots()`); const sl = [...d.querySelectorAll("#snapTable tr[data-snap]")].map(r=>[r.dataset.snap, /history file/.test(r.textContent)]);
     X(`select("bar", BAR)`); await wait(5); const ul = [...d.querySelectorAll("[data-upd]")].map(li=>li.dataset.upd);
     ok("M9 everything moved is still listed, from the history file", JSON.stringify(sl) === JSON.stringify([["s-new", false], ["s-old2", true], ["s-old1", true]]) && JSON.stringify(ul) === JSON.stringify(["u-3", "u-2", "u-1"]), JSON.stringify([sl, ul]));
@@ -120,7 +120,7 @@ const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), perm =
     ok("M19 a missing last part of a quarter is named by its file", [...d.querySelectorAll("#histProblems li")].some(li=>/\.2\.json wasn't found/.test(li.textContent)), [...d.querySelectorAll("#histProblems li")].map(li=>li.textContent).join(" | "));
 
     // A part this copy can't fully read blocks writes to it, says so, and nothing leaves the plan.
-    await A(`prime()`); X(`window.Q1 = histQuarter(daysAgo(60)); putFile(TEAM, "p-move01", Q1 + ".json", quarter(Q1, {snapshots:[{id:"s-x", name:"odd", takenAt:"not a date"}]})); hist.readStart = 0;`);
+    X(`window.Q1 = histQuarter(daysAgo(60));`); await A(`prime({before:()=>putFile(TEAM, "p-move01", Q1 + ".json", quarter(Q1, {snapshots:[{id:"s-x", name:"odd", takenAt:"not a date"}]}))})`); X(`hist.readStart = 0;`);
     await A(`saveNow(1)`); X(`renderActivity()`);
     ok("M20 a part with entries this copy can't read is never written over: new entries go in a part of their own, and the part is named", X(`HFILES().includes(Q1 + ".json") && HFILES().includes(Q1 + ".2.json") && TEAM.kids.get("history").dir.get("p-move01").dir.get(Q1 + ".json").text.includes("not a date")`) === true && /can't read/.test(txt("#histProblems")), X(`JSON.stringify(HFILES())`) + " " + txt("#histProblems"));
     X(`later(); hist.readStart = 0;`); await A(`saveNow(2)`); await A(`saveNow(3)`);
@@ -133,7 +133,7 @@ const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), perm =
     ok("M22 a removal that a teammate's later edit outlasts is said to be still shown", /1 entry you deleted is still shown/.test(txt("#histKept")), txt("#histKept"));
 
     // No lock, no move: quick updates never touch the history files.
-    await A(`prime()`); X(`file.holdLock = false;`);
+    await A(`prime({lock:false})`);
     await A(`quickSave("an update", s=>{ s.updates.push({id:"u-q", item:"bar:" + BAR, at:new Date().toISOString(), by:"", text:"Quick"}); })`); await wait(20);
     const quickFiles = X(`HFILES().length`), quickOk = X(`PLANFILE().updates.some(u=>u.id === "u-q")`);
     X(`file.holdLock = true; file.baseText = PH.rec.text; S = normalize(PLANFILE(), false);`); await A(`saveNow(11)`);
@@ -154,6 +154,28 @@ const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), perm =
     X(`undo()`); const un = X(`JSON.stringify([S.snapshots.map(x=>x.id).sort(), !!(S.meta.histParts || {})[histQuarter(daysAgo(60))], S.meta.title])`);
     await A(`(async()=>{ await writeMine(PH, true); await hist.flushing; })()`);
     ok("M27 undo after a save that moved history out undoes the edit, but doesn't put the moved entries back or forget their quarter", un === JSON.stringify([["s-new"], true, "Plan 2"]) && X(`PLANFILE().snapshots.length`) === 1 && !!X(`PLANFILE().meta.histParts`), un);
+    // Review round 1.
+    await A(`prime()`); await A(`saveNow(1)`); X(`disconnectHistFolder(); commit(s=>{ s.updates = s.updates.filter(u=>u.id !== "u-2"); });`);
+    ok("R1 deleting an old entry records its removal even on a copy without the folder connected, once the plan names its quarter", X(`!!(S.meta.histGone || {})["u-2"]`) === true && X(`histOn()`) === false, X(`JSON.stringify(S.meta.histGone)`));
+    await A(`prime()`); await A(`saveNow(1)`); X(`commit(s=>{ s.snapshots = s.snapshots.filter(x=>x.id !== "s-old1"); hist.raw.snapshots.delete("s-old1"); hist.sent.clear(); });`);
+    ok("R2 and on a copy whose last read of the files doesn't have the entry yet", X(`!!(S.meta.histGone || {})["s-old1"]`) === true);
+    await A(`prime()`); await A(`saveNow(1)`);
+    X(`window.QQ = histQuarter(daysAgo(80)); { const f = HREAD(QQ + ".json"); const u = f.updates.find(x=>x.id === "u-1"); f.updates = f.updates.filter(x=>x.id !== "u-1"); putFile(TEAM, "p-move01", QQ + ".json", JSON.stringify(f)); putFile(TEAM, "p-move01", QQ + "-LAPTOP.json", quarter(QQ, {updates:[u]})); }`);
+    X(`later(); hist.readStart = 0;`); await A(`readHistory()`); const there = X(`histThere("updates", S.updates.find(x=>x.id === "u-1"))`); await A(`hist.flushing`);
+    ok("R3 an entry that's only in a sync service's conflict copy doesn't count as there: it stays in the plan file and is copied to the quarter's own file again", there === false && X(`HREAD(QQ + ".json").updates.some(u=>u.id === "u-1")`) === true && X(`PLANFILE().updates.some(u=>u.id === "u-1")`) === true, JSON.stringify([there, X(`HREAD(QQ + ".json").updates.map(u=>u.id)`)]));
+    // A plan too big to save still moves history out.
+    await A(`prime()`); X(`window.realOver = overLimit; overLimit = (t, ...a) => JSON.parse(t).snapshots.length > 1 ? "Not saved: the plan is too big." : realOver(t, ...a);`);
+    const big1 = await A(`saveNow(1)`); await A(`hist.flushing`); const bigMsg = X(`$("#status").textContent`), bigFiles = X(`HFILES().length`);
+    X(`later(); hist.readStart = 0;`); await A(`readHistory()`); const big2 = await A(`saveNow(2)`); X(`overLimit = realOver;`);
+    ok("R4 a plan too big to save copies its older history anyway, says so, and the next save takes it out and fits", big1 === false && /being copied to the history files/.test(bigMsg) && bigFiles === 1 && big2 === true && X(`PLANFILE().snapshots.length`) === 1 && X(`PLANFILE().meta.histParts[histQuarter(daysAgo(60))]`) === 1, JSON.stringify([big1, bigMsg, bigFiles, big2]));
+    // Reopening the plan right after a write doesn't skip the wait: the files' own times count.
+    await A(`prime()`); await A(`saveNow(1)`); X(`hist.plan = "";`); await A(`histRestore()`); await A(`saveNow(2)`); await A(`saveNow(3)`);
+    ok("R5 reopening the plan seconds after its history was written still waits before anything leaves the plan file", X(`PLANFILE().snapshots.length`) === 3, X(`PLANFILE().snapshots.length`));
+    await A(`prime()`); await A(`saveNow(1)`); X(`later(); hist.readStart = 0;`); await A(`readHistory()`); await A(`hist.flushing`); const clean6 = X(`planUnchanged()`); const plain = await A(`(async()=>{ const r = await writeMine(PH, true); await hist.flushing; return r; })()`);
+    ok("R6 Save with no edits still takes out what the files hold", clean6 === true && plain === true && X(`PLANFILE().snapshots.length`) === 1, JSON.stringify([clean6, plain, X(`PLANFILE().snapshots.length`)]));
+    const mx = X(`(()=>{ const base = normalize(JSON.parse(FIX), false); base.meta.histParts = {"2026-Q1":1}; const mine = clone(base), theirs = clone(base);
+      mine.meta.histParts = {"2026-Q1":2}; theirs.meta.histParts = {"2026-Q1":3, "2026-Q2":1}; return JSON.stringify(mergePlans(base, mine, theirs).plan.meta.histParts); })()`);
+    ok("R7 a quarter's part count merges to the larger, since parts only grow", mx === JSON.stringify({"2026-Q1":3, "2026-Q2":1}), mx);
     ok("M26 no page errors", !X(`errs.length`), X(`errs.join(" | ")`));
   } catch(e){ ok("harness completed", false, e.stack || e.message); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
