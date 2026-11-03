@@ -194,8 +194,9 @@ backups, drafts and the Jira files are not history.
   out of the plan file, and only after checking that no file for that quarter exists.
 - **History follows the plan's rules.** Entries record who added them and when, merge with teammates' entries, never
   overwrite a teammate's, and are checked against the size limit before anything is written. The plan's edit lock
-  covers its history files, undo works on history like any other change, and saving as a new shared plan copies its
-  history. A history file is shared like the plan file (principle 11).
+  covers its history files, and undo works on history like any other change. Saving as a new shared plan should copy its
+  history; until it does, it's refused for a plan whose history is in files, and the page says to copy the plan's whole
+  folder instead. A history file is shared like the plan file (principle 11).
 - **History never blocks the plan.** If the history folder isn't available, history stays in the plan file and the
   page says so. A history file that would pass the size limit is split, never refused.
 - **Moving history out never loses it.** An entry leaves the plan file only after its history file is written and read
