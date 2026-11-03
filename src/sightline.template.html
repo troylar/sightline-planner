@@ -1283,6 +1283,7 @@ dialog.capdlg{width:min(560px,92vw)}.capdlg form{display:flex;flex-direction:col
 .amgroup>summary{cursor:pointer;font-weight:600;font-size:13px;margin:8px 0 4px}.amlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}.amrow{border:1px solid var(--rule-2);border-radius:8px;padding:6px 8px;display:flex;flex-direction:column;gap:3px}
 .amrow.am-changed{border-color:var(--warn)}.amrow.am-invalid{border-color:var(--bad)}.amlines{margin:0;padding-left:16px;font-size:12.5px;color:var(--ink-2)}.amwhy{color:var(--bad)}.amrow.am-changed .amwhy{color:var(--warn)}.amghostidea{opacity:.85}
 /* Plan size */
+.histline{display:flex;flex-direction:column;gap:4px;margin:0 0 12px;font-size:13px}.histline p.hint{margin:0}.histprob{margin:0;padding-left:18px;color:var(--bad)}.histmiss{margin:6px 0}
 .psize{display:flex;flex-direction:column;gap:2px;margin:8px 0 12px;font-size:13px}.psize p.hint{margin:0}.psbar{display:inline-block;width:160px;height:6px;border-radius:3px;background:var(--rule-2);overflow:hidden;vertical-align:middle}.psbar b{display:block;height:100%;background:var(--ok)}
 .psize.warn .psbar b{background:var(--warn)}.psize.bad .psbar b{background:var(--bad)}
 /* Data checked */
@@ -3169,10 +3170,10 @@ const waitName = v => personById(v)?.name || v || "";
 // Updates by item, newest first: one pass over the log instead of one per item. Rebuilt when the list, its length or its
 // last entry changes (adding, deleting and replacing all do); an edit in place changes only text the index points to.
 const updMemo = {list:null, n:-1, last:null, by:new Map()};
-function updatesIndex(){ const L = S.updates || [], last = L.length ? L[L.length - 1] : null;
+function updatesIndex(){ const L = histList("updates"), last = L.length ? L[L.length - 1] : null;
   if (updMemo.list !== L || updMemo.n !== L.length || updMemo.last !== last){ const by = new Map();
     L.forEach(u=>{ let a = by.get(u.item); if (!a) by.set(u.item, a = []); a.push(u); });
-    by.forEach(a=>a.sort((x,y)=>x.at < y.at ? 1 : x.at > y.at ? -1 : 0)); Object.assign(updMemo, {list:L, n:L.length, last, by}); }
+    by.forEach(a=>a.sort(histNewestFirst("at"))); Object.assign(updMemo, {list:L, n:L.length, last, by}); }
   return updMemo.by; }
 const updatesFor = key => (updatesIndex().get(key) || []).slice();
 function addUpdate(s, key, text){ s.updates = s.updates || []; s.updates.push({id:newId("upd"), item:key, at:new Date().toISOString(), by:meId() || "", text:String(text).slice(0,1000)}); }
@@ -3752,6 +3753,116 @@ const HistoryStore = {
     }
     return {error:`${quarter}'s history kept changing while it was being saved`}; }
 };
+// The plan's folder, for its history files. Each person connects it once (read and write, so later saves can move history
+// there); it's remembered per plan and checked against the open plan file every time. What's read is shown beside the
+// plan's own history. A quarter that can't be read is named wherever history is listed, never shown as empty.
+const hist = {dir:null, plan:"", hd:null, state:"off", gen:0, by:null, quarters:[], problems:[], reading:null, readAt:0};
+const HIST_KV = id => "histDir:" + id, HIST_QUARTERS = 400;
+const HIST_QN = ["Jan to Mar", "Apr to Jun", "Jul to Sep", "Oct to Dec"], histQName = q => { const m = HIST_Q.exec(q); return m ? `${HIST_QN[m[2] - 1]} ${m[1]}` : q; };
+const histNewestFirst = k => (a, b) => (Date.parse(b[k]) || 0) - (Date.parse(a[k]) || 0);   // stamps can carry different time zones, so compare times, not text
+// History files are untrusted like the plan: each entry gets the cleaning a plan's own gets in normalize (in batches within
+// its per-kind caps), so a well-formed file with odd entries can't break a view.
+function histTidy(by){
+  const out = {snapshots:[], reports:[], updates:[], changes:[], removed:by.removed}, who = v => /^[A-Za-z0-9_-]{0,48}$/.test(String(v == null ? "" : v)) ? String(v == null ? "" : v) : "";
+  const pass = (k, n) => { for (let i = 0; i < by[k].length; i += n) out[k].push(...normalize({meta:{...S.meta}, lanes:[{id:"h", name:"h"}], [k]:by[k].slice(i, i + n)}, false)[k]); };
+  pass("snapshots", SNAP_KEEP); pass("reports", REP_MAX); pass("changes", 1000); out.reports.forEach(r=>{ delete r.info; });
+  out.updates = by.updates.filter(u=>typeof u.item === "string" && u.item.length <= 200 && typeof u.text === "string" && u.text.trim())
+    .map(u=>({id:u.id, item:u.item, at:u.at, by:who(u.by), text:u.text.slice(0, 1000), ...(u.edited ? {edited:{by:who(u.edited.by), at:u.edited.at}} : {})}));
+  return out; }
+const histOn = () => !!(hist.by && file.handle && hist.hd === file.handle && hist.plan === S.meta.planId);
+async function histSameFolder(dir){ if (!file.handle) return false; try { return await (await dir.getFileHandle(file.handle.name)).isSameEntry(file.handle); } catch(e){ return false; } }
+async function histPerm(dir, ask){ try { if ((await dir.queryPermission({mode:"readwrite"})) === "granted") return true; return !!ask && (await dir.requestPermission({mode:"readwrite"})) === "granted"; } catch(e){ return false; } }
+async function readHistory(){
+  const dir = hist.dir, plan = hist.plan, hd = hist.hd; if (!dir || hist.state !== "ready") return;
+  const run = (async ()=>{
+    const by = {snapshots:[], reports:[], updates:[], changes:[], removed:Object.create(null)}, problems = [], quarters = [], qs = new Set();
+    let folder = null; try { folder = await HistoryStore.folder(dir, plan, false); }
+    catch(e){ if (e.name !== "NotFoundError") problems.push({quarter:"", why:`couldn't open ${HIST_DIR}/${plan}: ${e.message || e}`}); return {by, problems, quarters}; }
+    try { for await (const x of folder.values()){ const m = /^(\d{4}-Q[1-4])/.exec(x.name); if (m && /\.json$/i.test(x.name)) qs.add(m[1]); } }
+    catch(e){ problems.push({quarter:"", why:`couldn't list ${HIST_DIR}/${plan}: ${e.message || e}`}); return {by, problems, quarters}; }
+    const all = [...qs].sort(); if (all.length > HIST_QUARTERS) problems.push({quarter:all.slice(0, all.length - HIST_QUARTERS).join(", "), why:`only the newest ${HIST_QUARTERS} quarters are read`});
+    for (const q of all.slice(-HIST_QUARTERS)){ const r = await HistoryStore.read(dir, plan, q);
+      (r.ignored || []).forEach(why=>problems.push({quarter:q, why}));
+      if (r.error){ problems.push({quarter:q, why:r.error}); continue; }
+      if (r.missing) continue;
+      (r.unreadable || []).forEach(n=>problems.push({quarter:q, why:`${n} has entries this copy of Sightline can't read`}));
+      quarters.push(q); HIST_KINDS.forEach(k=>by[k].push(...r.file[k]));
+      for (const id of Object.keys(r.file.removed)) by.removed[id] = by.removed[id] ? histPickRm(by.removed[id], r.file.removed[id]) : r.file.removed[id]; }
+    return {by:histTidy(by), problems, quarters}; })();
+  hist.reading = run; if (!hist.by) render();   // the lists say history is still coming
+  const out = await run;
+  if (hist.reading !== run || hist.dir !== dir || hist.plan !== plan || hist.hd !== hd) return;   // the plan or folder changed meanwhile
+  Object.assign(hist, {reading:null, by:out.by, problems:out.problems, quarters:out.quarters, readAt:Date.now()}); hist.gen++; render(); }
+// Called whenever a plan is installed: a different plan or file starts from what this browser remembers for it.
+async function histRestore(){
+  const plan = S.meta.planId, hd = file.handle;
+  if (hist.plan === plan && hist.hd === hd){ if (hist.state === "ready" && Date.now() - hist.readAt > 600000) readHistory(); return; }   // saves install the plan often; history is read again at most every ten minutes, or on Read again
+  Object.assign(hist, {dir:null, plan, hd, state:"off", by:null, quarters:[], problems:[], reading:null, readAt:0}); hist.gen++;
+  if (!hd) return;
+  const dir = await kvGet(HIST_KV(plan)); if (!dir || !dir.getFileHandle || hist.plan !== plan || hist.hd !== hd || hist.dir) return;
+  hist.dir = dir;
+  hist.state = !(await histPerm(dir, false)) ? "paused" : !(await histSameFolder(dir)) ? "moved" : "ready";
+  if (hist.dir !== dir) return; if (hist.state === "ready") await readHistory(); else render(); }
+async function connectHistFolder(){
+  if (!file.handle){ setStatus("Open the shared plan file first."); return; }
+  if (!window.showDirectoryPicker){ setStatus("This browser can't open folders. Use Edge or Chrome."); return; }
+  const hd = file.handle, plan = S.meta.planId; let dir;
+  try { dir = await showDirectoryPicker({mode:"readwrite", id:"sightline-plan", startIn:hd}); }
+  catch(e){ if (e.name === "AbortError") return; try { dir = await showDirectoryPicker({mode:"readwrite", id:"sightline-plan"}); } catch(_){ return; } }
+  if (file.handle !== hd || S.meta.planId !== plan) return;
+  if (!(await histSameFolder(dir))){ setStatus(`${dir.name} doesn't hold ${hd.name}. Choose the folder the plan file is in.`); return; }
+  if (file.handle !== hd || S.meta.planId !== plan) return;
+  Object.assign(hist, {dir, plan, hd, state:"ready", by:null, quarters:[], problems:[], reading:null}); hist.gen++;
+  kvSet(HIST_KV(plan), dir, true); setStatus(`Connected ${dir.name}. History files beside the plan are shown with the plan's own.`);
+  await readHistory(); render(); }
+// One click (a user gesture) asks the browser again, then checks the folder still holds the plan.
+async function reconnectHistFolder(){ const dir = hist.dir; if (!dir) return connectHistFolder();
+  if (!(await histPerm(dir, true))){ setStatus(`Sightline needs permission to use ${dir.name}. Click Reconnect and choose Allow.`); return; }
+  if (hist.dir !== dir) return;
+  if (!(await histSameFolder(dir))){ hist.state = "moved"; hist.by = null; hist.gen++; render(); setStatus(`${dir.name} no longer holds ${file.handle ? file.handle.name : "the plan"}. Connect the folder the plan file is in now.`); return; }
+  hist.state = "ready"; await readHistory(); setStatus(`Read the history files in ${dir.name}.`); }
+function disconnectHistFolder(){ kvDel(HIST_KV(hist.plan)); Object.assign(hist, {dir:null, state:"off", by:null, quarters:[], problems:[], reading:null}); hist.gen++; render(); setStatus("Disconnected the plan's folder. Only the history in the plan file is shown."); }
+// The plan's own entries with those from the history files: one per id, the newer edit, and a removal hides only older versions.
+const histMemo = new Map();
+function histList(kind){
+  const mine = S[kind] || []; if (!histOn()) return mine;
+  const m = histMemo.get(kind), last = mine[mine.length - 1];
+  if (m && m.mine === mine && m.n === mine.length && m.last === last && m.gen === hist.gen) return m.list;
+  const by = new Map(), loose = [], rm = hist.by.removed;
+  for (const x of hist.by[kind]) by.set(x.id, by.has(x.id) ? histPick(by.get(x.id), x) : x);
+  for (const x of mine){ if (!x || typeof x.id !== "string"){ loose.push(x); continue; } by.set(x.id, by.has(x.id) ? histPick(by.get(x.id), x) : x); }
+  const list = [...by.values()].filter(x=>!rm[x.id] || histNewest(kind, x) > Date.parse(rm[x.id].at)).concat(loose);
+  histMemo.set(kind, {mine, n:mine.length, last, gen:hist.gen, list}); return list; }
+// Ids of entries that are only in the history files: shown, but changed or deleted only from a copy that can save them there.
+const histAwayMemo = new Map();
+function histOnlyIds(kind){ if (!histOn()) return new Set(); const list = histList(kind), m = histAwayMemo.get(kind); if (m && m.list === list) return m.ids;
+  const mine = new Set((S[kind] || []).map(x=>x && x.id)), ids = new Set(list.filter(x=>x && !mine.has(x.id)).map(x=>x.id)); histAwayMemo.set(kind, {list, ids}); return ids; }
+// Where history is listed: what may be missing from it, and why. Null when nothing is.
+function histNotice(short){
+  if (!file.handle || hist.hd !== file.handle || hist.plan !== S.meta.planId) return null;
+  const go = " See Settings, then Activity.";
+  if (hist.state === "paused") return h("p",{class:"msg warn histmiss"}, `History files in ${hist.dir.name} aren't shown until you reconnect the folder.` + (short ? "" : go));
+  if (hist.state === "moved") return h("p",{class:"msg warn histmiss"}, `${hist.dir.name} no longer holds this plan, so its history files aren't shown.` + (short ? "" : go));
+  if (hist.state === "ready" && !hist.by) return h("p",{class:"msg histmiss"}, `Reading the history files in ${hist.dir.name}…`);
+  if (hist.state !== "ready" || !hist.problems.length) return null;
+  const qs = [...new Set(hist.problems.flatMap(p=>p.quarter.split(", ")).filter(Boolean))].map(histQName);
+  return h("p",{class:"msg warn histmiss"}, `Some history couldn't be read${qs.length ? ` (${qs.join(", ")})` : ""}, so entries from then may be missing here.` + (short ? "" : go)); }
+function histLine(){
+  if (!file.handle || !window.showDirectoryPicker) return null;
+  const head = h("b",{}, "History files"), box = (...kids) => h("div",{class:"histline",id:"histLine"}, head, ...kids);
+  if (!hist.dir || hist.hd !== file.handle || hist.plan !== S.meta.planId) return box(h("p",{class:"hint"}, `Snapshots, status updates, item updates and Activity are kept in ${file.handle.name}. Connect the folder it's in to also show the history files kept beside it.`),
+    h("div",{class:"qrow"}, h("button",{type:"button",class:"btn",id:"histConnect",onclick:()=>connectHistFolder()}, "Connect the plan's folder…")));
+  const name = hist.dir.name, off = h("button",{type:"button",class:"linkish",id:"histOff",onclick:()=>disconnectHistFolder()}, "Disconnect");
+  if (hist.state === "paused") return box(h("p",{class:"hint"}, `Your browser needs your OK to use ${name} again (it asks once per visit unless you choose to allow it every time).`),
+    h("div",{class:"qrow"}, h("button",{type:"button",class:"btn primary",id:"histReconnect",onclick:()=>reconnectHistFolder()}, `Reconnect ${name}`), off));
+  if (hist.state === "moved") return box(h("p",{class:"hint"}, `${name} no longer holds ${file.handle.name}. Connect the folder the plan file is in now.`),
+    h("div",{class:"qrow"}, h("button",{type:"button",class:"btn primary",id:"histConnect",onclick:()=>connectHistFolder()}, "Connect the plan's folder…"), off));
+  const q = hist.quarters, n = HIST_KINDS.reduce((a, k)=>a + (hist.by ? hist.by[k].length : 0), 0);
+  return box(h("p",{class:"hint",id:"histRead"}, hist.reading && !hist.by ? `Reading ${name}…` : !q.length ? `${name} is connected. It has no history files for this plan yet.`
+      : `${name}: history from ${q.length} quarter${q.length === 1 ? "" : "s"} (${q.length === 1 ? histQName(q[0]) : histQName(q[0]) + " through " + histQName(q[q.length - 1])}), ${n.toLocaleString("en-US")} entr${n === 1 ? "y" : "ies"}.`),
+    hist.problems.length ? h("ul",{class:"histprob",id:"histProblems"}, ...hist.problems.slice(0, 20).map(p=>h("li",{}, (p.quarter ? p.quarter.split(", ").map(histQName).join(", ") + ": " : "") + p.why + "."))) : null,
+    hist.problems.length ? h("p",{class:"hint"}, "Entries in those files aren't shown, and Sightline won't write over them. A newer copy of Sightline may be able to read them.") : null,
+    h("div",{class:"qrow"}, h("button",{type:"button",class:"btn",id:"histReload",onclick:()=>reconnectHistFolder()}, "Read again"), off)); }
 const activeStore = () => file.handle ? FileStore : LocalStore;
 const serialize = (plan, name) => FileStore.serialize(plan, name);
 const readFile = hd => FileStore.read(hd);
@@ -3792,7 +3903,7 @@ function installPlan(plan, text, hd){
     const l = lockOf(plan); file.holdLock = !!(l && l.mine && !l.expired);
     showLockBanner();
   }
-  interruptedLink = null; locked = false; clearBanner("link");
+  interruptedLink = null; locked = false; clearBanner("link"); histRestore();
 }
 // One always-visible line that says who can edit, whether your changes are saved, and when your lock runs out.
 let stripTimer = null, stripKey = "";
@@ -11941,18 +12052,18 @@ function saveSnapshot(name){
 }
 function renderSnapshots(){
   const host = $("#snapWs"); if (!host) return;
-  const list = (S.snapshots || []).slice().sort((a, b)=>a.takenAt < b.takenAt ? 1 : -1), can = !present && !tooNew();
+  const list = histList("snapshots").slice().sort(histNewestFirst("takenAt")), can = !present && !tooNew(), away = histOnlyIds("snapshots");
   const cmp = list.find(x=>x.id === UI.snapCmp) || null, onTl = id => S.baseline && S.baseline.snap === id;
   const inp = h("input",{id:"snapName","aria-label":"Snapshot name",maxlength:"60",placeholder:"e.g. Q4 commit",autocomplete:"off"});
   const form = can ? h("form",{class:"row",id:"snapAdd",onsubmit:e=>{ e.preventDefault(); saveSnapshot(inp.value); }},
-    inp, h("button",{type:"submit",class:"btn primary",id:"snapGo",disabled:list.length >= SNAP_MAX},"Save snapshot"),
-    list.length >= SNAP_MAX ? h("span",{class:"hint"}, `The limit is ${SNAP_MAX}. Delete one to save another.`) : null) : null;
+    inp, h("button",{type:"submit",class:"btn primary",id:"snapGo",disabled:(S.snapshots || []).length >= SNAP_MAX},"Save snapshot"),
+    (S.snapshots || []).length >= SNAP_MAX ? h("span",{class:"hint"}, `The limit is ${SNAP_MAX}. Delete one to save another.`) : null) : null;
   const row = x => h("tr",{"data-snap":x.id, class: cmp && cmp.id === x.id ? "selected" : null},
-    h("td",{}, h("b",{}, x.name), onTl(x.id) ? h("span",{class:"dvb dvb-ready",title:"The Timeline's slip marks compare with this one"}, "On the Timeline") : null),
+    h("td",{}, h("b",{}, x.name), away.has(x.id) ? h("span",{class:"hint histfrom",title:"Kept in the history files beside the plan"}, " · history file") : null, onTl(x.id) ? h("span",{class:"dvb dvb-ready",title:"The Timeline's slip marks compare with this one"}, "On the Timeline") : null),
     h("td",{}, x.takenAt ? `${fmtDay(isoToDay(x.takenAt.slice(0, 10)))}` : "", x.by ? h("span",{class:"hint"}, ` · ${personName(x.by)}`) : null),
     h("td",{class:"acts"}, h("button",{type:"button",class:"btn","data-snapcmp":x.id,"aria-pressed":String(!!(cmp && cmp.id === x.id)),onclick:()=>{ UI.snapCmp = cmp && cmp.id === x.id ? null : x.id; saveUI(); render(); }}, "Compare"),
-      can && !onTl(x.id) ? h("button",{type:"button",class:"btn","data-snaptl":x.id,title:"Show how far items moved since this snapshot, on the Timeline",onclick:()=>quickSave(`slip since ${x.name}`, s=>{ const y = (s.snapshots || []).find(z=>z.id === x.id); if (!y) return NOCHANGE; s.baseline = {...clone(y.base), name:y.name, snap:y.id}; })}, "Show slip on the Timeline") : null,
-      can ? h("button",{type:"button",class:"btn","data-snapdel":x.id,onclick:()=>{ if (!window.confirm(`Delete the snapshot "${x.name}"? Everyone loses it.`)) return;
+      can && !onTl(x.id) ? h("button",{type:"button",class:"btn","data-snaptl":x.id,title:"Show how far items moved since this snapshot, on the Timeline",onclick:()=>quickSave(`slip since ${x.name}`, s=>{ const y = (s.snapshots || []).find(z=>z.id === x.id) || (away.has(x.id) ? x : null); if (!y) return NOCHANGE; s.baseline = {...clone(y.base), name:y.name, snap:y.id}; })}, "Show slip on the Timeline") : null,
+      can && !away.has(x.id) ? h("button",{type:"button",class:"btn","data-snapdel":x.id,onclick:()=>{ if (!window.confirm(`Delete the snapshot "${x.name}"? Everyone loses it.`)) return;
         quickSave(`deleted snapshot ${x.name}`, s=>{ const n = (s.snapshots || []).length; s.snapshots = (s.snapshots || []).filter(z=>z.id !== x.id); if (s.snapshots.length === n) return NOCHANGE; }); }}, "Delete") : null));
   let body = null;
   if (cmp){ const C = snapCompare(cmp), MAX = 20;
@@ -11965,7 +12076,7 @@ function renderSnapshots(){
       h("p",{class:"hint",id:"snapSum"}, none ? "Nothing has changed since then." : [`${n("slipped")} later`, `${n("earlier")} earlier`, `${n("added")} added`, `${n("removed")} removed or dropped`, `${n("finished")} finished`, n("retimed") ? `${n("retimed")} deliverables retimed` : ""].filter(Boolean).join(" · ")),
       grp("slipped", "Later than then", C.slipped), grp("earlier", "Earlier than then", C.earlier), grp("finished", "Finished since", C.finished), grp("added", "Added since", C.added), grp("removed", "Removed, switched off or dropped", C.removed), grp("retimed", "Deliverables retimed", C.retimed)); }
   host.replaceChildren(h("div",{class:"jhead"}, h("h2",{}, "Snapshots"), h("p",{class:"hint"}, "Save a named copy of the plan as it stands (\"Q4 commit\"), then compare today with it: what moved, what was added or dropped, what finished. Snapshots are in the shared file, so everyone sees the same ones.")),
-    form, list.length ? h("table",{class:"tbl",id:"snapTable"}, h("thead",{}, h("tr",{}, h("th",{},"Snapshot"), h("th",{},"Taken"), h("th",{}))), h("tbody",{}, ...list.map(row))) : h("p",{class:"hint"}, "No snapshots yet."),
+    form, histNotice(), list.length ? h("table",{class:"tbl",id:"snapTable"}, h("thead",{}, h("tr",{}, h("th",{},"Snapshot"), h("th",{},"Taken"), h("th",{}))), h("tbody",{}, ...list.map(row))) : h("p",{class:"hint"}, "No snapshots yet."),
     body);
 }
 // Status update (Settings, then Status update): a draft built from the plan in five parts, which you edit, copy and save.
@@ -12022,7 +12133,7 @@ function renderReport(){
   const can = !present && !tooNew(); let d = repDraft();
   if (!d){ d = {...reportDraft(), made:new Date().toISOString(), edited:false}; repPut(d); }
   const edit = patch => { const cur = repDraft() || d; repPut({...cur, ...patch, edited:true}, true); };
-  const past = S.reports || [];
+  const past = histList("reports").slice().sort(histNewestFirst("at")), away = histOnlyIds("reports");
   const statusSel = h("select",{id:"repStatus","aria-label":"Overall status",onchange:e=>{ edit({status:e.target.value}); }}, ...REP_STATUS.map(([k, t])=>h("option",{value:k, selected:d.status === k}, t)));
   host.replaceChildren(...[h("div",{class:"jhead"}, h("h2",{}, "Status update"), h("p",{class:"hint",id:"repScope"}, "Whole plan. Timeline and personal filters do not narrow this update."), h("p",{class:"hint"}, "Edit this draft, then copy it into your email or chat. Save it to keep a frozen copy; the next update compares with it.")),
     h("div",{class:"row repbar"}, h("label",{for:"repStatus"}, "Overall"), statusSel,
@@ -12033,8 +12144,8 @@ function renderReport(){
     h("p",{class:"hint",id:"repBasis"}, (d.made ? `Drafted from the plan ${ageOf(d.made)}${d.edited ? ", then edited" : ""}. ` : "") + (d.basedOn ? `Changed is ${d.basedOn}.` : "Nothing to compare with yet: Changed fills in from the next update on (or save a snapshot).")),
     h("div",{class:"repsecs"}, ...REP_SECTIONS.map(([k, t])=>h("label",{class:"field repsec"}, h("span",{class:"flabel"}, t),
       h("textarea",{id:"rep-" + k,rows:String(Math.min(14, Math.max(4, (d.sections[k] || "").split("\n").reduce((n, l)=>n + Math.ceil((l.length + 1) / 48), 0) + 1))),maxlength:String(REP_TEXT),oninput:e=>{ const cur = repDraft() || d; edit({sections:{...cur.sections, [k]: e.target.value}}); }}, d.sections[k] || "")))),
-    past.length ? h("div",{class:"reppast"}, h("h3",{}, "Saved updates"), h("table",{class:"tbl",id:"repTable"}, h("tbody",{}, ...past.map(r=>h("tr",{"data-rep":r.id},
-      h("td",{}, fmtDay(isoToDay(r.at.slice(0, 10)))), h("td",{}, dvChip(r.status === "ontrack" ? "ready" : "risk", (REP_STATUS.find(x=>x[0] === r.status) || REP_STATUS[0])[1])), h("td",{}, r.by ? personName(r.by) : ""),
+    histNotice(), past.length ? h("div",{class:"reppast"}, h("h3",{}, "Saved updates"), h("table",{class:"tbl",id:"repTable"}, h("tbody",{}, ...past.map(r=>h("tr",{"data-rep":r.id},
+      h("td",{}, fmtDay(isoToDay(r.at.slice(0, 10)))), h("td",{}, dvChip(r.status === "ontrack" ? "ready" : "risk", (REP_STATUS.find(x=>x[0] === r.status) || REP_STATUS[0])[1])), h("td",{}, r.by ? personName(r.by) : "", away.has(r.id) ? h("span",{class:"hint histfrom",title:"Kept in the history files beside the plan"}, " · history file") : null),
       h("td",{class:"acts"}, h("button",{type:"button",class:"btn","data-repshow":r.id,onclick:()=>{ UI.repShow = UI.repShow === r.id ? null : r.id; saveUI(); render(); }}, UI.repShow === r.id ? "Hide" : "Show"),
         h("button",{type:"button",class:"btn","data-repcopy":r.id,onclick:()=>copyText(repText(r, false), "that update")},"Copy")))))),
       (r => r ? h("pre",{class:"repfrozen",id:"repFrozen"}, repText(r, false)) : null)(past.find(r=>r.id === UI.repShow))) : null].filter(Boolean));
@@ -12071,17 +12182,18 @@ function planSizeLine(){ const P = planSize(), big = P.pct > 50, full = P.pct > 
     big ? h("p",{class:"hint"}, full ? `Almost full: saves stop at ${P.byValues ? num(P.maxValues) + " entries" : "2 MB"}. Delete old snapshots, park or delete finished work, or trim old notes.` : "Getting large: every save reads and writes the whole file, so saves on a synced drive slow down as it grows.") : null); }
 function renderActivity(){
   const host = $("#activityWs"); if (!host) return;
-  const who = UI.actBy || "", list = (S.changes || []).filter(c=>!who || c.by === who).slice().sort((a, z)=>z.at < a.at ? -1 : z.at > a.at ? 1 : 0);
-  const people = [...new Set((S.changes || []).map(c=>c.by))];
+  const all = histList("changes"), away = histOnlyIds("changes"), who = UI.actBy || "", list = all.filter(c=>!who || c.by === who).slice().sort(histNewestFirst("at"));
+  const people = [...new Set(all.map(c=>c.by))];
   const pick = h("select",{id:"actBy","aria-label":"Whose changes",onchange:e=>{ UI.actBy = e.target.value; saveUI(); renderActivity(); }},
     h("option",{value:"",selected:!who},"Everyone"), ...people.map(id=>h("option",{value:id,selected:who === id}, id ? personOrFormer(id) : "Not recorded")));
   const when = c => { const d = new Date(c.at); return isNaN(d) ? "" : `${fmtDay(isoToDay(d.toISOString().slice(0,10)))} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
-  host.replaceChildren(h("div",{class:"jhead"}, h("h2",{}, "Activity"), h("p",{class:"hint"}, "Every quick update and save, newest first: who, when, and what changed. It's a record kept in the plan file, so it's a guide, not proof.")),
-    planSizeLine(),
-    h("div",{class:"qrow"}, h("label",{for:"actBy"}, "Show "), pick, h("span",{class:"hint"}, `${list.length} change${list.length===1?"":"s"}` + (S.changes && S.changes.length ? " · the last 30 days" : ""))),
+  host.replaceChildren(h("div",{class:"jhead"}, h("h2",{}, "Activity"), h("p",{class:"hint"}, `Every quick update and save, newest first: who, when, and what changed. It's a record kept in the plan file${histOn() ? " and its history files" : ""}, so it's a guide, not proof.`)),
+    planSizeLine(), histLine(), histNotice(true),
+    h("div",{class:"qrow"}, h("label",{for:"actBy"}, "Show "), pick, h("span",{class:"hint"}, `${list.length} change${list.length===1?"":"s"}` + (away.size ? ` · ${away.size} from the history files` : S.changes && S.changes.length ? " · the last 30 days" : ""))),
     list.length ? h("div",{class:"elist",id:"actList"}, ...list.slice(0, UI.actShown || 50).map(c=>h("details",{class:"actrow","data-change":c.id,ontoggle:e=>{ const d = e.currentTarget; if (!d.open || d.dataset.filled) return; d.dataset.filled = "1"; const ul = d.querySelector(".actops"); if (ul && c.ops) ul.replaceChildren(...describeUnsaved(c.ops).slice(0, 50).map(r=>h("li",{}, r.line))); }},
       h("summary",{}, h("span",{class:"mono hint"}, when(c)), " ", h("b",{}, c.by ? personOrFormer(c.by) : "Someone"), " · ", c.what || "changes",
-        c.ops && !present && !tooNew() ? h("button",{type:"button",class:"linkish actundo","data-undo":c.id,onclick:e=>{ e.preventDefault(); undoChange(c); }}," Undo this") : null),
+        away.has(c.id) ? h("span",{class:"hint histfrom"}, " · history file") : null,
+        c.ops && !present && !tooNew() && !away.has(c.id) ? h("button",{type:"button",class:"linkish actundo","data-undo":c.id,onclick:e=>{ e.preventDefault(); undoChange(c); }}," Undo this") : null),
       c.ops ? h("ul",{class:"actops"}) : h("p",{class:"hint"}, c.cut ? `${c.n} changes: too big to list or undo from here. Undo right after the change still works in this browser.` : ""))), list.length > (UI.actShown || 50) ? h("button",{type:"button",class:"btn",id:"actMore",onclick:()=>{ UI.actShown = (UI.actShown || 50) + 50; renderActivity(); }}, `Show ${Math.min(50, list.length - (UI.actShown || 50))} more`) : null) : h("p",{class:"hint"}, "Nothing yet. Changes show up here as people make quick updates and save."));
 }
 // Unsubmitted quick text belongs to this browser session and stable plan/item IDs, never to Jira or the shared plan.
@@ -13106,7 +13218,7 @@ function quickPanel(key){
     }
   } else if (it.type === "bar"){ const n = blockedInside(it.b); if (n) box.append(h("div",{class:"msg bad"}, `${n} blocked inside`)); }
   // updates
-  const ups = updatesFor(key), txt = composerField(key, "q-upd", h("textarea",{id:"q-upd",rows:"2",maxlength:"1000",placeholder:"Add an update (what changed, what's next)","aria-label":"Add an update"}));
+  const ups = updatesFor(key), upAway = histOnlyIds("updates"), txt = composerField(key, "q-upd", h("textarea",{id:"q-upd",rows:"2",maxlength:"1000",placeholder:"Add an update (what changed, what's next)","aria-label":"Add an update"}));
   // Anyone can edit or delete an update; someone else's words get a question first (a courtesy, not a lock), and an
   // edit says who made it. Both are quick updates, so they merge with teammates' and can be undone.
   const courtesy = (u, pp, doing) => !u.by || u.by === meId() || window.confirm(`This is ${pp ? pp.name : "someone else"}'s update. ${doing} it anyway?` + (doing === "Change" ? " It'll show that you edited it." : ""));
@@ -13124,11 +13236,12 @@ function quickPanel(key){
     const remove = () => { if (pendingDelete !== delId && !courtesy(u, pp, "Delete")) return; if (!armDelete(delId)){ renderSide(); return; } act("update deleted", (w,s)=>{ const i = (s.updates || []).findIndex(y=>y.id === u.id); if (i < 0) return NOCHANGE; s.updates.splice(i, 1); }); };
     return h("li",{"data-upd":u.id}, h("div",{class:"uh"}, pp ? h("i",{class:"ini",style:{background:pp.color, color:iniFg(pp.color)}}, pp.initials) : null, h("b",{}, pp ? pp.name : "Someone"), h("span",{}, `${fmtDay(stampDay(u.at))} ${isNaN(d) ? "" : d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"})}`),
         u.edited ? h("span",{class:"hint",title:`Edited by ${ed ? ed.name : "someone"}, ${fmtDay(stampDay(u.edited.at))}`}, " · edited") : null,
-        present ? null : h("span",{class:"uacts"}, h("button",{type:"button",class:"linkish","data-uedit":u.id,onclick:()=>edit()},"Edit"), h("button",{type:"button",class:"linkish","data-udel":u.id,"data-armed":pendingDelete === delId ? "1" : null,"aria-live":"polite",onclick:remove}, pendingDelete === delId ? "Click again to delete" : "Delete"))),
+        upAway.has(u.id) ? h("span",{class:"hint histfrom",title:"Kept in the history files beside the plan"}, " · history file") : null,
+        present || upAway.has(u.id) ? null : h("span",{class:"uacts"}, h("button",{type:"button",class:"linkish","data-uedit":u.id,onclick:()=>edit()},"Edit"), h("button",{type:"button",class:"linkish","data-udel":u.id,"data-armed":pendingDelete === delId ? "1" : null,"aria-live":"polite",onclick:remove}, pendingDelete === delId ? "Click again to delete" : "Delete"))),
       body); }));
   const uadd = h("div",{class:"uadd"}, txt, h("button",{type:"button",class:"btn",id:"q-addupd",onclick:()=>{ const v = txt.value.trim(); if (!v){ txt.focus(); return; } act("update added", (w,s)=>{ addUpdate(s, key, v); }, [["q-upd",txt.value]]); }},"Add update"));
   box.append(quietBox(key, "q-upd", !ups.length, "Add an update", uadd, h("div",{class:"field"}, h("span",{class:"flabel"}, `Updates${ups.length ? " (" + ups.length + ")" : ""}`), uadd,
-    ups.length ? list : null,
+    histNotice(true), ups.length ? list : null,
     ups.length > 5 && UI.allUpdates !== key ? h("button",{type:"button",class:"linkish nav",onclick:()=>{ UI.allUpdates = key; render(); }}, `Show all ${ups.length}`) : null), "U"));
   // what does this push?
   if (leaf && x.status !== "done"){
