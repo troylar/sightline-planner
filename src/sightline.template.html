@@ -1824,7 +1824,7 @@ const MAX_BYTES = 2 * 1024 * 1024, MAX_READ_BYTES = 5 * 1024 * 1024, MAX_DEPTH =
 // Values in one plan the same way: write up to 60,000 (what copies before 1.175.5 can open), read up to 400,000, so a later copy can raise the write limit.
 // Plan format. SCHEMA changes only for a change older copies can't read; new optional parts are named in meta.features,
 // and a copy that finds one it doesn't know opens the plan read-only instead of saving over what it can't see.
-const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1", "stories1", "skills1", "aiHint1", "msStory1", "descriptions1", "laneIds1", "cardLayout1", "hideWhy1", "captures1", "captureAgain1", "rough1"];
+const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1", "stories1", "skills1", "aiHint1", "msStory1", "descriptions1", "laneIds1", "cardLayout1", "hideWhy1", "captures1", "captureAgain1", "rough1", "histFiles1"];
 // A deliverable's target: a year, a half or a quarter ("2027", "2027-H1", "2027-Q2"), or "later".
 const TARGET_RE = /^(\d{4})(?:-(Q[1-4]|H[12]))?$/;
 const PR_DRAFT_RE = /^\s*[\[(]?\s*(draft|wip)\s*[\])]?\s*[:\-]?\s/i;    // a draft pull request's title: "Draft: …", "[WIP] …"
@@ -1926,6 +1926,7 @@ const featuresIn = plan => { const f = [];
   if ((plan.cardViews || []).length) f.push("cardViews");
   if ((plan.meta || {}).cardLayout) f.push("cardLayout1");
   if (Object.keys((plan.meta || {}).hideWhy || {}).length) f.push("hideWhy1");
+  if (Object.keys((plan.meta || {}).histParts || {}).length || Object.keys((plan.meta || {}).histGone || {}).length) f.push("histFiles1");
   if ((plan.views || []).some(v=>v && v.def && v.def.zoomN != null)) f.push("viewZoom");
   if ((plan.views || []).some(v=>v && v.def && normKinds(v.def.hide).length)) f.push("viewHide1");
   if ((plan.bars || []).some(b=>b && (b.story || (b.tasks || []).some(t=>t && t.story))) || (plan.meta || {}).storyTemplates) f.push("stories1");
@@ -2158,6 +2159,14 @@ const HIDE_REASON_MAX = 200, HIDE_WHY_MAX = 2000;
 function normCardLayout(v){ if (!v || typeof v !== "object" || Array.isArray(v)) return null;
   const f = [...new Set((Array.isArray(v.fields) ? v.fields : []).filter(x=>CARD_LAYOUT_FIELDS.some(c=>c[0] === x)))];
   return {fields: f.length ? f : CARD_LAYOUT0.fields.slice(), density: CARD_DENSITY.some(d=>d[0] === v.density) ? v.density : "normal", width: v.width === "points" ? "points" : "fixed"}; }
+// History files (vision.md, The plan and its history): which quarters have files and how many parts each, so one that goes
+// missing is named, and entries deleted here that a history file still holds, until that file says they're removed.
+function normHistMeta(m){ const o = {}, obj = v => v && typeof v === "object" && !Array.isArray(v) ? v : {}, Q = /^\d{4}-Q[1-4]$/;
+  const parts = Object.entries(obj(m.histParts)).filter(([q, n])=>Q.test(q) && Number.isInteger(n) && n >= 1 && n <= 100).sort().slice(-400);
+  if (parts.length) o.histParts = Object.fromEntries(parts);
+  const gone = Object.entries(obj(m.histGone)).filter(([id, g])=>/^(?!(?:__proto__|constructor|prototype|toString|valueOf|hasOwnProperty|isPrototypeOf|propertyIsEnumerable|toLocaleString)$)[A-Za-z0-9_.:-]{1,80}$/.test(id) && g && typeof g === "object" && Q.test(g.q) && validStamp(g.at) && /^[A-Za-z0-9_-]{0,48}$/.test(String(g.by == null ? "" : g.by))).slice(-5000);
+  if (gone.length) o.histGone = Object.fromEntries(gone.map(([id, g])=>[id, {q:g.q, by:String(g.by == null ? "" : g.by), at:g.at}]));
+  return o; }
 function normHideWhy(v){ if (!v || typeof v !== "object" || Array.isArray(v)) return {};
   const o = Object.create(null); Object.entries(v).forEach(([k, t])=>{ const K = String(k).trim().toUpperCase(), r = typeof t === "string" ? t.trim().slice(0, HIDE_REASON_MAX) : "";
     if (r && /^[A-Z][A-Z0-9_]{0,19}-[1-9][0-9]{0,8}$/.test(K)) o[K] = r; });
@@ -2239,7 +2248,7 @@ function normalize(input, strict){
       weeks:clampInt(m.weeks,1,104,12), sprintWeeks:clampInt(m.sprintWeeks,1,8,2), firstSprint:clampInt(m.firstSprint,0,999,0),
       revision:clampInt(m.revision,0,1e9,0), savedAt:str(m.savedAt), autoSchedule: m.autoSchedule !== false, jiraBase: /^https?:\/\/\S{3,200}$/i.test(str(m.jiraBase)) ? str(m.jiraBase) : "",
       jiraStatusMap: cleanStateMap(m.jiraStatusMap), jiraResMap: cleanStateMap(m.jiraResMap), ...normTemplates(m.storyTemplates),
-      ...(normCardLayout(m.cardLayout) ? {cardLayout:normCardLayout(m.cardLayout)} : {}), ...normHideWhy(m.hideWhy),
+      ...(normCardLayout(m.cardLayout) ? {cardLayout:normCardLayout(m.cardLayout)} : {}), ...normHideWhy(m.hideWhy), ...normHistMeta(m),
       ...(m.forecast && typeof m.forecast === "object" && m.forecast.reserve != null && m.forecast.reserve !== "" && Number.isFinite(+m.forecast.reserve) ? {forecast:{reserve:clampInt(Math.round(+m.forecast.reserve), 0, 90, 0)}} : {}),
       ...(Array.isArray(m.capRates) && m.capRates.length ? {capRates: [...new Map(m.capRates.filter(r=>r && validIso(r.from) && Number(r.points) > 0).map(r=>[r.from, {from:r.from, points:Math.min(200, Math.round(Number(r.points) * 2) / 2)}])).values()].sort((a, b)=>a.from < b.from ? -1 : 1).slice(-50)} : {}),
       jiraSkip: [...new Set((Array.isArray(m.jiraSkip) ? m.jiraSkip : []).map(x=>str(x).trim().toUpperCase()).filter(x=>/^[A-Z][A-Z0-9_]{0,19}-[1-9][0-9]{0,8}$/.test(x)))].slice(-2000),
@@ -2693,7 +2702,7 @@ function decorateLinks(){
 
 // ================= change engine (for multi-writer sync + history) =================
 // A change ("op") is {op:"add"|"set"|"del"|"order", type, id, field?, value?, prev?}. Tasks are type "task" with a "_parent" bar id.
-const SYNC_META = ["title","start","weeks","sprintWeeks","firstSprint","autoSchedule","jiraBase","jiraSkip","jiraStatusMap","jiraResMap","capRates","forecast","cardLayout","hideWhy"];
+const SYNC_META = ["title","start","weeks","sprintWeeks","firstSprint","autoSchedule","jiraBase","jiraSkip","jiraStatusMap","jiraResMap","capRates","forecast","cardLayout","hideWhy","histParts","histGone"];
 const SYNC_COLS = ["lanes","bars","milestones","gates","notes","people","views","sprints","decisions","risks","groups","meetings","updates","types","blocks","changes","tags","jiraItems","proposals","cardViews","deliverables","snapshots","reports","commitments","planningGuide","skills"];
 const SYNC_ORDERED = new Set(["lanes","sprints","people","views","decisions","risks","bars"]);
 const jeq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -2721,12 +2730,12 @@ function diffPlans(a, b){
 // Apply ops to a copy. Idempotent: re-adding an existing item updates it; setting or deleting a missing item is a no-op (a delete wins).
 // Lists of Jira keys (skips, an initiative's epics, its stories that are off) merge item by item, and so do the status
 // maps: two people changing different keys both win. Used by rebaseOnto and when a quick update is replayed on a retry.
-const SET_FIELDS = {meta:["jiraSkip"], people:["skills"], bars:["epics","storiesOff","tags","jiraDeps","delivers","needs","dependsOn"], task:["tags","jiraDeps","needs","dependsOn"], milestones:["tags"], gates:["tags"], meetings:["tags"], notes:["tags"], blocks:["tags"], jiraItems:["tags"], deliverables:["tags","jira"]}, OBJ_FIELDS = ["jiraStatusMap","jiraResMap","hideWhy"];
+const SET_FIELDS = {meta:["jiraSkip"], people:["skills"], bars:["epics","storiesOff","tags","jiraDeps","delivers","needs","dependsOn"], task:["tags","jiraDeps","needs","dependsOn"], milestones:["tags"], gates:["tags"], meetings:["tags"], notes:["tags"], blocks:["tags"], jiraItems:["tags"], deliverables:["tags","jira"]}, OBJ_FIELDS = ["jiraStatusMap","jiraResMap","hideWhy","histParts","histGone"];
 // Team capacity rates merge by date: two people adding rates on different dates both win.
 const rateObj = L => Object.fromEntries((L || []).map(r=>[r.from, r.points])), rateList = o => Object.entries(o || {}).filter(([, v])=>v != null).map(([from, points])=>({from, points})).sort((a, b)=>a.from < b.from ? -1 : 1);
 const mergeRates = (prev, mine, theirs) => rateList(objMerge(rateObj(prev), rateObj(mine), rateObj(theirs)));
 const objMerge = (b0, mv, tv) => { const B = b0 || {}, M = mv || {}, out = {...(tv || {})};
-  new Set([...Object.keys(B), ...Object.keys(M)]).forEach(k=>{ if (B[k] === M[k]) return; if (k in M) out[k] = M[k]; else delete out[k]; }); return out; };
+  new Set([...Object.keys(B), ...Object.keys(M)]).forEach(k=>{ if (jeq(B[k], M[k])) return; if (k in M) out[k] = M[k]; else delete out[k]; }); return out; };
 const setMerge = (b0, mv, tv) => { const B = new Set(b0 || []), M = new Set(mv || []), rem = new Set([...B].filter(x=>!M.has(x)));
   if ((tv || []).length === B.size && (tv || []).every(x=>B.has(x))) return [...M];      // they didn't change it: mine, in my order
   return [...new Set([...(tv || []), ...[...M].filter(x=>!B.has(x))])].filter(x=>!rem.has(x)); };
@@ -3367,7 +3376,7 @@ function commit(mutator, opts={}){
   if (mutator(S) === NOCHANGE){ if (pushed){ histPop(); coalesceKey = null; } return false; }
 
   if (opts.text){ if (pushed) try { stampAuthors(JSON.parse(past[past.length-1]), S, mutator.via); } catch(e){} markDirty(); if (!opts.norender) opts.deferDerived ? scheduleDerived() : renderDerived(); return true; }   // a title: no dates or links change, so skip the scheduling
-  if (pushed) try { const prev = JSON.parse(past[past.length-1]); stampAuthors(prev, S, mutator.via); stampStatuses(prev, S); } catch(e){} rollup(S); const rs = reschedule(); syncWeeks(S); fitHorizonTasks(S); if (rs.moved || opts.grow) growToFit(); clampToRange(S);
+  if (pushed) try { const prev = JSON.parse(past[past.length-1]); stampAuthors(prev, S, mutator.via); stampStatuses(prev, S); histNoteGone(prev, S); } catch(e){} rollup(S); const rs = reschedule(); syncWeeks(S); fitHorizonTasks(S); if (rs.moved || opts.grow) growToFit(); clampToRange(S);
   if (pushed && !key){ const bad = (()=>{ try { return blackoutHit(JSON.parse(past[past.length-1]), S); } catch(e){ return null; } })();   // the finished change, after automatic moves
     if (bad){ S = JSON.parse(histPop()); coalesceKey = null; dropJiraMemos(); setStatus(bad); if (!opts.norender) render(); return false; } }
   markDirty();
@@ -3420,8 +3429,13 @@ function stillMine(st, ops){
   return {ops:keep, skipped:lost.size + items};
 }
 const quickUndoable = () => (!editable() || (saygLive() && !(file.dirty && past.length))) && !present && !!file.handle;   // Save as you go: what's saved undoes like a quick update
-function undo(){ if (quickUndoable()){ quickUndo(false); return; } if (!editable() || !past.length) return; future.push(JSON.stringify(S)); S = JSON.parse(histPop()); sel = null; coalesceKey = null; markDirty(); render(); }
-function redo(){ if (quickUndoable()){ quickUndo(true); return; } if (!editable() || !future.length) return; const fut = future; pushSnap(JSON.stringify(S)); future = fut; S = JSON.parse(future.pop()); sel = null; coalesceKey = null; markDirty(); render(); }
+// Undo and redo never put back into the plan what a save moved to the history files, or forget the quarters it recorded.
+function histKeepMoved(was, next){
+  const p = was.meta.histParts; if (p){ const m = {...(next.meta.histParts || {})}; Object.entries(p).forEach(([q, n])=>{ if (n > (m[q] || 0)) m[q] = n; }); next.meta.histParts = m; }
+  if (histOn() && hist.raw) HIST_MOVE.forEach(k=>{ const ids = new Set((was[k] || []).map(x=>x && x.id)); next[k] = (next[k] || []).filter(x=>!x || ids.has(x.id) || !histThere(k, x)); });
+  return next; }
+function undo(){ if (quickUndoable()){ quickUndo(false); return; } if (!editable() || !past.length) return; future.push(JSON.stringify(S)); S = histKeepMoved(S, JSON.parse(histPop())); sel = null; coalesceKey = null; markDirty(); render(); }
+function redo(){ if (quickUndoable()){ quickUndo(true); return; } if (!editable() || !future.length) return; const fut = future; pushSnap(JSON.stringify(S)); future = fut; S = histKeepMoved(S, JSON.parse(future.pop())); sel = null; coalesceKey = null; markDirty(); render(); }
 function resetHistory(){ past = []; future = []; coalesceKey = null; }
 
 let persistTimer = null;
@@ -3741,22 +3755,23 @@ const HistoryStore = {
       const same = i => { const was = (now.parts || [])[i]; if (!was) return false; try { return shown(JSON.parse(texts[i])) === shown(was); } catch(e){ return false; } };
       const change = texts.map((t, i)=>(now.texts || [])[i] === t || (locked.has(i) && same(i)) ? -1 : i).filter(i=>i >= 0).sort((a, b)=>loses(a) - loses(b) || a - b);   // a part this copy can't fully read is left alone unless its entries change
       const blocked = change.filter(i=>locked.has(i));
-      if (blocked.length) return {error:`${blocked.map(i=>histName(quarter, i)).join(", ")} ${blocked.length === 1 ? "has" : "have"} entries this copy of Sightline can't read, so it won't write over ${blocked.length === 1 ? "it" : "them"}`};
-      if (!change.length) return {ok:true, file:merged, kept};
+      if (blocked.length) return {error:`${blocked.map(i=>histName(quarter, i)).join(", ")} ${blocked.length === 1 ? "has" : "have"} entries this copy of Sightline can't read, so it won't write over ${blocked.length === 1 ? "it" : "them"}. A newer copy of Sightline can save there; until then, what would go there stays in the plan file`};
+      if (!change.length) return {ok:true, file:merged, kept, parts:(now.parts || []).length};
       try { const folder = await HistoryStore.folder(dir, planId, !!now.missing);
         for (const i of change){ let w; try { w = await (await folder.getFileHandle(histName(quarter, i), {create:true})).createWritable(); await w.write(texts[i]); await w.close(); }
           catch(e){ try { await w?.abort(); } catch(_){} throw e; } } }
       catch(e){ return {error:`couldn't save ${quarter}'s history: ${e.message || e}`}; }
       const back = await HistoryStore.read(dir, planId, quarter);
       if (back.error) return {error:back.error};
-      if (back.file && histHas(back.file, merged)) return {ok:true, file:back.file, kept};
+      if (back.file && histHas(back.file, merged)) return {ok:true, file:back.file, kept, parts:back.parts.length};
     }
     return {error:`${quarter}'s history kept changing while it was being saved`}; }
 };
 // The plan's folder, for its history files. Each person connects it once (read and write, so later saves can move history
 // there); it's remembered per plan and checked against the open plan file every time. What's read is shown beside the
 // plan's own history. A quarter that can't be read is named wherever history is listed, never shown as empty.
-const hist = {dir:null, plan:"", hd:null, state:"off", gen:0, by:null, quarters:[], problems:[], reading:null, readAt:0};
+const hist = {dir:null, plan:"", hd:null, state:"off", gen:0, by:null, raw:null, parts:{}, quarters:[], problems:[], reading:null, readAt:0, readStart:0, wrote:new Map(), sent:new Map(), flushing:null, flushed:null};
+const histReset = o => Object.assign(hist, {by:null, raw:null, parts:{}, quarters:[], problems:[], reading:null, readAt:0, readStart:0, wrote:new Map(), sent:new Map(), flushing:null, flushed:null}, o);
 const HIST_KV = id => "histDir:" + id, HIST_QUARTERS = 400;
 const HIST_QN = ["Jan to Mar", "Apr to Jun", "Jul to Sep", "Oct to Dec"], histQName = q => { const m = HIST_Q.exec(q); return m ? `${HIST_QN[m[2] - 1]} ${m[1]}` : q; };
 const histNewestFirst = k => (a, b) => (Date.parse(b[k]) || 0) - (Date.parse(a[k]) || 0);   // stamps can carry different time zones, so compare times, not text
@@ -3774,30 +3789,36 @@ async function histSameFolder(dir){ if (!file.handle) return false; try { return
 async function histPerm(dir, ask){ try { if ((await dir.queryPermission({mode:"readwrite"})) === "granted") return true; return !!ask && (await dir.requestPermission({mode:"readwrite"})) === "granted"; } catch(e){ return false; } }
 async function readHistory(){
   const dir = hist.dir, plan = hist.plan, hd = hist.hd; if (!dir || hist.state !== "ready") return;
+  const started = Date.now(), recorded = S.meta.histParts || {};
   const run = (async ()=>{
-    const by = {snapshots:[], reports:[], updates:[], changes:[], removed:Object.create(null)}, problems = [], quarters = [], qs = new Set();
+    const by = {snapshots:[], reports:[], updates:[], changes:[], removed:Object.create(null)}, problems = [], quarters = [], qs = new Set(), parts = {};
+    const lost = () => Object.keys(recorded).filter(q=>!qs.has(q)).forEach(q=>problems.push({quarter:q, why:`its history file wasn't found`}));   // the plan says it has one: never shown as empty
+    const none = () => ({removed:Object.create(null), ...Object.fromEntries(HIST_KINDS.map(k=>[k, new Map()]))});
     let folder = null; try { folder = await HistoryStore.folder(dir, plan, false); }
-    catch(e){ if (e.name !== "NotFoundError") problems.push({quarter:"", why:`couldn't open ${HIST_DIR}/${plan}: ${e.message || e}`}); return {by, problems, quarters}; }
+    catch(e){ if (e.name !== "NotFoundError"){ problems.push({quarter:"", why:`couldn't open ${HIST_DIR}/${plan}: ${e.message || e}`}); return {by, problems, quarters, parts, raw:null}; } lost(); return {by, problems, quarters, parts, raw:none()}; }   // no history folder yet: nothing there, and the first save can start it
     try { for await (const x of folder.values()){ const m = /^(\d{4}-Q[1-4])/.exec(x.name); if (m && /\.json$/i.test(x.name)) qs.add(m[1]); } }
-    catch(e){ problems.push({quarter:"", why:`couldn't list ${HIST_DIR}/${plan}: ${e.message || e}`}); return {by, problems, quarters}; }
+    catch(e){ problems.push({quarter:"", why:`couldn't list ${HIST_DIR}/${plan}: ${e.message || e}`}); return {by, problems, quarters, parts, raw:null}; }
+    lost();
     const all = [...qs].sort(); if (all.length > HIST_QUARTERS) problems.push({quarter:all.slice(0, all.length - HIST_QUARTERS).join(", "), why:`only the newest ${HIST_QUARTERS} quarters are read`});
     for (const q of all.slice(-HIST_QUARTERS)){ const r = await HistoryStore.read(dir, plan, q);
       (r.ignored || []).forEach(why=>problems.push({quarter:q, why}));
       if (r.error){ problems.push({quarter:q, why:r.error}); continue; }
-      if (r.missing) continue;
+      if (r.missing){ if (recorded[q]) problems.push({quarter:q, why:`its history file wasn't found`}); continue; }
       (r.unreadable || []).forEach(n=>problems.push({quarter:q, why:`${n} has entries this copy of Sightline can't read`}));
+      parts[q] = r.parts.length; if (recorded[q] > r.parts.length) problems.push({quarter:q, why:`${histName(q, r.parts.length)} wasn't found`});
       quarters.push(q); HIST_KINDS.forEach(k=>by[k].push(...r.file[k]));
       for (const id of Object.keys(r.file.removed)) by.removed[id] = by.removed[id] ? histPickRm(by.removed[id], r.file.removed[id]) : r.file.removed[id]; }
-    return {by:histTidy(by), problems, quarters}; })();
+    const raw = {removed:by.removed}; HIST_KINDS.forEach(k=>{ raw[k] = new Map(by[k].map(x=>[x.id, x])); });   // as the files hold them, to tell whether an entry from the plan is there
+    return {by:histTidy(by), problems, quarters, parts, raw}; })();
   hist.reading = run; if (!hist.by) render();   // the lists say history is still coming
   const out = await run;
   if (hist.reading !== run || hist.dir !== dir || hist.plan !== plan || hist.hd !== hd) return;   // the plan or folder changed meanwhile
-  Object.assign(hist, {reading:null, by:out.by, problems:out.problems, quarters:out.quarters, readAt:Date.now()}); hist.gen++; render(); }
+  Object.assign(hist, {reading:null, by:out.by, raw:out.raw, parts:out.parts, problems:out.problems, quarters:out.quarters, readAt:Date.now(), readStart:started, sent:new Map()}); hist.gen++; render(); }   // a new read is what the files hold now: anything they lost is sent again
 // Called whenever a plan is installed: a different plan or file starts from what this browser remembers for it.
 async function histRestore(){
   const plan = S.meta.planId, hd = file.handle;
   if (hist.plan === plan && hist.hd === hd){ if (hist.state === "ready" && Date.now() - hist.readAt > 600000) readHistory(); return; }   // saves install the plan often; history is read again at most every ten minutes, or on Read again
-  Object.assign(hist, {dir:null, plan, hd, state:"off", by:null, quarters:[], problems:[], reading:null, readAt:0}); hist.gen++;
+  histReset({dir:null, plan, hd, state:"off"}); hist.gen++;
   if (!hd) return;
   const dir = await kvGet(HIST_KV(plan)); if (!dir || !dir.getFileHandle || hist.plan !== plan || hist.hd !== hd || hist.dir) return;
   hist.dir = dir;
@@ -3812,31 +3833,113 @@ async function connectHistFolder(){
   if (file.handle !== hd || S.meta.planId !== plan) return;
   if (!(await histSameFolder(dir))){ setStatus(`${dir.name} doesn't hold ${hd.name}. Choose the folder the plan file is in.`); return; }
   if (file.handle !== hd || S.meta.planId !== plan) return;
-  Object.assign(hist, {dir, plan, hd, state:"ready", by:null, quarters:[], problems:[], reading:null}); hist.gen++;
+  histReset({dir, plan, hd, state:"ready"}); hist.gen++;
   kvSet(HIST_KV(plan), dir, true); setStatus(`Connected ${dir.name}. History files beside the plan are shown with the plan's own.`);
   await readHistory(); render(); }
 // One click (a user gesture) asks the browser again, then checks the folder still holds the plan.
 async function reconnectHistFolder(){ const dir = hist.dir; if (!dir) return connectHistFolder();
   if (!(await histPerm(dir, true))){ setStatus(`Sightline needs permission to use ${dir.name}. Click Reconnect and choose Allow.`); return; }
   if (hist.dir !== dir) return;
-  if (!(await histSameFolder(dir))){ hist.state = "moved"; hist.by = null; hist.gen++; render(); setStatus(`${dir.name} no longer holds ${file.handle ? file.handle.name : "the plan"}. Connect the folder the plan file is in now.`); return; }
+  if (!(await histSameFolder(dir))){ hist.state = "moved"; hist.by = null; hist.raw = null; hist.gen++; render(); setStatus(`${dir.name} no longer holds ${file.handle ? file.handle.name : "the plan"}. Connect the folder the plan file is in now.`); return; }
   hist.state = "ready"; await readHistory(); setStatus(`Read the history files in ${dir.name}.`); }
-function disconnectHistFolder(){ kvDel(HIST_KV(hist.plan)); Object.assign(hist, {dir:null, state:"off", by:null, quarters:[], problems:[], reading:null}); hist.gen++; render(); setStatus("Disconnected the plan's folder. Only the history in the plan file is shown."); }
+function disconnectHistFolder(){ kvDel(HIST_KV(hist.plan)); histReset({dir:null, state:"off"}); hist.gen++; render(); setStatus("Disconnected the plan's folder. Only the history in the plan file is shown."); }
 // The plan's own entries with those from the history files: one per id, the newer edit, and a removal hides only older versions.
 const histMemo = new Map();
 function histList(kind){
   const mine = S[kind] || []; if (!histOn()) return mine;
   const m = histMemo.get(kind), last = mine[mine.length - 1];
-  if (m && m.mine === mine && m.n === mine.length && m.last === last && m.gen === hist.gen) return m.list;
-  const by = new Map(), loose = [], rm = hist.by.removed;
-  for (const x of hist.by[kind]) by.set(x.id, by.has(x.id) ? histPick(by.get(x.id), x) : x);
+  if (m && m.mine === mine && m.n === mine.length && m.last === last && m.gen === hist.gen && m.gone === S.meta.histGone) return m.list;
+  // An entry in the plan is shown: deleting one takes it out of the plan. A removal, in a history file or one this plan
+  // hasn't written there yet (meta.histGone), hides only a history file's older copy.
+  const by = new Map(), loose = [], rm = hist.by.removed, gone = S.meta.histGone || {};
+  const hidden = x => [rm[x.id], gone[x.id]].some(r=>r && histNewest(kind, x) <= Date.parse(r.at));
+  for (const x of hist.by[kind]) if (!hidden(x)) by.set(x.id, by.has(x.id) ? histPick(by.get(x.id), x) : x);
   for (const x of mine){ if (!x || typeof x.id !== "string"){ loose.push(x); continue; } by.set(x.id, by.has(x.id) ? histPick(by.get(x.id), x) : x); }
-  const list = [...by.values()].filter(x=>!rm[x.id] || histNewest(kind, x) > Date.parse(rm[x.id].at)).concat(loose);
-  histMemo.set(kind, {mine, n:mine.length, last, gen:hist.gen, list}); return list; }
+  const list = [...by.values()].concat(loose);
+  histMemo.set(kind, {mine, n:mine.length, last, gen:hist.gen, gone:S.meta.histGone, list}); return list; }
 // Ids of entries that are only in the history files: shown, but changed or deleted only from a copy that can save them there.
 const histAwayMemo = new Map();
 function histOnlyIds(kind){ if (!histOn()) return new Set(); const list = histList(kind), m = histAwayMemo.get(kind); if (m && m.list === list) return m.ids;
   const mine = new Set((S[kind] || []).map(x=>x && x.id)), ids = new Set(list.filter(x=>x && !mine.has(x.id)).map(x=>x.id)); histAwayMemo.set(kind, {list, ids}); return ids; }
+// Moving history out of the plan (vision.md, Moving history out never loses it). Each save while editing copies entries
+// older than 30 days to their quarter's file; each item's latest update and the newest snapshot and status update stay,
+// since the plan draws from them. An entry leaves the plan at a later save, once a read that began at least five minutes
+// after this page last wrote that quarter still shows it: what a write reads back isn't proof it stayed, since a sync
+// service can put an older file back. Activity isn't moved: the plan keeps only its last 30 days, as before.
+const HIST_MOVE = ["snapshots", "reports", "updates"], HIST_AGE = 30 * 864e5, HIST_SETTLE = 5 * 60000, HIST_REREAD = 10 * 60000;
+function histMovable(plan, now = Date.now()){
+  const at = (k, x) => Date.parse(histAt(k, x)), keep = new Set(), latest = new Map(), out = [];
+  for (const k of ["snapshots", "reports"]){ let top = null; for (const x of plan[k] || []) if (x && histStamp(histAt(k, x)) && (!top || at(k, x) > at(k, top))) top = x; if (top) keep.add(top); }
+  for (const u of plan.updates || []) if (u && histStamp(u.at)){ const p = latest.get(u.item); if (!p || at("updates", u) > at("updates", p)) latest.set(u.item, u); }
+  latest.forEach(u=>keep.add(u));
+  for (const k of HIST_MOVE) for (const x of plan[k] || []) if (x && !keep.has(x) && HIST_ID.test(String(x.id)) && histStamp(histAt(k, x)) && at(k, x) < now - HIST_AGE && (!x.edited || (histStamp(x.edited.at) && histSoon(x.edited.at)))) out.push([k, x]);
+  return out; }
+const histMoveOn = () => histOn() && hist.state === "ready" && !!hist.raw && !hist.reading && file.holdLock && !tooNew();
+const histQuiet = q => !hist.problems.some(p=>!p.quarter || p.quarter.split(", ").includes(q));   // the last read had no trouble with this quarter or the folder
+const histLate = q => hist.readStart >= (hist.wrote.has(q) ? hist.wrote.get(q) + HIST_SETTLE : 0);
+// The files, as last read late enough, hold this entry: the same, or a newer edit of it.
+function histThere(k, x){ const y = hist.raw && hist.raw[k].get(x.id), q = histQuarter(histAt(k, x));
+  return !!y && (jeq(y, x) || histPick(y, x) === y) && !!hist.parts[q] && histQuiet(q) && histLate(q); }
+// What a save while editing changes for history, on the plan it's about to write: entries the files hold leave it, it
+// records each quarter's parts, and deletions the files now show are forgotten. Returns how many entries left.
+function histPatch(plan){
+  if (!histMoveOn()) return 0;
+  const drop = new Set(histMovable(plan).filter(([k, x])=>histThere(k, x)).map(([, x])=>x));
+  if (drop.size) HIST_MOVE.forEach(k=>{ plan[k] = (plan[k] || []).filter(x=>!drop.has(x)); });
+  const parts = {...(plan.meta.histParts || {})}, moving = drop.size || Object.keys(parts).length || Object.keys(plan.meta.histGone || {}).length;   // the plan changes format only once history leaves it
+  if (moving){ Object.entries(hist.parts).forEach(([q, n])=>{ if (n > (parts[q] || 0)) parts[q] = n; }); if (Object.keys(parts).length) plan.meta.histParts = parts; }
+  const gone = {...(plan.meta.histGone || {})};
+  for (const [id, g] of Object.entries(gone)){ const r = hist.raw.removed[id]; if (r && Date.parse(r.at) >= Date.parse(g.at) && histQuiet(g.q) && histLate(g.q)) delete gone[id]; }
+  if (Object.keys(gone).length) plan.meta.histGone = gone; else delete plan.meta.histGone;
+  return drop.size; }
+// Deleting an entry here that a history file also holds: the plan remembers to write its removal there, so it doesn't
+// come back from the file. Called by commit with the plan before and after a person's own edit, never for a merge.
+function histNoteGone(prev, next){
+  if (!histOn() || !hist.raw) return;
+  let gone = null;
+  for (const k of HIST_MOVE){ const now = new Set((next[k] || []).map(x=>x && x.id));
+    for (const x of prev[k] || []){ if (!x || now.has(x.id) || !(hist.raw[k].has(x.id) || hist.sent.has(k + ":" + x.id))) continue;
+      const q = histQuarter(histAt(k, x)), y = hist.raw[k].get(x.id); if (!q) continue;
+      gone = gone || {...(next.meta.histGone || {})}; gone[x.id] = {q, ...histRemoval(k, y ? histPick(y, x) : x, meId() || "")}; } }
+  if (gone) next.meta.histGone = gone; }
+// After a save while editing: copy what's due to the history files, in the background (saving never waits on history).
+async function histFlush(){
+  if (!histMoveOn() || hist.flushing) return hist.flushing;
+  const dir = hist.dir, plan = hist.plan, hd = hist.hd, same = () => hist.dir === dir && hist.plan === plan && hist.hd === hd;
+  const run = (async ()=>{
+    const due = [...hist.wrote.values()].some(t=>hist.readStart < t + HIST_SETTLE && Date.now() >= t + HIST_SETTLE);
+    if (Date.now() - hist.readStart > HIST_REREAD || due){ await readHistory(); if (!same() || !hist.raw) return null; }
+    const want = new Map(), add = q => { if (!want.has(q)) want.set(q, {snapshots:[], reports:[], updates:[], changes:[], removed:{}, keys:[]}); return want.get(q); };
+    const pending = histMovable(S);
+    for (const k of HIST_MOVE) for (const x of S[k] || []){ const y = x && hist.raw[k].get(x.id); if (y && !jeq(y, x) && histPick(y, x) === x && histStamp(histAt(k, x))) pending.push([k, x]); }   // an edit here to an entry a file holds
+    for (const [k, x] of pending){ const y = hist.raw[k].get(x.id), r = hist.raw.removed[x.id], key = k + ":" + x.id, js = JSON.stringify(x);
+      // Already there; or deleted there, and back here by an undo (so it stays in the plan); or just sent.
+      if ((y && (jeq(y, x) || histPick(y, x) === y)) || (r && histNewest(k, x) <= Date.parse(r.at)) || hist.sent.get(key) === js) continue;
+      const f = add(histQuarter(histAt(k, x))); if (!f[k].some(z=>z.id === x.id)){ f[k].push(x); f.keys.push([key, js]); } }
+    for (const [id, g] of Object.entries(S.meta.histGone || {})){ const r = hist.raw.removed[id], key = "rm:" + id;
+      if ((r && Date.parse(r.at) >= Date.parse(g.at)) || hist.sent.get(key) === g.at) continue;
+      const f = add(g.q); f.removed[id] = {by:g.by, at:g.at}; f.keys.push([key, g.at]); }
+    const res = {at:Date.now(), wrote:0, quarters:[], errors:[], kept:0};
+    for (const [q, f] of [...want].sort((a, b)=>a[0] < b[0] ? -1 : 1)){
+      const {keys, ...mine} = f, r = await HistoryStore.write(dir, plan, q, mine, {create:!(S.meta.histParts || {})[q] && !hist.parts[q]});   // a quarter the plan says has a file is never started again
+      if (!same()) return null;
+      if (r.error){ res.errors.push({quarter:q, why:r.error}); continue; }
+      hist.wrote.set(q, Date.now()); keys.forEach(([k, v])=>hist.sent.set(k, v)); hist.parts[q] = Math.max(hist.parts[q] || 0, r.parts || 1);
+      res.wrote += HIST_MOVE.reduce((a, k)=>a + mine[k].length, 0); res.quarters.push(q); res.kept += (r.kept || []).length; }
+    return res; })();
+  hist.flushing = run;
+  let res; try { res = await run; } catch(e){ res = {at:Date.now(), wrote:0, quarters:[], errors:[{quarter:"", why:e.message || String(e)}], kept:0}; }
+  if (hist.flushing === run) hist.flushing = null;
+  if (res && same()){ hist.flushed = res; render();
+    if (res.errors.length) setStatus(`Saved, but some older history couldn't be copied to its files (${res.errors.map(e=>e.quarter ? histQName(e.quarter) : "the history folder").join(", ")}), so it stays in the plan file. See Settings, then Activity.`); }
+  return res; }
+// The first save that keeps history in files downloads the file as it was, since copies from before this open it read-only.
+function histBackupFirst(hd, before, out){
+  if (!hd || !before || upgradedFiles.has(hd) || !featuresIn(out).includes("histFiles1")) return;
+  let was; try { was = parseText(before); } catch(e){ return; } if (featuresIn(was).includes("histFiles1")) return;
+  const yaml = /\.ya?ml$/i.test(hd.name || ""); upgradedFiles.add(hd);
+  download(before, backupName("before-history-files", hd.name).replace(/\.json$/, yaml ? ".yaml" : ".json"), yaml ? "text/yaml" : "application/json");
+  mergeNote = (mergeNote ? mergeNote + " " : "") + `This plan now keeps older history in files beside it, and the file as it was was downloaded as a backup. Copies of Sightline older than ${APP_VERSION} will open it read-only.`; }
 // Where history is listed: what may be missing from it, and why. Null when nothing is.
 function histNotice(short){
   if (!file.handle || hist.hd !== file.handle || hist.plan !== S.meta.planId) return null;
@@ -3847,6 +3950,16 @@ function histNotice(short){
   if (hist.state !== "ready" || !hist.problems.length) return null;
   const qs = [...new Set(hist.problems.flatMap(p=>p.quarter.split(", ")).filter(Boolean))].map(histQName);
   return h("p",{class:"msg warn histmiss"}, `Some history couldn't be read${qs.length ? ` (${qs.join(", ")})` : ""}, so entries from then may be missing here.` + (short ? "" : go)); }
+// How moving history out is going, under the folder's summary.
+function histMoveLine(){
+  const fl = hist.flushed, kids = [], ents = n => `${n.toLocaleString("en-US")} entr${n === 1 ? "y" : "ies"}`;
+  kids.push(h("p",{class:"hint",id:"histMove"}, !file.holdLock ? "When someone saves while editing, snapshots, status updates and item updates older than 30 days move into these files. Each item's latest update and the newest snapshot and status update stay in the plan file."
+    : hist.flushing ? "Copying older history to the files…"
+    : fl && fl.wrote ? `Your last save copied ${ents(fl.wrote)} to ${fl.quarters.map(histQName).join(", ")}. They leave the plan file at a later save, once the files are read again and still have them.`
+    : "Snapshots, status updates and item updates older than 30 days are copied to these files when you save, and leave the plan file at a later save."));
+  if (fl && fl.errors.length) kids.push(h("ul",{class:"histprob",id:"histMoveProblems"}, ...fl.errors.slice(0, 20).map(e=>h("li",{}, (e.quarter ? histQName(e.quarter) + ": " : "") + e.why + ". What would go there stays in the plan file."))));
+  if (fl && fl.kept) kids.push(h("p",{class:"hint",id:"histKept"}, `${ents(fl.kept)} you deleted ${fl.kept === 1 ? "is" : "are"} still shown: someone changed ${fl.kept === 1 ? "it" : "them"} after ${fl.kept === 1 ? "it was" : "they were"} deleted, or a computer's clock is off.`));
+  return kids; }
 function histLine(){
   if (!file.handle || !window.showDirectoryPicker) return null;
   const head = h("b",{}, "History files"), box = (...kids) => h("div",{class:"histline",id:"histLine"}, head, ...kids);
@@ -3862,6 +3975,7 @@ function histLine(){
       : `${name}: history from ${q.length} quarter${q.length === 1 ? "" : "s"} (${q.length === 1 ? histQName(q[0]) : histQName(q[0]) + " through " + histQName(q[q.length - 1])}), ${n.toLocaleString("en-US")} entr${n === 1 ? "y" : "ies"}.`),
     hist.problems.length ? h("ul",{class:"histprob",id:"histProblems"}, ...hist.problems.slice(0, 20).map(p=>h("li",{}, (p.quarter ? p.quarter.split(", ").map(histQName).join(", ") + ": " : "") + p.why + "."))) : null,
     hist.problems.length ? h("p",{class:"hint"}, "Entries in those files aren't shown, and Sightline won't write over them. A newer copy of Sightline may be able to read them.") : null,
+    histMoveLine(),
     h("div",{class:"qrow"}, h("button",{type:"button",class:"btn",id:"histReload",onclick:()=>reconnectHistFolder()}, "Read again"), off)); }
 const activeStore = () => file.handle ? FileStore : LocalStore;
 const serialize = (plan, name) => FileStore.serialize(plan, name);
@@ -4257,16 +4371,18 @@ async function writeMine(hd, keepLock){
   const withRec = o => { if (rec) o.changes = pruneChanges([...(o.changes || []).filter(c=>c.id !== rec.id), rec]); return o; };
   const out = withRec(clone(planOfRecord(S))); out.meta.revision = (S.meta.revision||0) + 1; out.meta.savedAt = new Date().toISOString();
   out.meta.lock = keepLock ? {by:myName()||"Someone", id:SESSION, at:new Date().toISOString()} : null;
+  let moved = histPatch(out);
   let text; try { text = serialize(out, hd.name); } catch(e){ setStatus("Not saved: " + e.message + "."); return false; }
   { const n = overLimit(text, 64, file.baseText); if (n){ setStatus(n); return false; } }
   try {
+    histBackupFirst(hd, file.baseText, out);
     let res = await writeIfUnchanged(hd, file.baseText, text);
     if (res === "changed"){                          // a teammate's quick update landed a moment ago: merge it and try once more
       const cur = await readFile(hd); let theirs = null; try { theirs = parseText(cur); } catch(e){}
       if (theirs && tooNew(theirs)){ setStatus(`Not saved: someone just saved with Sightline ${tooNew(theirs).version}, which has things this copy doesn't know about. Your edits are kept here; get the latest Sightline to save them.`); return false; }
       if (!(theirs && rebaseOnto(theirs, cur))){ setStatus("Not saved: the file changed while saving. Your edits are kept; save again."); return false; }
       const out2 = withRec(clone(planOfRecord(S))); out2.meta.revision = (S.meta.revision||0) + 1; out2.meta.savedAt = out.meta.savedAt; out2.meta.lock = out.meta.lock;
-      Object.assign(out, out2); text = serialize(out, hd.name);
+      moved = histPatch(out2); Object.assign(out, out2); text = serialize(out, hd.name);
       { const n = overLimit(text, 64, cur); if (n){ setStatus(n); return false; } }
       res = await writeIfUnchanged(hd, file.baseText, text);
     }
@@ -4274,10 +4390,13 @@ async function writeMine(hd, keepLock){
   }
   catch(e){ setStatus("Couldn't save: " + e.message); return false; }
   S.meta.revision = out.meta.revision; S.meta.savedAt = out.meta.savedAt; S.meta.lock = out.meta.lock; S.changes = out.changes;
+  { const keep = k => new Set((out[k] || []).map(x=>x && x.id)); if (moved) HIST_MOVE.forEach(k=>{ const ids = keep(k); S[k] = (S[k] || []).filter(x=>!x || ids.has(x.id)); });   // what moved to the history files, as written
+    ["histParts", "histGone"].forEach(k=>{ if (out.meta[k]) S.meta[k] = clone(out.meta[k]); else delete S.meta[k]; }); }
   file.baseText = text; file.baseHash = hashText(text); file.dirty = false; file.holdLock = !!keepLock; markFileChecked(hd, file.gen); flushPersist();
   keepLock ? startHeartbeat() : stopHeartbeat(); showLockBanner();
   clearBanner("remote"); updateFileUI(); planChanged("save");
-  setStatus(withMergeNote(`Saved to local file ${hd.name} · revision ${out.meta.revision} · ${new Date().toLocaleTimeString()}`));
+  setStatus(withMergeNote(`Saved to local file ${hd.name} · revision ${out.meta.revision} · ${new Date().toLocaleTimeString()}` + (moved ? ` · ${moved.toLocaleString("en-US")} older entr${moved === 1 ? "y" : "ies"} now only in the history files` : "")));
+  if (keepLock) histFlush();
   return true;
 }
 function showConflict(theirPlan, theirText, why){
@@ -17017,6 +17136,7 @@ menu.addEventListener("keydown", e=>{
 async function newSharedPlan(){
   if (!window.showSaveFilePicker || file.holdLock) return;
   if (tooNew()){ setStatus(newerMsg()); return; }
+  if (Object.keys(S.meta.histParts || {}).length){ setStatus("This plan keeps older history in files beside it, which a new shared plan would leave behind. To share it somewhere else, copy the plan's whole folder (the plan file and its history folder)."); return; }
   if (file.dirty && !(await confirmDiscard("save a new shared plan"))) return;
   let hd;
   try { hd = await window.showSaveFilePicker({suggestedName: slug() + ".json", types:[{description:"Timeline", accept:{"application/json":[".json"],"text/yaml":[".yaml",".yml"]}}]}); }
