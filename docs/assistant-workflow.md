@@ -317,6 +317,15 @@ action, field `aiHint`.
 for a person, at every review level: the team's priority and its reason are a person's call. A plan with a class or
 either line needs this version or later: older copies open it read-only.
 
+### The work order
+
+`initiative.order` {ids} sets the team's work order: every initiative id, in the order the team will take them, and
+`[]` clears it. The forecast follows it when people are busy: ordered work gets people first, a nested initiative
+takes its nearest listed holder's place, and unordered work follows in workstream order, then by start. What an item
+waits for still comes first, and Jira-dated initiatives keep their sprint, so they can't be in the order. It always
+waits for a person, at every review level. The export has `planning.workOrder` and each initiative's `workOrder`
+place, from 1. A plan with a work order needs this version or later: older copies open it read-only.
+
 ### Workstream actions
 
 `workstream.set` {id, field: note, color, from or until, value, prev} and `workstream.move` {id, index} change a

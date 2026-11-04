@@ -1806,6 +1806,7 @@ ACTIONS = {
     "initiative.place": ({"id": "id", "target": "id", "zone": "str"}, False),
     "initiative.del": ({"id": "id"}, False),
     "initiative.setEffort": ({"id": "id", "likely": "num?", "low": "num?", "high": "num?", "at": "iso?"}, True),
+    "initiative.order": ({"ids": "ids"}, True),
     "initiative.setScope": ({"id": "id", "scope": "str"}, True),
     "initiative.delivers.add": ({"id": "id", "outcome": "id"}, False),
     "initiative.delivers.remove": ({"id": "id", "outcome": "id"}, False),
