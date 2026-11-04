@@ -136,6 +136,22 @@ async function page(){
       file.handle = null; file.dirty = false; return JSON.stringify(out); })()`));
     ok('R4b with Save as you go, a reorder that loses to a teammate\'s keeps theirs, downloads mine as a backup and says so',
       JSON.stringify(sg.file) === '["C","A","B"]' && JSON.stringify(sg.S) === '["C","A","B"]' && sg.DL.includes('backup-mine') && /work order too/.test(sg.status) && /backup/.test(sg.status), JSON.stringify(sg));
+    // R4c: the same save then refused (over the size limit): its note never shows up on a later, unrelated save.
+    const rf = JSON.parse(await w.eval(`(async()=>{ DL.length = 0; const realLimit = overLimit;
+      const mine = clone(planOfRecord(S)); mine.meta.workOrder = ['A', 'C']; const base = serialize(mine, 'p.json');
+      const theirs = clone(mine); theirs.meta.workOrder = ['C', 'A', 'B']; theirs.meta.revision = (mine.meta.revision || 0) + 5;
+      const hd = {name:'p.json', text:serialize(theirs, 'p.json'), async queryPermission(){ return 'granted'; }, async requestPermission(){ return 'granted'; },
+        async getFile(){ const t = hd.text; return {size:t.length, lastModified:1, text:async()=>t}; }, async createWritable(){ let x = ''; return {async write(v){ x = v; }, async abort(){}, async close(){ hd.text = x; }}; }};
+      S = normalize(mine, false); file.handle = hd; file.baseText = base; file.baseHash = hashText(base); file.holdLock = false; file.dirty = true; locked = false;
+      overLimit = ()=>'Not saved: the plan would be too big.';
+      const okA = await quickSave('work order', null, 0, [{op:'set', type:'meta', id:'meta', field:'workOrder', prev:['A', 'C'], value:['B', 'C', 'A']},
+        {op:'set', type:'bars', id:'P1', field:'label', prev:'P1', value:'P1 renamed'}], false, true);
+      overLimit = realLimit; const note = mergeNote;
+      S = normalize(parseText(hd.text), false); file.baseText = hd.text; file.baseHash = hashText(hd.text); file.dirty = true;
+      const okB = await quickSave('name', null, 0, [{op:'set', type:'bars', id:'P1', field:'label', prev:'P1', value:'P1 again'}], false, true);
+      const out = {okA, okB, note, status:$('#status') ? $('#status').textContent : '', DL};
+      file.handle = null; file.dirty = false; return JSON.stringify(out); })()`));
+    ok('R4c a refused save drops its work-order note, so a later save doesn\'t repeat it', rf.okA === false && rf.okB === true && rf.note === '' && !/work order/.test(rf.status) && rf.DL.filter(x=>x === 'backup-mine').length === 1, JSON.stringify(rf));
     ok('Z1 no page errors', !w.errors.length, w.errors.join(' | '));
 
     // End to end: an app's batch at routine and all. The order and a priority are held; a routine risk applies.

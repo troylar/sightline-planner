@@ -4244,6 +4244,8 @@ function backupBeforeUpgrade(hd, before){
   download(before, backupName(`format${from}`, hd.name).replace(/\.json$/, yaml ? ".yaml" : ".json"), yaml ? "text/yaml" : "application/json"); upgradedFiles.add(hd);
   mergeNote = (mergeNote ? mergeNote + " " : "") + `Saved in plan format ${SCHEMA} (was ${from}); the old file was downloaded as a backup. Older copies of Sightline will open it read-only.`;
 }
+const WO_LOST_NOTE = "A teammate changed the work order too, so theirs stands; yours was downloaded as a backup.";
+let woBacked = false;                                            // this save already kept my lost reorder; its retries don't again
 function quickSave(what, mutate, tries = 0, ops = null, isUndo = false, fromSayg = false, putBacks = 0){
   if (present) return Promise.resolve(false);
   if (tooNew()){ setStatus(newerMsg()); return Promise.resolve(false); }
@@ -4253,7 +4255,7 @@ function quickSave(what, mutate, tries = 0, ops = null, isUndo = false, fromSayg
   if (file.dirty && !file.holdLock && !fromSayg){ setStatus("You have unsaved edits from your editing session. Click Start editing and save them before making quick updates."); return Promise.resolve(false); }
   return exclusive(async ()=>{
     if ((file.dirty && !fromSayg) || file.holdLock){ setStatus("You have unsaved edits. Save them before making quick updates."); return false; }   // state changed while this was queued
-    const hd = file.handle, gen = file.gen, keepSel = sel;
+    const hd = file.handle, gen = file.gen, keepSel = sel; if (!tries) woBacked = false;
     if (!(await hasPerm(hd,"readwrite")) && !(await askPerm(hd,"readwrite"))){ setStatus("Permission to save the file was denied"); return false; }
     let now; try { now = await readFile(hd); } catch(e){ showLinkProblem(hd, e.message); return false; }
     if (gen !== file.gen) return false;
@@ -4274,8 +4276,8 @@ function quickSave(what, mutate, tries = 0, ops = null, isUndo = false, fromSayg
       if (lost.length){ backup(plan, "theirs"); setStatus(`A teammate changed ${lost.length === 1 ? "the same thing" : lost.length + " of the same things"} since you started; yours is saved and theirs downloaded as a backup.`); } }
     // The work order is one list, one choice: when a teammate reordered since, theirs stands (applyOps) and mine is kept as a copy.
     { const wl = (ops || []).find(o=>o.type === "meta" && o.field === "workOrder" && "prev" in o && !jeq(plan.meta.workOrder || [], o.prev || []) && !jeq(plan.meta.workOrder || [], o.value || []));
-      if (wl && !(mergeNote || "").includes("changed the work order too")){ const mine = mineS ? clone(mineS) : clone(plan); if (!mineS){ if ((wl.value || []).length) mine.meta.workOrder = clone(wl.value); else delete mine.meta.workOrder; }
-        backup(mine, "mine"); mergeNote = (mergeNote ? mergeNote + " " : "") + "A teammate changed the work order too, so theirs stands; yours was downloaded as a backup."; } }
+      if (wl && !woBacked){ woBacked = true; const mine = mineS ? clone(mineS) : clone(plan); if (!mineS){ if ((wl.value || []).length) mine.meta.workOrder = clone(wl.value); else delete mine.meta.workOrder; }
+        backup(mine, "mine"); mergeNote = (mergeNote ? mergeNote + " " : "") + WO_LOST_NOTE; } }
     const change = ops ? (st=>{ const r = applyOps(st, ops).plan; for (const k of Object.keys(st)) delete st[k]; Object.assign(st, r); if (!diffPlans(before, st).length) return NOCHANGE; }) : mutate;
     let changed = false; const change2 = ops ? (st=>{ const r = change(st); changed = r !== NOCHANGE; return r; }) : change;
     let ok; quickMode = true; try { ok = commit(change2, {quiet:true, grow:true, norender:true}); } finally { quickMode = false; }
@@ -4302,7 +4304,9 @@ function quickSave(what, mutate, tries = 0, ops = null, isUndo = false, fromSayg
     planChanged("quick"); setStatus(withMergeNote(`Saved to local file: ${what}`));
     verifyLater(hd, myOps, what, out.meta.revision, 1500, putBacks, hashText(text));
     return true;
-  }).then(r=>r && typeof r === "object" && "retry" in r ? quickSave(what, mutate, tries + 1, r.retry, isUndo, fromSayg, putBacks) : r && typeof r === "object" && r.wait ? false : r);
+  }).then(r=>{ if (r && typeof r === "object" && "retry" in r) return quickSave(what, mutate, tries + 1, r.retry, isUndo, fromSayg, putBacks);
+    if (r !== true && woBacked && mergeNote.includes(WO_LOST_NOTE)) mergeNote = mergeNote.replace(WO_LOST_NOTE, "").trim();   // refused: never tell a later save about it
+    return r && typeof r === "object" && r.wait ? false : r; });
 }
 // Two saves in the same instant can both pass the checks. Look again shortly after; if our change was overwritten, put it back,
 // once. Overwritten again after that, something keeps restoring an older file (another open copy, a sync tool): putting it
