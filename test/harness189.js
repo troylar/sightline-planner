@@ -103,6 +103,26 @@ async function page(){
     ok('U6 an initiative\'s card says its place in the work order', /2nd in the work order/.test((d.querySelector('#f-workorder') || {}).textContent || ''));
     ev("sel = {type:'bar', id:'P1'}; render()"); await wait(20); d.querySelector('#f-wofirst').click(); await wait(20);
     ok('U7 an initiative not in the order can be put first from its card', J('S.meta.workOrder')[0] === 'P1');
+    // Review fixes.
+    ev("sel = null; S.meta.workOrder = ['A', 'J', 'C']; goWs('people'); render(); renderForecastWs()"); await wait(20);
+    d.querySelector('#fcOrder [data-wo="C"] [data-wobtn="first"]').click(); await wait(20);
+    ok('R1 an initiative Jira dated after it was ordered doesn\'t lock the order: moving another still works', JSON.stringify(J('S.meta.workOrder')) === '["C","A","J"]', JSON.stringify(J('S.meta.workOrder')));
+    const rj = J(`RA(clone(S), 'initiative.order', {ids:['J', 'C', 'A']})`), rn = J(`(()=>{ const p = clone(S); p.meta.workOrder = ['C']; return RA(p, 'initiative.order', {ids:['C', 'J']}); })()`);
+    ok('R1 …and an app can reorder it too, while adding newly Jira-dated work is still refused', rj.ok && !rn.ok && /Jira/.test(rn.reason), JSON.stringify([rj.ok, rn.reason]));
+    ev("file.handle = {name:'plan.json'}; file.holdLock = false; render(); renderForecastWs()"); await wait(20);
+    const roBtn = d.querySelector('#fcOrder [data-wo="A"] [data-wobtn="first"]'), before = JSON.stringify(J('S.meta.workOrder'));
+    ok('R2 without editing, the order\'s buttons are off and the panel says how to change it', roBtn && roBtn.disabled && /Start editing/.test((d.querySelector('#fcOrderRO') || {}).textContent || ''));
+    ev("setWorkOrder(['A', 'C', 'J'], 'Moved A to 1st in the work order')"); await wait(10);
+    ok('R2 …and a refused change never says it worked', JSON.stringify(J('S.meta.workOrder')) === before && !/Moved A/.test(d.querySelector('#status') ? d.querySelector('#status').textContent : ''), d.querySelector('#status') ? d.querySelector('#status').textContent : 'no status');
+    ev("file.handle = null; render(); renderForecastWs()"); await wait(20);
+    const xq = mod => it(mod, 'C'), noOrd = xq("P=>{ P.bars.push({...clone(P.bars.find(b=>b.id === 'A')), id:'X', start:2, label:'X'}); P.bars.find(b=>b.id === 'A').start = 0; P.bars.find(b=>b.id === 'C').dependsOn = ['X']; P.meta.workOrder = []; }"),
+      ord = xq("P=>{ P.bars.push({...clone(P.bars.find(b=>b.id === 'A')), id:'X', start:2, label:'X'}); P.bars.find(b=>b.id === 'A').start = 0; P.bars.find(b=>b.id === 'C').dependsOn = ['X']; P.meta.workOrder = ['C']; }");
+    ok('R3 putting something first pulls what it waits for forward too', ord.finish < noOrd.finish, JSON.stringify([noOrd.finish, ord.finish]));
+    const rp = J(`(()=>{ const p = clone(S); p.meta.workOrder = ['A', 'C']; const out = applyOps(p, [{op:'set', type:'meta', id:'meta', field:'workOrder', value:['C'], prev:[]}]); return {order:out.plan ? out.plan.meta.workOrder : out.meta && out.meta.workOrder, skipped:(out.skipped || []).length}; })()`);
+    ok('R4 replaying my reorder onto a teammate\'s newer one leaves theirs and reports mine as not applied', JSON.stringify(rp.order) === '["A","C"]' && rp.skipped === 1, JSON.stringify(rp));
+    ev("S.meta.workOrder = ['C', 'A', 'N']; render(); renderForecastWs()"); await wait(20);
+    d.querySelector('#fcOrder [data-wo="A"] [data-wobtn="remove"]').click(); await wait(20);
+    ok('R5 after Remove, focus moves to the next row, not the page', JSON.stringify(J('S.meta.workOrder')) === '["C","N"]' && d.activeElement && d.activeElement.closest && d.activeElement.closest('[data-wo]') && d.activeElement.closest('[data-wo]').dataset.wo === 'N');
     ok('Z1 no page errors', !w.errors.length, w.errors.join(' | '));
 
     // End to end: an app's batch at routine and all. The order and a priority are held; a routine risk applies.
