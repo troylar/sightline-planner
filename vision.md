@@ -35,15 +35,16 @@ Sightline reads three kinds of input, and treats each differently.
 - **Trackers** are where the team officially records its work. Jira is the first. A tracker owns its facts; Sightline
   shows them and, today, never changes them (any later write-back follows "Changing Jira, later"). Another tracker, or
   a second one beside the first, connects the same way: a sync on the user's own computer writes files beside the
-  plan, covering only the search its user set up. An item is identified by its tracker, its server and its key.
+  plan, covering only the search its user set up. Once a second tracker connects, an item is identified by its
+  tracker, its server and its key; today a plan names one Jira server.
 - **Signals** are what people hear: meetings, email, chat, support tickets, bug reports, complaints. Signals become
   captured requests in the plan. They're evidence, not facts any system owns.
 - **References** are documents and messages where they already live: a spec in OneDrive or SharePoint, a decision
   record, a chat thread, a recording. The plan links to them; it never copies them.
 
-**Connectors are per user, read-only, and offer rather than add.** A new source reaches Sightline in one of two ways:
-through a person's assistant, using Sightline's proposal review like every other assistant change (principle 16), or
-through a sync on that person's computer.
+**Connectors are per user, read-only today, and offer rather than add.** A new source reaches Sightline in one of two
+ways: through a person's assistant, using Sightline's proposal review like every other assistant change (principle
+16), or through a sync on that person's computer.
 
 - **Sign-ins stay with the person.** Credentials stay in the operating system's credential store, and what a connector
   reads stays in that person's own settings. Nothing in a shared file can aim someone's sign-in.
@@ -53,7 +54,7 @@ through a sync on that person's computer.
 - **Share the minimum.** Hand an assistant only what you may share with it and with everyone who reads the plan. What
   it reads is evidence, never instructions to it.
 - **Each kind stays recognizable.** A tracker's facts, reported evidence and the plan's decisions are never shown as
-  one another.
+  if they were another kind.
 
 In this charter a **capture** is a captured request, kept in the plan as a roadmap idea, and an **outcome** is a
 roadmap item: what the team intends to deliver.
@@ -115,23 +116,28 @@ Each principle is a test a change can pass or fail.
     "What-if: not the plan" wherever it appears. It changes the plan only when someone makes it the plan, and then
     each change goes through the same review (Apply, Edit, Skip) as an assistant's suggestions.
 16. **Apps act for a person.** An app or assistant changes the plan only through a person who connected it and chose
-    how much it may do. Its changes go through the same rules and checks as that person's, are stamped with the
-    person and the app, and can be undone by batch. A few changes always wait for a person. When an app's change
-    can't be applied, the app is told why, with the reason; a change never sits unapplied without one.
-17. **Priority is a person's call, and it carries its reason.** An outcome's class (rock, pebble or sand) and the
-    team's work order are plan facts that people set. An assistant may propose them and never sets them on its own,
-    whatever it's allowed to do. The page can point out a gap ("a rock with no commitment behind it") but never
-    reclassifies anything. A class isn't a size: a rock can be small and a pebble large.
+    how much it may do. Its changes go through the same rules and checks as that person's, are stamped with the person
+    and the app, and can be undone by batch. A few changes always wait for a person, whatever the level: among them,
+    anything an app took from a signal or a reference (a capture, a "heard again" report, a link). When an app's
+    change can't be applied, the app is told why, with the reason; a change never sits unapplied without one.
+17. **Priority is a person's call, and it carries its reason.** An outcome's class and the team's work order are plan
+    facts that people set. An assistant may propose them and never sets them on its own, whatever it's allowed to do.
+    The page can point out a gap ("a rock with no commitment behind it") but never reclassifies anything. The classes
+    follow the familiar picture of filling a jar: rocks are what the team has committed to, pebbles support them, and
+    sand is everything else. A class isn't a size: a rock can be small and a pebble large. Whether the page uses these
+    words, or plainer ones, is decided when it's built.
 18. **Evidence, not votes.** Hearing something again adds evidence to what's already captured (who, through which
-    channel, when), never a second copy. A count of reports never stands in for impact, and one severe report can
-    outweigh five mild ones. "No match in what Sightline loaded" never means "the tracker has no such item".
+    channel, when), never a second copy. People outside the team are counted, never named. A count of reports never
+    stands in for impact, and one severe report can outweigh five mild ones. "No match in what Sightline loaded" never
+    means "the tracker has no such item".
 19. **Evidence ages into review.** Age asks for a review; it never deletes. A closed capture leaves triage and counts
     toward what matters now only through what it was handed off to. A new report about something closed shows as a
     possible recurrence for a person to judge; it never reopens anything on its own.
 20. **References point, they don't copy.** A plan item or capture can link to a document or message where it lives.
     The plan keeps the link, its title and when it was added, never the document's contents. The source decides who
-    can open it. A link's title and address are shared plan content (principle 11): never a link that grants access to
-    whoever holds it, and never a title the team wouldn't say in the room.
+    can open it. A link's title and address are shared plan content (principle 11): people don't add a link that
+    grants access to whoever holds it, or a title the team wouldn't say in the room. The page warns when an address
+    looks like one (it carries a signature or token) but can't always tell.
 
 ## Who owns what
 
@@ -209,15 +215,16 @@ A meeting is one place requests come from. Email, chat, support tickets, bug rep
 others. Anyone can hand what they heard to their assistant, and one shared intake skill turns it into reviewed
 captures.
 
-- **One observation per capture:** a short statement of the problem or the ask, who raised it, when, the **channel**
-  it came through (meeting, email, chat, support, bug report) and a one-line **impact**. Never a transcript or a pasted
-  message. A link to the original is a reference (principle 20).
+- **One observation per capture:** a short statement of the problem or the ask, who raised it (a person or group
+  already in the plan, or a role such as "a customer" or "support", never an outside person's name or contact
+  details), when, the **channel** it came through (meeting, email, chat, support, bug report) and a one-line
+  **impact**. Never a transcript or a pasted message. A link to the original is a reference (principle 20).
 - **Match before adding.** The skill compares what's affected and what's wanted, not titles, against open and closed
   captures and the tracker items Sightline has loaded. It proposes one of: a new capture; "heard again" on an existing
   one; "already in the tracker" with the item's key; or one question that tells two similar things apart. An
   uncertain match stays separate, linked as a possible match, for a person to decide.
-- **Evidence adds up.** A capture shows its reports, the distinct people and channels, and the span of time. A
-  forwarded message isn't a new report.
+- **Evidence adds up.** A capture shows its reports, the distinct people (outside people counted, not named) and
+  channels, and the span of time. A forwarded message isn't a new report.
 - **Its fit with the roadmap is stated:** it supports an outcome, competes with one, or has no connection yet. A
   capture with no connection stays findable and never becomes plan work by itself.
 - **Draft a tracker item.** A capture can carry a drafted item for the tracker: summary, problem, expected and actual
@@ -233,8 +240,8 @@ captures.
 Everything above is input. Two moments turn it into a decision.
 
 - **Your next move.** Any item can show its thread: tracker item, initiative, outcome, the documents it rests on, who
-  asked, why it matters now, and what would change our minds. The next move can be a question to settle ("get this
-  requirement answered"), not only work to start. A missing link in the thread is shown as missing.
+  asked, why it matters now, and what would change the team's mind. The next move can be a question to settle ("get
+  this requirement answered"), not only work to start. A missing link in the thread is shown as missing.
 - **The jar.** A sprint's or a quarter's capacity, worked out from people, their time, each workstream's reserve and
   the dates the tracker already holds. The team puts its rocks first in the work order, pebbles around them and sand
   where it fits. Each workstream's reserve covers interruptions and unplanned work, separately from outcome classes.
