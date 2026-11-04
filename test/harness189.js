@@ -109,7 +109,7 @@ async function page(){
     ok('R1 an initiative Jira dated after it was ordered doesn\'t lock the order: moving another still works', JSON.stringify(J('S.meta.workOrder')) === '["C","A","J"]', JSON.stringify(J('S.meta.workOrder')));
     const rj = J(`RA(clone(S), 'initiative.order', {ids:['J', 'C', 'A']})`), rn = J(`(()=>{ const p = clone(S); p.meta.workOrder = ['C']; return RA(p, 'initiative.order', {ids:['C', 'J']}); })()`);
     ok('R1 …and an app can reorder it too, while adding newly Jira-dated work is still refused', rj.ok && !rn.ok && /Jira/.test(rn.reason), JSON.stringify([rj.ok, rn.reason]));
-    ev("file.handle = {name:'plan.json'}; file.holdLock = false; render(); renderForecastWs()"); await wait(20);
+    ev("stopAuto(); startAuto = ()=>{}; file.handle = {name:'plan.json'}; file.holdLock = false; render(); renderForecastWs()"); await wait(20);
     const roBtn = d.querySelector('#fcOrder [data-wo="A"] [data-wobtn="first"]'), before = JSON.stringify(J('S.meta.workOrder'));
     ok('R2 without editing, the order\'s buttons are off and the panel says how to change it', roBtn && roBtn.disabled && /Start editing/.test((d.querySelector('#fcOrderRO') || {}).textContent || ''));
     ev("setWorkOrder(['A', 'C', 'J'], 'Moved A to 1st in the work order')"); await wait(10);
