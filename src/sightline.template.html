@@ -1277,7 +1277,7 @@ dialog.capdlg{width:min(560px,92vw)}.capdlg form{display:flex;flex-direction:col
 .dvname{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.dvmeta{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11.5px;color:var(--ink-2);align-items:center}
 .dvkind{text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;color:var(--ink-3)}.dvprog{font-variant-numeric:tabular-nums}.dvown{display:inline-flex;gap:2px}.dvown .ini{width:16px;height:16px;font-size:9px}
 .dvbadges{display:flex;flex-wrap:wrap;gap:4px}.dvb{font-size:10.5px;border-radius:9px;padding:1px 7px;border:1px solid currentColor}.dvb-jira{color:var(--accent)}.dvb-detail{color:var(--warn)}.dvb-risk{color:var(--bad)}.dvb-ready{color:var(--ok)}.dvb-done{color:var(--ok)}.dvb-drop{color:var(--ink-3)}
-.dvside .dvwhy{font-size:12px;margin:2px 0 0}.dvkeys{list-style:none;padding:0;margin:4px 0;display:flex;flex-direction:column;gap:3px;font-size:13px}.dvprogline{margin:0 0 4px}
+.dvside .dvwhy{font-size:12px;margin:2px 0 0}.dvb-cls-rock{color:var(--accent);font-weight:600}.dvb-cls-pebble{color:var(--ink-2)}.dvb-cls-sand{color:var(--ink-3)}.dvkeys{list-style:none;padding:0;margin:4px 0;display:flex;flex-direction:column;gap:3px;font-size:13px}.dvprogline{margin:0 0 4px}
 /* Assistant amendments */
 .dvcard.dvghost{border-style:dashed;border-left-style:dashed;background:transparent;opacity:.85}.dvcard.dvghost.stale{border-color:var(--warn)}.amark{border-style:dashed}.amchip{font-size:12px;padding:2px 10px;vertical-align:middle}.amerr{color:var(--bad)}
 .amgroup>summary{cursor:pointer;font-weight:600;font-size:13px;margin:8px 0 4px}.amlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}.amrow{border:1px solid var(--rule-2);border-radius:8px;padding:6px 8px;display:flex;flex-direction:column;gap:3px}
@@ -1824,7 +1824,7 @@ const MAX_BYTES = 2 * 1024 * 1024, MAX_READ_BYTES = 5 * 1024 * 1024, MAX_DEPTH =
 // Values in one plan the same way: write up to 60,000 (what copies before 1.175.5 can open), read up to 400,000, so a later copy can raise the write limit.
 // Plan format. SCHEMA changes only for a change older copies can't read; new optional parts are named in meta.features,
 // and a copy that finds one it doesn't know opens the plan read-only instead of saving over what it can't see.
-const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1", "stories1", "skills1", "aiHint1", "msStory1", "descriptions1", "laneIds1", "cardLayout1", "hideWhy1", "captures1", "captureAgain1", "rough1", "histFiles1"];
+const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1", "stories1", "skills1", "aiHint1", "msStory1", "descriptions1", "laneIds1", "cardLayout1", "hideWhy1", "captures1", "captureAgain1", "rough1", "histFiles1", "priority1"];
 // A deliverable's target: a year, a half or a quarter ("2027", "2027-H1", "2027-Q2"), or "later".
 const TARGET_RE = /^(\d{4})(?:-(Q[1-4]|H[12]))?$/;
 const PR_DRAFT_RE = /^\s*[\[(]?\s*(draft|wip)\s*[\])]?\s*[:\-]?\s/i;    // a draft pull request's title: "Draft: …", "[WIP] …"
@@ -1832,6 +1832,12 @@ const DV_MAX = 5000, DV_MAX_KEYS = 200;
 // Captured from meetings (vision.md, Captured requests and ideas): a capture type, who asked (a person or group already
 // in the plan), the meeting's date and what became of it. Kept apart from a deliverable's kind and stage.
 const CAPTURE_TYPES = [["idea","Idea"],["request","Request"],["gap","Process gap"],["question","Question"]];
+// An outcome's priority (vision.md, Deciding what matters): its class and, in one line each, why it matters and when to
+// reconsider it. Set by people; an app's change to any of them always waits for a person (amPriorityOp).
+const DV_CLASSES = ["rock","pebble","sand"], DV_PRIORITY = ["class","why","reconsider"];
+const DV_CLASS_NAME = {rock:"Committed", pebble:"Supporting", sand:"If there's room"};
+const DV_CLASS_PICK = {rock:"Committed (rock)", pebble:"Supports a commitment (pebble)", sand:"If there's room (sand)"};
+const DV_CLASS_TIP = {rock:"Committed: what the team has promised. Goes first.", pebble:"Supporting: helps a commitment land.", sand:"If there's room: worth doing when there's space."};
 const validWho = v => !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length === 2 && (v.type === "person" || v.type === "group") && typeof v.id === "string" && /^[A-Za-z0-9._-]{1,60}$/.test(v.id);                      // deliverables per plan, Jira links per deliverable (the 2 MB file limit usually comes first)
 // Each later time a capture is raised again: who (or unknown), which meeting, when. The first ask stays in askedBy/raised/
 // source, so a copy that predates this still shows who asked first. Records merge by their id (REC_FIELDS).
@@ -1945,6 +1951,7 @@ const featuresIn = plan => { const f = [];
   if ((plan.deliverables || []).some(d=>d && d.approved)) f.push("approvals");
   if ((plan.deliverables || []).some(d=>d && (d.capture || d.askedBy || d.raised || d.handoff))) f.push("captures1");
   if ((plan.deliverables || []).some(d=>d && Array.isArray(d.raisedAgain) && d.raisedAgain.length)) f.push("captureAgain1");
+  if ((plan.deliverables || []).some(d=>d && (d.class || d.why || d.reconsider))) f.push("priority1");
   if ((plan.bars || []).some(b=>b && (b.tasks || []).some(t=>t && t.rough === true))) f.push("rough1");
   if ((plan.snapshots || []).length) f.push("snapshots");
   if ((plan.reports || []).length) f.push("reports");
@@ -2412,7 +2419,8 @@ function normalize(input, strict){
     // Deliverables: plain-language things to ship, added here. Only what's set is kept, so a quick idea stays small.
     uniq = idMaker(); d.deliverables = arr("deliverables").slice(0, DV_MAX).map((x,i)=>{ const o = {id:uniq(x.id, "dv-" + (i + 1)), name:str(x.name).slice(0,120) || "Deliverable", stage:["idea","planned","done","dropped","split"].includes(x.stage) ? x.stage : "idea"};
       const put = (k, v) => { if (v) o[k] = v; };
-      put("line", str(x.line).slice(0,300)); put("kind", ["new","improved","fixed"].includes(x.kind) ? x.kind : "");
+      put("line", str(x.line).slice(0,300));
+      put("class", DV_CLASSES.includes(x.class) ? x.class : ""); put("why", str(x.why).replace(/\s+/g, " ").trim().slice(0,300)); put("reconsider", str(x.reconsider).replace(/\s+/g, " ").trim().slice(0,300)); put("kind", ["new","improved","fixed"].includes(x.kind) ? x.kind : "");
       put("target", TARGET_RE.test(str(x.target)) || x.target === "later" ? str(x.target) : ""); put("date", validIso(x.date) ? x.date : "");
       put("release", /^[0-9]{1,18}$/.test(str(x.release)) ? str(x.release) : ""); put("lane", str(x.lane).slice(0,60));
       const ow = ppl(x.owners); if (ow.length) o.owners = ow;
@@ -8675,7 +8683,7 @@ const ACTION_DESC = {
   "task.unlink":"Remove a task's wait on another task.",
   "task.del":"Delete a task.",
   "outcome.add":"Add an outcome: what the plan promises, with its target, release and date.",
-  "outcome.set":"Change one field of an outcome.",
+  "outcome.set":"Change one field of an outcome, though its priority or its reason always waits for a person.",
   "outcome.setTarget":"Set an outcome's target and date.",
   "outcome.setRelease":"Put an outcome in a release, or blank to take it out.",
   "outcome.linkJira":"Link Jira issues to an outcome.",
@@ -9110,7 +9118,7 @@ defAction("task.del", {done:(p, a)=>!actTask(p, a.id), scope:"tasks", risk:"risk
     p.bars.forEach(b=>(b.tasks||[]).forEach(t=>{ t.dependsOn = (t.dependsOn||[]).filter(x=>x !== a.id); })); if (!f.b.tasks.length) f.b.datesFrom = "manual"; return f.b.id; }});
 
 // Outcomes (deliverables). Every change settles the stage and approval the way the card does (dvSettle).
-const DV_SET = {name:120, line:300, note:4000, kind:0, lane:0, owners:0, stage:0, aiHint:HINT_MAX, capture:0, raised:0, askedBy:0};
+const DV_SET = {name:120, line:300, note:4000, kind:0, lane:0, owners:0, stage:0, aiHint:HINT_MAX, capture:0, raised:0, askedBy:0, class:0, why:300, reconsider:300};
 // Who asked is a person or a group already in the plan: an assistant adds a new one first, and that always waits for review.
 const actWho = (p, w) => w.type === "person" ? p.people.some(x=>x.id === w.id) : (p.groups || []).some(g=>g.id === w.id);
 function captureProblem(p, a){
@@ -9144,6 +9152,8 @@ defAction("outcome.set", {scope:"outcomes", risk:"routine", args:{id:"id", field
     if (a.field === "owners"){ if (!ACT_ARG.ids(v)) return actInvalid("Owners is a list of people."); if (!actPeople(p, v)) return actMissing("person"); return; }
     if (a.field === "askedBy"){ if (v !== null && v !== "" && !validWho(v)) return actInvalid("Asked by is {type:'person'|'group', id}, or null."); if (v && !actWho(p, v)) return actMissing(v.type === "group" ? "group" : "person"); return; }
     if (typeof v !== "string") return actInvalid(`That isn't a valid ${a.field}.`);
+    if (a.field === "class" && v && !DV_CLASSES.includes(v)) return actInvalid("Class is rock, pebble or sand, or blank.");
+    if (DV_PRIORITY.includes(a.field) && /[\r\n]/.test(v)) return actInvalid(`Its ${a.field === "why" ? "why it matters" : a.field === "reconsider" ? "reconsider when" : a.field} is one line.`);
     if (a.field === "capture" && v && !CAPTURE_TYPES.some(c=>c[0] === v)) return actInvalid(`Capture type is one of ${CAPTURE_TYPES.map(c=>c[0]).join(", ")}.`);
     if (a.field === "raised" && v && !validIso(v)) return actInvalid(`Raised is a date (${REL_HELP}).`);
     if (DV_SET[a.field] && v.length > DV_SET[a.field]) return actInvalid(`Its ${a.field} is up to ${DV_SET[a.field]} characters.`);
@@ -12430,7 +12440,7 @@ function renderSide0(){
     const d = dvById(sel.id); if (!d){ sel = null; return; }
     const can = !present && !tooNew(), w = dvWhen(d), P = dvProgress(d), B = dvBadges(d), all = jiraAll(), parent = d.from ? dvById(d.from) : null, kids = (S.deliverables || []).filter(x=>x.from === d.id);
     const txt = (id, label, key, max, ph, area) => field(id, label, h(area ? "textarea" : "input",{id, value:d[key] || "", maxlength:String(max), placeholder:ph || "", rows: area ? "3" : null, disabled:!can,
-      onchange:e=>{ const v = e.target.value.trim().slice(0, max); if (key === "name" && !v){ e.target.value = d.name; return; } dvSave(`${d.name}: ${key === "line" ? "customer wording" : key}`, s=>act("outcome.set", {id:d.id, field:key, value:v}, s)); }}));
+      onchange:e=>{ const v = e.target.value.trim().slice(0, max); if (key === "name" && !v){ e.target.value = d.name; return; } dvSave(`${d.name}: ${({line:"customer wording", why:"why it matters", reconsider:"reconsider when"})[key] || key}`, s=>act("outcome.set", {id:d.id, field:key, value:v}, s)); }}));
     const tsel = h("select",{id:"f-dvtarget","aria-label":"Target",disabled:!can,onchange:e=>{ const v = e.target.value; if (v === "__date"){ fdate.hidden = false; fdate.focus(); return; } setDvTarget(d.id, v); }},
       h("option",{value:"",selected:!d.target && !d.release && !d.date}, "No target yet (an idea)"),
       ...targetChoices().map(([v, l])=>h("option",{value:v, selected:!d.release && !d.date && d.target === v}, l)), h("option",{value:"__date",selected:!!d.date && !d.release}, "A specific date…"));
@@ -12450,6 +12460,11 @@ function renderSide0(){
       can ? h("button",{type:"button",class:"btn",id:"dvAsk",onclick:()=>openPlanningAssistant({kind:"deliverable",id:d.id})},"Ask assistant about this") : null,
       B.length ? h("div",{class:"dvbadges"}, ...B.map(x=>dvChip(...x)), ...B.filter(x=>x[0] !== "jira").map(x=>h("div",{class:"hint dvwhy"}, `${x[1]}: ${x[2]}`))) : null,
       txt("f-dvname", "What we'll ship", "name", 120, "e.g. Make onboarding effortless"),
+      field("f-dvclass", "Priority", h("select",{id:"f-dvclass",disabled:!can,onchange:e=>{ const v = e.target.value; dvSave(`${d.name}: ${v ? DV_CLASS_NAME[v].toLowerCase() : "priority cleared"}`, s=>act("outcome.set", {id:d.id, field:"class", value:v}, s)); }},
+        h("option",{value:""}, "Not set yet"), ...DV_CLASSES.map(c=>h("option",{value:c, selected:d.class === c}, DV_CLASS_PICK[c])))),
+      h("p",{class:"hint",id:"dvClassHint"}, "Fill the jar with rocks first, pebbles around them, and sand where it fits. A class isn't a size: a committed outcome can be small."),
+      txt("f-dvwhy", "Why it matters", "why", 300, "What it changes, and for whom"),
+      txt("f-dvreconsider", "Reconsider when", "reconsider", 300, "e.g. if the other team ships it first"),
       txt("f-dvline", "For customers (release-note wording)", "line", 300, "One sentence a customer would understand", true),
       h("div",{class:"row2"},
         capOpen(d) ? null : field("f-dvkind","Kind", h("select",{id:"f-dvkind",disabled:!can,onchange:e=>{ const v = e.target.value; dvSave(`${d.name}: kind`, s=>act("outcome.set", {id:d.id, field:"kind", value:v}, s)); }}, h("option",{value:""},"Not set"), ...DV_KINDS.map(([v, l])=>h("option",{value:v, selected:d.kind === v}, l)))),
@@ -14585,7 +14600,7 @@ function contextGaps(){
 }
 function assistantView(){
   const J = jiraAll(), linked = new Set((S.deliverables || []).flatMap(d=>d.jira || []));
-  const pick = d => Object.fromEntries(["id","name","line","kind","stage","target","date","release","lane","owners","jira","source","aiHint","capture","askedBy","raised","raisedAgain","handoff","dropReason"].filter(k=>d[k] != null && d[k] !== "").map(k=>[k, d[k]]));     // no notes: they aren't needed to amend, and they're free text
+  const pick = d => Object.fromEntries(["id","name","line","class","why","reconsider","kind","stage","target","date","release","lane","owners","jira","source","aiHint","capture","askedBy","raised","raisedAgain","handoff","dropReason"].filter(k=>d[k] != null && d[k] !== "").map(k=>[k, d[k]]));     // no notes: they aren't needed to amend, and they're free text
   const fields = (x,keys)=>Object.fromEntries(keys.filter(k=>x[k]!=null).map(k=>[k,clone(x[k])]));
   return assistantFitView({coverage:{context:contextGaps()}, kind:"sightline-assistant-view", version:1, appVersion:APP_VERSION, generatedAt:new Date().toISOString(), today:dayToIso(todayDay()),
     plan:{id:S.meta.planId, title:S.meta.title, revision:S.meta.revision || 0},
@@ -14628,6 +14643,7 @@ function assistantView(){
       "Workstreams: workstream.set {id, field:'note'|'color'|'from'|'until', value, prev}, workstream.move {id, index}, workstream.reid {lane, id, prev} and workstream.del {id}. workstream.reid changes a workstream's id (lane, its id now; id, the new one) and every reference with it; its old ids are in was, still accepted from files written before, and never used again. A person always reviews it. workstream.del is refused while anything still points at the workstream (it says what), and a person always reviews it; move its work first with initiative.setLane, and change person.setSplit.",
       "coverage.context counts what the plan doesn't say yet (workstreams without guidance, people without skills, open work without a story or needs, milestones in the next 12 weeks without a story). Mention the gaps that weaken a suggestion and offer to fill them; never guess to cover one.",
       "Items marked jiraLinked keep Jira's status and dates: propose those in Jira. Items marked datesFromTasks get their dates from their tasks. Moving dates can move linked items; Sightline shows that before applying.",
+      "An outcome's priority is a person's call: class (rock = committed, pebble = supports a commitment, sand = if there's room; absent = not classed yet), why (why it matters) and reconsider (when to reconsider it). Propose a class only with its why, through outcome.set; any change to class, why or reconsider always waits for a person, whatever the level. Never reclassify on your own, and treat a class as importance, not size.",
       "Captured from meetings: when an open or closed capture already covers the request (compare names and raisedAgain), record it with outcome.raiseAgain (a new ask id, who, raised, source) instead of adding a duplicate; when unsure, add it and say which capture it may match. Otherwise outcome.add with capture (idea, request, gap or question), askedBy {type:'person'|'group', id} from planning.people or planning.groups, raised (the meeting's date), source (the meeting) and lane when the workstream is clear; leave lane out when it isn't. Never make someone the requester or owner because their name was mentioned. A new person or group (person.add, group.add) always waits for review: add it in the same change as the capture that needs it. A date never plans a capture. Close one with outcome.handoff {id, initiative or jira} or outcome.drop with a reason; outcome.reopen puts it back.",
       "Jira is read-only: never set Jira facts; propose them. Use only ids that appear below, or new ids you create (dv-…). Targets: a year '2027', a half '2027-H1', a quarter '2027-Q2', or 'later'.",
       "Use projectGuide to interpret scope and suggest placement, subordinate to the ownership and operation rules above. Explain placements; keep suggested extra work separate. If required owners or dates are unknown, ask rather than fabricate a scheduled task.",
@@ -14874,12 +14890,15 @@ function amSetPaused(on){ if (!AM || !AM.dir) return; try { on ? localStorage.se
 // Why a change always waits for a person: its first always-reviewed action, else the one floor that isn't an action's own.
 const FLOOR_WHY = {"workstream.del":"It deletes a workstream", "workstream.reid":"It changes a workstream's ID", "person.add":"It adds a person to the team",
   "group.add":"It adds a group", "skill.add":"It adds a skill to the team's list"};
-function amFloorWhy(c){ const o = (c.ops || []).find(o=>o && FLOOR_WHY[o.action]); return (o ? FLOOR_WHY[o.action] : "It deletes an initiative with Jira-linked work") + ", so a person always reviews it."; }
+// An outcome's priority and its reason are a person's call (vision.md principle 17): an app may only propose them.
+const amPriorityOp = o => !!(o && o.op === "action" && o.action === "outcome.set" && o.args && DV_PRIORITY.includes(o.args.field));
+function amFloorWhy(c){ const ops = c.ops || [], o = ops.find(o=>o && FLOOR_WHY[o.action]);
+  return (o ? FLOOR_WHY[o.action] : ops.some(amPriorityOp) ? "It sets an outcome's priority or its reason" : "It deletes an initiative with Jira-linked work") + ", so a person always reviews it."; }
 // How risky a change is: "floor" (always reviewed), "risky" (reviewed below "all") or "routine".
 function amRiskOf(c, p = S){ let risk = "routine";
   for (const o of c.ops || []){ if (!o || o.op !== "action") continue; const A = amHas(planActions, String(o.action)) ? planActions[o.action] : null; if (!A) continue;
     if (A.scope === "jira") return "jira";
-    if (A.risk === "floor") return "floor";
+    if (A.risk === "floor" || amPriorityOp(o)) return "floor";
     if (A.id === "initiative.del" && o.args){ const b = actBar(p, o.args.id), tree = b ? [b, ...descendantsOf(b.id, p)] : [];
       if (tree.some(x=>x.jira || (x.epics || []).length || (x.tasks || []).some(t=>t.jira))) return "floor"; }
     if (A.risk === "risky") risk = "risky"; }
@@ -14971,7 +14990,7 @@ function analysisGuide(){ const t = cutText(S.meta.title || "this plan", 120).re
     "- `plan`: id, title and revision. `today`: the day the file was written.",
     "- `initiatives[]`: id, label, lane (a workstream id), start, weeks, status (notstarted, inprogress, done or atrisk), owners (person ids), dependsOn, Jira keys and epics, and `tasks[]` with start, days, rough (true when the length is a guess), status and owners.",
     "- `planning`: people, workstreams, milestones, gates, risks, decisions, capacity, timeboxes and the calendar.",
-    "- `deliverables[]`: outcomes and ideas, with their targets.",
+    "- `deliverables[]`: outcomes and ideas, with their targets, and each one's priority: `class` (rock = committed, pebble = supports a commitment, sand = if there's room; absent = not classed yet), `why` (why it matters) and `reconsider` (when to reconsider it).",
     "- `jira.issues[]`: key, summary, status, assignee, points, sprint, epic and parent.",
     "- `projectGuide`: the team's own words on what each workstream is for.",
     "- `actions`, `guide` and `example` are for proposing changes. Skip them for analysis.", "",
@@ -15839,6 +15858,8 @@ function targetChoices(){ const t = dayToIso(todayDay()), y = +t.slice(0, 4), q 
   for (let yy = y; yy <= y + 3; yy++) out.push([String(yy), String(yy)]);
   out.push(["later", "Later"]); return out; }
 function dvChip(k, label, why){ return h("span",{class:"dvb dvb-" + k, title:why || label}, label); }
+// An outcome's priority, in plain words, with why it matters in its tooltip. Unclassed: nothing.
+function dvClassChip(d){ return d && DV_CLASSES.includes(d.class) ? h("span",{class:"dvb dvb-cls-" + d.class, "data-dvclass":d.class, title:DV_CLASS_TIP[d.class] + (d.why ? " Why: " + d.why : "")}, DV_CLASS_NAME[d.class]) : null; }
 // The deliverable card's capture fields: what kind of thing was raised, who asked, when, and what became of it.
 function capturePanel(d, can){
   const set = (field, value, what) => dvSave(`${d.name}: ${what}`, s=>act("outcome.set", {id:d.id, field, value}, s));
@@ -15893,7 +15914,7 @@ function triageList(can){
   open.forEach(d=>{ const k = d.lane && S.lanes.some(l=>l.id === d.lane) ? d.lane : ""; if (!by.has(k)) by.set(k, []); by.get(k).push(d); });
   const old = (a, b) => { const x = capAge(a).days, y = capAge(b).days; return x == null && y == null ? a.name.localeCompare(b.name) : x == null ? 1 : y == null ? -1 : y - x || a.name.localeCompare(b.name); };
   const row = d => { const age = capAge(d);
-    return h("li",{"data-cap":d.id}, h("span",{class:"captype cap-" + d.capture}, capType(d)),
+    return h("li",{"data-cap":d.id}, h("span",{class:"captype cap-" + d.capture}, capType(d)), dvClassChip(d),
       h("button",{type:"button",class:"linkish dvidea",onclick:()=>{ sel = {type:"deliverable", id:d.id}; render(); }}, d.name),
       h("span",{class:"hint"}, [d.askedBy ? "asked by " + capWho(d.askedBy) : "asked by: not known", d.source || "", d.raised ? "raised " + fmtDay(isoToDay(d.raised)) : ""].filter(Boolean).join(" · ")),
       capTimes(d) > 1 ? h("span",{class:"captimes",title:(d.raisedAgain || []).map(askLine).join("\n")}, `raised ${capTimes(d)} times`) : null,
@@ -15941,7 +15962,7 @@ function renderRoadmap(){
       ondragstart:e=>{ e.dataTransfer.setData("text/plain", d.id); e.dataTransfer.effectAllowed = "move"; },
       onclick:()=>{ sel = {type:"deliverable", id:d.id}; render(); }},
       h("span",{class:"dvname"}, d.name),
-      h("span",{class:"dvmeta"}, d.kind ? h("span",{class:"dvkind"}, DV_KINDS.find(k=>k[0] === d.kind)[1]) : null, sp && sp.w && (sp.w.prec === "release" || sp.w.prec === "date") ? h("span",{class:"dvwhen"}, "◆ " + sp.w.label) : null,
+      h("span",{class:"dvmeta"}, dvClassChip(d), d.kind ? h("span",{class:"dvkind"}, DV_KINDS.find(k=>k[0] === d.kind)[1]) : null, sp && sp.w && (sp.w.prec === "release" || sp.w.prec === "date") ? h("span",{class:"dvwhen"}, "◆ " + sp.w.label) : null,
         P ? h("span",{class:"dvprog" + (P.missing ? " miss" : ""),title:progTitle(P)}, progText(P)) : null, own.length ? h("span",{class:"dvown",title:own.map(p=>p.name).join(", ")}, ...own.slice(0, 3).map(p=>h("i",{class:"ini",style:{background:p.color || "#888", color:iniFg(p.color || "#888")}}, p.initials || "?"))) : null,
         d.stage === "done" ? h("span",{class:"dvb dvb-done"}, "Done") : d.stage === "dropped" ? h("span",{class:"dvb dvb-drop"}, "Dropped") : null),
       b.filter(x=>x[0] !== "jira").length ? h("span",{class:"dvbadges"}, ...b.filter(x=>x[0] !== "jira").map(x=>dvChip(...x))) : null,
