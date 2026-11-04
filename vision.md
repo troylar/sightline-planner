@@ -117,15 +117,15 @@ Each principle is a test a change can pass or fail.
     each change goes through the same review (Apply, Edit, Skip) as an assistant's suggestions.
 16. **Apps act for a person.** An app or assistant changes the plan only through a person who connected it and chose
     how much it may do. Its changes go through the same rules and checks as that person's, are stamped with the person
-    and the app, and can be undone by batch. A few changes always wait for a person, whatever the level: among them,
-    anything an app took from a signal or a reference (a capture, a "heard again" report, a link). When an app's
-    change can't be applied, the app is told why, with the reason; a change never sits unapplied without one.
+    and the app, and can be undone by batch. A few changes always wait for a person, whatever the level: among them, a
+    capture, a "heard again" report or a link that an app adds. When an app's change can't be applied, the app is told
+    why, with the reason; a change never sits unapplied without one.
 17. **Priority is a person's call, and it carries its reason.** An outcome's class and the team's work order are plan
     facts that people set. An assistant may propose them and never sets them on its own, whatever it's allowed to do.
-    The page can point out a gap ("a rock with no commitment behind it") but never reclassifies anything. The classes
-    follow the familiar picture of filling a jar: rocks are what the team has committed to, pebbles support them, and
-    sand is everything else. A class isn't a size: a rock can be small and a pebble large. Whether the page uses these
-    words, or plainer ones, is decided when it's built.
+    The classes follow the familiar picture of filling a jar: rocks are what the team has committed to, pebbles
+    support them, and sand is everything else. The page can point out a gap ("a rock with no sprint or date commitment
+    recorded") but never reclassifies anything. A class isn't a size: a rock can be small and a pebble large. Whether
+    the page uses these words, or plainer ones, is decided when it's built.
 18. **Evidence, not votes.** Hearing something again adds evidence to what's already captured (who, through which
     channel, when), never a second copy. People outside the team are counted, never named. A count of reports never
     stands in for impact, and one severe report can outweigh five mild ones. "No match in what Sightline loaded" never
