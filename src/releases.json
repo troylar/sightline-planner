@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.181.0",
+  "date": "2026-11-04",
+  "headline": "Choose what the forecast takes first",
+  "changes": [
+    {
+      "kind": "new",
+      "area": "Capacity",
+      "title": "Set the team's work order",
+      "before": "The forecast took work in workstream order, then by start date.",
+      "now": "Put initiatives in the order the team will take them, and the forecast gives them people first. Waiting for other work still comes first, and Jira-dated work keeps its sprint. An assistant's suggestion always waits for your review. Copies older than 1.181.0 open such a plan read-only.",
+      "where": "Capacity, Forecast, Work order; or an initiative's card."
+    }
+  ]
+},
+{
   "version": "1.180.0",
   "date": "2026-11-04",
   "headline": "Say what matters most, and why",

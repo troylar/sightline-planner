@@ -1277,7 +1277,7 @@ dialog.capdlg{width:min(560px,92vw)}.capdlg form{display:flex;flex-direction:col
 .dvname{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.dvmeta{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11.5px;color:var(--ink-2);align-items:center}
 .dvkind{text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;color:var(--ink-3)}.dvprog{font-variant-numeric:tabular-nums}.dvown{display:inline-flex;gap:2px}.dvown .ini{width:16px;height:16px;font-size:9px}
 .dvbadges{display:flex;flex-wrap:wrap;gap:4px}.dvb{font-size:10.5px;border-radius:9px;padding:1px 7px;border:1px solid currentColor}.dvb-jira{color:var(--accent)}.dvb-detail{color:var(--warn)}.dvb-risk{color:var(--bad)}.dvb-ready{color:var(--ok)}.dvb-done{color:var(--ok)}.dvb-drop{color:var(--ink-3)}
-.dvside .dvwhy{font-size:12px;margin:2px 0 0}.dvb-cls-rock{color:var(--accent);font-weight:600}.dvb-cls-pebble{color:var(--ink-2)}.dvb-cls-sand{color:var(--ink-3)}.dvkeys{list-style:none;padding:0;margin:4px 0;display:flex;flex-direction:column;gap:3px;font-size:13px}.dvprogline{margin:0 0 4px}
+.dvside .dvwhy{font-size:12px;margin:2px 0 0}.dvb-cls-rock{color:var(--accent);font-weight:600}.fcorderlist{list-style:none;margin:6px 0;padding:0;display:flex;flex-direction:column;gap:4px}.fcorderlist li{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}.fcorderlist .wonum{min-width:1.6em;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-3)}.fcorderlist .wobtns{margin-left:auto;display:inline-flex;gap:4px}.fcorderlist li.wo-off{opacity:.7}.dvb-cls-pebble{color:var(--ink-2)}.dvb-cls-sand{color:var(--ink-3)}.dvkeys{list-style:none;padding:0;margin:4px 0;display:flex;flex-direction:column;gap:3px;font-size:13px}.dvprogline{margin:0 0 4px}
 /* Assistant amendments */
 .dvcard.dvghost{border-style:dashed;border-left-style:dashed;background:transparent;opacity:.85}.dvcard.dvghost.stale{border-color:var(--warn)}.amark{border-style:dashed}.amchip{font-size:12px;padding:2px 10px;vertical-align:middle}.amerr{color:var(--bad)}
 .amgroup>summary{cursor:pointer;font-weight:600;font-size:13px;margin:8px 0 4px}.amlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}.amrow{border:1px solid var(--rule-2);border-radius:8px;padding:6px 8px;display:flex;flex-direction:column;gap:3px}
@@ -1824,7 +1824,7 @@ const MAX_BYTES = 2 * 1024 * 1024, MAX_READ_BYTES = 5 * 1024 * 1024, MAX_DEPTH =
 // Values in one plan the same way: write up to 60,000 (what copies before 1.175.5 can open), read up to 400,000, so a later copy can raise the write limit.
 // Plan format. SCHEMA changes only for a change older copies can't read; new optional parts are named in meta.features,
 // and a copy that finds one it doesn't know opens the plan read-only instead of saving over what it can't see.
-const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1", "stories1", "skills1", "aiHint1", "msStory1", "descriptions1", "laneIds1", "cardLayout1", "hideWhy1", "captures1", "captureAgain1", "rough1", "histFiles1", "priority1"];
+const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1", "stories1", "skills1", "aiHint1", "msStory1", "descriptions1", "laneIds1", "cardLayout1", "hideWhy1", "captures1", "captureAgain1", "rough1", "histFiles1", "priority1", "workOrder1"];
 // A deliverable's target: a year, a half or a quarter ("2027", "2027-H1", "2027-Q2"), or "later".
 const TARGET_RE = /^(\d{4})(?:-(Q[1-4]|H[12]))?$/;
 const PR_DRAFT_RE = /^\s*[\[(]?\s*(draft|wip)\s*[\])]?\s*[:\-]?\s/i;    // a draft pull request's title: "Draft: …", "[WIP] …"
@@ -1952,6 +1952,7 @@ const featuresIn = plan => { const f = [];
   if ((plan.deliverables || []).some(d=>d && (d.capture || d.askedBy || d.raised || d.handoff))) f.push("captures1");
   if ((plan.deliverables || []).some(d=>d && Array.isArray(d.raisedAgain) && d.raisedAgain.length)) f.push("captureAgain1");
   if ((plan.deliverables || []).some(d=>d && (d.class || d.why || d.reconsider))) f.push("priority1");
+  if (plan.meta && Array.isArray(plan.meta.workOrder) && plan.meta.workOrder.length) f.push("workOrder1");
   if ((plan.bars || []).some(b=>b && (b.tasks || []).some(t=>t && t.rough === true))) f.push("rough1");
   if ((plan.snapshots || []).length) f.push("snapshots");
   if ((plan.reports || []).length) f.push("reports");
@@ -2177,6 +2178,10 @@ function normHistMeta(m){ const o = {}, obj = v => v && typeof v === "object" &&
   const gone = Object.entries(obj(m.histGone)).filter(([id, g])=>/^(?!(?:__proto__|constructor|prototype|toString|valueOf|hasOwnProperty|isPrototypeOf|propertyIsEnumerable|toLocaleString)$)[A-Za-z0-9_.:-]{1,80}$/.test(id) && g && typeof g === "object" && Q.test(g.q) && validStamp(g.at) && /^[A-Za-z0-9_-]{0,48}$/.test(String(g.by == null ? "" : g.by))).sort((a, b)=>Date.parse(a[1].at) - Date.parse(b[1].at)).slice(-20000);
   if (gone.length) o.histGone = Object.fromEntries(gone.map(([id, g])=>[id, {q:g.q, by:String(g.by == null ? "" : g.by), at:g.at}]));
   return o; }
+// The team's work order: initiative ids in the order the forecast takes them. Ids are kept even when the initiative is
+// gone, so an undo or a merge that brings one back brings back its place; the forecast and the list skip them.
+const WO_MAX = 500, WO_ID = /^[A-Za-z0-9_.:-]{1,80}$/;
+function normWorkOrder(v){ const ids = [...new Set((Array.isArray(v) ? v : []).filter(x=>typeof x === "string" && WO_ID.test(x)))].slice(0, WO_MAX); return ids.length ? {workOrder:ids} : {}; }
 function normHideWhy(v){ if (!v || typeof v !== "object" || Array.isArray(v)) return {};
   const o = Object.create(null); Object.entries(v).forEach(([k, t])=>{ const K = String(k).trim().toUpperCase(), r = typeof t === "string" ? t.trim().slice(0, HIDE_REASON_MAX) : "";
     if (r && /^[A-Z][A-Z0-9_]{0,19}-[1-9][0-9]{0,8}$/.test(K)) o[K] = r; });
@@ -2258,7 +2263,7 @@ function normalize(input, strict){
       weeks:clampInt(m.weeks,1,104,12), sprintWeeks:clampInt(m.sprintWeeks,1,8,2), firstSprint:clampInt(m.firstSprint,0,999,0),
       revision:clampInt(m.revision,0,1e9,0), savedAt:str(m.savedAt), autoSchedule: m.autoSchedule !== false, jiraBase: /^https?:\/\/\S{3,200}$/i.test(str(m.jiraBase)) ? str(m.jiraBase) : "",
       jiraStatusMap: cleanStateMap(m.jiraStatusMap), jiraResMap: cleanStateMap(m.jiraResMap), ...normTemplates(m.storyTemplates),
-      ...(normCardLayout(m.cardLayout) ? {cardLayout:normCardLayout(m.cardLayout)} : {}), ...normHideWhy(m.hideWhy), ...normHistMeta(m),
+      ...(normCardLayout(m.cardLayout) ? {cardLayout:normCardLayout(m.cardLayout)} : {}), ...normHideWhy(m.hideWhy), ...normHistMeta(m), ...normWorkOrder(m.workOrder),
       ...(m.forecast && typeof m.forecast === "object" && m.forecast.reserve != null && m.forecast.reserve !== "" && Number.isFinite(+m.forecast.reserve) ? {forecast:{reserve:clampInt(Math.round(+m.forecast.reserve), 0, 90, 0)}} : {}),
       ...(Array.isArray(m.capRates) && m.capRates.length ? {capRates: [...new Map(m.capRates.filter(r=>r && validIso(r.from) && Number(r.points) > 0).map(r=>[r.from, {from:r.from, points:Math.min(200, Math.round(Number(r.points) * 2) / 2)}])).values()].sort((a, b)=>a.from < b.from ? -1 : 1).slice(-50)} : {}),
       jiraSkip: [...new Set((Array.isArray(m.jiraSkip) ? m.jiraSkip : []).map(x=>str(x).trim().toUpperCase()).filter(x=>/^[A-Z][A-Z0-9_]{0,19}-[1-9][0-9]{0,8}$/.test(x)))].slice(-2000),
@@ -2713,7 +2718,7 @@ function decorateLinks(){
 
 // ================= change engine (for multi-writer sync + history) =================
 // A change ("op") is {op:"add"|"set"|"del"|"order", type, id, field?, value?, prev?}. Tasks are type "task" with a "_parent" bar id.
-const SYNC_META = ["title","start","weeks","sprintWeeks","firstSprint","autoSchedule","jiraBase","jiraSkip","jiraStatusMap","jiraResMap","capRates","forecast","cardLayout","hideWhy","histParts","histGone"];
+const SYNC_META = ["title","start","weeks","sprintWeeks","firstSprint","autoSchedule","jiraBase","jiraSkip","jiraStatusMap","jiraResMap","capRates","forecast","cardLayout","hideWhy","histParts","histGone","workOrder"];
 const SYNC_COLS = ["lanes","bars","milestones","gates","notes","people","views","sprints","decisions","risks","groups","meetings","updates","types","blocks","changes","tags","jiraItems","proposals","cardViews","deliverables","snapshots","reports","commitments","planningGuide","skills"];
 const SYNC_ORDERED = new Set(["lanes","sprints","people","views","decisions","risks","bars"]);
 const jeq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -3044,7 +3049,12 @@ function forecastRun(level, opts = {}){
   const over = {};
   items.forEach(it=>{ if (it.state !== "fixed" || !it.effort || it.finish < first) return; const days = []; for (let n = it.bookFrom; n <= it.finish; n++) if (isWork(n, hs)) days.push(n); if (!days.length) return;
     const per = it.effort / days.length; days.forEach(n=>{ if (!booked.has(n)) booked.set(n, []); booked.get(n).push({id:it.id, lane:it.lane, amt:per}); }); });
-  const rank = (a, b) => (laneIdx.get(a.lane) ?? 1e9) - (laneIdx.get(b.lane) ?? 1e9) || byId.get(a.id).start - byId.get(b.id).start || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  // The team's work order goes first (vision.md, Deciding what matters): a leaf takes its own place, else its nearest
+  // holder's. Unordered work follows, as before; without a work order nothing changes.
+  const wo = new Map(((P.meta || {}).workOrder || []).filter(id=>byId.has(id)).map((id, i)=>[id, i]));
+  const woPos = new Map([...items.keys()].map(id=>{ const x = byId.get(id) ? chain(byId.get(id)).find(y=>wo.has(y.id)) : null; return [id, x ? wo.get(x.id) : null]; }));
+  const byOrder = (x, y) => x === y ? 0 : x == null ? 1 : y == null ? -1 : x - y;
+  const rank = (a, b) => byOrder(woPos.get(a.id), woPos.get(b.id)) || (laneIdx.get(a.lane) ?? 1e9) - (laneIdx.get(b.lane) ?? 1e9) || byId.get(a.id).start - byId.get(b.id).start || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
   const runs = [...items.values()].filter(it=>it.state === "run").sort(rank);
   const readyAt = it => { let r = it.clear; for (const id of it.preds){ const p = items.get(id); if (!p || p.state === "none") continue; if (p.finish === undefined) return undefined;
       if (p.finish + 1 > r.day) r = {day:p.finish + 1, edge:{kind:"dep", id, name:name(id), day:p.finish}}; } return r; };
@@ -3493,7 +3503,7 @@ function unsavedOps(){
   try { ops = diffPlans(JSON.parse(cleanSnap), planOfRecord(S)).filter(o=>!(o.type === "meta" && ["revision","savedAt","lock"].includes(o.field)) && !(o.op === "set" && (o.field === "edited" || o.field === "added")) && o.type !== "changes"); } catch(e){ ops = null; }
   unsavedMemo = {gen:changeGen, snap:cleanSnap, ops}; return ops;
 }
-const OP_FIELD = {label:"title", chartName:"chart name", start:"dates", span:"dates", days:"dates", date:"date", at:"date", stretchAt:"stretch date", status:"status", owners:"owners", lane:"workstream",
+const OP_FIELD = {workOrder:"work order", label:"title", chartName:"chart name", start:"dates", span:"dates", days:"dates", date:"date", at:"date", stretchAt:"stretch date", status:"status", owners:"owners", lane:"workstream",
   dependsOn:"dependencies", waitsFor:"what it waits for", jira:"Jira link", epics:"epics", storiesOff:"stories switched off", parked:"parked", kind:"kind", blocked:"blocked", what:"name", gate:"name", text:"text",
   name:"name", goal:"goal", weeks:"length", neededBy:"needed by", tasks:"tasks", _parent:"initiative", color:"color", after:"what it follows"};
 const OP_TYPE = {bars:"Initiative", task:"Task", milestones:"Milestone", gates:"Gate", notes:"Note", people:"Person", lanes:"Workstream", sprints:"Sprint", decisions:"Decision", risks:"Risk",
@@ -4350,6 +4360,8 @@ function mergePlans(base, S, theirs){
     if (o.op === "set" && (SETF[o.type] || []).includes(o.field)){
       if (o.type === "meta"){ o.value = setMerge(o.prev, o.value, theirs.meta[o.field]); return true; }
       const t = theirVal(o.type, o.id, o.field); if (t.has) o.value = setMerge(o.prev, o.value, t.v); return true; }
+    if (o.op === "set" && o.type === "meta" && o.field === "workOrder"){ const t = theirs.meta.workOrder, b0 = base.meta.workOrder;   // one list, one choice: if a teammate reordered too, theirs stands and mine is kept
+      if (!jeq(t, b0) && !jeq(t, o.value)){ kept.push(o); return false; } return true; }
     if (o.type === "meta") return true;
     if (o.op === "del"){ const t = ent(theirs, o.type, o.id); if (!t) return true;
       if (!jeq(t, o.prev) || (o.type === "bars" && !jeq(tasksOf(theirs, o.id), tasksOf(base, o.id)))){ keptDel.push(o); return false; } return true; }
@@ -8671,6 +8683,7 @@ const ACTION_DESC = {
   "initiative.place":"Place an initiative before, after or inside another initiative.",
   "initiative.del":"Delete an initiative.",
   "initiative.setEffort":"Set a leaf initiative's effort estimate for the forecast: likely, low and high.",
+  "initiative.order":"Set the team's work order, the initiatives the forecast takes first, which always waits for a person.",
   "initiative.setScope":"Leave an initiative out of the forecast on purpose (out), or bring it back (in).",
   "initiative.delivers.add":"Record that an initiative delivers an outcome.",
   "initiative.delivers.remove":"Remove an outcome from what an initiative delivers.",
@@ -8859,7 +8872,8 @@ function actLine(id, args, p){ const a = args && typeof args === "object" ? args
     return x ? `"${String(x).slice(0, 60)}"` : v; };
   const who = nm("id", a.id), say = {
     "link.add": () => `${who} starts after ${nm("", a.after)}`, "link.remove": () => `${who} no longer waits for ${nm("", a.after)}`,
-    "initiative.del": () => `Delete ${who} (and anything inside it)`, "task.del": () => `Delete task ${who}`, "milestone.del": () => `Delete milestone ${who}`, "gate.del": () => `Delete gate ${who}`,
+    "initiative.del": () => `Delete ${who} (and anything inside it)`,
+    "initiative.order": () => (a.ids || []).length ? `Work order: ${(a.ids || []).slice(0, 5).map(x=>nm("", x)).join(", ")}${a.ids.length > 5 ? ` and ${a.ids.length - 5} more` : ""}` : "Clear the work order", "task.del": () => `Delete task ${who}`, "milestone.del": () => `Delete milestone ${who}`, "gate.del": () => `Delete gate ${who}`,
     "risk.del": () => `Delete risk ${who}`, "decision.del": () => `Delete decision ${who}`, "outcome.del": () => `Delete deliverable ${who}`,
     "workstream.add": () => `New workstream "${a.name}"`, "workstream.rename": () => `Rename ${who} to "${a.name}"`,
     "workstream.reid": () => `Change ${nm("", a.lane)}'s id from ${a.lane} to ${a.id}, everywhere it's used`,
@@ -9045,6 +9059,14 @@ defAction("initiative.setEffort", {scope:"initiatives", risk:"routine", args:{id
   run:(p, a)=>{ const b = actBar(p, a.id), e = a.likely == null ? null : normEffort({...a, at:a.at || dayToIso(todayDay())});
     if (!e){ if (!b.effort) return NOCHANGE; delete b.effort; return; }
     if (b.effort && b.effort.low === e.low && b.effort.likely === e.likely && b.effort.high === e.high && !a.at) return NOCHANGE; b.effort = e; }});
+// The team's work order (vision.md principle 17): the whole list, in order; [] clears it. A person's call, so it always
+// waits for one, whatever the level. Jira-dated work keeps its sprint, so it isn't put in the order.
+defAction("initiative.order", {scope:"initiatives", risk:"floor", args:{ids:"ids"},
+  cur:p=>[...((p.meta || {}).workOrder || [])],
+  check:(p, a)=>{ const ids = a.ids || []; if (new Set(ids).size !== ids.length) return actInvalid("Each initiative is in the work order once.");
+    if (ids.length > WO_MAX) return actInvalid(`The work order holds up to ${WO_MAX} initiatives.`);
+    for (const id of ids){ const b = actBar(p, id); if (!b) return actMissing("initiative"); if (b.jira && jiraLockOf(b)?.dates) return actInvalid(`Jira's sprint sets ${barTitle(b)}'s dates, so the work order doesn't change it.`); } },
+  run:(p, a)=>{ const ids = [...(a.ids || [])]; if (jeq((p.meta.workOrder || []), ids)) return NOCHANGE; if (ids.length) p.meta.workOrder = ids; else delete p.meta.workOrder; }});
 defAction("initiative.setScope", {scope:"initiatives", risk:"routine", args:{id:"id", scope:"str"},
   cur:(p, a)=>{ const b = actBar(p, a.id); return b ? (b.scope === "out" ? "out" : "in") : undefined; },
   check:(p, a)=>{ if (!actBar(p, a.id)) return actMissing("initiative"); if (!["in","out"].includes(a.scope)) return actInvalid('Scope is "in" or "out".'); },
@@ -11905,6 +11927,7 @@ function renderForecastWs(){
   if (!sm.rows.some(([id])=>(byId.get(id) || {}).effort)){ host.append(h("p",{class:"hint",id:"fcEmpty"}, "Nothing has an effort yet. Give initiatives an effort (person-weeks left) on their cards, and the forecast appears here.")); return; }
   const yr = n => dayToDate(n).getUTCFullYear() === dayToDate(F.today).getUTCFullYear() ? fmtDay(n) : fmtDayY(n);
   host.append(h("p",{class:"fcsum" + (sm.complete ? "" : " incomplete"),id:"fcSummary"}, sm.text));
+  renderWorkOrder(host);
   const reason = it => it.finish == null ? it.why.text : it.state === "fixed" ? "Jira's sprint sets its dates" : it.startEdge && it.startEdge.kind !== "first" ? fcEdgeText(it.startEdge, run) : "starts as soon as it can";
   const rows = sm.rows.slice().sort(([a, x], [b, y])=>(x.finish ?? Infinity) - (y.finish ?? Infinity) || chartLabel(byId.get(a)).localeCompare(chartLabel(byId.get(b))));
   host.append(h("div",{class:"gwrap"}, h("table",{class:"jptable fctable",id:"fcItems"},
@@ -11924,6 +11947,42 @@ function renderForecastWs(){
       h("tbody",{}, ...loads.map(({l, i, x})=>h("tr",{"data-lane":l.id, class:x.load > 1 + FC_EPS ? "over" : ""}, h("td",{}, poolName(l.id, x.people)), h("td",{class:"num"}, pw1(x.capacity)), h("td",{class:"num"}, pw1(x.demand)),
         h("td",{class:"num"}, x.load == null ? "no one" : `${(Math.round(x.load * 10) / 10).toFixed(1)} ×`), h("td",{}, loadChart(run, l.id, to, i))))))));
 }
+// The team's work order, in the Forecast: what the forecast takes first when people are busy. A person's call: the page
+// never orders anything by class, Jira's priority or chart position. Ids of initiatives that are gone are skipped.
+const woList = (p = S) => ((p.meta || {}).workOrder || []).filter(id=>(p.bars || []).some(b=>b.id === id));
+const woIndex = id => { const i = woList().indexOf(id); return i < 0 ? 0 : i + 1; };
+const woFixed = b => !!(b && b.jira && jiraLockOf(b)?.dates);
+// The highest class among the outcomes an initiative delivers, as a hint beside it.
+function woClassChip(b){ const ds = (b.delivers || []).map(dvById).filter(d=>d && DV_CLASSES.includes(d.class)); if (!ds.length) return null;
+  const top = ds.sort((x, y)=>DV_CLASSES.indexOf(x.class) - DV_CLASSES.indexOf(y.class))[0];
+  return h("span",{class:"dvb dvb-cls-" + top.class, "data-woclass":top.class, title:`Delivers a${top.class === "rock" ? " committed" : top.class === "pebble" ? " supporting" : "n if-there's-room"} outcome: ${top.name}`}, DV_CLASS_NAME[top.class]); }
+function setWorkOrder(ids, say, focus){ commit(()=>act("initiative.order", {ids})); setStatus(say); renderForecastWs();
+  if (!focus) return; const row = $(`#fcOrder [data-wo="${CSS.escape(focus[0])}"]`); if (!row) return;      // the same button, or the row's next one that still works (Put first is off at the top)
+  const want = row.querySelector(`[data-wobtn="${focus[1]}"]`); (want && !want.disabled ? want : row.querySelector("[data-wobtn]:not([disabled])") || row.querySelector("button"))?.focus(); }
+function renderWorkOrder(host){
+  const ids = woList(), can = !present && !tooNew(), byId = new Map(S.bars.map(b=>[b.id, b]));
+  const tag = b => b.status === "done" ? "done" : b.parked ? "parked" : b.scope === "out" ? "left out" : woFixed(b) ? "Jira sets its dates" : "";
+  const move = (i, j, btn) => { const L = ids.slice(), [x] = L.splice(i, 1); L.splice(j, 0, x); setWorkOrder(L, `Moved ${chartLabel(byId.get(x))} to ${ordinal(j + 1)} in the work order`, [x, btn]); };
+  const btn = (k, label, aria, fn, off) => h("button",{type:"button",class:"btn sm","data-wobtn":k,"aria-label":aria,disabled:!can || off,onclick:fn}, label);
+  const sec = h("section",{class:"fcorder",id:"fcOrderSec"}, h("h3",{class:"fch3"}, "Work order"),
+    h("p",{class:"hint"}, "What the forecast takes first when people are busy. Put committed work first. It doesn't move anything on the timeline, and it's separate from Jira's priority."));
+  if (!ids.length) sec.append(h("p",{class:"hint",id:"fcOrderEmpty"}, "No work order yet. The forecast takes work in workstream order, then by start date."));
+  else { let n = 0;
+    sec.append(h("ol",{class:"fcorderlist",id:"fcOrder"}, ...ids.map((id, i)=>{ const b = byId.get(id), t = tag(b), nm = chartLabel(b);
+      return h("li",{"data-wo":id, class:t ? "wo-off" : ""}, h("span",{class:"wonum"}, t ? "" : String(++n)), h("button",{type:"button",class:"linkish",onclick:()=>select("bar", id)}, nm), woClassChip(b), t ? h("span",{class:"hint wotag"}, t) : null,
+        h("span",{class:"wobtns"}, btn("first", "Put first", `Put ${nm} first`, ()=>move(i, 0, "first"), i === 0), btn("up", "↑", `Move ${nm} up`, ()=>move(i, i - 1, "up"), i === 0),
+          btn("down", "↓", `Move ${nm} down`, ()=>move(i, i + 1, "down"), i === ids.length - 1),
+          btn("remove", "Remove", `Take ${nm} out of the work order`, ()=>setWorkOrder(ids.filter(x=>x !== id), `${nm} is out of the work order`)))); }))); }
+  const left = S.bars.filter(b=>!ids.includes(b.id) && b.status !== "done" && !b.parked && b.scope !== "out" && !woFixed(b));
+  if (can && left.length) sec.append(h("select",{id:"fcOrderAdd","aria-label":"Add to the work order",onchange:e=>{ const v = e.target.value; if (!v) return; setWorkOrder([...ids, v], `${chartLabel(byId.get(v))} is ${ordinal(ids.length + 1)} in the work order`); }},
+    h("option",{value:""}, "Add to the work order…"), ...left.map(b=>h("option",{value:b.id}, chartLabel(b)))));
+  host.append(sec); }
+// On an initiative's card: its place in the work order, or a way in.
+function workOrderLine(b){ if (woFixed(b)) return null; const ids = woList(), i = ids.indexOf(b.id), can = !present && !tooNew();
+  const go = () => { goWs("people"); setTimeout(()=>$("#fcOrderSec")?.scrollIntoView({block:"start"}), 0); };
+  if (i >= 0) return h("p",{class:"hint",id:"f-workorder"}, `${ordinal(i + 1)} in the work order. `, h("button",{type:"button",class:"linkish",onclick:go}, "Change"));
+  return h("p",{class:"hint",id:"f-workorder"}, "Not in the work order. ", can ? [h("button",{type:"button",class:"linkish",id:"f-wofirst",onclick:()=>{ commit(()=>act("initiative.order", {ids:[b.id, ...ids]})); setStatus(`${chartLabel(b)} is first in the work order`); }}, "Put it first"), " · ",
+    h("button",{type:"button",class:"linkish",id:"f-woend",onclick:()=>{ commit(()=>act("initiative.order", {ids:[...ids, b.id]})); setStatus(`${chartLabel(b)} is ${ordinal(ids.length + 1)} in the work order`); }}, "Add it at the end")] : null); }
 function effortField(b){
   if (hasKids(b)){ const e = effortOf(b); return h("div",{class:"field",id:"f-effort"}, h("span",{class:"flabel"},"Effort left (from what's inside)"),
     h("p",{class:"hint",id:"f-effortsum"}, !e ? "Nothing inside has an effort yet." : (e.items ? `${pw(e.likely)} likely` + (e.low !== e.likely || e.high !== e.likely ? ` (${e.low} to ${e.high})` : "") + ` across ${e.items} item${e.items === 1 ? "" : "s"}` : "No effort yet") + (e.missing ? `; ${e.missing} item${e.missing === 1 ? " has" : "s have"} no effort, so ${e.missing === 1 ? "it isn't" : "they aren't"} counted` : "")), forecastLine(b), forecastWhy(b)); }
@@ -12604,7 +12663,7 @@ function sideBody(put){
       h("div",{class:"row2"},
         h("button",{class:"btn",onclick:()=>addTask(b)},"+ Task")),
       fold("bar", "schedule", "Schedule", `${snap(b.span)} week${snap(b.span)===1?"":"s"}` + (derived(b) ? " · from tasks" : ""),
-        effortField(b), deliversField(b),
+        effortField(b), workOrderLine(b), deliversField(b),
         hasTasks(b) && !hasKids(b) ? field("f-datesfrom","Dates", h("select",{id:"f-datesfrom",onchange:e=>commit(()=>act("initiative.set", {id:b.id, field:"datesFrom", value:e.target.value}))}, [["manual","Planned (set here)"],["tasks","From tasks (earliest to latest)"]].map(([v,t])=>h("option",{value:v,selected:b.datesFrom===v},t)))) : null,
         h("div",{class:"row2"},
           field("f-start","Start (week)", h("input",{id:"f-start",type:"number",step:"0.5",min:"0",max:String(W),value:snap(b.start),disabled:derived(b) || !!jiraLockOf(b)?.dates,onchange:e=>commit(()=>act("initiative.move", {id:b.id, start:num(e.target.value,b.start)}))})),
@@ -14611,7 +14670,7 @@ function assistantView(){
     cards:{layout:cardLayoutTeam(), teamLayoutSet:!!S.meta.cardLayout, fields:CARD_LAYOUT_FIELDS.map(x=>x[0]), densities:CARD_DENSITY.map(x=>x[0]),
       hidden:hiddenList().slice(0, 300).map(x=>({key:x.key, how:x.how, ...(x.b ? {initiative:x.b.id} : {}), ...(x.why ? {why:x.why} : {})}))},
     planning:{version:1,calendar:{start:S.meta.start,weeks:S.meta.weeks,holidayDates:S.holidays.map(x=>x.date)},
-      forecast:{reserve:(S.meta.forecast || {}).reserve ?? null},
+      forecast:{reserve:(S.meta.forecast || {}).reserve ?? null}, workOrder:(S.meta.workOrder || []).filter(id=>S.bars.some(b=>b.id === id)),
       people:S.people.map(pp=>({id:pp.id,name:pp.name,role:pp.role || "",initials:pp.initials,color:pp.color,alloc:pp.alloc ?? null,inactive:!!pp.inactive,external:!!pp.external,
         jiraKey:pp.jira ? pp.jira.key : null,daysPerWeek:pp.days || 5,allocationPercent:Math.round(allocOf(pp)*100),ownPointsPerSprint:pp.capacity || null,
         unavailable:(pp.off || []).map(o=>({from:o.from,to:o.to || o.from})),skills:[...(pp.skills || [])],...(pp.from ? {joins:pp.from} : {}),...(pp.leaves ? {leaves:pp.leaves} : {}),
@@ -14643,6 +14702,7 @@ function assistantView(){
       "Workstreams: workstream.set {id, field:'note'|'color'|'from'|'until', value, prev}, workstream.move {id, index}, workstream.reid {lane, id, prev} and workstream.del {id}. workstream.reid changes a workstream's id (lane, its id now; id, the new one) and every reference with it; its old ids are in was, still accepted from files written before, and never used again. A person always reviews it. workstream.del is refused while anything still points at the workstream (it says what), and a person always reviews it; move its work first with initiative.setLane, and change person.setSplit.",
       "coverage.context counts what the plan doesn't say yet (workstreams without guidance, people without skills, open work without a story or needs, milestones in the next 12 weeks without a story). Mention the gaps that weaken a suggestion and offer to fill them; never guess to cover one.",
       "Items marked jiraLinked keep Jira's status and dates: propose those in Jira. Items marked datesFromTasks get their dates from their tasks. Moving dates can move linked items; Sightline shows that before applying.",
+      "The work order (planning.workOrder, and workOrder on each initiative: its place, from 1) is the order the team takes initiatives in, and the forecast follows it when people are busy. It's a person's call: propose initiative.order with every id in order and say why; it always waits for a person, whatever the level. Never infer it from Jira's priority or where items sit on the chart.",
       "An outcome's priority is a person's call: class (rock = committed, pebble = supports a commitment, sand = if there's room; absent = not classed yet), why (why it matters) and reconsider (when to reconsider it). Propose a class only with its why, through outcome.set; any change to class, why or reconsider always waits for a person, whatever the level. Never reclassify on your own, and treat a class as importance, not size.",
       "Captured from meetings: when an open or closed capture already covers the request (compare names and raisedAgain), record it with outcome.raiseAgain (a new ask id, who, raised, source) instead of adding a duplicate; when unsure, add it and say which capture it may match. Otherwise outcome.add with capture (idea, request, gap or question), askedBy {type:'person'|'group', id} from planning.people or planning.groups, raised (the meeting's date), source (the meeting) and lane when the workstream is clear; leave lane out when it isn't. Never make someone the requester or owner because their name was mentioned. A new person or group (person.add, group.add) always waits for review: add it in the same change as the capture that needs it. A date never plans a capture. Close one with outcome.handoff {id, initiative or jira} or outcome.drop with a reason; outcome.reopen puts it back.",
       "Jira is read-only: never set Jira facts; propose them. Use only ids that appear below, or new ids you create (dv-…). Targets: a year '2027', a half '2027-H1', a quarter '2027-Q2', or 'later'.",
@@ -14664,7 +14724,7 @@ function assistantView(){
       releases:(JIRA && JIRA.releases || []).map(r=>({id:r.id, name:r.name, date:r.date || null, released:!!r.released}))},
     deliverables:(S.deliverables || []).map(pick),
     initiatives:S.bars.map(b=>({id:b.id, label:barTitle(b), lane:b.lane, start:amWeekIso(S, b.start), weeks:b.span, status:b.status, owners:b.owners || [],
-      kind:b.kind,datesFrom:b.datesFrom || "manual",scope:b.scope === "out" ? "out" : "in",...(b.chartName ? {chartName:b.chartName} : {}),...(b.effort ? {effort:clone(b.effort)} : {}),delivers:[...(b.delivers || [])],parked:!!b.parked,dependsOn:[...(b.dependsOn || [])],waitsFor:[...(b.waitsFor || [])],jiraDeps:[...(b.jiraDeps || [])],epics:[...(b.epics || [])],storiesOff:[...(b.storiesOff || [])],...(b.jira ? {jira:b.jira} : {}),
+      kind:b.kind,datesFrom:b.datesFrom || "manual",scope:b.scope === "out" ? "out" : "in",...(b.chartName ? {chartName:b.chartName} : {}),...(b.effort ? {effort:clone(b.effort)} : {}),delivers:[...(b.delivers || [])],...(woIndex(b.id) ? {workOrder:woIndex(b.id)} : {}),parked:!!b.parked,dependsOn:[...(b.dependsOn || [])],waitsFor:[...(b.waitsFor || [])],jiraDeps:[...(b.jiraDeps || [])],epics:[...(b.epics || [])],storiesOff:[...(b.storiesOff || [])],...(b.jira ? {jira:b.jira} : {}),
       ...(b.jira || (b.epics || []).length ? {jiraLinked:true} : {}), ...(derived(b, S) ? {datesFromTasks:true} : {}), ...(b.parent ? {parent:b.parent} : {}), ...(b.story ? {story:b.story} : {}), needs:[...(b.needs || [])], ...(b.aiHint ? {aiHint:b.aiHint} : {}),
       tasks:(b.tasks || []).map(t=>({id:t.id, label:t.label, start:t.start, days:t.days, rough:!!t.rough, status:t.status, owners:t.owners || [],dependsOn:[...(t.dependsOn || [])],jiraDeps:[...(t.jiraDeps || [])], ...(t.jira ? {jiraLinked:true,jira:t.jira} : {}), ...(t.story ? {story:t.story} : {}), needs:[...(t.needs || [])], ...(t.aiHint ? {aiHint:t.aiHint} : {})}))})),
     jira:{syncedAt:(JIRA && JIRA.generatedAt) || null,searchSyncedAt:(JIRA_ISSUES && JIRA_ISSUES.generatedAt) || null,
@@ -14889,7 +14949,7 @@ function amSetPaused(on){ if (!AM || !AM.dir) return; try { on ? localStorage.se
   AM.autoGen = (AM.autoGen || 0) + 1; render(); setStatus(on ? "Paused: your assistant's changes wait until you resume." : "Resumed: your assistant's changes apply again at the level you picked."); assistantTick(); }
 // Why a change always waits for a person: its first always-reviewed action, else the one floor that isn't an action's own.
 const FLOOR_WHY = {"workstream.del":"It deletes a workstream", "workstream.reid":"It changes a workstream's ID", "person.add":"It adds a person to the team",
-  "group.add":"It adds a group", "skill.add":"It adds a skill to the team's list"};
+  "group.add":"It adds a group", "skill.add":"It adds a skill to the team's list", "initiative.order":"It changes the team's work order"};
 // An outcome's priority and its reason are a person's call (vision.md principle 17): an app may only propose them.
 const amPriorityOp = o => !!(o && o.op === "action" && o.action === "outcome.set" && o.args && DV_PRIORITY.includes(o.args.field));
 function amFloorWhy(c){ const ops = c.ops || [], o = ops.find(o=>o && FLOOR_WHY[o.action]);
@@ -14989,7 +15049,7 @@ function analysisGuide(){ const t = cutText(S.meta.title || "this plan", 120).re
     "## What the export holds", "",
     "- `plan`: id, title and revision. `today`: the day the file was written.",
     "- `initiatives[]`: id, label, lane (a workstream id), start, weeks, status (notstarted, inprogress, done or atrisk), owners (person ids), dependsOn, Jira keys and epics, and `tasks[]` with start, days, rough (true when the length is a guess), status and owners.",
-    "- `planning`: people, workstreams, milestones, gates, risks, decisions, capacity, timeboxes and the calendar.",
+    "- `planning`: people, workstreams, milestones, gates, risks, decisions, capacity, timeboxes and the calendar, and `workOrder`: the initiatives the team takes first, in order (each initiative's `workOrder` is its place, from 1). The forecast follows it.",
     "- `deliverables[]`: outcomes and ideas, with their targets, and each one's priority: `class` (rock = committed, pebble = supports a commitment, sand = if there's room; absent = not classed yet), `why` (why it matters) and `reconsider` (when to reconsider it).",
     "- `jira.issues[]`: key, summary, status, assignee, points, sprint, epic and parent.",
     "- `projectGuide`: the team's own words on what each workstream is for.",
