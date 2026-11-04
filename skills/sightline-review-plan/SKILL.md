@@ -25,6 +25,7 @@ Review the requested scope, or the next four explicit calendar quarters when no 
 - Missing or ambiguous owner, target or workstream information. Distinguish unknown from deliberately unassigned.
 - Unsupported timing or progress claims, especially Jira-derived status or dates. State snapshot freshness and omitted Jira coverage.
 - Dependencies, risks, capacity and decisions only where the supplied evidence supports them. The assistant view omits notes and may omit parts of the plan or Jira; do not claim to have reviewed missing data.
+- Priority gaps: a rock (`class: "rock"`) with no target, release or date recorded, or a class with no `why`. Point them out; never reclassify an outcome, since its class is the team's call.
 - Relevant work outside the requested quarters. Do not recommend deleting it simply because the view excludes it.
 
 Lead with up to three material findings, naming stable IDs and the evidence behind each. End with focused next decisions. If no material issue is supported, say so and state the coverage limits. Offer proposed edits only if the person subsequently asks.

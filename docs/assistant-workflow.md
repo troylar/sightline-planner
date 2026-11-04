@@ -309,6 +309,14 @@ and never shows on hover cards. Anyone who can open the plan, and your assistant
 advice, never authorization: it can't approve a change or lower the review level. Set it with the item's `.set`
 action, field `aiHint`.
 
+### An outcome's priority
+
+`outcome.set` {id, field: class, why or reconsider, value, prev} sets an outcome's priority: `class` is `rock`
+(committed), `pebble` (supports a commitment), `sand` (if there's room) or blank, and `why` (why it matters) and
+`reconsider` (when to reconsider it) are one line each, up to 300 characters. A change to any of them always waits
+for a person, at every review level: the team's priority and its reason are a person's call. A plan with a class or
+either line needs this version or later: older copies open it read-only.
+
 ### Workstream actions
 
 `workstream.set` {id, field: note, color, from or until, value, prev} and `workstream.move` {id, index} change a

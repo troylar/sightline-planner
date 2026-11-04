@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.180.0",
+  "date": "2026-11-04",
+  "headline": "Say what matters most, and why",
+  "changes": [
+    {
+      "kind": "new",
+      "area": "Roadmap",
+      "title": "Give each outcome a priority and its reason",
+      "before": "Outcomes had a target and a stage, but nothing said which ones the team had committed to or why they mattered.",
+      "now": "Each outcome has a Priority (Committed, Supports a commitment, or If there's room) and one line each for why it matters and when to reconsider it. Roadmap cards and triage show it. An assistant's suggestion always waits for your review. Copies older than 1.180.0 open such a plan read-only.",
+      "where": "Roadmap: open an outcome, then Priority, Why it matters and Reconsider when."
+    }
+  ]
+},
+{
   "version": "1.179.0",
   "date": "2026-11-03",
   "headline": "Older history moves out of the plan file",
