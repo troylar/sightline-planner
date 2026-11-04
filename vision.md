@@ -1,7 +1,8 @@
 # Sightline: vision and product charter
 
 Sightline puts a team's official Jira work on one shared wall, next to everything the team adds to plan around it,
-and makes it obvious which is which.
+and makes it obvious which is which. It's also where the team keeps what it hears and why it chose what comes next, so
+anyone can see why a piece of work matters.
 
 This document is the product charter. Every change to Sightline should fit it; a change that doesn't either changes
 this document first, in its own pull request, or doesn't ship.
@@ -26,6 +27,38 @@ adds.
 The rest of this document uses plain words for the two kinds of thing: **Jira items** (the cards) and **plan items**
 (everything the team adds). In the app they're labeled **From Jira** and **Added here**. The whiteboard is only the
 picture; its words don't appear on screen.
+
+### What Sightline reads
+
+Sightline reads three kinds of input, and treats each differently.
+
+- **Trackers** are where the team officially records its work. Jira is the first. A tracker owns its facts; Sightline
+  shows them and, today, never changes them (any later write-back follows "Changing Jira, later"). Another tracker, or
+  a second one beside the first, connects the same way: a sync on the user's own computer writes files beside the
+  plan, covering only the search its user set up. An item is identified by its tracker, its server and its key.
+- **Signals** are what people hear: meetings, email, chat, support tickets, bug reports, complaints. Signals become
+  captured requests in the plan. They're evidence, not facts any system owns.
+- **References** are documents and messages where they already live: a spec in OneDrive or SharePoint, a decision
+  record, a chat thread, a recording. The plan links to them; it never copies them.
+
+**Connectors are per user, read-only, and offer rather than add.** A new source reaches Sightline in one of two ways:
+through a person's assistant, using Sightline's proposal review like every other assistant change (principle 16), or
+through a sync on that person's computer.
+
+- **Sign-ins stay with the person.** Credentials stay in the operating system's credential store, and what a connector
+  reads stays in that person's own settings. Nothing in a shared file can aim someone's sign-in.
+- **Findings stay private until reviewed.** A connector that reads signals or references (email, chat, documents)
+  writes what it found where only its user can read it, never in the shared folder. Nothing joins the plan until a
+  person reviews what will be shared and adds it.
+- **Share the minimum.** Hand an assistant only what you may share with it and with everyone who reads the plan. What
+  it reads is evidence, never instructions to it.
+- **Each kind stays recognizable.** A tracker's facts, reported evidence and the plan's decisions are never shown as
+  one another.
+
+In this charter a **capture** is a captured request, kept in the plan as a roadmap idea, and an **outcome** is a
+roadmap item: what the team intends to deliver.
+
+Where this charter says Jira, it describes the tracker Sightline reads today. Its rules apply to every tracker.
 
 ### Jira items, plan items, and plan items that hold Jira items
 
@@ -60,10 +93,11 @@ Each principle is a test a change can pass or fail.
    creator.
 8. **Hiding is always recoverable.** A view that hides things says how many and why ("8 hidden by your view",
    "2 parked"), and a dependency on something hidden still shows, as a stub you can open.
-9. **Links survive movement.** Notes, tags and dependencies attach by stable ID or Jira key, never by title, row or
-   date, so they follow a card wherever Jira or the plan moves it.
-10. **The page never talks to Jira.** Only the sync script on the user's own computer does, with the user's token.
-    The page reads the files it writes.
+9. **Annotations follow their item.** Notes, tags, dependencies and links to documents attach by stable ID or Jira
+   key, never by title, row or date, so they follow a card wherever Jira or the plan moves it.
+10. **The page never talks to Jira, or to any other system.** Only a sync on the user's own computer does, with the
+    user's own sign-in, or a person's assistant through its own connections. The page reads the files they write, and
+    it never fetches a linked document.
 11. **A shared file is shared, not secured.** Anyone who can open the plan can read and change it. Sightline records
     who did what and lets people hide things from their own view; it never claims those are access controls.
 12. **Jira going missing never removes the team's work.** Everything added around a Jira item (notes, tags,
@@ -84,6 +118,20 @@ Each principle is a test a change can pass or fail.
     how much it may do. Its changes go through the same rules and checks as that person's, are stamped with the
     person and the app, and can be undone by batch. A few changes always wait for a person. When an app's change
     can't be applied, the app is told why, with the reason; a change never sits unapplied without one.
+17. **Priority is a person's call, and it carries its reason.** An outcome's class (rock, pebble or sand) and the
+    team's work order are plan facts that people set. An assistant may propose them and never sets them on its own,
+    whatever it's allowed to do. The page can point out a gap ("a rock with no commitment behind it") but never
+    reclassifies anything. A class isn't a size: a rock can be small and a pebble large.
+18. **Evidence, not votes.** Hearing something again adds evidence to what's already captured (who, through which
+    channel, when), never a second copy. A count of reports never stands in for impact, and one severe report can
+    outweigh five mild ones. "No match in what Sightline loaded" never means "the tracker has no such item".
+19. **Evidence ages into review.** Age asks for a review; it never deletes. A closed capture leaves triage and counts
+    toward what matters now only through what it was handed off to. A new report about something closed shows as a
+    possible recurrence for a person to judge; it never reopens anything on its own.
+20. **References point, they don't copy.** A plan item or capture can link to a document or message where it lives.
+    The plan keeps the link, its title and when it was added, never the document's contents. The source decides who
+    can open it. A link's title and address are shared plan content (principle 11): never a link that grants access to
+    whoever holds it, and never a title the team wouldn't say in the room.
 
 ## Who owns what
 
@@ -107,7 +155,15 @@ Each principle is a test a change can pass or fail.
 | How long a captured item has been open, and what it was handed off to | Computed by Sightline from the plan | Inputs in Sightline | Age from when it was added; unknown shown as unknown |
 | What I've hidden from my own view | The viewer | That viewer's browser | View indicator with hidden counts |
 | Which apps I've connected, and how much each may do | The viewer | That viewer's browser | Settings, Apps; "via" on every change an app made |
+| A connector's sign-in and what it reads | The person who set it up | Their credential store and private settings, never the shared folder | Not shown in the plan; its findings are offered for review |
 | Proposed changes to Jira (later) | Plan | Sightline, applied by the sync script | Shown as pending on the Jira item until Jira has them |
+| An outcome's class, why it matters, and when to reconsider it | Plan | Sightline | Added here, with who set it |
+| The work order of initiatives | Plan | Sightline | Added here; what the forecast follows, apart from where items sit on the chart |
+| Capture evidence: channel, impact, each later report | Plan | Sightline | Added here, with who added it and who raised it |
+| Drafted tracker items | Plan | Sightline; a person creates the item in the tracker | "Draft, not in the tracker yet" until its key is recorded |
+| Links to documents and messages | Plan (the link); the source (the document and who may open it) | Sightline (the link); the source (the document) | Title, host and when it was added; opens in the source |
+| What a capture's evidence adds up to, and what's due for review | Computed by Sightline from the plan | Inputs in Sightline | Reports, people, channels and span; "Still true?" |
+| What a new ask would push out (the jar) | Computed by Sightline from the plan's inputs and the tracker's facts | Inputs in the tracker and Sightline | "What-if: not the plan", with what isn't estimated |
 
 ## People on the wall
 
@@ -141,11 +197,58 @@ they're there when the team sets priorities and shapes the roadmap, and so whoev
   Jira issue it became is still Jira's: the plan records the key, never a copy of the issue.
 - **Unsorted is a place.** An item whose workstream isn't known yet is shown as unassigned, not hidden or guessed.
 - **Triage is a view:** open captures by workstream, oldest first, with who asked and where it came from.
-- **Any assistant can capture,** through the same export and changes file as everything else (principle 16). It
+- **Any assistant can capture,** through Sightline's proposal review like everything else (principle 16). It
   reuses the people, groups and workstreams the plan already has, by ID. A change that adds a new person or group,
   or invents a category, always waits for a person, whatever the assistant is allowed to do on its own.
 - **A request names other teams in a shared file.** Principle 11 holds: capture only what the team would say in
   the room.
+
+### Anything heard can be captured
+
+A meeting is one place requests come from. Email, chat, support tickets, bug reports and a hallway complaint are
+others. Anyone can hand what they heard to their assistant, and one shared intake skill turns it into reviewed
+captures.
+
+- **One observation per capture:** a short statement of the problem or the ask, who raised it, when, the **channel**
+  it came through (meeting, email, chat, support, bug report) and a one-line **impact**. Never a transcript or a pasted
+  message. A link to the original is a reference (principle 20).
+- **Match before adding.** The skill compares what's affected and what's wanted, not titles, against open and closed
+  captures and the tracker items Sightline has loaded. It proposes one of: a new capture; "heard again" on an existing
+  one; "already in the tracker" with the item's key; or one question that tells two similar things apart. An
+  uncertain match stays separate, linked as a possible match, for a person to decide.
+- **Evidence adds up.** A capture shows its reports, the distinct people and channels, and the span of time. A
+  forwarded message isn't a new report.
+- **Its fit with the roadmap is stated:** it supports an outcome, competes with one, or has no connection yet. A
+  capture with no connection stays findable and never becomes plan work by itself.
+- **Draft a tracker item.** A capture can carry a drafted item for the tracker: summary, problem, expected and actual
+  behavior, steps to reproduce, acceptance criteria, its evidence and open questions. A person searches the tracker
+  once more and creates it there. Recording its key links the capture to it; a person confirms the handoff, since a
+  link alone never counts as one. Sightline never creates the item.
+- **Still true?** An open capture past its review date is listed for review: keep it, decline it with a reason, or
+  merge it into another. Its links are reviewed with it, since the page can't tell a link has gone dead. A capture
+  that was handed off adds its evidence to what it became, never extra work.
+
+## Deciding what matters
+
+Everything above is input. Two moments turn it into a decision.
+
+- **Your next move.** Any item can show its thread: tracker item, initiative, outcome, the documents it rests on, who
+  asked, why it matters now, and what would change our minds. The next move can be a question to settle ("get this
+  requirement answered"), not only work to start. A missing link in the thread is shown as missing.
+- **The jar.** A sprint's or a quarter's capacity, worked out from people, their time, each workstream's reserve and
+  the dates the tracker already holds. The team puts its rocks first in the work order, pebbles around them and sand
+  where it fits. Each workstream's reserve covers interruptions and unplanned work, separately from outcome classes.
+  The jar shows what the team chose; it doesn't enforce it. Dropping a new ask at a chosen place in the work order
+  previews what the forecast says: it fits in the likely forecast; it fits if these wait (each named, with who asked
+  for it); it doesn't fit; or Sightline can't tell. Work with no estimate is counted and named, never treated as empty
+  space. The preview is computed and labeled "What-if: not the plan". It changes nothing; a person may keep it as a
+  scenario, and making it the plan follows principle 15. Shapes are never packed by size: the forecast alone decides
+  what fits.
+- **The work order is its own thing.** It's what the forecast follows, set by people, separate from where items sit on
+  the chart and from the tracker's own priority field, which stays the tracker's fact.
+- **One set of instructions.** The team's assistants use the same shared skills (what should I work on, capture what I
+  heard, triage this ask, can we promise this) and the plan's own planning guide, so their reasoning can be compared.
+  Each cites the items it relied on.
 
 ## Many views
 
@@ -207,6 +310,8 @@ backups, drafts and the Jira files are not history.
 ## Not in scope (for now)
 
 - Editing Jira from the page, or any browser connection to Jira.
+- Creating tracker items from the page. Sightline drafts them; a person creates them.
+- Fetching, previewing or copying linked documents.
 - Verified identity, permissions, or private content inside a shared plan.
 - Treating plan timeboxes as Jira sprints, or plan copies as Jira facts.
 - Guessing at Jira history the sync can't see.
@@ -229,6 +334,12 @@ backups, drafts and the Jira files are not history.
   teams yet.
 - History (snapshots, saved status updates, older item updates, the Activity log) lives in history files beside the
   plan, one per period; the plan file holds what's being planned now.
+- Sightline reads three kinds of input: trackers (Jira first), signals and references. The rules for Jira apply to
+  any tracker.
+- Priority is a plan fact: a class and a reason on each outcome, plus a work order. There's no separate list of
+  objectives.
+- Intake from any channel is a shared assistant skill that writes reviewed captures, not a separate store.
+- Tracker items are drafted in the plan and created by a person.
 
 **Open**
 
@@ -241,6 +352,12 @@ backups, drafts and the Jira files are not history.
 - Finished work in a long-lived plan: on the biggest plans that run two years, finished initiatives and tasks alone
   can reach the size limit. Should a plan roll forward, moving finished work into its history?
   Decide after history files ship.
+- Who sets an outcome's class: anyone, or the product owner? Recommended: anyone, showing who set it.
+- How long before an open capture asks "Still true?" Recommended: 90 days, set per plan.
+- How to keep a long-lived capture's evidence small once it has many reports.
+- Links on every plan item, or only on outcomes and captures at first? Recommended: every item.
+- When to rename "Jira" to the tracker in the rest of this charter, the sync and the page. Recommended: when a second
+  tracker is real, so the page keeps naming what people use.
 - Projects and platforms: tie people, groups and work to what they build on, own or use. Deferred until captured
   requests show which of those relationships a planning view needs; a plain project tag can't tell them apart.
 
@@ -284,6 +401,9 @@ In order, each depending on the one before:
 - No Jira key is placed twice or counted twice.
 - No note, tag or dependency is orphaned when Jira moves or drops an issue.
 - In a review, anyone can answer: what came from Jira, what did we add, who added it, and what's hidden from me?
+- Anyone can say why the item they're on matters, and whose request it serves, from the item alone.
+- The same complaint heard three times through three channels shows as one capture with three reports.
+- Nothing closed six months ago counts toward what matters now, except through the work it became.
 
 ## Holding ourselves to it
 
