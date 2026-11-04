@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.181.1",
+  "date": "2026-11-04",
+  "headline": "Clearer notes when two people reorder",
+  "changes": [
+    {
+      "kind": "fixed",
+      "area": "Capacity",
+      "title": "A reorder note shows only on the save it belongs to",
+      "before": "If a save was refused right after a teammate's work order replaced yours, a later save could still say the work order had changed.",
+      "now": "The note about a teammate's work order appears only when that save goes through. Your order is still downloaded as a backup once.",
+      "where": "Capacity, Forecast, Work order, with Save as you go."
+    }
+  ]
+},
+{
   "version": "1.181.0",
   "date": "2026-11-04",
   "headline": "Choose what the forecast takes first",
