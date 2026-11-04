@@ -4272,6 +4272,10 @@ function quickSave(what, mutate, tries = 0, ops = null, isUndo = false, fromSayg
     // A retry re-applies exactly the same change (same ids), so a note or update is never added twice.
     if (ops && fromSayg){ const lost = ops.filter(o=>o.op === "set" && o.type !== "meta" && o.field !== "edited" && o.field !== "added" && (e=>e && !jeq(e[o.field], o.prev) && !jeq(e[o.field], o.value))(syncEntities(plan, o.type).find(y=>y.id === o.id)));
       if (lost.length){ backup(plan, "theirs"); setStatus(`A teammate changed ${lost.length === 1 ? "the same thing" : lost.length + " of the same things"} since you started; yours is saved and theirs downloaded as a backup.`); } }
+    // The work order is one list, one choice: when a teammate reordered since, theirs stands (applyOps) and mine is kept as a copy.
+    { const wl = (ops || []).find(o=>o.type === "meta" && o.field === "workOrder" && "prev" in o && !jeq(plan.meta.workOrder || [], o.prev || []) && !jeq(plan.meta.workOrder || [], o.value || []));
+      if (wl && !(mergeNote || "").includes("changed the work order too")){ const mine = mineS ? clone(mineS) : clone(plan); if (!mineS){ if ((wl.value || []).length) mine.meta.workOrder = clone(wl.value); else delete mine.meta.workOrder; }
+        backup(mine, "mine"); mergeNote = (mergeNote ? mergeNote + " " : "") + "A teammate changed the work order too, so theirs stands; yours was downloaded as a backup."; } }
     const change = ops ? (st=>{ const r = applyOps(st, ops).plan; for (const k of Object.keys(st)) delete st[k]; Object.assign(st, r); if (!diffPlans(before, st).length) return NOCHANGE; }) : mutate;
     let changed = false; const change2 = ops ? (st=>{ const r = change(st); changed = r !== NOCHANGE; return r; }) : change;
     let ok; quickMode = true; try { ok = commit(change2, {quiet:true, grow:true, norender:true}); } finally { quickMode = false; }
@@ -4279,7 +4283,7 @@ function quickSave(what, mutate, tries = 0, ops = null, isUndo = false, fromSayg
       if (ops && !ok && !changed){                            // nothing to write: already in the file, or its item is gone
         const gone = ops.filter(o=>(o.op === "set" || o.op === "del") && o.type !== "meta" && o.field !== "edited" && o.field !== "added" && !syncEntities(plan, o.type).some(y=>y.id === o.id));
         if (gone.length && mineS){ render(); backup(mineS, "mine"); setStatus(`A teammate removed ${gone.length === 1 ? "something" : gone.length + " things"} you had changed, so your change couldn't be saved. Your version was downloaded as a backup.`); }
-        else { planChanged("quick"); setStatus(`Saved to local file: ${what}`); }
+        else { planChanged("quick"); setStatus(withMergeNote(`Saved to local file: ${what}`)); }
         return true; }
       render(); return false; }                                         // refused (a blackout, a limit): the edit stays unsaved here
     const myOps = ops || diffPlans(before, S);

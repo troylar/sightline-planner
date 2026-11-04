@@ -123,6 +123,19 @@ async function page(){
     ev("S.meta.workOrder = ['C', 'A', 'N']; render(); renderForecastWs()"); await wait(20);
     d.querySelector('#fcOrder [data-wo="A"] [data-wobtn="remove"]').click(); await wait(20);
     ok('R5 after Remove, focus moves to the next row, not the page', JSON.stringify(J('S.meta.workOrder')) === '["C","N"]' && d.activeElement && d.activeElement.closest && d.activeElement.closest('[data-wo]') && d.activeElement.closest('[data-wo]').dataset.wo === 'N');
+    // R4b: the same through Save as you go: my reorder loses to a teammate's, and mine is kept as a copy with a note.
+    ev(`window.DL = []; download = (text, name) => DL.push(name); backup = (pl, tag) => DL.push('backup-' + tag);`);
+    const sg = JSON.parse(await w.eval(`(async()=>{ stopAuto(); startAuto = ()=>{};
+      const mine = clone(planOfRecord(S)); mine.meta.workOrder = ['A', 'C']; const base = serialize(mine, 'p.json');
+      const theirs = clone(mine); theirs.meta.workOrder = ['C', 'A', 'B']; theirs.meta.revision = (mine.meta.revision || 0) + 5;
+      const hd = {name:'p.json', text:serialize(theirs, 'p.json'), async queryPermission(){ return 'granted'; }, async requestPermission(){ return 'granted'; },
+        async getFile(){ const t = hd.text; return {size:t.length, lastModified:1, text:async()=>t}; }, async createWritable(){ let x = ''; return {async write(v){ x = v; }, async abort(){}, async close(){ hd.text = x; }}; }};
+      S = normalize(mine, false); file.handle = hd; file.baseText = base; file.baseHash = hashText(base); file.holdLock = false; file.dirty = true; locked = false;
+      await quickSave('work order', null, 0, [{op:'set', type:'meta', id:'meta', field:'workOrder', prev:['A', 'C'], value:['B', 'C', 'A']}], false, true);
+      const out = {file:parseText(hd.text).meta.workOrder, S:S.meta.workOrder, status:$('#status') ? $('#status').textContent : '', DL};
+      file.handle = null; file.dirty = false; return JSON.stringify(out); })()`));
+    ok('R4b with Save as you go, a reorder that loses to a teammate\'s keeps theirs, downloads mine as a backup and says so',
+      JSON.stringify(sg.file) === '["C","A","B"]' && JSON.stringify(sg.S) === '["C","A","B"]' && sg.DL.includes('backup-mine') && /work order too/.test(sg.status) && /backup/.test(sg.status), JSON.stringify(sg));
     ok('Z1 no page errors', !w.errors.length, w.errors.join(' | '));
 
     // End to end: an app's batch at routine and all. The order and a priority are held; a routine risk applies.
