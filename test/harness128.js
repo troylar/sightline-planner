@@ -198,6 +198,30 @@ const byId = (rs, id) => rs.find(r=>r.id === id) || {};
       ok("K3 the helper refuses an epic another initiative holds, and passes one already where the change puts it", verdicts.filter(v=>v.id.startsWith("held")).length === 4 && verdicts.filter(v=>v.id.startsWith("held")).every(v=>v.helper === v.want && v.pageOk === v.want), JSON.stringify(verdicts.filter(v=>v.id.startsWith("held")).map(v=>[v.id, v.want, v.helper, v.pageOk, v.raw.slice(0, 120)])));
       ok("K2 the helper takes --json after the command, as the guide writes it, and answers in JSON", verdicts.every(v=>v.json), JSON.stringify(verdicts.filter(v=>!v.json).map(v=>v.raw)));
       fs.rmSync(tmp, {recursive:true, force:true}); }
+    // ---- what the team heard always waits for a person (vision.md principle 16), whatever the level ----
+    { const Q = await page(), me = Q.ev("S.people[0].id");
+      Q.ev(`S = applyAction(S, "outcome.add", {id:"dv-heard", name:"Exports drop cents", capture:"request", raised:"2026-09-01", source:"Support"}).plan; HD.text = serialize(S, HD.name); installPlan(S, HD.text, HD); render();`);
+      ok("W0 the plan starts with one capture to hear again", Q.ev(`!!(S.deliverables || []).find(x=>x.id === "dv-heard" && x.capture)`) === true);
+      const cap = (n, ops) => ({id:n, summary:n, ops});
+      const changes = [cap("new-cap", [F.act("outcome.add", {id:"dv-new", name:"Keyboard focus lost after Save", capture:"request", askedBy:{type:"person", id:me}, raised:"2026-09-29", source:"Bug report"})]),
+        cap("again", [F.act("outcome.raiseAgain", {id:"dv-heard", ask:"ask-1", source:"Support chat", raised:"2026-09-29"})]),
+        cap("handoff", [F.act("outcome.handoff", {id:"dv-heard", jira:"ABC-7"})]),
+        cap("jira-link", [F.act("outcome.linkJira", {id:"dv-heard", keys:["ABC-7"]})]),
+        cap("make-cap", [{op:"action", action:"outcome.set", args:{id:"dv-plain", field:"capture", value:"idea"}}]),
+        cap("plain", [F.act("outcome.add", {id:"dv-plain", name:"Usage report"})])];
+      for (const level of ["routine", "all"]){
+        Q.ev(`amSetLevel(${JSON.stringify(level)})`); Q.send({changes, batchId:"heard-" + level}); await Q.tick(); await Q.ev("amAuto()"); await wait(20);
+        const h = JSON.parse(Q.ev("JSON.stringify(AM.held || {})")), dv = JSON.parse(Q.ev("JSON.stringify(S.deliverables.map(x=>({id:x.id, again:(x.raisedAgain || []).length, handoff:!!x.handoff, jira:(x.jira || []).length, capture:x.capture || ''})))"));
+        const heard = dv.find(x=>x.id === "dv-heard") || {};
+        const waits = ["new-cap", "again", "handoff", "jira-link"].every(k=>h[k] && /records something the team heard, or links it, so a person always reviews it/.test(h[k].reason));
+        ok(`W1 at "${level}", an assistant's capture, heard-again, handoff and Jira link on a capture all wait for a person, saying why`, waits, JSON.stringify(h));
+        ok(`W2 at "${level}", none of them reached the plan`, !dv.some(x=>x.id === "dv-new") && heard.again === 0 && !heard.handoff && heard.jira === 0, JSON.stringify(dv));
+        ok(`W3 at "${level}", an ordinary outcome still applies on its own; turning it into a capture waits`, dv.some(x=>x.id === "dv-plain" && !x.capture) && !!h["make-cap"], JSON.stringify(h["make-cap"] || null) + JSON.stringify(dv));
+        Q.ev(`S.deliverables = S.deliverables.filter(x=>x.id !== "dv-plain"); render();`); }
+      const r = k => Q.ev(`amRiskOf({ops:[${k}]})`);
+      ok("W4 a raw Jira link on a capture is always reviewed; on an ordinary outcome it isn't", r(`{op:"link", type:"deliverable", id:"dv-heard", jira:["ABC-7"]}`) === "floor" && r(`{op:"link", type:"deliverable", id:"dv-none", jira:["ABC-7"]}`) === "routine");
+      ok("W5 clearing a capture type isn't a capture; an ordinary outcome.add stays routine", r(`{op:"action", action:"outcome.set", args:{id:"dv-heard", field:"capture", value:""}}`) === "routine" && r(`{op:"action", action:"outcome.add", args:{name:"x"}}`) === "routine");
+      ok("W6 no page errors on the second page", !Q.w.errs.length, Q.w.errs.join(" | ")); }
     ok("Z3 no page errors", !w.errs.length, w.errs.join(" | "));
   } catch(e){ ok("harness ran without throwing", false, e.stack); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);

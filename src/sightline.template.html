@@ -8741,9 +8741,9 @@ const ACTION_DESC = {
   "meeting.set":"Change one field of a meeting.",
   "person.add":"Add a person to the team, or an outside owner such as another team.",
   "group.add":"Add a group of people, such as a team that asks for things, with its members if known.",
-  "outcome.handoff":"Close a captured item by handing it off to an initiative or a Jira issue.",
+  "outcome.handoff":"Close a captured item by handing it off to an initiative or a Jira issue, which always waits for a person.",
   "outcome.reopen":"Put a handed-off or declined captured item back on the list to triage.",
-  "outcome.raiseAgain":"Record that a captured item was raised again: who asked, at which meeting, and when.",
+  "outcome.raiseAgain":"Record that a captured item was raised again: who asked, at which meeting, and when. It always waits for a person.",
   "outcome.unraise":"Remove one raised-again record from a captured item.",
   "person.set":"Change one field of a person.",
   "person.setAlloc":"Set how much of a person's time goes to this plan.",
@@ -14723,7 +14723,7 @@ function assistantView(){
       "Items marked jiraLinked keep Jira's status and dates: propose those in Jira. Items marked datesFromTasks get their dates from their tasks. Moving dates can move linked items; Sightline shows that before applying.",
       "The work order (planning.workOrder, and workOrder on each initiative: its place, from 1) is the order the team takes initiatives in, and the forecast follows it when people are busy. It's a person's call: propose initiative.order with every id in order and say why; it always waits for a person, whatever the level. Never infer it from Jira's priority or where items sit on the chart.",
       "An outcome's priority is a person's call: class (rock = committed, pebble = supports a commitment, sand = if there's room; absent = not classed yet), why (why it matters) and reconsider (when to reconsider it). Propose a class only with its why, through outcome.set; any change to class, why or reconsider always waits for a person, whatever the level. Never reclassify on your own, and treat a class as importance, not size.",
-      "Captured from meetings: when an open or closed capture already covers the request (compare names and raisedAgain), record it with outcome.raiseAgain (a new ask id, who, raised, source) instead of adding a duplicate; when unsure, add it and say which capture it may match. Otherwise outcome.add with capture (idea, request, gap or question), askedBy {type:'person'|'group', id} from planning.people or planning.groups, raised (the meeting's date), source (the meeting) and lane when the workstream is clear; leave lane out when it isn't. Never make someone the requester or owner because their name was mentioned. A new person or group (person.add, group.add) always waits for review: add it in the same change as the capture that needs it. A date never plans a capture. Close one with outcome.handoff {id, initiative or jira} or outcome.drop with a reason; outcome.reopen puts it back.",
+      "Captured from meetings: when an open or closed capture already covers the request (compare names and raisedAgain), record it with outcome.raiseAgain (a new ask id, who, raised, source) instead of adding a duplicate; when unsure, add it and say which capture it may match. Otherwise outcome.add with capture (idea, request, gap or question), askedBy {type:'person'|'group', id} from planning.people or planning.groups, raised (the meeting's date), source (the meeting) and lane when the workstream is clear; leave lane out when it isn't. Never make someone the requester or owner because their name was mentioned. A new person or group (person.add, group.add) always waits for review: add it in the same change as the capture that needs it. A date never plans a capture. Close one with outcome.handoff {id, initiative or jira} or outcome.drop with a reason; outcome.reopen puts it back. A new capture, outcome.raiseAgain, outcome.handoff and a Jira link on a capture always wait for a person, whatever the level.",
       "Jira is read-only: never set Jira facts; propose them. Use only ids that appear below, or new ids you create (dv-…). Targets: a year '2027', a half '2027-H1', a quarter '2027-Q2', or 'later'.",
       "Use projectGuide to interpret scope and suggest placement, subordinate to the ownership and operation rules above. Explain placements; keep suggested extra work separate. If required owners or dates are unknown, ask rather than fabricate a scheduled task.",
       "If a request is ambiguous (for example 'Q2' without a year), ask the person before writing. Write the whole file at once.",
@@ -14951,7 +14951,7 @@ async function assistantTick(){
 }
 // Applying without a click (docs/app-access.md 4, 5). The level is this browser's, per plan: a file in the folder can't
 // raise it. Routine changes apply on their own at "routine"; deletes wait unless it's "all"; deleting an initiative
-// with Jira-linked work always waits. A batch never sits unapplied without a reason: each change it can't apply gets
+// with Jira-linked work, and anything the team heard (amCaptureOp), always waits. A batch never sits unapplied without a reason: each change it can't apply gets
 // one (stale context, expired, editing, review) in the results file, and the page writes a heartbeat every tick.
 const AM_LEVELS = [["review","Wait for me to review"],["routine","Apply routine changes; deletes wait for me"],["all","Apply everything except deleting Jira-linked work"]];
 const AM_EXPIRE_MS = 60 * 60 * 1000, AM_STATUS_FILE = "sightline-assistant-status.json";
@@ -14971,11 +14971,21 @@ const FLOOR_WHY = {"workstream.del":"It deletes a workstream", "workstream.reid"
   "group.add":"It adds a group", "skill.add":"It adds a skill to the team's list", "initiative.order":"It changes the team's work order"};
 // An outcome's priority and its reason are a person's call (vision.md principle 17): an app may only propose them.
 const amPriorityOp = o => !!(o && o.op === "action" && o.action === "outcome.set" && o.args && DV_PRIORITY.includes(o.args.field));
-function amFloorWhy(c){ const ops = c.ops || [], o = ops.find(o=>o && FLOOR_WHY[o.action]);
-  return (o ? FLOOR_WHY[o.action] : ops.some(amPriorityOp) ? "It sets an outcome's priority or its reason" : "It deletes an initiative with Jira-linked work") + ", so a person always reviews it."; }
+// What a team heard is evidence a person vouches for (principle 16): an app's capture, "heard again" or link to one always waits.
+function amCaptureOp(o, p = S){ if (!o || typeof o !== "object") return false; const a = o.args && typeof o.args === "object" ? o.args : {};
+  const isCap = id => !!((p.deliverables || []).find(d=>d.id === id) || {}).capture;
+  if (o.op === "action"){
+    if (o.action === "outcome.add") return !!a.capture;
+    if (o.action === "outcome.set") return a.field === "capture" && !!a.value;
+    if (o.action === "outcome.raiseAgain" || o.action === "outcome.handoff") return true;
+    if (o.action === "outcome.linkJira") return isCap(a.id);
+    return false; }
+  return o.type === "deliverable" && o.op === "link" && isCap(String(o.id || "")); }
+function amFloorWhy(c, p = S){ const ops = c.ops || [], o = ops.find(o=>o && FLOOR_WHY[o.action]);
+  return (o ? FLOOR_WHY[o.action] : ops.some(x=>amCaptureOp(x, p)) ? "It records something the team heard, or links it" : ops.some(amPriorityOp) ? "It sets an outcome's priority or its reason" : "It deletes an initiative with Jira-linked work") + ", so a person always reviews it."; }
 // How risky a change is: "floor" (always reviewed), "risky" (reviewed below "all") or "routine".
 function amRiskOf(c, p = S){ let risk = "routine";
-  for (const o of c.ops || []){ if (!o || o.op !== "action") continue; const A = amHas(planActions, String(o.action)) ? planActions[o.action] : null; if (!A) continue;
+  for (const o of c.ops || []){ if (amCaptureOp(o, p)) return "floor"; if (!o || o.op !== "action") continue; const A = amHas(planActions, String(o.action)) ? planActions[o.action] : null; if (!A) continue;
     if (A.scope === "jira") return "jira";
     if (A.risk === "floor" || amPriorityOp(o)) return "floor";
     if (A.id === "initiative.del" && o.args){ const b = actBar(p, o.args.id), tree = b ? [b, ...descendantsOf(b.id, p)] : [];
@@ -15004,7 +15014,7 @@ async function amAuto(){
   else if (rows.length){ const why = amAutoBlock(F), jiraHeld = new Set();          // placements wait anyway, and still count toward the batch's size
     rows.forEach(r=>{ const risk = why ? "" : amRiskOf(r.eff, r.base);
       if (why) held[r.c.id] = why;
-      else if (risk === "floor") held[r.c.id] = {code:"review", reason:amFloorWhy(r.eff)};
+      else if (risk === "floor") held[r.c.id] = {code:"review", reason:amFloorWhy(r.eff, r.base)};
       else if (risk === "jira"){ held[r.c.id] = {code:"review", reason:"It places Jira work on the plan, so a person always reviews it."}; jiraHeld.add(r.c.id); }
       else if (risk === "risky" && level !== "all") held[r.c.id] = {code:"review", reason:"It deletes something, so it waits for review at this level."}; });
     // risk by size: what a change moves besides its own items, and how many items the batch touches in all

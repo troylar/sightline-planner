@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.182.0",
+  "date": "2026-11-05",
+  "headline": "Tell your AI assistant what you heard",
+  "changes": [
+    {
+      "kind": "fixed",
+      "area": "Assistant",
+      "title": "What the team heard always waits for you",
+      "before": "With an assistant allowed to apply routine changes, a request it recorded, a \"heard again\", a handoff or a Jira link on a request went straight into the plan.",
+      "now": "Those always wait for a person to review, whatever the assistant is allowed to do, and say why they're waiting.",
+      "where": "Assistant, Changes."
+    }
+  ]
+},
+{
   "version": "1.181.2",
   "date": "2026-11-04",
   "headline": "One backup when a quick save meets two clashes",
