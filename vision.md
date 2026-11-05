@@ -118,8 +118,9 @@ Each principle is a test a change can pass or fail.
 16. **Apps act for a person.** An app or assistant changes the plan only through a person who connected it and chose
     how much it may do. Its changes go through the same rules and checks as that person's, are stamped with the person
     and the app, and can be undone by batch. A few changes always wait for a person, whatever the level: among them, a
-    capture, a "heard again" report or a link that an app adds, and any change to what matters now (principle 21). When an app's change can't be applied, the app is told
-    why, with the reason; a change never sits unapplied without one.
+    capture, a "heard again" report or a link that an app adds, and any change to what matters now (principle 21).
+    When an app's change can't be applied, the app is told why, with the reason; a change never sits unapplied
+    without one.
 17. **Priority is a person's call, and it carries its reason.** An outcome's class and the team's work order are plan
     facts that people set. An assistant may propose them and never sets them on its own, whatever it's allowed to do.
     The classes follow the familiar picture of filling a jar: rocks are what the team has committed to, pebbles
@@ -162,8 +163,9 @@ Each principle is a test a change can pass or fail.
     decision or releases a commitment, and the entry stays readable as history.
 24. **Whose input to seek, not how much a person counts.** Guidance can say whose recommendation to seek in an area and
     who decides ("for infrastructure spend, seek Casey's recommendation; the product owner decides"), with its reason
-    and scope. It names people already in the plan, or a role; never someone outside the team (principle 18). It is reported plan context, not verified authority or access control, and never a weight on a person:
-    their reports aren't multiplied and nobody else's are discounted. The page says "whose input to seek" and "who
+    and scope. It names people already in the plan, or a role; never someone outside the team (principle 18). It is
+    reported plan context, not verified authority or access control, and never a weight on a person: their reports
+    aren't multiplied and nobody else's are discounted. The page says "whose input to seek" and "who
     decides", never "trusted" or "weight".
 
 ## Who owns what
