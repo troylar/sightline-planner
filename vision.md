@@ -118,7 +118,7 @@ Each principle is a test a change can pass or fail.
 16. **Apps act for a person.** An app or assistant changes the plan only through a person who connected it and chose
     how much it may do. Its changes go through the same rules and checks as that person's, are stamped with the person
     and the app, and can be undone by batch. A few changes always wait for a person, whatever the level: among them, a
-    capture, a "heard again" report or a link that an app adds. When an app's change can't be applied, the app is told
+    capture, a "heard again" report or a link that an app adds, and any change to what matters now (principle 21). When an app's change can't be applied, the app is told
     why, with the reason; a change never sits unapplied without one.
 17. **Priority is a person's call, and it carries its reason.** An outcome's class and the team's work order are plan
     facts that people set. An assistant may propose them and never sets them on its own, whatever it's allowed to do.
@@ -131,7 +131,7 @@ Each principle is a test a change can pass or fail.
     stands in for impact, and one severe report can outweigh five mild ones. "No match in what Sightline loaded" never
     means "the tracker has no such item".
 19. **Evidence ages into review.** Age asks for a review; it never deletes. A closed capture leaves triage and counts
-    toward what matters now only through what it was handed off to. A new report about something closed shows as a
+    toward priority only through what it was handed off to. A new report about something closed shows as a
     possible recurrence for a person to judge; it never reopens anything on its own.
 20. **References point, they don't copy.** A plan item or capture can link to a document or message where it lives.
     The plan keeps the link, its title and when it was added, never the document's contents. The source decides who
@@ -139,22 +139,30 @@ Each principle is a test a change can pass or fail.
     grants access to whoever holds it, or a title the team wouldn't say in the room. The page warns when an address
     looks like one (it carries a signature or token) but can't always tell.
 21. **What matters now is written down, dated and owned.** Standing priorities ("for Q1, focus on reducing cost") are
-    part of the plan's planning guide: a statement, why, which workstreams it covers, when it starts and ends, when to
-    review it, who set it and what it replaces. People set them; an app's addition, edit or removal always waits for a
-    person. They inform judgment and never move anything by themselves. A rule the schedule must obey (wait for a
+    kept in the plan beside its planning guide: a statement, why, its scope, when it starts and ends, when to review
+    it, who set it and what it replaces. Scope is the whole plan or listed workstreams; with none listed it covers the
+    whole plan, and a narrower area ("infrastructure spend") is wording in the statement. People set them; an app's
+    addition, edit, end or removal always waits for a person. Fixing the wording, the review date or the end date edits
+    the entry in place, with the editor stamped. Changing what it asks or which workstreams it covers makes a new entry
+    that replaces the old one, which ends that day. Ending is the normal path; removing is for mistakes and can be
+    undone. Guidance informs judgment and never moves anything by itself. A rule the schedule must obey (wait for a
     sign-off, a date from outside) belongs in the schedule as a gate or milestone, not in guidance text.
 22. **Explain, don't score.** Sightline computes facts: which guidance applies to an item, what's committed, due,
     estimated or missing, and what a different order would push back. It never computes a priority score. Assistants
     recommend with reasons a person can check, and the work order, commitments and outcome priority stay separate
-    human choices. Guidance that conflicts is shown as a conflict, never settled by which is newer, narrower or from a
+    human choices. Sightline can show where guidance overlaps in scope and dates; whether the words conflict is a
+    person's or an assistant's judgment, and a conflict is shown, never settled by which is newer, narrower or from a
     more senior title. An explanation separates what a decision recorded at the time from what today's guidance would
     suggest: guidance never explains a decision it wasn't part of.
 23. **Guidance ends without undoing anything.** When guidance ends, it stops shaping new recommendations and asks for
-    a review of the decisions that cited it. It never reorders work, reverses a decision or releases a commitment, and
-    it stays readable as history. Changing what a guidance entry means makes a new entry that replaces it.
+    a review of the decisions that cited it. A decision is an entry in the plan's decision list; a work order or
+    outcome class that relied on guidance is recorded as a decision too. A decision cites guidance by the entry's ID,
+    kept on the decision as a plan fact (an assistant's citation is recorded only through a reviewed change), and
+    Sightline only computes the reverse: which decisions cited an entry. Ending never reorders work, reverses a
+    decision or releases a commitment, and the entry stays readable as history.
 24. **Whose input to seek, not how much a person counts.** Guidance can say whose recommendation to seek in an area and
     who decides ("for infrastructure spend, seek Casey's recommendation; the product owner decides"), with its reason
-    and scope. It is reported plan context, not verified authority or access control, and never a weight on a person:
+    and scope. It names people already in the plan, or a role; never someone outside the team (principle 18). It is reported plan context, not verified authority or access control, and never a weight on a person:
     their reports aren't multiplied and nobody else's are discounted. The page says "whose input to seek" and "who
     decides", never "trusted" or "weight".
 
@@ -276,7 +284,8 @@ Everything above is input. Two moments turn it into a decision.
   the chart and from the tracker's own priority field, which stays the tracker's fact.
 - **What matters now.** A team says what it's weighing this period, in plain words, with dates. Asked "why is X above
   Y?", an assistant cites the reasons the decision recorded, then, separately, what current guidance would suggest.
-  Asked to "focus on cost", it proposes the guidance entry for review and, as its own change, an order to compare.
+  Asked to "focus on cost", it proposes the guidance entry for review and, as its own reviewed change, a work order
+  to compare with today's; neither applies on its own.
   The money, deadlines and confidence behind a decision are short evidence with links to their sources; contracts
   and financial models stay where they live. Sightline holds what's needed to explain the plan, and says how fresh
   each part is.
@@ -370,6 +379,8 @@ backups, drafts and the Jira files are not history.
   plan, one per period; the plan file holds what's being planned now.
 - Sightline reads three kinds of input: trackers (Jira first), signals and references. The rules for Jira apply to
   any tracker.
+- What matters now is dated guidance kept beside the planning guide, scoped to the whole plan or listed workstreams;
+  Sightline never computes a priority score, and decisions cite the guidance they relied on by ID.
 - Priority is a plan fact: a class and a reason on each outcome, plus a work order. There's no separate list of
   objectives.
 - Intake from any channel is a shared assistant skill that writes reviewed captures, not a separate store.
@@ -437,7 +448,7 @@ In order, each depending on the one before:
 - In a review, anyone can answer: what came from Jira, what did we add, who added it, and what's hidden from me?
 - Anyone can say why the item they're on matters, and whose request it serves, from the item alone.
 - The same complaint heard three times through three channels shows as one capture with three reports.
-- Nothing closed six months ago counts toward what matters now, except through the work it became.
+- Nothing closed six months ago counts toward priority, except through the work it became.
 
 ## Holding ourselves to it
 
