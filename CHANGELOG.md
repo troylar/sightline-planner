@@ -6,6 +6,10 @@
 
 Tell your AI assistant what you heard.
 
+### New
+
+- **One skill takes anything you paste** (Assistant). Start with the sightline-plan skill and paste anything: notes, emails, bug reports, ideas, a leader's priorities or a question. It sorts each piece, answers what you asked, prepares changes for you to review, and can prep a grooming agenda or draft a Jira issue in its reply. A priority someone states is recorded as their request; the work order only changes when you decide. *Where:* Assistant, Setup and files, Planning skills.
+
 ### Fixed
 
 - **What the team heard always waits for you** (Assistant). Those always wait for a person to review, whatever the assistant is allowed to do, and say why they're waiting. *Where:* Assistant, Changes.

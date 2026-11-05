@@ -5,6 +5,14 @@
   "headline": "Tell your AI assistant what you heard",
   "changes": [
     {
+      "kind": "new",
+      "area": "Assistant",
+      "title": "One skill takes anything you paste",
+      "before": "You picked a skill for each job: meeting notes, an edit, a roadmap, a status update.",
+      "now": "Start with the sightline-plan skill and paste anything: notes, emails, bug reports, ideas, a leader's priorities or a question. It sorts each piece, answers what you asked, prepares changes for you to review, and can prep a grooming agenda or draft a Jira issue in its reply. A priority someone states is recorded as their request; the work order only changes when you decide.",
+      "where": "Assistant, Setup and files, Planning skills."
+    },
+    {
       "kind": "fixed",
       "area": "Assistant",
       "title": "What the team heard always waits for you",

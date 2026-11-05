@@ -91,7 +91,7 @@ Use **Customer release notes** for customer wording. Return to Roadmap for the b
 *The same invented plan, viewed for daily attention. Check scope and freshness before relying on the summary.*
 
 Have your assistant prepare a review, turn meeting notes into proposed updates, or draft an explanation of what
-changed from supplied evidence. [Run a team planning session](docs/team-planning.md) · [Explore the six planning skills](docs/skills.md).
+changed from supplied evidence. [Run a team planning session](docs/team-planning.md) · [Explore the planning skills](docs/skills.md).
 
 ## How it works
 
