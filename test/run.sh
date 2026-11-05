@@ -251,6 +251,7 @@ main(){
     "harness186 60 node harness186.js"
     "harness187 90 node harness187.js"
     "harness189 90 node harness189.js"
+    "harness190 60 node harness190.js"
     "harness188 60 node harness188.js"
     "harness144 90 node harness144.js"
     "harness139 90 node harness139.js"

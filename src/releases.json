@@ -13,6 +13,14 @@
       "where": "Assistant, Setup and files, Planning skills."
     },
     {
+      "kind": "new",
+      "area": "Assistant",
+      "title": "Use an assistant you can only paste into",
+      "before": "With Copilot or another assistant that can't read files, you could ask questions about the plan, but there was no way to bring its suggested changes back.",
+      "now": "Copy for my assistant gives it the planning skill and the plan's data. Paste what you heard or your question after it, then choose Paste proposed changes and paste its reply. Each change opens for your review; nothing applies on its own.",
+      "where": "Assistant, Setup and files, Use any AI assistant."
+    },
+    {
       "kind": "fixed",
       "area": "Assistant",
       "title": "What the team heard always waits for you",
