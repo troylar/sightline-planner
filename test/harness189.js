@@ -152,6 +152,19 @@ async function page(){
       const out = {okA, okB, note, status:$('#status') ? $('#status').textContent : '', DL};
       file.handle = null; file.dirty = false; return JSON.stringify(out); })()`));
     ok('R4c a refused save drops its work-order note, so a later save doesn\'t repeat it', rf.okA === false && rf.okB === true && rf.note === '' && !/work order/.test(rf.status) && rf.DL.filter(x=>x === 'backup-mine').length === 1, JSON.stringify(rf));
+    // R4d: the same save also changed something a teammate deleted: one backup of mine, and the note isn't left for later.
+    const gn = JSON.parse(await w.eval(`(async()=>{ DL.length = 0; mergeNote = '';
+      const mine = clone(planOfRecord(S)); mine.meta.workOrder = ['A', 'C']; const base = serialize(mine, 'p.json');
+      const theirs = clone(mine); theirs.meta.workOrder = ['C', 'A', 'B']; theirs.bars = theirs.bars.filter(b=>b.id !== 'P1'); theirs.meta.revision = (mine.meta.revision || 0) + 5;
+      const hd = {name:'p.json', text:serialize(theirs, 'p.json'), async queryPermission(){ return 'granted'; }, async requestPermission(){ return 'granted'; },
+        async getFile(){ const t = hd.text; return {size:t.length, lastModified:1, text:async()=>t}; }, async createWritable(){ let x = ''; return {async write(v){ x = v; }, async abort(){}, async close(){ hd.text = x; }}; }};
+      S = normalize(mine, false); file.handle = hd; file.baseText = base; file.baseHash = hashText(base); file.holdLock = false; file.dirty = true; locked = false;
+      const okA = await quickSave('work order', null, 0, [{op:'set', type:'meta', id:'meta', field:'workOrder', prev:['A', 'C'], value:['B', 'C', 'A']},
+        {op:'set', type:'bars', id:'P1', field:'label', prev:'P1', value:'P1 renamed'}], false, true);
+      const out = {okA, note:mergeNote, status:$('#status') ? $('#status').textContent : '', DL};
+      file.handle = null; file.dirty = false; return JSON.stringify(out); })()`));
+    ok('R4d a lost reorder in a save that also touched a deleted item downloads mine once and says both, leaving no note behind',
+      gn.DL.filter(x=>x === 'backup-mine').length === 1 && gn.note === '' && /removed something/.test(gn.status) && /work order too/.test(gn.status), JSON.stringify(gn));
     ok('Z1 no page errors', !w.errors.length, w.errors.join(' | '));
 
     // End to end: an app's batch at routine and all. The order and a priority are held; a routine risk applies.

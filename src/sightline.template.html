@@ -4284,7 +4284,7 @@ function quickSave(what, mutate, tries = 0, ops = null, isUndo = false, fromSayg
     if (!ok || !checkWritable(S)){ installPlan(plan, now, hd); sel = keepSel;
       if (ops && !ok && !changed){                            // nothing to write: already in the file, or its item is gone
         const gone = ops.filter(o=>(o.op === "set" || o.op === "del") && o.type !== "meta" && o.field !== "edited" && o.field !== "added" && !syncEntities(plan, o.type).some(y=>y.id === o.id));
-        if (gone.length && mineS){ render(); backup(mineS, "mine"); setStatus(`A teammate removed ${gone.length === 1 ? "something" : gone.length + " things"} you had changed, so your change couldn't be saved. Your version was downloaded as a backup.`); }
+        if (gone.length && mineS){ render(); if (!woBacked) backup(mineS, "mine"); setStatus(withMergeNote(`A teammate removed ${gone.length === 1 ? "something" : gone.length + " things"} you had changed, so your change couldn't be saved. Your version was downloaded as a backup.`)); }
         else { planChanged("quick"); setStatus(withMergeNote(`Saved to local file: ${what}`)); }
         return true; }
       render(); return false; }                                         // refused (a blackout, a limit): the edit stays unsaved here
