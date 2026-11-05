@@ -57,6 +57,14 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     r = run("guidance.del", {id:"gd-cost"});
     ok("A7 removing an entry takes it out of the decisions that cited it", r.ok && !J(`S.guidance.some(g=>g.id === "gd-cost")`) && !J(`"guidance" in S.decisions.find(x=>x.id === "dec-cite")`));
 
+    X(`S = normalize(JSON.parse(RAW), false);`); r = run("guidance.set", {id:"gd-cost", field:"from", value:day(30)});
+    ok("A8 the start isn't edited in place: a new entry replaces it", !r.ok && /add a new entry that replaces it/.test(r.reason), r.reason);
+    X(`S = normalize(JSON.parse(RAW), false); S.guidance.push({id:"gd-b", text:"B"}, {id:"gd-c", text:"C"}); S = normalize(S, false);`);
+    const mg = J(`(()=>{ const base = planOfRecord(S), mine = clone(base), theirs = clone(base);
+      mine.decisions.find(x=>x.id === "dec-cite").guidance = ["gd-cost", "gd-b"]; theirs.decisions.find(x=>x.id === "dec-cite").guidance = ["gd-cost", "gd-c"];
+      const m = mergePlans(base, mine, theirs); return m && [m.plan.decisions.find(x=>x.id === "dec-cite").guidance, (m.kept || []).length]; })()`);
+    ok("A9 two people citing different guidance on one decision both keep theirs, with no clash", Array.isArray(mg) && ["gd-cost", "gd-b", "gd-c"].every(id=>mg[0].includes(id)) && mg[1] === 0, JSON.stringify(mg));
+
     // ---- an app's changes always wait ----
     X(`S = normalize(JSON.parse(RAW), false); resetHistory();`);
     const risk = ops => X(`amRiskOf({ops:${JSON.stringify(ops)}})`), why = ops => X(`amFloorWhy({ops:${JSON.stringify(ops)}})`), op = (action, args) => ({op:"action", action, args});
@@ -81,7 +89,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     const sec = () => d.getElementById("gdSec"), li = id => d.querySelector(`#gdSec [data-gd="${id}"]`);
     ok("U1 What matters now sits above the work order, with the entry, its why, scope, dates and how many decisions cited it",
       !!sec() && /What matters now/.test(sec().querySelector("h3").textContent) && !!li("gd-cost") && /Reduce cloud cost/.test(li("gd-cost").textContent) && /Why: Budget review/.test(li("gd-cost").textContent)
-      && /cited by 1 decision/.test(li("gd-cost").textContent) && (!d.getElementById("fcOrderSec") || (sec().compareDocumentPosition(d.getElementById("fcOrderSec")) & 4)), sec() ? sec().textContent.slice(0, 200) : "none");
+      && /Cited by a decision/.test(li("gd-cost").textContent) && (!d.getElementById("fcOrderSec") || (sec().compareDocumentPosition(d.getElementById("fcOrderSec")) & 4)), sec() ? sec().textContent.slice(0, 200) : "none");
     X(`present = true; renderForecastWs();`); await wait(10);
     ok("U2 read-only: no buttons", !sec().querySelector("[data-gdbtn]"));
     X(`present = false; renderForecastWs();`); await wait(10);
@@ -94,17 +102,22 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     const added = J(`S.guidance.find(g=>g.text === "Keep support load low")`);
     ok("U5 Add saves the entry for the whole plan, stamped with who set it, and says so", added && added.why === "Two people out" && added.through === day(40) && !added.lanes && !!added.added && /Added "Keep support load low"/.test(status()) && !d.getElementById("gdForm"), JSON.stringify(added));
     li("gd-cost").querySelector('[data-gdbtn="edit"]').click(); await wait(10);
-    ok("U6 Edit shows the scope as text: changing it means Replace", !d.querySelector("#gdForm #gdLanes") && /use Replace/.test(d.getElementById("gdForm").textContent));
+    ok("U6 Edit shows the scope and start as text: changing them means Replace", !d.querySelector("#gdForm #gdLanes") && !d.getElementById("gdFrom") && /when it starts .* use Replace/.test(d.getElementById("gdForm").textContent) && /Covers: .*, from /.test(d.getElementById("gdForm").textContent));
     d.getElementById("gdText").value = "Reduce cloud spend"; d.getElementById("gdSave").click(); await wait(10);
     ok("U7 Edit changes the wording in place, keeping the id and the citation", J(`S.guidance.find(g=>g.id === "gd-cost").text`) === "Reduce cloud spend" && J(`S.decisions.find(x=>x.id === "dec-cite").guidance[0]`) === "gd-cost" && d.activeElement === li("gd-cost").querySelector('[data-gdbtn="edit"]'));
     li("gd-cost").querySelector('[data-gdbtn="end"]').click(); await wait(10);
-    ok("U8 End today ends it today (still active until tonight) and says decisions that cited it are listed", J(`S.guidance.find(g=>g.id === "gd-cost").through`) === day(0) && J(`guidanceState(S.guidance.find(g=>g.id === "gd-cost")).state`) === "active" && /ended today/.test(status()), status());
+    ok("U8 End today ends it today (still active until tonight) and asks to check the decisions that cited it", J(`S.guidance.find(g=>g.id === "gd-cost").through`) === day(0) && J(`guidanceState(S.guidance.find(g=>g.id === "gd-cost")).state`) === "active" && /ends today\. Check whether the decisions that cited it still hold/.test(status()), status());
+    ok("R1 an entry that ends today shows it, and offers no second End today or Replace", /ends today/.test(li("gd-cost").textContent) && !li("gd-cost").querySelector('[data-gdbtn="end"]') && !li("gd-cost").querySelector('[data-gdbtn="replace"]') && !!li("gd-cost").querySelector('[data-gdbtn="edit"]'));
+    const cite = li("gd-cost").querySelector('[data-gdcite="dec-cite"]');
+    ok("R2 the decisions that cited it are named, and open the decision", !!cite && /Pause the reporting work/.test(cite.textContent) && /Cited by a decision/.test(li("gd-cost").textContent));
     X(`S.guidance.find(g=>g.id === "gd-cost").through = dayToIso(todayDay() - 1); renderForecastWs();`); await wait(10);
     ok("U9 an ended entry is listed under Ended, not with what matters now", !!d.querySelector('#gdEnded [data-gd="gd-cost"]') && !d.querySelector('#gdList [data-gd="gd-cost"]'));
     const nid = J(`S.guidance.find(g=>g.text === "Keep support load low").id`);
     li(nid).querySelector('[data-gdbtn="replace"]').click(); await wait(10);
     d.getElementById("gdText").value = "Keep support load under a day a week"; d.getElementById("gdSave").click(); await wait(10);
     const rep = J(`S.guidance.find(g=>g.supersedes === ${JSON.stringify(nid)})`), was = J(`S.guidance.find(g=>g.id === ${JSON.stringify(nid)})`);
+    ok("R3 a replaced entry offers no second Replace and says what replaced it", !!li(nid) && !li(nid).querySelector('[data-gdbtn="replace"]') && /replaced by "Keep support load under a day a week"/.test(li(nid).textContent));
+    ok("R4 replacing the same entry twice is refused, naming what replaced it", (r => !r.ok && /already replaced by "Keep support load under/.test(r.reason))(J(`runAction(S, "guidance.add", {text:"Another", supersedes:${JSON.stringify(nid)}})`)));
     ok("U10 Replace adds a new entry naming the old one, which ends today and stays as history", rep && rep.text === "Keep support load under a day a week" && was.through === day(0) && /replaces/.test(status()), JSON.stringify([rep, was]));
     li(rep.id).querySelector('[data-gdbtn="remove"]').click(); await wait(10);
     ok("U11 Remove takes it out, says Undo brings it back, and Undo does", !J(`S.guidance.some(g=>g.id === ${JSON.stringify(rep.id)})`) && /Undo brings it back/.test(status())
