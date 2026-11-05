@@ -21,6 +21,13 @@
       "where": "Assistant, Setup and files, Use any AI assistant."
     },
     {
+      "kind": "new",
+      "area": "Today",
+      "title": "Sightline noticed",
+      "now": "Today opens with up to three things worth a look, worked out from the plan: a request that keeps coming up and where its work sits in the order, work near the top of the order with no estimate, and committed work queued behind work that's only if there's room. Each one opens what it's about. Nothing is changed or saved.",
+      "where": "Today, at the top."
+    },
+    {
       "kind": "fixed",
       "area": "Assistant",
       "title": "What the team heard always waits for you",

@@ -10,6 +10,7 @@ Tell your AI assistant what you heard.
 
 - **One skill takes anything you paste** (Assistant). Start with the sightline-plan skill and paste anything: notes, emails, bug reports, ideas, a leader's priorities or a question. It sorts each piece, answers what you asked, prepares changes for you to review, and can prep a grooming agenda or draft a Jira issue in its reply. A priority someone states is recorded as their request; the work order only changes when you decide. *Where:* Assistant, Setup and files, Planning skills.
 - **Use an assistant you can only paste into** (Assistant). Copy for my assistant gives it the planning skill and the plan's data. Paste what you heard or your question after it, then choose Paste proposed changes and paste its reply. Each change opens for your review; nothing applies on its own. *Where:* Assistant, Setup and files, Use any AI assistant.
+- **Sightline noticed** (Today). Today opens with up to three things worth a look, worked out from the plan: a request that keeps coming up and where its work sits in the order, work near the top of the order with no estimate, and committed work queued behind work that's only if there's room. Each one opens what it's about. Nothing is changed or saved. *Where:* Today, at the top.
 
 ### Fixed
 

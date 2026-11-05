@@ -615,7 +615,7 @@ body.presenting #filterBtn,body.presenting #viewSave{display:none!important}
 @media (max-width:900px){.tgrid{grid-template-columns:1fr}}
 .tcol{display:flex;flex-direction:column;gap:12px;min-width:0}
 .tsec{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:10px 12px}
-.tsec.bad{border-left:4px solid var(--bad)} .tsec.warn{border-left:4px solid var(--warn)} .tsec.good{border-left:4px solid var(--good,#3a8a5a)}
+.tsec.tnoticed{border-left:4px solid var(--accent)} .tsec.bad{border-left:4px solid var(--bad)} .tsec.warn{border-left:4px solid var(--warn)} .tsec.good{border-left:4px solid var(--good,#3a8a5a)}
 .repbar{display:flex;gap:8px;margin:8px 0;flex-wrap:wrap;align-items:center}.repbar label{margin-right:2px;font-weight:600}.repsecs{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}.repsec textarea{width:100%;box-sizing:border-box;font:inherit;font-size:13px}.reppast{margin-top:18px}.repfrozen{white-space:pre-wrap;background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:10px;font:inherit;font-size:13px;max-width:80ch}#repTable td.acts{display:flex;gap:6px;justify-content:flex-end}
 .bwclist{list-style:none;margin:6px 0 10px;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px}.bwc{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}.bwc-ic{width:16px;text-align:center;font-weight:700}.bwc.ok .bwc-ic{color:var(--ok)}.bwc.warn .bwc-ic{color:var(--warn,#b26b00)}.bwcgo{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.bwcgo input{flex:1;min-width:220px;max-width:560px}.bwcrec p{margin:4px 0}.bwcw>header .seg{margin-left:auto}
 .amedit{margin:8px 0;padding:8px;border:1px solid var(--rule);border-radius:6px;display:flex;flex-direction:column;gap:8px}.amop{border:0;padding:0;margin:0;display:grid;gap:6px}.amop legend{font-weight:600;font-size:12.5px;margin-bottom:2px}.amf input,.amf textarea,.amf select{width:100%;box-sizing:border-box;font:inherit}
@@ -16392,6 +16392,28 @@ function todaySummary(D, scope){
     h("div",{class:"tsum-col tsum-go"}, h("h3",{}, "Go to"), h("div",{class:"tsum-acts"},
       h("button",{type:"button",class:"btn",onclick:()=>goWs("roadmap")}, "Roadmap"), h("button",{type:"button",class:"btn",onclick:()=>goWs("standup")}, "Sprint"), h("button",{type:"button",class:"btn",onclick:()=>goWs("timeline")}, "Timeline"))));
 }
+// Sightline noticed: up to three things worth a look, computed from the plan on every draw and never stored. Each says
+// what it saw in counts it can stand behind ("came up 3 times", not "3 people want it") and opens the item it's about.
+const NOTICE_DAYS = 14, NOTICE_TOP = 5;
+function noticed(p = S, t0 = todayDay()){ const out = [], since = t0 - NOTICE_DAYS, wo = woList(p), bar = id => (p.bars || []).find(b=>b.id === id);
+  const inWin = iso => validIso(iso) && isoToDay(iso) >= since && isoToDay(iso) <= t0, nth = n => n + (n % 10 === 1 && n % 100 !== 11 ? "st" : n % 10 === 2 && n % 100 !== 12 ? "nd" : n % 10 === 3 && n % 100 !== 13 ? "rd" : "th");
+  const heard = (p.deliverables || []).filter(d=>d.capture && d.stage !== "dropped").map(d=>({d, n:(inWin(d.raised) ? 1 : 0) + (d.raisedAgain || []).filter(x=>inWin(x.raised)).length}))
+    .filter(x=>x.n >= 2).sort((a, b)=>b.n - a.n || a.d.name.localeCompare(b.d.name));
+  if (heard.length){ const {d, n} = heard[0], to = d.handoff && d.handoff.to === "initiative" ? bar(d.handoff.id) : null, at = to ? wo.indexOf(to.id) : -1;
+    out.push({kind:"heard", type:"deliverable", id:d.id, text:`"${cutText(d.name, 80)}" came up ${n} times in the last two weeks` +
+      (to ? (at >= 0 ? `. Its work is ${nth(at + 1)} in the work order.` : ". Its work isn't in the work order.") : d.handoff ? "." : ". It isn't connected to any work yet.")}); }
+  const top = wo.slice(0, NOTICE_TOP).map(bar).filter(b=>b && b.scope !== "out"), bare = top.filter(b=>{ const e = effortOf(b, p); return !e || e.missing > 0; });
+  if (bare.length) out.push({kind:"estimate", type:"bar", id:bare[0].id, text:bare.length === 1 ? `"${cutText(barTitle(bare[0]), 80)}" is ${nth(wo.indexOf(bare[0].id) + 1)} in the work order and has no estimate yet, so the forecast can't place it.`
+    : `${bare.length} of the first ${top.length} in the work order have no estimate yet, so the forecast can't place them.`});
+  const cls = b => { const cs = (b.delivers || []).map(id=>((p.deliverables || []).find(d=>d.id === id) || {}).class).filter(Boolean); return cs.includes("rock") ? "rock" : cs.length && cs.every(c=>c === "sand") ? "sand" : ""; };
+  const ordered = wo.map(bar).filter(Boolean), firstSand = ordered.findIndex(b=>cls(b) === "sand"), rock = firstSand < 0 ? null : ordered.slice(firstSand + 1).find(b=>cls(b) === "rock");
+  if (rock) out.push({kind:"order", type:"bar", id:rock.id, text:`"${cutText(barTitle(rock), 80)}" delivers something the team committed to, but comes after "${cutText(barTitle(ordered[firstSand]), 80)}", which is only if there's room.`});
+  return out.slice(0, 3); }
+function noticedSection(){ if (tooNew()) return null; const xs = noticed(); if (!xs.length) return null;
+  return h("section",{class:"tsec tnoticed","data-tsec":"Sightline noticed","aria-labelledby":"tNoticedH"},
+    h("header",{}, h("h3",{id:"tNoticedH"}, icon("star"), "Sightline noticed"), h("span",{class:"hint"}, "Worked out from the plan just now. Nothing was changed.")),
+    h("ul",{}, ...xs.map(x=>h("li",{class:"trow","data-notice":x.kind}, h("div",{class:"tmain"}, h("span",{}, x.text)),
+      h("div",{class:"tacts"}, h("button",{type:"button",class:"btn sm",onclick:()=>goTo(x.type, x.id)}, x.type === "deliverable" ? "Show the request" : "Show it")))))); }
 function renderToday(){
   const host = $("#today"); if (!host) return;
   const D = todayData(), scope = todayScope(), me = meId(), t0 = D.t0, hs = HS(), assessment = todayAssessment();
@@ -16432,6 +16454,7 @@ function renderToday(){
         h("button",{type:"button","aria-pressed":String(scope==="me"),id:"tMe",onclick:()=>{ if (!me){ whoAmI(null, ()=>{ UI.todayScope = "me"; saveUI(); render(); }); return; } UI.todayScope = "me"; saveUI(); render(); }}, me ? "Mine" : "Mine…"),
         h("button",{type:"button","aria-pressed":String(scope==="team"),id:"tTeam",onclick:()=>{ UI.todayScope = "team"; saveUI(); render(); }},"Team"))),
     todaySummary(D, scope),
+    noticedSection(),
     h("div",{class:"tgrid"},
       h("div",{class:"tcol"},
         ...(()=>{ const secs = [section("flag", "Escalate", "Risks and decisions past their escalate-by date, and decisions past when they were needed", D.escalate.map(e=>{ const x = e.x, over = Math.max(0, workBetween(e.by + 1, t0, hs));

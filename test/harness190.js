@@ -60,6 +60,29 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     d.getElementById("pasteClose").click(); await wait(10);
     const ok1 = await X(`amApply(["plain"])`); await wait(20);
     ok("P9 applying one adds it to the plan, the way a changes file would", ok1 === true && !!J("(S.deliverables || []).find(x=>x.id === 'dv-usage')") && !J("(S.deliverables || []).find(x=>x.id === 'dv-focus')"));
+
+    // ---- Sightline noticed: computed on every draw, at most three, never stored ----
+    X(`AM = null; amMemo = null; S = normalize(JSON.parse(FIX), false); resetHistory(); sel = null; UI.ws = "today"; UI.todayScope = "team"; render();`); await wait(10);
+    ok("N1 a plan with nothing to notice shows no section", J("noticed()").length === 0 && !d.querySelector("#today [data-tsec='Sightline noticed']"), JSON.stringify(J("noticed()")));
+    X(`(()=>{ const t = todayDay(), iso = n => dayToIso(t - n);
+      S.deliverables = [{id:"dv-x", name:"Exports drop cents", stage:"idea", capture:"request", raised:iso(3), raisedAgain:[{id:"a1", raised:iso(1)}, {id:"a2", raised:iso(2)}, {id:"a3", raised:iso(40)}]},
+        {id:"dv-y", name:"Once only", stage:"idea", capture:"idea", raised:iso(1)},
+        {id:"dv-rock", name:"Renewal", stage:"planned", target:"2027", class:"rock"}, {id:"dv-sand", name:"Nice to have", stage:"idea", class:"sand"}];
+      S.bars.find(b=>b.id === "c1").delivers = ["dv-sand"]; S.bars.find(b=>b.id === "c2").delivers = ["dv-rock"];
+      S.bars.forEach(b=>{ delete b.effort; }); S.bars.find(b=>b.id === "c1").effort = {low:2, likely:3, high:5};
+      S.meta.workOrder = ["c1", "c3", "c2"]; S = normalize(S, false); render(); })()`); await wait(10);
+    const N = J("noticed()");
+    ok("N2 a request that came up 3 times in two weeks is noticed, counting mentions (not people) and ignoring an old one", N[0] && N[0].kind === "heard" && N[0].text === '"Exports drop cents" came up 3 times in the last two weeks. It isn\'t connected to any work yet.', JSON.stringify(N[0]));
+    ok("N3 work near the top of the order with no estimate is noticed", N.some(x=>x.kind === "estimate" && /^2 of the first 3 in the work order have no estimate yet/.test(x.text)), JSON.stringify(N));
+    ok("N4 committed work after work that's only if there's room is noticed, naming both", N.some(x=>x.kind === "order" && x.id === "c2" && /comes after/.test(x.text)), JSON.stringify(N));
+    X(`S.deliverables[0].handoff = {to:"initiative", id:"c2"}; render();`); await wait(5);
+    ok("N5 a request handed off to work says where that work is in the order", /Its work is 3rd in the work order\./.test(J("noticed()")[0].text), J("noticed()")[0].text);
+    const nsec = d.querySelector("#today [data-tsec='Sightline noticed']");
+    ok("N6 Today shows them first, at most three, each with a button to open it", !!nsec && nsec === d.querySelector("#today .tsec") && nsec.querySelectorAll("li").length === 3 && J("noticed()").length <= 3);
+    const kept = X("JSON.stringify(planOfRecord(S))"); J("noticed()"); X("UI.ws = 'today'; render(); UI.ws = 'timeline'; render(); UI.ws = 'today'; render();"); await wait(5);
+    ok("N8 noticing changes nothing in the plan", X("JSON.stringify(planOfRecord(S))") === kept);
+    d.querySelector("#today [data-tsec='Sightline noticed'] [data-notice='heard'] button").click(); await wait(10);
+    ok("N7 Show the request opens it", X("UI.ws") === "roadmap" && J("sel") && J("sel").type === "deliverable" && J("sel").id === "dv-x", JSON.stringify(J("sel")));
     ok("Z1 no page errors", !w.errs.length, w.errs.join(" | "));
   } catch(e){ ok("harness ran without throwing", false, e.stack); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
