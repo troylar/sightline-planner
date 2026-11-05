@@ -15387,7 +15387,7 @@ function pastedAmendments(text){ const t = String(text || ""), blocks = [...t.ma
 function openPasteChanges(){
   const existing = document.getElementById("dlgPaste"); if (existing){ existing.querySelector("textarea")?.focus(); return; }
   const opener = document.activeElement;
-  const box = h("textarea",{id:"pasteBox",rows:"10","aria-label":"Your assistant's reply",placeholder:"Paste your assistant's whole reply, or just its JSON block.",style:{width:"100%"}});
+  const box = h("textarea",{id:"pasteBox",rows:"10","aria-label":"Your assistant's reply",placeholder:"Paste your assistant's whole reply, or just its JSON block.",style:{width:"100%",height:"12em",minHeight:"6em",resize:"vertical"}});
   const note = h("p",{id:"pasteStatus",role:"status","aria-live":"polite",class:"hint"}, "Nothing is applied here: each change opens for your review.");
   const go = h("button",{type:"button",class:"btn primary",id:"pasteReview",onclick:()=>{ const r = reviewPastedChanges(box.value); if (r === true) dialog.close(); else { note.textContent = r; box.focus(); } }},"Review these changes");
   const dialog = h("dialog",{id:"dlgPaste","aria-labelledby":"pasteTitle",style:{maxWidth:"680px",width:"calc(100% - 48px)"}},
