@@ -138,6 +138,25 @@ Each principle is a test a change can pass or fail.
     can open it. A link's title and address are shared plan content (principle 11): people don't add a link that
     grants access to whoever holds it, or a title the team wouldn't say in the room. The page warns when an address
     looks like one (it carries a signature or token) but can't always tell.
+21. **What matters now is written down, dated and owned.** Standing priorities ("for Q1, focus on reducing cost") are
+    part of the plan's planning guide: a statement, why, which workstreams it covers, when it starts and ends, when to
+    review it, who set it and what it replaces. People set them; an app's addition, edit or removal always waits for a
+    person. They inform judgment and never move anything by themselves. A rule the schedule must obey (wait for a
+    sign-off, a date from outside) belongs in the schedule as a gate or milestone, not in guidance text.
+22. **Explain, don't score.** Sightline computes facts: which guidance applies to an item, what's committed, due,
+    estimated or missing, and what a different order would push back. It never computes a priority score. Assistants
+    recommend with reasons a person can check, and the work order, commitments and outcome priority stay separate
+    human choices. Guidance that conflicts is shown as a conflict, never settled by which is newer, narrower or from a
+    more senior title. An explanation separates what a decision recorded at the time from what today's guidance would
+    suggest: guidance never explains a decision it wasn't part of.
+23. **Guidance ends without undoing anything.** When guidance ends, it stops shaping new recommendations and asks for
+    a review of the decisions that cited it. It never reorders work, reverses a decision or releases a commitment, and
+    it stays readable as history. Changing what a guidance entry means makes a new entry that replaces it.
+24. **Whose input to seek, not how much a person counts.** Guidance can say whose recommendation to seek in an area and
+    who decides ("for infrastructure spend, seek Casey's recommendation; the product owner decides"), with its reason
+    and scope. It is reported plan context, not verified authority or access control, and never a weight on a person:
+    their reports aren't multiplied and nobody else's are discounted. The page says "whose input to seek" and "who
+    decides", never "trusted" or "weight".
 
 ## Who owns what
 
@@ -169,6 +188,8 @@ Each principle is a test a change can pass or fail.
 | Drafted tracker items | Plan | Sightline; a person creates the item in the tracker | "Draft, not in the tracker yet" until its key is recorded |
 | Links to documents and messages | Plan (the link); the source (the document and who may open it) | Sightline (the link); the source (the document) | Title, host and when it was added; opens in the source |
 | What a capture's evidence adds up to, and what's due for review | Computed by Sightline from the plan | Inputs in Sightline | Reports, people, channels and span; "Still true?" |
+| What matters now: dated guidance, its scope, why, who set it, review date and what it replaces | Plan | Sightline | Added here, with who set it; upcoming, active or ended, and review due |
+| Which guidance applies to an item, and which decisions cited it | Computed by Sightline from the plan | Inputs in Sightline | Named guidance with its dates; history kept when it ends |
 | What a new ask would push out (the jar) | Computed by Sightline from the plan's inputs and the tracker's facts | Inputs in the tracker and Sightline | "What-if: not the plan", with what isn't estimated |
 
 ## People on the wall
@@ -253,6 +274,12 @@ Everything above is input. Two moments turn it into a decision.
   what fits.
 - **The work order is its own thing.** It's what the forecast follows, set by people, separate from where items sit on
   the chart and from the tracker's own priority field, which stays the tracker's fact.
+- **What matters now.** A team says what it's weighing this period, in plain words, with dates. Asked "why is X above
+  Y?", an assistant cites the reasons the decision recorded, then, separately, what current guidance would suggest.
+  Asked to "focus on cost", it proposes the guidance entry for review and, as its own change, an order to compare.
+  The money, deadlines and confidence behind a decision are short evidence with links to their sources; contracts
+  and financial models stay where they live. Sightline holds what's needed to explain the plan, and says how fresh
+  each part is.
 - **One set of instructions.** The team's assistants use the same shared skills (what should I work on, capture what I
   heard, triage this ask, can we promise this) and the plan's own planning guide, so their reasoning can be compared.
   Each cites the items it relied on.
