@@ -1845,6 +1845,9 @@ ACTIONS = {
     "workstream.del": ({"id": "id"}, False),
     "guide.set": ({"section": "str", "value": "str"}, True),
     "guide.setWorkstream": ({"lane": "id", "value": "str"}, True),
+    "guidance.add": ({"id": "id?", "text": "str", "why": "str?", "lanes": "ids?", "from": "iso?", "through": "iso?", "reviewOn": "iso?", "supersedes": "id?"}, False),
+    "guidance.set": ({"id": "id", "field": "str", "value": "str"}, True),
+    "guidance.del": ({"id": "id"}, False),
     "template.set": ({"kind": "str", "value": "str"}, True),
     "skill.add": ({"id": "id", "label": "str"}, False),
     "skill.rename": ({"id": "id", "label": "str"}, True),
@@ -1885,7 +1888,7 @@ ACTIONS = {
     "risk.add": ({"id": "id?", "text": "str", "sev": "any?", "state": "any?", "owners": "any?", "item": "any?", "next": "any?", "waitingOn": "any?", "escalateBy": "any?", "aiHint": "any?"}, False),
     "risk.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "risk.del": ({"id": "id"}, False),
-    "decision.add": ({"id": "id?", "text": "str", "state": "any?", "owners": "any?", "item": "any?", "due": "any?", "decider": "any?", "next": "any?", "waitingOn": "any?", "escalateBy": "any?", "aiHint": "any?"}, False),
+    "decision.add": ({"id": "id?", "text": "str", "state": "any?", "owners": "any?", "item": "any?", "due": "any?", "decider": "any?", "next": "any?", "waitingOn": "any?", "escalateBy": "any?", "aiHint": "any?", "guidance": "any?"}, False),
     "decision.set": ({"id": "id", "field": "str", "value": "any"}, True),
     "decision.del": ({"id": "id"}, False),
 }
