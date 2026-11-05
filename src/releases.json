@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.181.2",
+  "date": "2026-11-04",
+  "headline": "One backup when a quick save meets two clashes",
+  "changes": [
+    {
+      "kind": "fixed",
+      "area": "Capacity",
+      "title": "One backup, one message, when two clashes meet in a save",
+      "before": "If a teammate had both reordered the work and deleted something you changed, your version downloaded twice, and the work order note could appear again on a later save.",
+      "now": "Your version downloads once, and the message names both clashes on that save only.",
+      "where": "Capacity, Forecast, Work order, with Save as you go."
+    }
+  ]
+},
+{
   "version": "1.181.1",
   "date": "2026-11-04",
   "headline": "Clearer notes when two people reorder",
