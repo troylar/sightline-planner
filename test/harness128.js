@@ -220,7 +220,10 @@ const byId = (rs, id) => rs.find(r=>r.id === id) || {};
         Q.ev(`S.deliverables = S.deliverables.filter(x=>x.id !== "dv-plain"); render();`); }
       const r = k => Q.ev(`amRiskOf({ops:[${k}]})`);
       ok("W4 a raw Jira link on a capture is always reviewed; on an ordinary outcome it isn't", r(`{op:"link", type:"deliverable", id:"dv-heard", jira:["ABC-7"]}`) === "floor" && r(`{op:"link", type:"deliverable", id:"dv-none", jira:["ABC-7"]}`) === "routine");
-      ok("W5 clearing a capture type isn't a capture; an ordinary outcome.add stays routine", r(`{op:"action", action:"outcome.set", args:{id:"dv-heard", field:"capture", value:""}}`) === "routine" && r(`{op:"action", action:"outcome.add", args:{name:"x"}}`) === "routine");
+      ok("W5 turning a capture back into an ordinary outcome waits too; an ordinary outcome.add stays routine", r(`{op:"action", action:"outcome.set", args:{id:"dv-heard", field:"capture", value:""}}`) === "floor" && r(`{op:"action", action:"outcome.add", args:{name:"x"}}`) === "routine");
+      ok("W7 linking work to a capture, or changing who raised it, when or where, waits; settling it (drop, reopen) stays routine",
+        r(`{op:"action", action:"initiative.delivers.add", args:{id:"c1", outcome:"dv-heard"}}`) === "floor" && ["askedBy","raised","source"].every(f=>r(`{op:"action", action:"outcome.set", args:{id:"dv-heard", field:"${f}", value:null}}`) === "floor")
+        && r(`{op:"action", action:"outcome.set", args:{id:"dv-heard", field:"name", value:"x"}}`) === "routine" && r(`{op:"action", action:"outcome.drop", args:{id:"dv-heard", reason:"x"}}`) === "routine");
       ok("W6 no page errors on the second page", !Q.w.errs.length, Q.w.errs.join(" | ")); }
     ok("Z3 no page errors", !w.errs.length, w.errs.join(" | "));
   } catch(e){ ok("harness ran without throwing", false, e.stack); }

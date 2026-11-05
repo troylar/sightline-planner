@@ -83,6 +83,25 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("N8 noticing changes nothing in the plan", X("JSON.stringify(planOfRecord(S))") === kept);
     d.querySelector("#today [data-tsec='Sightline noticed'] [data-notice='heard'] button").click(); await wait(10);
     ok("N7 Show the request opens it", X("UI.ws") === "roadmap" && J("sel") && J("sel").type === "deliverable" && J("sel").id === "dv-x", JSON.stringify(J("sel")));
+    // finished, parked and Jira-dated work isn't open work: never "no estimate", never "comes after", numbered like the list
+    X(`(()=>{ S.deliverables = [{id:"dv-rock", name:"Renewal", stage:"planned", target:"2027", class:"rock"}, {id:"dv-sand", name:"Nice to have", stage:"idea", class:"sand"}];
+      S.bars.forEach(b=>{ delete b.effort; delete b.delivers; });
+      const c1 = S.bars.find(b=>b.id === "c1"), c2 = S.bars.find(b=>b.id === "c2"), c3 = S.bars.find(b=>b.id === "c3");
+      c1.status = "done"; c1.delivers = ["dv-sand"]; c3.parked = true; c2.delivers = ["dv-rock"]; c2.effort = {low:1, likely:2, high:3};
+      S.meta.workOrder = ["c1", "c3", "c2"]; S = normalize(S, false); render(); })()`); await wait(5);
+    const Q = J("noticed()");
+    ok("Q1 done and parked work near the top of the order isn't called unestimated", !Q.some(x=>x.kind === "estimate"), JSON.stringify(Q));
+    ok("Q2 committed work after a finished if-there's-room item isn't flagged", !Q.some(x=>x.kind === "order"), JSON.stringify(Q));
+    X(`(()=>{ delete S.bars.find(b=>b.id === "c2").effort; S.deliverables.push({id:"dv-h", name:"Heard", stage:"idea", capture:"idea", raised:dayToIso(todayDay() - 1), raisedAgain:[{id:"x1", raised:dayToIso(todayDay())}], handoff:{to:"initiative", id:"c2"}}); render(); })()`); await wait(5);
+    const Q3 = J("noticed()");
+    ok("Q3 places are counted among open work, as the Work order list numbers them", Q3.some(x=>x.kind === "heard" && /Its work is 1st in the work order\./.test(x.text)) && Q3.some(x=>x.kind === "estimate" && /is 1st in the work order and has no estimate/.test(x.text)), JSON.stringify(Q3));
+    // closing a pasted batch keeps saved connections
+    X(`(()=>{ AM = null; amMemo = null; sel = {type:"amend", id:"x"}; render(); window.__del = []; const kd = kvDel; kvDel = k=>{ __del.push(k); return kd(k); }; })()`);
+    r = await open(reply([{id:"plain2", summary:"Add a note outcome", ops:[{op:"action", action:"outcome.add", args:{id:"dv-n2", name:"Notes"}}]}], {batchId:"paste-3"}).replace(/"planRevision":\d+/, `"planRevision":${X("S.meta.revision || 0")}`));
+    const closeBtn = d.getElementById("amDisconnect");
+    ok("C6 a pasted batch offers Close pasted changes and no Refresh", !!closeBtn && closeBtn.textContent === "Close pasted changes" && !d.getElementById("amRefresh"));
+    closeBtn.click(); await wait(10);
+    ok("C7 closing it forgets the paste, never a saved folder or file connection", X("AM") === null && J("__del").length === 0 && /Closed the pasted changes/.test(status()), JSON.stringify(J("__del")) + status());
     ok("Z1 no page errors", !w.errs.length, w.errs.join(" | "));
   } catch(e){ ok("harness ran without throwing", false, e.stack); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
