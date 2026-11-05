@@ -60,7 +60,7 @@ const HOSTILE = '<img src=x onerror="window.pwned=1"> Support desk';
     const un = T(`(()=>{ const p = clone(Q); RA(p, 'outcome.unraise', {id:'dv-c1', ask:'ask-nope'}); return [p.deliverables[0].raisedAgain.length, RA(Q, 'outcome.unraise', {id:'dv-c1', ask:'ask-a'}), Q.deliverables[0]]; })()`);
     ok("A3 outcome.unraise removes one record (the field goes when it's empty); one that isn't there changes nothing", un && un[0] === 1 && un[1].ok && !("raisedAgain" in un[2]), JSON.stringify(un && un[2]));
     const risk = k => T(`amRiskOf({ops:[{op:'action', action:'${k}', args:{}}]})`);
-    ok("A4 an assistant's raised-again record is routine to review; removing one is risky", risk("outcome.raiseAgain") === "routine" && risk("outcome.unraise") === "risky" && !!T("ACTION_DESC['outcome.raiseAgain']"), [risk("outcome.raiseAgain"), risk("outcome.unraise")].join());
+    ok("A4 an assistant's raised-again record always waits for a person; removing one is risky", risk("outcome.raiseAgain") === "floor" && risk("outcome.unraise") === "risky" && !!T("ACTION_DESC['outcome.raiseAgain']"), [risk("outcome.raiseAgain"), risk("outcome.unraise")].join());
     const chk = T(`(()=>{ const p = clone(Q); return [amCheck({id:'c-1', ops:[{op:'action', action:'outcome.raiseAgain', args:{id:'dv-c1', ask:'ask-q', source:'Weekly sync'}}]}, p), amCheck({id:'c-2', ops:[{op:'action', action:'outcome.raiseAgain', args:{id:'dv-road', ask:'ask-q'}}]}, p)].map(x=>x.status); })()`);
     ok("A5 a proposal to record it is checked like any action: fine on a capture, invalid on a roadmap item", chk && chk[0] !== "invalid" && chk[1] === "invalid", JSON.stringify(chk));
 

@@ -27,6 +27,11 @@ function folder(root,prefix=''){
   ok('bundle version matches the app',bundle.version===ev('APP_VERSION'));
   ok('every current skill is bundled',JSON.stringify(bundle.files.map(x=>x.name).sort())===JSON.stringify(names));
   ok('skill text matches source bytes',bundle.files.every(x=>x.text===fs.readFileSync(path.join(__dirname,'../skills',x.name,'SKILL.md'),'utf8')));
+  {const door=bundle.files.find(x=>x.name==='sightline-plan'),t=door?door.text:'',others=names.filter(n=>n!=='sightline-plan');
+   ok('one way in: sightline-plan is bundled, under 8 KiB, and hands off to every other skill',!!door&&Buffer.byteLength(t)<8192&&others.every(n=>t.includes('`'+n+'`')),others.filter(n=>!t.includes('`'+n+'`')).join(','));
+   ok('…it never changes priority to match what someone said, and keeps that a separate change',/Never change an outcome's class or the work order to match it/.test(t)&&/propose the change separately, as its own change/.test(t));
+   ok('…a forwarded copy is not another report, and nothing is applied by the reply',/A forwarded copy of a report is not another report/.test(t)&&/Nothing has been applied/.test(t));
+   ok('…Jira drafts stay in the reply and missing requirements stay questions',/put a draft in your reply only/.test(t)&&/missing ones are open questions/.test(t)&&/Sightline never creates issues/.test(t));}
   ok('license matches source',bundle.license===fs.readFileSync(path.join(__dirname,'../LICENSE'),'utf8'));
   const read=spawnSync('python3',['-c',"import sys,io,zipfile,json;z=zipfile.ZipFile(io.BytesIO(sys.stdin.buffer.read()));print(json.dumps({n:z.read(n).decode('utf8') for n in z.namelist()}))"],{input:Buffer.from(bundle.archive,'base64'),encoding:'utf8'});
   ok('independent reader opens the ZIP',read.status===0,read.stderr);const zip=JSON.parse(read.stdout);

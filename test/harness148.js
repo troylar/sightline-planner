@@ -23,7 +23,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
         window.copied = []; copyText = (t, what)=>{ copied.push({t, what}); }; window.saved = []; download = (t, n, type)=>{ saved.push({t, n, type}); return true; }`);
     ev("AM = null; sel = {type:'amend', id:'x'}; render()"); await wait(20);
     const box = d.querySelector("#assistantAnalysis");
-    ok("P1 the assistant panel has Analyze with any assistant, with its three buttons", box && /Analyze with any assistant/.test(box.querySelector("summary").textContent)
+    ok("P1 the assistant panel has Use any AI assistant, with its read-only buttons too", box && /Use any AI assistant/.test(box.querySelector("summary").textContent)
       && ["analysisCopy", "analysisCopyData", "analysisAgents"].every(id=>box.querySelector("#" + id)), box ? box.textContent.slice(0, 120) : "no section");
     const G = ev("analysisGuide()");
     ok("G1 the instructions say they're read-only, name every file and the rules, and carry the plan's title and version",

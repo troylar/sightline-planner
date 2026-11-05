@@ -1,7 +1,8 @@
 # Planning skills that start where your team is
 
-A skill is reusable instructions for an AI assistant. Sightline ships six: turn rough notes into a roadmap,
-make a precise edit, review the gaps, summarize the plan and teach the assistant your team's vocabulary.
+A skill is reusable instructions for an AI assistant. Start with **sightline-plan**, the one way in: paste
+notes, emails, bug reports, ideas, a leader's priorities or a question, and it works out where each piece
+belongs and prepares changes for you to review. It hands off to the specialist skills below when a job needs them.
 [Back to the tour](../README.md#documentation).
 
 ## Start with your normal conversation
@@ -17,7 +18,7 @@ node bin/sightline.js skills --to ../planning-skills
 This works without a public npm package. Builds 1.95.0 and later also offer
 [skill deployment from the HTML](bundled-skills.md); check [availability](availability.md) first.
 
-You do not need to learn six command names to have a useful planning conversation. Say what you need:
+You do not need to learn any skill names to have a useful planning conversation. Say what you need:
 
 > Read the current context in my private assistant folder. Organize these notes against existing work,
 > leave unknown owners unknown, and show the three decisions that matter most. Prepare only the changes I request.
@@ -30,6 +31,7 @@ Sightline tab writing its outputs. [Connect the folder and complete a session](a
 
 | Skill | Input | Result |
 | --- | --- | --- |
+| [sightline-plan](../skills/sightline-plan/SKILL.md) | Anything: notes, emails, bug reports, ideas, priorities, questions | Each piece sorted and answered; changes prepared for review; grooming agendas and Jira issue drafts in the reply |
 | [sightline-plan-roadmap](../skills/sightline-plan-roadmap/SKILL.md) | Goals, notes and an explicit horizon | Proposed outcomes, placement and timing; unknowns remain unknown |
 | [sightline-meeting-to-plan](../skills/sightline-meeting-to-plan/SKILL.md) | Notes you supply | Agreed changes, ideas and open decisions kept distinguishable |
 | [sightline-edit-plan](../skills/sightline-edit-plan/SKILL.md) | A targeted change | Small amendments with stable IDs and current-value preconditions |
