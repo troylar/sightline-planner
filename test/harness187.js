@@ -1,6 +1,8 @@
 // History files, moving history out (vision.md, Moving history out never loses it): saves while editing copy entries older
 // than 30 days to their quarter's file, and a later save takes them out of the plan file once a later read still shows them.
 // Deletions and edits reach the files too, a missing file is named, and a file this copy can't fully read is never written.
+// The clock starts at a fixed moment and runs from there, so the history the checks place 31 to 90 days back always
+// falls in one quarter (2026-Q3), whatever today's date is.
 const {JSDOM, VirtualConsole} = require("jsdom"), fs = require("fs"), path = require("path");
 const html = fs.readFileSync(process.env.SIGHTLINE_HTML || path.join(__dirname, "..", "dist", "sightline.html"), "utf8").replace(/<link[^>]+fonts[^>]+>/, "");
 const FIX = fs.readFileSync(path.join(__dirname, "fixtures", "sample-plan.json"), "utf8");
@@ -24,6 +26,8 @@ const FAKE = `window.mkDir = (name = "team") => { const kids = new Map(), perm =
 (async()=>{
   try {
     const dom = new JSDOM(html, {runScripts:"dangerously", pretendToBeVisual:true, url:"https://local.test/", virtualConsole:new VirtualConsole(), beforeParse(w){
+      const RealDate = w.Date, off = new RealDate("2026-10-24T14:00:00Z").getTime() - RealDate.now();
+      w.Date = class extends RealDate {constructor(...a){ a.length ? super(...a) : super(RealDate.now() + off); } static now(){ return RealDate.now() + off; }};
       w.indexedDB = undefined; w.confirm = ()=>true; w.alert = ()=>{}; w.prompt = ()=>""; w.Element.prototype.scrollIntoView = ()=>{};
       w.HTMLCanvasElement.prototype.getContext = ()=>null; w.CSS = w.CSS || {}; w.CSS.escape = s=>s; w.errs = []; w.addEventListener("error", e=>w.errs.push(e.message)); }});
     const w = dom.window, d = w.document; await wait(150); w.FIX = FIX;
