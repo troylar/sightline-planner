@@ -9,7 +9,7 @@
       "area": "Requests",
       "title": "Who asked, where and why it matters",
       "before": "A request said what was wanted and little about who raised it or how much it hurt.",
-      "now": "A request now keeps how it came in (meeting, email, chat, support, bug), the asker's role, a one-line impact, and a source ID so a forwarded copy isn't counted as a second report. Link requests that support, compete with or may match each other, and add links to the email or ticket instead of pasting it in. Initiatives take links too.",
+      "now": "A request now keeps how it came in, the asker's role, a one-line impact, and a source ID so a forwarded copy isn't counted twice. Link requests that support, compete with or may match each other, and add links to the email or ticket instead of pasting it in, with when they were added. Sightline warns when an address looks like it carries a key. Initiatives take links too.",
       "where": "A request's editor; an initiative's Schedule"
     },
     {
