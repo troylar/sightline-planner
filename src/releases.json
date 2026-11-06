@@ -1,5 +1,76 @@
 [
 {
+  "version": "1.184.0",
+  "date": "2026-11-05",
+  "headline": "From what you heard to what you decide",
+  "changes": [
+    {
+      "kind": "new",
+      "area": "Requests",
+      "title": "Who asked, where and why it matters",
+      "before": "A request said what was wanted and little about who raised it or how much it hurt.",
+      "now": "A request now keeps how it came in, the asker's role, a one-line impact, and a source ID so a forwarded copy isn't counted twice. Link requests that support, compete with or may match each other, and add links to the email or ticket instead of pasting it in, with when they were added. Sightline warns when an address looks like it carries a key. Initiatives take links too.",
+      "where": "A request's editor; an initiative's Schedule"
+    },
+    {
+      "kind": "new",
+      "area": "Forecast",
+      "title": "Try a what-if without changing the plan",
+      "now": "Ask what happens if a new piece of work comes in, an initiative moves, or the work order changes. Sightline runs the forecast on a copy and says whether it fits, what would finish later or earlier, and what has no estimate yet. Nothing in the plan changes. Sightline noticed and the review can open a comparison for you.",
+      "where": "Capacity, Forecast, under Work order: What if"
+    },
+    {
+      "kind": "improved",
+      "area": "Assistant",
+      "title": "Review proposed changes by topic, with decisions on their own",
+      "now": "Proposed changes are grouped by the topic they're about, with a count of updates and decisions. A change to the work order or what matters most is a decision card you accept on its own, never in a batch, and you can compare it with today's order first.",
+      "where": "Assistant, Review proposed changes"
+    },
+    {
+      "kind": "new",
+      "area": "Today",
+      "title": "Prep our grooming",
+      "now": "Today shows a short agenda for the next grooming session: at most five topics, starting with decisions, each with why, the evidence and what to aim for. Copy it into the meeting invite. Preparing it changes nothing.",
+      "where": "Today, Prep our grooming"
+    },
+    {
+      "kind": "new",
+      "area": "Today",
+      "title": "Top work with no Jira issue",
+      "now": "When the team tracks work in Jira, Sightline points out top work in the work order that has no Jira link, and says whether linked work already covers it. It never creates an issue for you.",
+      "where": "Today, Sightline noticed, and the Work order"
+    },
+    {
+      "kind": "improved",
+      "area": "Assistant",
+      "title": "A shorter copy for assistants without file access",
+      "now": "Copy for my assistant now gives a compact digest that fits in a chat, with what it holds and what it left out. When the assistant needs more, Copy more about gives it everything on one topic.",
+      "where": "Assistant, Copy for my assistant and Copy more about"
+    },
+    {
+      "kind": "improved",
+      "area": "Decisions",
+      "title": "Decisions cite what matters now",
+      "now": "Choose the guidance a decision relied on right in the decisions table. Setting the work order or an outcome's class can be recorded as a decision with its guidance. Guidance that applies to the same work at the same time is pointed out, and a cited entry removed by a teammate's save is kept.",
+      "where": "Decisions, Relied on. Forecast, Work order: Record this as a decision"
+    },
+    {
+      "kind": "improved",
+      "area": "Assistant",
+      "title": "One skill instead of seven",
+      "now": "The sightline-plan skill now does everything the seven separate skills did: sorting what you paste, answering, roadmap, status, reviews, grooming and Jira sorting. Install it and remove the old ones.",
+      "where": "Assistant, Skills"
+    },
+    {
+      "kind": "improved",
+      "area": "Plan file",
+      "title": "Older copies open plans with evidence read-only",
+      "now": "A copy of Sightline older than 1.184.0 opens a plan with request evidence or links read-only, so it can't save the plan and drop them. Update everyone's copy.",
+      "where": "Opening a plan"
+    }
+  ]
+},
+{
   "version": "1.183.0",
   "date": "2026-11-05",
   "headline": "Say what matters now",

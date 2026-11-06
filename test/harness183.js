@@ -98,8 +98,8 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
 
     // What assistants are told
     ok("A26 the assistant guide explains a pasted reference", /## A reference pasted from Sightline/.test(X(`analysisGuide()`)) && /\[bar:c4\]/.test(X(`analysisGuide()`)));
-    const sk = ["sightline-status", "sightline-review-plan", "sightline-edit-plan"].map(n=>fs.readFileSync(path.join(__dirname, "..", "skills", n, "SKILL.md"), "utf8"));
-    ok("A27 the status, review and edit skills explain a pasted reference too", sk.every(t=>/\[bar:c4\]/.test(t) && /sightline-item/.test(t)));
+    const sk = ["sightline-plan"].map(n=>fs.readFileSync(path.join(__dirname, "..", "skills", n, "SKILL.md"), "utf8"));
+    ok("A27 the one skill explains a pasted reference too", sk.every(t=>/\[bar:c4\]/.test(t) && /sightline-item/.test(t)));
     ok("A28 the keyboard help lists Ctrl+C", html.includes('[["Ctrl+C"],"Copy the selection for your assistant, when no text is selected"]'));
     // From review: a process block's record (never its note), outcomes and releases by their own names, and a size bound
     X(`S.types = [...(S.types || []), {id:"tx-ask", name:"Check", shape:"window", days:2}];

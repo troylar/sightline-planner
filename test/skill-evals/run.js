@@ -42,7 +42,7 @@ async function prepare(dest, skillRoot){
     w.FIX = fs.readFileSync(path.join(root, 'test/fixtures/sample-plan.json'), 'utf8');
     const manifest = {skills:{}, cases:[]};
     for (const [id, short, prompt] of tasks){
-      const skill = 'sightline-' + short, dir = path.join(dest, id); fs.mkdirSync(dir);
+      const skill = 'sightline-plan', dir = path.join(dest, id); fs.mkdirSync(dir);
       const skillText = fs.readFileSync(path.join(skillRoot, skill, 'SKILL.md'), 'utf8');
       manifest.skills[skill] = digest(skillText);
       fs.writeFileSync(path.join(dir, 'SKILL.md'), skillText, {flag:'wx'});

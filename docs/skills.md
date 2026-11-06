@@ -1,8 +1,9 @@
 # Planning skills that start where your team is
 
-A skill is reusable instructions for an AI assistant. Start with **sightline-plan**, the one way in: paste
-notes, emails, bug reports, ideas, a leader's priorities or a question, and it works out where each piece
-belongs and prepares changes for you to review. It hands off to the specialist skills below when a job needs them.
+A skill is reusable instructions for an AI assistant. Sightline has one: **sightline-plan**. Paste notes,
+emails, bug reports, ideas, a leader's priorities or a question, and it works out where each piece belongs,
+answers what was asked, and prepares changes for you to review. Since 1.184.0 it also does the jobs of the seven
+specialist skills earlier versions shipped, so every assistant on the team follows the same instructions.
 [Back to the tour](../README.md#documentation).
 
 ## Start with your normal conversation
@@ -27,22 +28,29 @@ The assistant needs access to the private folder you connected, or a manual cont
 establish file permissions or connect a model. Use one folder per person, device and plan, with one active
 Sightline tab writing its outputs. [Connect the folder and complete a session](assistant-workflow.md).
 
-## Choose the job
+## What it does
 
-| Skill | Input | Result |
-| --- | --- | --- |
-| [sightline-plan](../skills/sightline-plan/SKILL.md) | Anything: notes, emails, bug reports, ideas, priorities, questions | Each piece sorted and answered; changes prepared for review; grooming agendas and Jira issue drafts in the reply |
-| [sightline-plan-roadmap](../skills/sightline-plan-roadmap/SKILL.md) | Goals, notes and an explicit horizon | Proposed outcomes, placement and timing; unknowns remain unknown |
-| [sightline-meeting-to-plan](../skills/sightline-meeting-to-plan/SKILL.md) | Notes you supply | Agreed changes, ideas and open decisions kept distinguishable |
-| [sightline-edit-plan](../skills/sightline-edit-plan/SKILL.md) | A targeted change | Small amendments with stable IDs and current-value preconditions |
-| [sightline-review-plan](../skills/sightline-review-plan/SKILL.md) | A snapshot and review scope | Read-only findings with evidence and coverage limits |
-| [sightline-status](../skills/sightline-status/SKILL.md) | Current context; optional matching results | Read-only update for the audience you name |
-| [sightline-planning-guide](../skills/sightline-planning-guide/SKILL.md) | Team scope and workstream distinctions | Copy-ready guidance for Settings → Planning guide |
-| [sightline-sort-jira](../skills/sightline-sort-jira/SKILL.md) | What's waiting in Sort Jira work | Reviewed placements with reasons, and a list of what it couldn't place |
+| Ask for | Result |
+| --- | --- |
+| Anything you heard: notes, emails, bug reports, ideas, priorities | Each piece sorted: a new request, one more report on an existing one, a decision, a risk, or a question to settle. Evidence (who, channel, impact) and links to related work, ready for review |
+| A question: what should I work on, can we take this on, why is X above Y | An answer from the plan's work order, priorities, forecast and what matters now, with what the data doesn't cover |
+| A status update or a review | Read-only: a summary for the audience you name, or up to three material findings with evidence |
+| A change to the plan, roadmap goals, a work order or what matters now | Small amendments with stable IDs and current values, each waiting for your review |
+| Prep our grooming | A short agenda that starts with decisions, at most five topics |
+| A tracker check or a Jira draft | Whether top work needs an issue, and a draft in the reply. Sightline never creates issues |
+| Sort Jira work | Placements with reasons, and a list of what it couldn't place |
+| Planning guide text | Copy-ready guidance for Settings, Planning guide |
+
+### Upgrading from the seven skills
+
+Earlier versions installed **sightline-edit-plan**, **sightline-meeting-to-plan**, **sightline-plan-roadmap**,
+**sightline-planning-guide**, **sightline-review-plan**, **sightline-status** and **sightline-sort-jira**. Install
+1.184.0 into a new folder, then delete those seven folders from wherever your assistant finds skills, so it doesn't
+follow old instructions alongside the new one.
 
 ## What happens to your plan
 
-Editing skills write only **sightline-amendments.json**. They read fresh IDs and allowed operations from
+The skill writes only **sightline-amendments.json**. They read fresh IDs and allowed operations from
 **sightline-assistant-view.json**, and use matching **sightline-assistant-results.json** to understand this browser's
 review outcomes. An existing unresolved batch must be preserved or deliberately replaced.
 Results must match the plan, revision, Jira timestamp, proposal batch and original operations before an
@@ -52,8 +60,7 @@ does not establish that they came from a saved shared file.
 
 Sightline checks each proposed change against the current plan before Apply. A proposal can be ready, conflicted,
 invalid or already in the plan. The assistant never overwrites the shared plan, context, results or Jira output.
-Unsupported edits become explicit manual steps. In particular, the planning-guide skill returns text for the
-editor; it does not fabricate an amendment operation for guide fields.
+Unsupported edits become explicit manual steps. For the Planning guide it returns text for the editor unless you ask it to propose the guide's own actions.
 
 ## Work through a large roadmap
 
@@ -73,9 +80,9 @@ The companion uses Sightline's built-in operation protocol and your saved **Plan
 or load these skill files automatically. You can use the same style of request in chat; installing skills doesn't
 change the companion's capabilities. [Set up in-app conversation](assistant-workflow.md#talk-to-your-company-endpoint).
 
-## Make a skill yours
+## Make the skill yours
 
-Copy a skill into your assistant's own skills location and edit that copy. Keep the ownership, stable-ID,
+Copy the skill into your assistant's own skills location and edit that copy. Keep the ownership, stable-ID,
 precondition and human-review rules. Add team-specific language to the plan's **Planning guide** so UI and AI work
 from the same context. The installer refuses to overwrite a different skill file; install updates into a new
 folder and compare before carrying your edits forward.
