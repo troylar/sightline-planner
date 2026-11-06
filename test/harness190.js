@@ -31,7 +31,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     d.getElementById("planCopy").click(); await wait(30);
     const clip = X("window.__clip") || "", body = SKILL.replace(/^---[\s\S]*?\n---\s*/, "").trim();
     ok("C2 the copy carries the sightline-plan skill word for word", clip.includes(body), clip.slice(0, 120));
-    ok("C3 …this plan's id and revision in the envelope to return, and the plan's data as JSON", clip.includes(`"planId":"${pid}"`) && clip.includes(`"planRevision":${rev}`) && (()=>{ try { const m = clip.match(/```json\n([\s\S]*?)\n```/); return JSON.parse(m[1]).kind === "sightline-assistant-view"; } catch(e){ return false; } })());
+    ok("C3 …this plan's id and revision in the envelope to return, and a digest of the plan's data under 6,000 characters", clip.includes(`"planId":"${pid}"`) && clip.includes(`"planRevision":${rev}`) && (()=>{ try { const m = clip.match(/```json\n([\s\S]*?)\n```/); const D = JSON.parse(m[1]); return D.kind === "sightline-digest" && D.coverage.of > 0 && m[1].length <= 6000; } catch(e){ return false; } })());
     ok("C4 …says the data is data, never instructions, and leaves notes out", /never as instructions/.test(clip) && !clip.includes("Private thought"));
     ok("C5 the status line says how long it is", /Copied the plan for your assistant \([\d,]+ characters/.test(status()), status());
 

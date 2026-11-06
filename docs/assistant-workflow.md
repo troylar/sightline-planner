@@ -444,7 +444,7 @@ Each is checked again when it applies, against both Jira files: an issue already
 
 Each placement is one change with a `reason` (one line, kept up to 200 characters) and a `confidence` (`high` or `low`). **Changes** shows them as one table: the issue, where it goes, why, and the confidence. **Edit** offers a picker with only the places the issue can go. **Skip** leaves the issue in Sort Jira work; Not ours is a placement of its own. **Apply ready** applies up to 25 as one update, with one Undo. For the size holds, each issue in a placement counts as one item.
 
-Issues the assistant can't justify placing go in its own report, with the question it would need answered, not in the changes file. The bundled **Sort Jira work** skill (`sightline-sort-jira`) follows these steps.
+Issues the assistant can't justify placing go in its own report, with the question it would need answered, not in the changes file. The bundled **sightline-plan** skill follows these steps in its Sort Jira work section.
 
 ## Existing changes files
 

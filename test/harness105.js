@@ -107,7 +107,7 @@ async function page(){
   });
   await section("daily navigation",async({d,ev})=>{
     ev("S.decisions=[{id:'ux-decision',text:'Choose synthetic option',state:'open',due:'2026-09-30',owners:[S.people[1].id],decider:S.people[0].id},{id:'ux-no-decider',text:'Unassigned synthetic decision',state:'open',due:'2026-09-30',owners:[]}]; UI.todayScope='team'; goWs('today');");
-    const rows=[...d.querySelectorAll('#today li')], decision=rows.find(r=>r.textContent.includes("Choose synthetic option")), unassigned=rows.find(r=>r.textContent.includes("Unassigned synthetic decision"));
+    const rows=[...d.querySelectorAll('#today [data-tsec="Decisions due"] li')], decision=rows.find(r=>r.textContent.includes("Choose synthetic option")), unassigned=rows.find(r=>r.textContent.includes("Unassigned synthetic decision"));
     ok("Today names decider and distinguishes owners",decision?.textContent.includes("Decider: "+ev("personName(S.people[0].id)")) && decision.textContent.includes("Owners: "+ev("personName(S.people[1].id)")));
     ok("Today explicitly identifies missing decider",unassigned?.textContent.includes("Decider: not set"));
     const sort=d.querySelector("#work-sort"); ok("Work exposes Sort Jira work directly",!!sort && !sort.hidden); sort?.click();
