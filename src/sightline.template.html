@@ -8990,7 +8990,7 @@ function actLine(id, args, p){ const a = args && typeof args === "object" ? args
     "guidance.set": () => `Guidance "${String((actGd(p, a.id) || {text:a.id}).text).slice(0, 60)}": ${a.field === "text" ? "new wording" : a.field === "why" ? "new reason" : a.field === "through" ? "ends" : a.field === "from" ? "starts" : "review"} ${GD_DATES.includes(a.field) ? (validIso(a.value) ? fmtDay(isoToDay(a.value)) : "cleared") : "(shown below)"}`,
     "guidance.del": () => `Remove guidance "${String((actGd(p, a.id) || {text:a.id}).text).slice(0, 60)}"`,
     "outcome.relate": () => `${who} ${relName(a.rel).toLowerCase()} ${nm("", a.to)}`, "outcome.unrelate": () => `${who} no longer linked to ${nm("", a.to)}`,
-    "ref.add": () => `Link "${String(a.title || "a document").trim().slice(0, 60)}" on ${nm("", a.on)}`, "ref.del": () => `Remove a link from ${nm("", a.on)}`}[id];
+    "ref.add": () => `Link "${String(a.title || "a document").trim().slice(0, 60)}" (${String(a.url || "").trim().replace(/^https:\/\//, "").slice(0, 80)}) on ${nm("", a.on)}`, "ref.del": () => `Remove a link from ${nm("", a.on)}`}[id];
   if (more) return more();
   if (say) return say() + ((id === "initiative.add" || id === "task.add") && typeof a.story === "string" && a.story.trim() ? ", with a story (shown below)" : "");
   const rest = Object.entries(a).filter(([k])=>k !== "id" && k !== "prev").map(([k, v])=>k === "field" ? v : `${Array.isArray(v) ? v.map(x=>nm("", x)).join(", ") || "none" : nm(k, v)}`).join(" → ");
@@ -14629,6 +14629,7 @@ function amCheck0(c00, p){
       if (!r.ok){ if (r.code === "stale") stale.push(`Changed since: ${actLine(A.id, args, cand)}. ${r.reason}`); else bad.push(`${at}: ${r.reason}`); acts.push(()=>{}); return; }
       lines.push(was && r.ok && !r.nochange ? afterLine(cand, args.id, was) : actLine(A.id, args, cand) + (r.nochange ? " (already so)" : ""));
       if (A.scope === "schedule" || A.id.endsWith(".del") || A.id.endsWith(".add")) dated = true;
+      if (A.id === "ref.add" && args && refLooksSecret(args.url)) notes.push(`${String(args.url).trim().replace(/^https:\/\//, "").slice(0, 80)} may let anyone who has it open the document: it looks like it carries a key or signature.`);
       if (!r.nochange) todo++;
       acts.push(s=>{ const x = runAction(s, A.id, clone(args)); if (!x.ok) throw new Error(x.reason); }); return; }
     if (o.op === "propose"){ const k = String(o.key || "").toUpperCase(), f = PROPOSAL_FIELDS.find(x=>x[0] === o.field);
