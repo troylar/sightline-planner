@@ -89,7 +89,7 @@ Return a short agenda that starts with decisions: at most five topics (fewer is 
 
 ## Write proposals
 
-Write changes only when asked; pasting things to be recorded counts as asking. Use only the context's `guide` and `actions` (each action's `args` exactly). Envelope: `{"kind":"sightline-amendments","version":1,"planId","batchId","createdAt","source":"assistant","basedOn":{"planRevision"},"changes":[...]}`, at most 100 changes of 25 operations each, 512 KiB. Replace only `sightline-amendments.json`, through a temporary file; ask before replacing an unresolved batch. Check it offline first: `python sightline-app.py check <folder> <batch.json> --json`, whose `--version` must match the context's `appVersion`. Captures, raised-again, links on a capture, priority, the work order and guidance always wait for a person.
+Write changes only when asked; pasting things to be recorded counts as asking. Use only the context's `guide` and `actions` (each action's `args` exactly). Envelope: `{"kind":"sightline-amendments","version":1,"planId","batchId","createdAt","source":"assistant","basedOn":{"planRevision"},"changes":[...]}`, at most 100 changes of 25 operations each, 512 KiB. Replace only `sightline-amendments.json`, through a temporary file; ask before replacing an unresolved batch. Check it offline first: `python sightline-app.py check <folder> <batch.json> --json`, whose `--version` must match the context's `appVersion`. Captures, raised-again, every link (`ref.add`), priority, the work order and guidance always wait for a person.
 
 ## No file access
 

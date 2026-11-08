@@ -56,6 +56,9 @@ setTimeout(()=>{console.log(checks.join('\n'));console.log('TIMEOUT');process.ex
     ok('V7 drawing the forecast never writes the plan', ev(`(()=>{ const t = JSON.stringify(planOfRecord(S)); render(); renderForecastWs(); return JSON.stringify(planOfRecord(S)) === t; })()`) === true);
     ev(`commit(()=>{ S.bars.forEach(b=>{ delete b.effort; }); })`); await settle();
     ok('V8 with no effort anywhere, it says how to start', !!q('#fcEmpty') && !q('#fcItems'), txt('#forecastWs'));
+    ev(`commit(()=>{ S.bars = S.bars.filter(b=>b.id === 'A'); S.bars[0].effort = {low:1, likely:1, high:1}; S.bars[0].dependsOn = []; })`); await settle();
+    const nb = ev(`(()=>{ const was = bottleneckText; bottleneckText = () => null; try { renderForecastWs(); return [!!document.querySelector('#fcChain'), !!document.querySelector('#fcBottleneck'), document.querySelector('#forecastWs').textContent]; } finally { bottleneckText = was; } })()`);
+    ok('V9 a chain with no bottleneck to name shows no bottleneck line, and no stray "null" where it would be', nb[0] && !nb[1] && !/null/.test(nb[2]), [nb[0], nb[1], (nb[2].match(/.{40}null.{20}/) || [''])[0]].join(' | '));
     ok('no runtime errors', ev('window.errors.length') === 0, ev('window.errors.join(" | ")'));
   } catch(e){ ok('harness ran', false, e && e.stack ? e.stack.split('\n').slice(0, 3).join(' ') : e); }
   console.log(checks.join('\n')); const f = checks.filter(c=>c.startsWith('FAIL')).length;

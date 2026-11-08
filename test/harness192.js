@@ -31,6 +31,10 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     raw.bars = raw.bars.map(b=>b.id === "c1" ? {...b, refs:[{id:"rb", url:"https://wiki.example.com/c1", title:"Design"}]} : b);
     w.RAW = JSON.stringify(raw);
     const n = J(`normalize(JSON.parse(RAW), false)`), sso = (n.deliverables || []).find(x=>x.id === "dv-sso") || {};
+    const again = J(`(()=>{ const p = normalize(JSON.parse(RAW), false), nm = p.people.find(x=>x.id === "${person2}").name;
+      return [actLine("outcome.raiseAgain", {id:"dv-sso", ask:"ra-9", role:"support", channel:"support", origin:"ticket-9", impact:"A third team is waiting"}, p), actLine("outcome.raiseAgain", {id:"dv-sso", ask:"ra-10", who:{type:"person", id:"${person2}"}, channel:"meeting"}, p), nm]; })()`);
+    ok("E1b reviewing a repeated report reads as a sentence: who, how it came in and why it matters, never the ask's id or the origin", Array.isArray(again) &&
+      again[0] === '"SSO for the pilot" raised again by support (support ticket): A third team is waiting' && again[1] === `"SSO for the pilot" raised again by "${again[2]}" (meeting)` && !/raiseAgain|ra-9|ticket-9/.test(again.join(" ")), JSON.stringify(again));
     ok("E1 a capture keeps its channel, a one-line impact (spaces tidied), a role cut to 40, and its origin", sso.channel === "email" && sso.impact === "Blocks the pilot" && sso.role.length === 40 && sso.origin === "msg-1", JSON.stringify(sso).slice(0, 300));
     ok("E2 links keep one per item, never to itself or with an unknown kind", JSON.stringify(sso.about) === JSON.stringify([{id:"c2", rel:"competes"}]), JSON.stringify(sso.about));
     ok("E3 references keep only https links, with a title", JSON.stringify((sso.refs || []).map(r=>r.id)) === JSON.stringify(["r1"]) && (n.bars.find(b=>b.id === "c1").refs || [])[0].title === "Design", JSON.stringify(sso.refs));

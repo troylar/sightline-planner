@@ -6383,7 +6383,7 @@ function openPlanningSkills(){
   const dialog = h("dialog",{id:"dlgSkills","aria-labelledby":"skillsTitle",style:{maxWidth:"680px",width:"calc(100% - 48px)",maxHeight:"90vh",overflow:"auto"}},
     h("h2",{id:"skillsTitle"},"Planning skills, ready to take with you"),
     h("p",{}, has ? `${BUNDLED_SKILLS.files.length === 1 ? "One skill" : BUNDLED_SKILLS.files.length + " skills"} bundled with Sightline ${BUNDLED_SKILLS.version}. Everything you need is in this HTML file. It replaces the seven skills earlier versions installed: install into a new folder, then delete the older sightline- folders your assistant reads, so it doesn't follow old instructions.` : "Open the built Sightline HTML to get its bundled skills."),
-    h("p",{class:"hint"},"Use them with an assistant that supports skills and can read your private plan context. The in-app companion uses its built-in guidance; installing these files does not change the companion."),
+    h("p",{class:"hint"},"Use it with an assistant that supports skills and can read your private plan context. For an assistant you paste into, Copy for my assistant includes it. The in-app chat uses its built-in guidance; installing the skill doesn't change it."),
     h("ul",{}, ...BUNDLED_SKILLS.files.map(item=>h("li",{}, h("b",{},item.name), h("p",{class:"hint"},item.description)))),
     h("div",{class:"qrow"},zip,install,close), note,
     !window.showDirectoryPicker ? h("p",{class:"hint"},"Unzip the download into your assistant's skills directory. Direct folder installation is available in Chrome or Edge.") : null);
@@ -8990,6 +8990,9 @@ function actLine(id, args, p){ const a = args && typeof args === "object" ? args
     "guidance.set": () => `Guidance "${String((actGd(p, a.id) || {text:a.id}).text).slice(0, 60)}": ${a.field === "text" ? "new wording" : a.field === "why" ? "new reason" : a.field === "through" ? "ends" : a.field === "from" ? "starts" : "review"} ${GD_DATES.includes(a.field) ? (validIso(a.value) ? fmtDay(isoToDay(a.value)) : "cleared") : "(shown below)"}`,
     "guidance.del": () => `Remove guidance "${String((actGd(p, a.id) || {text:a.id}).text).slice(0, 60)}"`,
     "outcome.relate": () => `${who} ${relName(a.rel).toLowerCase()} ${nm("", a.to)}`, "outcome.unrelate": () => `${who} no longer linked to ${nm("", a.to)}`,
+    "outcome.raiseAgain": () => `${who} raised again` + (a.who && a.who.id ? ` by ${nm("", a.who.id)}` : a.role ? ` by ${String(a.role).trim().slice(0, 40)}` : "") +
+      (validIso(a.raised) ? ` on ${fmtDay(isoToDay(a.raised))}` : "") + (CHANNELS.some(c=>c[0] === a.channel) ? ` (${CHANNELS.find(c=>c[0] === a.channel)[1].toLowerCase()})` : "") +
+      (String(a.impact || "").trim() ? `: ${String(a.impact).trim().slice(0, 120)}` : ""),
     "ref.add": () => `Link "${String(a.title || "a document").trim().slice(0, 60)}" (${String(a.url || "").trim().replace(/^https:\/\//, "").slice(0, 80)}) on ${nm("", a.on)}`, "ref.del": () => `Remove a link from ${nm("", a.on)}`}[id];
   if (more) return more();
   if (say) return say() + ((id === "initiative.add" || id === "task.add") && typeof a.story === "string" && a.story.trim() ? ", with a story (shown below)" : "");
@@ -12096,7 +12099,7 @@ function renderForecastWs(){
   const last = rows.filter(([, it])=>it.finish != null).sort(([a, x], [b, y])=>y.finish - x.finish || (a < b ? -1 : 1))[0];
   if (last){ const ch = criticalChain(run, last[0]), bt = bottleneckText(run, ch, yr);
     host.append(h("h3",{class:"fch3"}, "Critical chain"), h("p",{class:"hint"}, "What sets the last finish, working back: the work each step waited for, or that had its people."),
-      h("ol",{class:"fcchain",id:"fcChain"}, ...chainLines(run, ch, yr).map(t=>h("li",{}, t))), bt ? h("p",{class:"hint",id:"fcBottleneck"}, bt) : null); }
+      h("ol",{class:"fcchain",id:"fcChain"}, ...chainLines(run, ch, yr).map(t=>h("li",{}, t))), ...(bt ? [h("p",{class:"hint",id:"fcBottleneck"}, bt)] : [])); }
   const to = sm.likely ?? run.end, loads = S.lanes.map((l, i)=>({l, i, x:forecastLoad(run, l.id, run.first, to)})).filter(r=>r.x && (r.x.demand > FC_EPS || r.x.capacity > FC_EPS));
   if (loads.length) host.append(h("h3",{class:"fch3"}, "Load by workstream"), h("p",{class:"hint"}, `Demand against capacity, ${yr(nextWork(run.first, holidaySet(S)))} to ${yr(to)}. Each week: Jira-dated work, forecast work, and ready work waiting (hatched), against the line of what the people have.`),
     h("div",{class:"gwrap"}, h("table",{class:"jptable fcloadt",id:"fcLoad"}, h("thead",{}, h("tr",{}, ...["Workstream", "Capacity", "Demand", "Load", "By week"].map(t=>h("th",{}, t)))),
