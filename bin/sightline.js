@@ -51,14 +51,14 @@ function install(target, skillsOnly) {
   }
   console.log(skillsOnly ? `Skills ready in ${dest}` : `Open ${path.join(dest, 'sightline.html')} in Chrome or Edge.`);
   console.log(`${written} files installed. Existing identical files were kept.`);
-  if (!skillsOnly) console.log('Planning skills: .sightline/skills. Try the invented plan in example/plan.json. Your own plans are kept separate.');
+  if (!skillsOnly) console.log('Planning skill: .sightline/skills. Try the invented plan in example/plan.json. Your own plans are kept separate.');
 }
 function main(args) {
   if (!args.length || ['--help','-h','help'].includes(args[0])) {
     console.log(`Sightline ${pkg.version} — your team's work, in plain sight.
 
-  sightline install [folder]     Install the HTML app and planning skills
-  sightline skills --to <folder> Install only the planning skills
+  sightline install [folder]     Install the HTML app and planning skill
+  sightline skills --to <folder> Install only the planning skill
   sightline helpers              Print the trusted Python helper directory
   sightline --version            Show the package version
 
