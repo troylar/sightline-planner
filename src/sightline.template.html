@@ -8901,13 +8901,21 @@ const ACT_REF = {
   riskId:["risk", (p, id)=>actOf(p, "risks", id), "planning.risks", "risks"], decisionId:["decision", (p, id)=>actOf(p, "decisions", id), "planning.decisions", "decisions"],
   timeboxId:["timebox", (p, id)=>actSprint(p, id) >= 0, "planning.timeboxes.list", "timeboxes"],
 };
-// What an add makes, so an id given to it can be referred to later in the same change.
+// Arguments that name what's being removed or unlinked. What they name may already be gone (a link to a deleted item),
+// so they aren't checked as references: the action itself says whether there's anything to remove.
+const ACT_REMOVES = {"initiative.del":["id"], "task.del":["id"], "outcome.del":["id"], "workstream.del":["id"], "guidance.del":["id"], "milestone.del":["id"],
+  "gate.del":["id"], "risk.del":["id"], "decision.del":["id"], "skill.remove":["id"], "initiative.delivers.remove":["id", "outcome"], "outcome.unrelate":["to"],
+  "workstream.removeMember":["person"], "link.remove":["after"], "milestone.doneWhen.remove":["bar"], "task.unlink":["after"]};
+// Each base type in words, for the view's argTypes and for the sentence a wrong value gets.
+const ACT_TYPE_WORDS = {id:"an id (letters, digits and . _ : @ -)", ids:"a list of ids", str:"text up to 4,000 characters", num:"a number", int:"a whole number", bool:"true or false",
+  iso:"a date (YYYY-MM-DD, or a day in words like next friday)", isoOrAfter:'a date, or "after"', isoOrNull:"a date, or null", idOrBlank:"an id, or empty", keys:"a list of Jira keys",
+  who:"{type: person or group, id}", weights:"{workstream id: weight}", any:"any value"};
+// What an add makes, so an id given to it can be referred to later in the same batch.
 const ACT_CREATES = {"initiative.add":"initiativeId", "task.add":"taskId", "outcome.add":"outcomeId", "person.add":"personId", "group.add":"groupId", "workstream.add":"workstreamId",
-  "milestone.add":"milestoneId", "gate.add":"gateId", "guidance.add":"guidanceId", "risk.add":"riskId", "decision.add":"decisionId", "skill.add":"skillId", "sprint.add":"timeboxId"};
+  "milestone.add":"milestoneId", "gate.add":"gateId", "guidance.add":"guidanceId", "risk.add":"riskId", "decision.add":"decisionId", "skill.add":"skillId", "sprint.add":"timeboxId", "jira.epicNew":"initiativeId"};
 const actArgTypes = () => ({about:"An argument's type is one or more choices joined by |, with ? at the end when it can be left out: a type below, a reference below, either with [] for a list, blank (\"\"), null, or any other word for exactly that value (high|med|low). A setter's value takes the type its field has in fields; a field not listed there can't be set this way. creates names what an add makes, so its id can be used by a later op in the same change.",
-  types:{id:"an id: letters, digits and . _ : @ -", ids:"a list of ids", str:"text up to 4,000 characters", num:"a number", int:"a whole number", bool:"true or false", iso:"a date, YYYY-MM-DD",
-    isoOrAfter:'a date, or "after"', isoOrNull:"a date, or null", idOrBlank:"an id, or empty", keys:"a list of Jira keys", who:"{type: person or group, id}", weights:"{workstream id: weight}", any:"any value"},
-  refs:Object.fromEntries(Object.entries(ACT_REF).map(([k, [noun, , where, cov]])=>[k, {noun, in:where, coverage:cov, missing:`That ${noun} isn't in the plan.`}]))});
+  types:ACT_TYPE_WORDS,
+  refs:Object.fromEntries(Object.entries(ACT_REF).map(([k, [noun, , where, cov]])=>[k, {noun, in:where, coverage:cov, ...(k === "itemId" ? {of:["outcomeId", "initiativeId"]} : {}), missing:`That ${noun} isn't in the plan.`}]))});
 // A type is one or more choices joined by |: a type in ACT_ARG, a reference in ACT_REF, either one with [] for a list of
 // them, blank (""), null, or any other word for that exact value (high|med|low). A trailing ? means it can be left out.
 const actAlts = t => t.replace(/\?$/, "").split("|");
@@ -8926,9 +8934,13 @@ function actArgProblem(k, t, v){ const ty = t.replace(/\?$/, ""), alts = actAlts
     return ACT_ARG[ty](v) ? null : `${k} isn't a valid ${ty === "isoOrAfter" ? `date (${REL_HELP}), or "after"` : ty === "iso" || ty === "isoOrNull" ? `date (${REL_HELP})` : ty === "ids" || ty === "keys" ? "list" : ty === "id" ? "id" : ty === "num" || ty === "int" ? "number" : ty === "weights" ? "split ({workstream id: weight})" : "value"}.`; }
   if (alts.some(x=>actAltOk(x, v))) return null;
   if (typeof v === "string" && v.length > 4000 && alts.includes("str")) return `${k} is up to 4,000 characters.`;
-  const words = alts.filter(x=>x !== "blank" && x !== "null" && !ACT_REF[x.replace(/\[\]$/, "")] && !ACT_ARG[x.replace(/\[\]$/, "")]);
-  if (words.length === alts.filter(x=>x !== "blank" && x !== "null").length) return `${k} is one of ${words.join(", ")}${alts.includes("blank") ? ", or empty" : alts.includes("null") ? ", or null" : ""}.`;
-  return `${k} isn't a valid ${alts.map(x=>x === "blank" ? "empty text" : x === "iso" ? `date (${REL_HELP})` : x.endsWith("[]") ? `list of ${x.slice(0, -2)} ids` : actRefOf(x) ? `${x} id` : x).join(" or ")}.`; }
+  return actTypeWords(k, alts, ACT_TYPE_WORDS, Object.fromEntries(Object.entries(ACT_REF).map(([r, [noun]])=>[r, noun]))); }
+// What a value should have been, in words. sightline-app.py builds the same sentence from argTypes (types and refs).
+function actTypeWords(k, alts, types, nouns){ const base = x => x.replace(/\[\]$/, ""), isWord = x => x !== "blank" && x !== "null" && !nouns[base(x)] && !types[base(x)];
+  const words = alts.filter(isWord), tail = alts.includes("blank") ? ", or empty" : alts.includes("null") ? ", or null" : "";
+  if (words.length && words.length === alts.filter(x=>x !== "blank" && x !== "null").length) return `${k} is one of ${words.join(", ")}${tail}.`;
+  const say = x => x === "blank" ? "empty" : x === "null" ? "null" : nouns[base(x)] ? (x.endsWith("[]") ? `a list of ${nouns[base(x)]} ids` : `the id of a ${nouns[base(x)]}`) : types[base(x)] ? (x.endsWith("[]") ? `a list of ${types[base(x)]}` : types[base(x)]) : `"${x}"`;
+  return `${k} must be ${alts.map(say).join(", or ")}.`; }
 // The type of each argument this call gives, a setter's value by its field (fields), so references can be checked.
 const actTypes = (a, args) => Object.entries(a.args).filter(([k])=>k in args && args[k] !== undefined).map(([k, t])=>[k, k === "value" && a.fields && typeof args.field === "string" && Object.hasOwn(a.fields, args.field) ? a.fields[args.field] : t]);
 // args: {name: "type"} or "type?" when it can be left out. prev, when an action knows its current value, is always allowed.
@@ -8942,7 +8954,7 @@ function actArgsProblem(a, args){
 // Every reference resolves in the plan: an id that's blank, null or a listed word isn't a reference.
 function actRefProblem(p, a, args){
   for (const [k, t] of actTypes(a, args)){ const alts = actAlts(t), v = args[k], refs = alts.filter(actRefOf);
-    if (!refs.length || alts.some(x=>!actRefOf(x) && actAltOk(x, v))) continue;
+    if (!refs.length || (ACT_REMOVES[a.id] || []).includes(k) || alts.some(x=>!actRefOf(x) && actAltOk(x, v))) continue;
     const ids = Array.isArray(v) ? v : [v], kinds = refs.map(actRefOf);
     for (const id of ids) if (!kinds.some(r=>ACT_REF[r][1](p, id))) return actMissing(ACT_REF[kinds[0]][0]); }
   return null; }
@@ -9298,7 +9310,7 @@ defAction("outcome.add", {scope:"outcomes", risk:"routine", done:(p, a)=>!!a.id 
     evPut(d, a);
     if ((d.target || d.release || d.date) && !d.capture) d.stage = "planned";
     (p.deliverables = p.deliverables || []).push(d); return id; }});
-defAction("outcome.set", {scope:"outcomes", risk:"routine", args:{id:"outcomeId", field:"str", value:"any"}, fields:{name:"str", line:"str", note:"str", kind:"new|improved|fixed|blank", lane:"workstreamId|blank", owners:"personId[]", stage:"str", aiHint:"str", capture:CAPTURE_TYPES.map(c=>c[0]).join("|") + "|blank", raised:"iso|blank", askedBy:"who", class:DV_CLASSES.join("|") + "|blank", why:"str", reconsider:"str", channel:CHANNELS.map(c=>c[0]).join("|") + "|blank", impact:"str", role:"str", origin:"str"},
+defAction("outcome.set", {scope:"outcomes", risk:"routine", args:{id:"outcomeId", field:"str", value:"any"}, fields:{name:"str", line:"str", note:"str", kind:"new|improved|fixed|blank", lane:"workstreamId|blank", owners:"personId[]", stage:"str", aiHint:"str", capture:CAPTURE_TYPES.map(c=>c[0]).join("|") + "|blank", raised:"iso|blank", askedBy:"who|blank", class:DV_CLASSES.join("|") + "|blank", why:"str", reconsider:"str", channel:CHANNELS.map(c=>c[0]).join("|") + "|blank", impact:"str", role:"str", origin:"str"},
   cur:(p, a)=>{ const d = actDv(p, a.id); return d && a.field in DV_SET ? clone(d[a.field] ?? "") : undefined; },
   check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable");
     if (["target","date"].includes(a.field)) return actInvalid("Use outcome.setTarget to change its timing.");
@@ -15066,7 +15078,7 @@ function assistantView(){
     guide:[
       "# Writing Sightline amendments (version 1)",
       "Read each action's args from actions in this file and use them exactly; never guess field names.",
-      "argTypes says what each type means. A type ending in Id is a reference: that id must be in the plan, or added earlier in the same change (risk.add and decision.add take an initiative's id as item). A setter's value takes the type of its field in fields. sightline-app.py check refuses the same types, references and values the page does; whether a change makes sense today (a dropped item, a Jira-owned date) is only checked when it's applied.",
+      "argTypes says what each type means. A type ending in Id is a reference: that id must be in the plan, or added earlier in the batch (risk.add and decision.add take an initiative's id as item). A setter's value takes the type of its field in fields. sightline-app.py check refuses the same types, references and values the page does; whether a change makes sense today (a dropped item, a Jira-owned date) is only checked when it's applied.",
       "Write one JSON file: {kind:'sightline-amendments', version:1, planId, batchId, createdAt, source:'assistant', basedOn:{planRevision}, changes:[...]}.",
       "Each change: {id, summary, ops:[...]} with a stable id; a change applies whole or not at all. Keep ids stable when you rewrite the file.",
       "Ops: add {op:'add', type:'deliverable', id:'dv-…', value:{name, line?, kind?, stage?, target?, release?, lane?, owners?, jira?, note?, source?}};",
@@ -15104,7 +15116,7 @@ function assistantView(){
       "Then check it offline: python sightline-app.py check <this folder> <your file> --json, using the sightline-app.py published beside this page (python sightline-app.py --version must print this file's appVersion). Fix anything invalid before telling the person; Sightline checks again when they apply."].join("\n"),
     argTypes:actArgTypes(),
     actions:Object.values(planActions).filter(a=>!a.preview).map(a=>({id:a.id, desc:a.desc, scope:a.scope, risk:a.risk, args:{...a.args, ...(a.cur ? {prev:"any?"} : {})},
-      ...(a.fields ? {fields:a.fields} : {}), ...(ACT_CREATES[a.id] ? {creates:ACT_CREATES[a.id]} : {})})),
+      ...(a.fields ? {fields:a.fields} : {}), ...(ACT_CREATES[a.id] ? {creates:ACT_CREATES[a.id]} : {}), ...(ACT_REMOVES[a.id] ? {removes:ACT_REMOVES[a.id]} : {})})),
     choices:{targets:targetChoices().map(x=>x[0]), kinds:DV_KINDS.map(x=>x[0]), stages:DV_STAGES.map(x=>x[0]), proposalFields:PROPOSAL_FIELDS.map(x=>x[0]),
       lanes:S.lanes.map(l=>({id:l.id, name:l.name})), people:S.people.filter(p=>!p.inactive).map(p=>({id:p.id, name:p.name, outside:!!p.external})),
       releases:(JIRA && JIRA.releases || []).map(r=>({id:r.id, name:r.name, date:r.date || null, released:!!r.released}))},

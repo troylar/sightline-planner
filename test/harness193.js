@@ -14,10 +14,17 @@ const dom = new JSDOM(html, {runScripts:"dangerously", pretendToBeVisual:true, u
 setTimeout(()=>{
   const w = dom.window, ev = s=>w.eval(s); w.FIX = sample;
   ev(`S = normalize(JSON.parse(FIX), false); file.handle = null; render();`);
+  // One of every kind the fixture lacks, so every action gets cases: a task, an outcome and a capture, a group, a skill,
+  // what matters now, a risk, a milestone, a gate. Made through the actions themselves; every name is invented.
+  const made0 = ev(`(()=>{ const b = S.bars[0].id, r = [["task.add", {id:"task-h1", bar:b, start:"2026-12-01", days:2, label:"Write it"}], ["outcome.add", {id:"dv-h1", name:"Faster search"}],
+    ["outcome.add", {id:"dv-h2", name:"Export to CSV", capture:"request"}], ["group.add", {id:"grp-h1", name:"Support"}], ["skill.add", {id:"sk-h1", label:"Go"}],
+    ["guidance.add", {id:"gd-h1", text:"Keep cloud cost flat", from:"2026-11-01"}], ["risk.add", {id:"risk-h1", text:"Vendor limits"}],
+    ["milestone.add", {id:"ms-h1", what:"Pilot", day:"2026-12-10"}], ["gate.add", {id:"gate-h1", gate:"Security review", day:"2026-12-10"}]].map(([a, x])=>[a, runAction(S, a, x)]);
+    render(); return JSON.stringify(r.filter(([, x])=>!x.ok)); })()`);
   const ctx = JSON.parse(ev("JSON.stringify(assistantView())")), refs = (ctx.argTypes || {}).refs || {}, acts = ctx.actions;
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "sl193-"));
   fs.writeFileSync(path.join(dir, "sightline-assistant-view.json"), JSON.stringify(ctx));
-  const check = changes => { const b = {kind:"sightline-amendments", version:1, planId:ctx.plan.id, batchId:"h138", createdAt:new Date().toISOString(), source:"assistant", basedOn:{planRevision:ctx.plan.revision || 0}, changes};
+  const check = (changes, view = null) => { if (view) fs.writeFileSync(path.join(dir, "sightline-assistant-view.json"), JSON.stringify(view)); const b = {kind:"sightline-amendments", version:1, planId:ctx.plan.id, batchId:"h138", createdAt:new Date().toISOString(), source:"assistant", basedOn:{planRevision:ctx.plan.revision || 0}, changes};
     fs.writeFileSync(path.join(dir, "b.json"), JSON.stringify(b));
     let out; try { out = execFileSync("python3", [APP, "check", dir, path.join(dir, "b.json"), "--json"], {encoding:"utf8"}); } catch(e){ out = e.stdout; }
     const r = JSON.parse(out), by = {}; ((r.lines) || []).forEach(l=>{ const m = /^change ([^,:]+)(?:, op \d+)?: (.*)$/.exec(l); if (m) (by[m[1]] = by[m[1]] || []).push(m[2]); }); return {r, by}; };
@@ -33,6 +40,7 @@ setTimeout(()=>{
 
   // H1: no argument is "any" unless it's prev, or a setter's value whose fields say what each field takes
   const loose = acts.flatMap(A=>Object.entries(A.args).filter(([k, t])=>t.replace(/\?$/, "") === "any" && k !== "prev" && !(k === "value" && A.fields)).map(([k])=>A.id + "." + k));
+  ok("H0 (setup) one of every kind is in the plan", made0 === "[]", made0);
   ok("H1 every exported argument has a type narrower than any", !loose.length, loose.join(", "));
   ok("H1b decision.add and risk.add say item is an initiative id", ["decision.add", "risk.add"].every(id=>acts.find(a=>a.id === id).args.item === "initiativeId|blank?"));
   const clash = acts.flatMap(A=>[...Object.values(A.args), ...Object.values(A.fields || {})]).flatMap(t=>alts(t)).filter(a=>!refOf(a) && !(a.replace(/\[\]$/, "") in BASE) && a !== "blank" && a !== "null" && (/Id$/.test(a) || a in BASE));
@@ -50,6 +58,7 @@ setTimeout(()=>{
     const targets = Object.entries(A.args).filter(([k])=>k !== "prev" && k !== "value").map(([k, t])=>[k, t, null]);
     if (A.fields) Object.entries(A.fields).forEach(([fld, t])=>targets.push(["value", t, fld]));
     for (const [k, t, fld] of targets){ const refAlts = alts(t).filter(refOf), words = alts(t).filter(a=>a !== "blank" && a !== "null" && !refOf(a) && !(a.replace(/\[\]$/, "") in BASE));
+      if ((A.removes || []).includes(k)) continue;                      // H7b: what's removed isn't a reference
       if (!refAlts.length && !(words.length && words.length === alts(t).filter(a=>a !== "blank" && a !== "null").length)) continue;
       const args = {}; let skip = false;
       for (const [kk, tt] of Object.entries(A.args)){ if (kk === "prev") continue; if (kk === "id" && A.creates){ args.id = "new-" + A.id.replace(/\W/g, "-"); continue; }
@@ -98,6 +107,41 @@ setTimeout(()=>{
   const bogus = acts.filter(a=>a.fields).map((A, i)=>({id:"f" + i, summary:A.id, ops:[{op:"action", action:A.id, args:Object.fromEntries(Object.entries(A.args).filter(([kk, tt])=>kk !== "prev" && !tt.endsWith("?")).map(([kk, tt])=>[kk, kk === "field" ? "zzField" : kk === "value" ? "x" : fill(tt)]))}]})).filter(c=>!Object.values(c.ops[0].args).includes(undefined));
   const bb = check(bogus).by, both = bogus.filter(c=>!page(c.ops).ok && (bb[c.id] || []).length);
   ok(`H6b a field fields doesn't list is refused by the page and the checker (${bogus.length} setters)`, both.length === bogus.length && bogus.length >= 9, bogus.filter(c=>!both.includes(c)).map(c=>c.summary).join(", "));
+
+  // H7 what's being removed may already be gone: a link to a deleted item can still be removed, and neither refuses it
+  ev(`runAction(S, "outcome.relate", {id:"dv-h1", to:"dv-h2", rel:"supports"}); runAction(S, "initiative.delivers.add", {id:S.bars[0].id, outcome:"dv-h2"}); runAction(S, "outcome.del", {id:"dv-h2"}); render();`);
+  const ctx2 = JSON.parse(ev("JSON.stringify(assistantView())")), dangling = [{id:"g1", summary:"Unlink a deleted capture", ops:[{op:"action", action:"outcome.unrelate", args:{id:"dv-h1", to:"dv-h2"}}]},
+    {id:"g2", summary:"Stop delivering a deleted capture", ops:[{op:"action", action:"initiative.delivers.remove", args:{id:ev("S.bars[0].id"), outcome:"dv-h2"}}]}];
+  const gp = dangling.map(c=>page(c.ops)), gc = check(dangling, ctx2).by;
+  ok("H7 a link to a deleted item can still be removed: the page does it and the checker doesn't refuse", gp.every(x=>x.ok) && !gc.g1 && !gc.g2, JSON.stringify(gp) + " / " + JSON.stringify(gc));
+  const rem = acts.filter(a=>a.removes).flatMap(A=>A.removes.map(k=>({id:"x" + A.id.replace(/\W/g, "") + k, summary:A.id, A, k, ops:[{op:"action", action:A.id, args:Object.fromEntries(Object.entries(A.args).filter(([kk, tt])=>kk !== "prev" && !tt.endsWith("?")).map(([kk, tt])=>[kk, kk === k ? "zz-gone" : fill(tt)]))}]}))).filter(c=>!Object.values(c.ops[0].args).includes(undefined));
+  const rc = check(rem, ctx2).by, remBad = rem.filter(c=>/isn't in the plan/.test(page(c.ops).reason || "") || (rc[c.id] || []).some(x=>/isn't in the plan/.test(x)));
+  ok(`H7b no removal argument is checked as a reference, by either (${rem.length} cases)`, rem.length >= 15 && !remBad.length, remBad.map(c=>c.summary + "." + c.k + ": " + (page(c.ops).reason || "") + " / " + (rc[c.id] || []).join("; ")).join(" | "));
+
+  // H8 an id made earlier in the batch counts, through any kind it can be: an action, or an {op:'add'}
+  const earlier = [{id:"e1", summary:"New outcome", ops:[{op:"action", action:"outcome.add", args:{id:"dv-n", name:"New"}}]}, {id:"e2", summary:"Link it", ops:[{op:"action", action:"ref.add", args:{on:"dv-n", id:"ref-n", url:"https://docs.example.com/x"}}]},
+    {id:"e3", summary:"New initiative", ops:[{op:"action", action:"initiative.add", args:{id:"b-n", lane:ev("S.lanes[0].id"), label:"New", day:"2026-12-07"}}]}, {id:"e4", summary:"Relate to it", ops:[{op:"action", action:"outcome.relate", args:{id:"dv-h1", to:"b-n", rel:"supports"}}]},
+    {id:"e5", summary:"Add by op", ops:[{op:"add", type:"deliverable", id:"dv-x", value:{name:"Added by op"}}, {op:"action", action:"ref.add", args:{on:"dv-x", id:"ref-x", url:"https://docs.example.com/y"}}]}];
+  const ec = check(earlier, ctx2).by, es = JSON.parse(ev(`(()=>{ const F = amParse(${JSON.stringify(JSON.stringify({kind:"sightline-amendments", version:1, planId:ctx2.plan.id, batchId:"h193e", createdAt:new Date().toISOString(), source:"assistant", basedOn:{planRevision:ctx2.plan.revision || 0}, changes:earlier}))}).file; AM = {file:F, name:"t"}; return JSON.stringify(amRows().map(x=>x.r.status)); })()`));
+  ok("H8 ids made earlier in the batch (by an action or an add op, through item's either kind) count for both", !Object.keys(ec).length && es.every(x=>x === "ready"), JSON.stringify(ec) + " / " + JSON.stringify(es));
+  ev("AM = null");
+
+  // H9 a context cut short can't prove an id is missing, so the checker doesn't refuse one it can't see
+  const cut = JSON.parse(JSON.stringify(ctx2)); cut.coverage.initiatives = {total:99, exported:cut.initiatives.length, omitted:99 - cut.initiatives.length}; cut.coverage.complete = false;
+  const tc = check([{id:"t1", summary:"An initiative left out of the context", ops:[{op:"action", action:"initiative.setStatus", args:{id:"bar-not-exported", status:"done"}}]},
+    {id:"t2", summary:"A person isn't cut short", ops:[{op:"action", action:"workstream.addMember", args:{id:ev("S.lanes[0].id"), person:"p-nobody"}}]}], cut).by;
+  ok("H9 with initiatives left out, an unknown initiative isn't refused; people weren't left out, so an unknown person is", !tc.t1 && (tc.t2 || []).includes("That person isn't in the plan."), JSON.stringify(tc));
+
+  // H10 a value of the wrong shape gets the same plain sentence from both, with no internal type names
+  const shapes = [["risk.add", {id:"risk-s1", text:"x", owners:"Avery"}], ["workstream.setReserve", {id:ev("S.lanes[0].id"), reserve:"lots"}], ["decision.add", {id:"dec-s1", text:"x", due:"someday soon"}],
+    ["outcome.set", {id:"dv-h1", field:"askedBy", value:7}], ["initiative.order", {ids:"m2"}]].map(([a, x], i)=>({id:"s" + i, summary:a, ops:[{op:"action", action:a, args:x}]}));
+  const sc = check(shapes, ctx2).by, sp = shapes.map(c=>page(c.ops).reason), sameWords = shapes.every((c, i)=>(sc[c.id] || []).join() === sp[i]);
+  ok("H10 a wrong-shaped value: the same sentence from page and checker, in plain words", sameWords && sp.every(x=>/ must be | is one of /.test(x) && !/Id\b|\bstr\b|\biso\b|\bint\b/.test(x)), sp.join(" | ") + " // " + shapes.map(c=>(sc[c.id] || []).join("; ")).join(" | "));
+  // H11 a day in words is a date for both; a blank clears where blank is allowed
+  const words = [{id:"w1", summary:"Escalate next friday", ops:[{op:"action", action:"risk.add", args:{id:"risk-w1", text:"x", escalateBy:"next friday"}}]},
+    {id:"w2", summary:"Clear who asked", ops:[{op:"action", action:"outcome.set", args:{id:"dv-h1", field:"askedBy", value:""}}]}];
+  const wc = check(words, ctx2).by;
+  ok("H11 a day said in words, and clearing who asked, are accepted by both", words.every(c=>page(c.ops).ok) && !Object.keys(wc).length, JSON.stringify(words.map(c=>page(c.ops))) + " / " + JSON.stringify(wc));
 
   fs.rmSync(dir, {recursive:true, force:true});
   console.log(R.join("\n")); const n = R.length; console.log(`${n - f}/${n} passed`); process.exit(f ? 1 : 0);
