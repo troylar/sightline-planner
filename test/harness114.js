@@ -114,7 +114,7 @@ const act = (action, args)=>({op:'action', action, args});
     // What the assistant is told.
     fresh();
     const view = JSON.parse(ev(`JSON.stringify(assistantView())`));
-    ok('the context lists every action with its arguments', Array.isArray(view.actions) && view.actions.some(a=>a.id === 'link.add' && a.args.after === 'id') && view.actions.some(a=>a.id === 'decision.set' && a.args.prev), JSON.stringify((view.actions || []).slice(0, 2)));
+    ok('the context lists every action with its arguments', Array.isArray(view.actions) && view.actions.some(a=>a.id === 'link.add' && a.args.after === 'initiativeId') && view.actions.some(a=>a.id === 'decision.set' && a.args.prev), JSON.stringify((view.actions || []).slice(0, 2)));
     const reg = JSON.parse(ev(`JSON.stringify(Object.values(planActions).filter(a=>!a.preview).map(a=>({id:a.id, desc:a.desc, args:{...a.args, ...(a.cur ? {prev:"any?"} : {})}})))`)), byId = new Map((view.actions || []).map(a=>[a.id, a]));
     const gaps = reg.filter(a=>{ const x = byId.get(a.id); return !x || JSON.stringify(x.args) !== JSON.stringify(a.args) || x.desc !== a.desc; }).map(a=>a.id);
     ok('every action in the registry is in the context, with exactly its args and its description', reg.length >= 80 && reg.length === view.actions.length && !gaps.length, gaps.join(', '));

@@ -128,6 +128,8 @@ def arg_ok(t: str, v) -> bool:
     if t == "str":
         return isinstance(v, str) and len(v) <= 4000
     if t == "iso":
+        if _rel_day(v):          # a day in words: the page reads it against today, the same way
+            return True
         if not (isinstance(v, str) and ISO.match(v)):
             return False
         try:
@@ -139,7 +141,134 @@ def arg_ok(t: str, v) -> bool:
         return isinstance(v, (int, float)) and not isinstance(v, bool) and v == v and abs(v) != float("inf")
     if t == "int":
         return isinstance(v, int) and not isinstance(v, bool)
+    if t == "bool":
+        return isinstance(v, bool)
+    if t == "who":           # who asked: {"type": "person" or "group", "id": ...}, or null
+        return v is None or (isinstance(v, dict) and set(v) == {"type", "id"} and v["type"] in ("person", "group") and isinstance(v["id"], str) and bool(re.match(r"^[A-Za-z0-9._-]{1,60}$", v["id"])))
+    if t == "weights":
+        return v is None or (isinstance(v, dict) and len(v) <= 20 and all(arg_ok("id", k) and arg_ok("int", x) for k, x in v.items()))
+    if t == "isoOrAfter":
+        return v == "after" or arg_ok("iso", v)
+    if t == "isoOrNull":
+        return v is None or arg_ok("iso", v)
     return True
+
+
+_REL_DAY = re.compile(r"^(today|tomorrow|yesterday|(\+ ?|in )\d{1,3} ?(d|days?|w|wks?|weeks?)|- ?\d{1,3} ?(d|days?|w|wks?|weeks?)|\d{1,3} (days?|weeks?) ago"
+                      r"|((this|next|last) )?(mon|tue|wed|thu|fri|sat|sun)[a-z]{0,6}|(next|last) (week|month)|(this|next) sprint)$")
+_REL_WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+
+
+def _rel_day(v) -> bool:
+    """A day said in words (next Monday, +3d, 2 weeks ago...): the page reads it against today when it checks the change."""
+    if not isinstance(v, str) or len(v) > 40:
+        return False
+    t = " ".join(v.strip().lower().split())
+    if not _REL_DAY.match(t):
+        return False
+    m = re.match(r"^((this|next|last) )?([a-z]+)$", t)    # a weekday: the start of its name, at least three letters
+    if m and m.group(3) == "month":
+        return m.group(2) in ("next", "last")
+    if m and m.group(3) not in ("today", "tomorrow", "yesterday", "week", "sprint"):
+        return any(d.startswith(m.group(3)) for d in _REL_WEEKDAYS)
+    return True
+
+
+BASE_TYPES = {"any", "id", "idOrBlank", "ids", "keys", "str", "iso", "num", "int", "bool", "isoOrAfter", "isoOrNull", "who", "weights"}
+
+
+def alt_ok(alt: str, v, refs: dict) -> bool:
+    """One choice of a type, as the page's actAltOk reads it: a base type, a reference, either with [] for a list,
+    blank, null, or a word that stands for itself."""
+    if alt == "blank":
+        return v == ""
+    if alt == "null":
+        return v is None
+    if alt.endswith("[]"):
+        return isinstance(v, list) and len(v) <= 500 and all(alt_ok(alt[:-2], x, refs) for x in v)
+    if alt in refs:
+        return arg_ok("id", v)
+    if alt in BASE_TYPES:
+        return arg_ok(alt, v)
+    return v == alt
+
+
+def type_problem(k: str, t: str, v, refs: dict, words_for: dict) -> str | None:
+    alts = t.rstrip("?").split("|")
+    if any(alt_ok(x, v, refs) for x in alts):
+        return None
+    if len(alts) == 1 and alts[0] in BASE_TYPES:
+        b = alts[0]
+        return f"{k} isn't a valid {'date (YYYY-MM-DD)' if b.startswith('iso') else 'list' if b in ('ids', 'keys') else 'id' if b == 'id' else 'number' if b in ('num', 'int') else 'split ({workstream id: weight})' if b == 'weights' else 'value'}."
+    return type_words(k, alts, words_for, {r: x.get("noun") or r for r, x in refs.items()})
+
+
+def type_words(k: str, alts: list, types: dict, nouns: dict) -> str:
+    """The page's actTypeWords: what a value should have been, built from argTypes so both say it the same way."""
+    base = lambda x: x.removesuffix("[]")
+    is_word = lambda x: x not in ("blank", "null") and base(x) not in nouns and base(x) not in types
+    words = [x for x in alts if is_word(x)]
+    tail = ", or empty" if "blank" in alts else ", or null" if "null" in alts else ""
+    if words and len(words) == len([x for x in alts if x not in ("blank", "null")]):
+        return f"{k} is one of {', '.join(words)}{tail}."
+    def say(x):
+        if x == "blank":
+            return "empty"
+        if x == "null":
+            return "null"
+        if base(x) in nouns:
+            n = nouns[base(x)]
+            return f"a list of {n} ids" if x.endswith("[]") else f"the id of {'an' if n[:1] in 'aeiou' else 'a'} {n}"
+        if base(x) in types:
+            return f"a list of {types[base(x)]}" if x.endswith("[]") else types[base(x)]
+        return f'"{x}"'
+    return f"{k} must be {', or '.join(say(x) for x in alts)}."
+
+
+def ref_index(ctx: dict, refs: dict) -> dict:
+    """Every id the context lists for each kind of reference, and whether that list is complete (nothing omitted)."""
+    def walk(node, parts):
+        if not parts:
+            return [node] if isinstance(node, list) else []
+        head, rest = parts[0], parts[1:]
+        if head.endswith("[]"):
+            out = []
+            for x in node.get(head[:-2]) or [] if isinstance(node, dict) else []:
+                out += walk(x, rest)
+            return out
+        return walk(node.get(head) if isinstance(node, dict) else None, rest)
+    cov = ctx.get("coverage") or {}
+    out = {}
+    for kind, r in refs.items():
+        ids, complete = set(), True
+        for where in str(r.get("in") or "").split(", "):
+            for lst in walk(ctx, where.split(".")) if where else []:
+                ids.update(x.get("id") for x in lst if isinstance(x, dict) and isinstance(x.get("id"), str))
+        for key in str(r.get("coverage") or "").split(", "):
+            c = cov.get(key) if key else None
+            if isinstance(c, dict):
+                complete = complete and not c.get("omitted")
+            else:
+                complete = complete and cov.get("complete") is True
+        out[kind] = (ids, complete)
+    return out
+
+
+def ref_problem(t: str, v, refs: dict, index: dict, made: dict) -> str | None:
+    """The page's actRefProblem: every reference names something in the plan or made earlier in the batch. A list the
+    context cut short can't prove an id is missing, unless the id is something else (made in this batch as another kind)."""
+    alts = t.rstrip("?").split("|")
+    kinds = [x.removesuffix("[]") for x in alts if x.removesuffix("[]") in refs]
+    if not kinds or any(x.removesuffix("[]") not in refs and alt_ok(x, v, refs) for x in alts):
+        return None
+    covers = set(kinds) | {o for k in kinds for o in refs[k].get("of") or []}     # an item id is an outcome's or an initiative's
+    for i in v if isinstance(v, list) else [v]:
+        if any(i in index[k][0] for k in kinds) or any(i in made.get(k, set()) for k in covers):
+            continue
+        other = any(i in ids for kk, ids in made.items() if kk not in covers)
+        if other or all(index[k][1] for k in kinds):
+            return refs[kinds[0]].get("missing") or f"That {kinds[0]} isn't in the plan."
+    return None
 
 
 def check_offline(folder: Path, batch: dict) -> list:
@@ -159,7 +288,12 @@ def check_offline(folder: Path, batch: dict) -> list:
     if based != plan.get("revision", 0):
         raise Fail(2, f"The batch was written against revision {based}; the context is at revision {plan.get('revision', 0)}. Read {CONTEXT_FILE} again and rewrite it.",
                    {"basedOn": based, "planRevision": plan.get("revision", 0)})
-    actions = {a.get("id"): a.get("args") or {} for a in ctx.get("actions") or [] if isinstance(a, dict)}
+    acts = {a.get("id"): a for a in ctx.get("actions") or [] if isinstance(a, dict)}
+    actions = {k: a.get("args") or {} for k, a in acts.items()}
+    refs = ((ctx.get("argTypes") or {}).get("refs") or {}) if isinstance(ctx.get("argTypes"), dict) else {}
+    index, made = ref_index(ctx, refs), {}
+    words_for = ((ctx.get("argTypes") or {}).get("types") or {}) if isinstance(ctx.get("argTypes"), dict) else {}
+    ADDS = {"deliverable": "outcomeId", "initiative": "initiativeId", "task": "taskId"}      # what an {op:'add'} makes
     bad, seen = [], set()
     changes = batch.get("changes")
     if not isinstance(changes, list) or not changes:
@@ -187,6 +321,8 @@ def check_offline(folder: Path, batch: dict) -> list:
                 bad.append(f"{where}: op is one of {', '.join(sorted(OPS))}.")
                 continue
             if o["op"] != "action":
+                if o["op"] == "add" and o.get("type") in ADDS and isinstance(o.get("id"), str):
+                    made.setdefault(ADDS[o["type"]], set()).add(o["id"])
                 continue
             name, args = o.get("action"), o.get("args")
             if name not in actions:
@@ -195,17 +331,27 @@ def check_offline(folder: Path, batch: dict) -> list:
             if not isinstance(args, dict):
                 bad.append(f"{where}: args must be an object.")
                 continue
-            spec = actions[name]
+            spec, fields, removes = actions[name], acts[name].get("fields"), acts[name].get("removes") or []
             for k in args:
                 if k not in spec:
                     bad.append(f"{where}: {name} has no argument {k!r}.")
             for k, t in spec.items():
-                if k not in args or (args[k] is None and t.endswith("?")):
+                if k not in args:
                     if not t.endswith("?"):
                         bad.append(f"{where}: {name} needs {k}.")
                     continue
-                if not arg_ok(t, args[k]):
-                    bad.append(f"{where}: {k} isn't a valid {'date (YYYY-MM-DD)' if t.startswith('iso') else t.rstrip('?')}.")
+                label = k
+                if k == "value" and isinstance(fields, dict) and isinstance(args.get("field"), str):
+                    if args["field"] not in fields:
+                        bad.append(f"{where}: {name} can't set {str(args['field'])[:40]!r} (fields lists what it can).")
+                        continue
+                    t, label = fields[args["field"]], args["field"]
+                gone = k in removes         # what's being removed may already be gone: the page decides whether there's anything to remove
+                why = type_problem(label, t, args[k], refs, words_for) or (None if gone else ref_problem(t, args[k], refs, index, made))
+                if why:
+                    bad.append(f"{where}: {why}")
+            if acts[name].get("creates") in refs and isinstance(args.get("id"), str):
+                made.setdefault(acts[name]["creates"], set()).add(args["id"])
             if name.endswith(".add") and "id" in spec and not (isinstance(args.get("id"), str) and args["id"]):
                 bad.append(f"{where}: give the new item an id (like risk-vendor-limits), so reading the file again can't add it twice.")
             if str(name).startswith("jira.") and name not in ("jira.hide", "jira.unhide"):      # hiding isn't a placement

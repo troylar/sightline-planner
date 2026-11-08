@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.184.2",
+  "date": "2026-11-08",
+  "headline": "The offline check agrees with the page",
+  "changes": [
+    {
+      "kind": "fixed",
+      "area": "Assistant",
+      "title": "sightline-app.py check refuses what Sightline would refuse",
+      "before": "The offline check could pass a batch that Sightline then marked invalid. A decision or risk about a captured request was the common case: its item has to be an initiative, but nothing said so.",
+      "now": "The assistant's context says exactly what an argument takes when it names something in the plan, or one of a few values. The check refuses a missing or wrong-kind id, or a value that isn't a choice, in Sightline's own words. A few odd values Sightline let through are now refused, like an outside flag that isn't true or false. Situational checks still happen when a change is applied.",
+      "where": "sightline-app.py check, and actions and argTypes in the assistant's context"
+    }
+  ]
+},
+{
   "version": "1.184.1",
   "date": "2026-11-08",
   "headline": "Clearer reviews, and no stray words",
