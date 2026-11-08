@@ -2,31 +2,39 @@
 {
   "version": "1.184.1",
   "date": "2026-11-08",
-  "headline": "Clearer reviews and forecasts",
+  "headline": "Clearer reviews, and no stray words",
   "changes": [
     {
       "kind": "fixed",
       "area": "Review",
       "title": "A repeated request reads as a sentence",
       "before": "Reviewing an assistant's note that a request came up again showed internal IDs and arrows, like \"raiseAgain ra-2 → support → support\".",
-      "now": "It now says who raised it again, how it came in and why it matters, for example: \"Sign in with the company account\" raised again by support (support ticket): a third team is waiting.",
+      "now": "It says who raised it again (a person, a group or a role), at which meeting, when, how it came in and why it matters, for example: \"Sign in with the company account\" raised again by support (support ticket): a third team is waiting.",
       "where": "Review of an assistant's proposed changes"
     },
     {
       "kind": "fixed",
-      "area": "Forecast",
-      "title": "No stray \"null\" under the critical chain",
-      "before": "When the critical chain had no single workstream to name as the bottleneck, the word \"null\" appeared under it.",
-      "now": "Nothing extra shows; the chain is listed on its own.",
-      "where": "Capacity, Forecast"
+      "area": "Everywhere",
+      "title": "No stray \"null\"",
+      "before": "The word \"null\" could appear under the forecast's critical chain, at the end of Settings, Tags and the Planning guide while you weren't editing, and after the list in If this slips, which also said \"1 other item move\".",
+      "now": "Nothing extra shows, and If this slips says \"1 other item moves\".",
+      "where": "Capacity, Forecast; Settings, Tags and Planning guide; an item's If this slips"
     },
     {
       "kind": "fixed",
       "area": "Assistant",
       "title": "The skill and its dialog match how links and pasting work",
-      "before": "The Planning skills dialog spoke of several skills, and the sightline-plan skill said only links on a captured request wait for a person.",
-      "now": "The dialog speaks of the one skill and says Copy for my assistant includes it for an assistant you paste into. The skill now says every link an assistant proposes waits for a person, as Sightline already required.",
+      "before": "The Planning skills dialog spoke of several skills and said \"1 skills ready\", and the sightline-plan skill said only links on a captured request wait for a person.",
+      "now": "The dialog speaks of the one skill and says Copy for my assistant includes it for an assistant you paste into. The skill says every link an assistant proposes waits for a person, as Sightline already required. The installer says \"planning skill\" too.",
       "where": "Setup and files, Planning skills"
+    },
+    {
+      "kind": "fixed",
+      "area": "Wording",
+      "title": "Messages point to the right place",
+      "before": "Some messages sent you to Settings for Activity, to Plan for Decisions, to Settings → Calendar, or to a \"Copy with data\" button that doesn't exist.",
+      "now": "They say Delivery, then Activity; Delivery, then Decisions; Settings → Work calendar; and Copy instructions with data.",
+      "where": "History-file and decision messages; Time off; Use any AI assistant"
     }
   ]
 },

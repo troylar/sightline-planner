@@ -4,13 +4,14 @@
 
 ## 1.184.1 · Nov 8, 2026
 
-Clearer reviews and forecasts.
+Clearer reviews, and no stray words.
 
 ### Fixed
 
-- **A repeated request reads as a sentence** (Review). It now says who raised it again, how it came in and why it matters, for example: "Sign in with the company account" raised again by support (support ticket): a third team is waiting. *Where:* Review of an assistant's proposed changes
-- **No stray "null" under the critical chain** (Forecast). Nothing extra shows; the chain is listed on its own. *Where:* Capacity, Forecast
-- **The skill and its dialog match how links and pasting work** (Assistant). The dialog speaks of the one skill and says Copy for my assistant includes it for an assistant you paste into. The skill now says every link an assistant proposes waits for a person, as Sightline already required. *Where:* Setup and files, Planning skills
+- **A repeated request reads as a sentence** (Review). It says who raised it again (a person, a group or a role), at which meeting, when, how it came in and why it matters, for example: "Sign in with the company account" raised again by support (support ticket): a third team is waiting. *Where:* Review of an assistant's proposed changes
+- **No stray "null"** (Everywhere). Nothing extra shows, and If this slips says "1 other item moves". *Where:* Capacity, Forecast; Settings, Tags and Planning guide; an item's If this slips
+- **The skill and its dialog match how links and pasting work** (Assistant). The dialog speaks of the one skill and says Copy for my assistant includes it for an assistant you paste into. The skill says every link an assistant proposes waits for a person, as Sightline already required. The installer says "planning skill" too. *Where:* Setup and files, Planning skills
+- **Messages point to the right place** (Wording). They say Delivery, then Activity; Delivery, then Decisions; Settings → Work calendar; and Copy instructions with data. *Where:* History-file and decision messages; Time off; Use any AI assistant
 
 ## 1.184.0 · Nov 5, 2026
 

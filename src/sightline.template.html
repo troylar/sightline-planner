@@ -1670,7 +1670,7 @@ body:has(> #bootfail) > :not(#bootfail){display:none !important}
   <div id="forecastWs"></div>
 </section>
 <section class="panel load" id="sec-off" aria-labelledby="off-h">
-  <header><h2 id="off-h">Time off</h2><span class="hint" id="offHint">Everyone's time off in one place. Company holidays are in Settings → Calendar.</span></header>
+  <header><h2 id="off-h">Time off</h2><span class="hint" id="offHint">Everyone's time off in one place. Company holidays are in Settings → Work calendar.</span></header>
   <div id="offTracker"></div>
 </section>
 <section class="panel load" id="sec-jirapeople" aria-labelledby="jp-h" hidden>
@@ -4019,7 +4019,7 @@ async function histFlush(unnamed){
   let res; try { res = await run; } catch(e){ res = {at:Date.now(), wrote:0, quarters:[], errors:[{quarter:"", why:e.message || String(e)}], kept:0}; }
   if (hist.flushing === run) hist.flushing = null;
   if (res && same()){ hist.flushed = res; render();
-    if (res.errors.length) setStatus(`Saved, but some older history couldn't be copied to its files (${res.errors.map(e=>e.quarter ? histQName(e.quarter) : "the history folder").join(", ")}), so it stays in the plan file. See Settings, then Activity.`); }
+    if (res.errors.length) setStatus(`Saved, but some older history couldn't be copied to its files (${res.errors.map(e=>e.quarter ? histQName(e.quarter) : "the history folder").join(", ")}), so it stays in the plan file. See Delivery, then Activity.`); }
   return res; }
 const histBackedUp = new WeakSet();
 // Whether a save with no edits should still be written: entries the files hold can leave, or removals they show be forgotten.
@@ -4035,7 +4035,7 @@ function histBackupFirst(hd, before, out){
 // Where history is listed: what may be missing from it, and why. Null when nothing is.
 function histNotice(short){
   if (!file.handle || hist.hd !== file.handle || hist.plan !== S.meta.planId) return null;
-  const go = " See Settings, then Activity.";
+  const go = " See Delivery, then Activity.";
   if (hist.state === "paused") return h("p",{class:"msg warn histmiss"}, `History files in ${hist.dir.name} aren't shown until you reconnect the folder.` + (short ? "" : go));
   if (hist.state === "moved") return h("p",{class:"msg warn histmiss"}, `${hist.dir.name} no longer holds this plan, so its history files aren't shown.` + (short ? "" : go));
   if (hist.state === "ready" && !hist.by) return h("p",{class:"msg histmiss"}, `Reading the history files in ${hist.dir.name}…`);
@@ -6375,7 +6375,7 @@ function openPlanningSkills(){
       let dir; try { dir = await showDirectoryPicker({mode:"readwrite",id:"sightline-skills"}); }
       catch(e){ if (e.name === "AbortError"){ note.textContent = "Folder selection canceled. No skills were installed."; return; } throw e; }
       const result = await installPlanningSkills(dir, (n,total)=>{ note.textContent = `Installed ${n} of ${total} files…`; });
-      note.textContent = `${result.skills} skills ready. ${result.installed} new files, ${result.unchanged} already up to date. Point your assistant at this folder to use the skills.`;
+      note.textContent = `${result.skills} skill${result.skills === 1 ? "" : "s"} ready. ${result.installed} new files, ${result.unchanged} already up to date. Point your assistant at this folder to use ${result.skills === 1 ? "it" : "them"}.`;
       setStatus(`Planning skills ready: ${result.skills} from Sightline ${BUNDLED_SKILLS.version}.`);
     } catch(e){ note.textContent = `${e.installed || 0} of ${e.total || BUNDLED_SKILLS.files.length + 1} files installed. ${e.message} Existing files are kept. Choose a new folder to retry.`; }
     finally { skillsInstalling = false; zip.disabled = install.disabled = !has; close.disabled = false; }
@@ -8990,9 +8990,10 @@ function actLine(id, args, p){ const a = args && typeof args === "object" ? args
     "guidance.set": () => `Guidance "${String((actGd(p, a.id) || {text:a.id}).text).slice(0, 60)}": ${a.field === "text" ? "new wording" : a.field === "why" ? "new reason" : a.field === "through" ? "ends" : a.field === "from" ? "starts" : "review"} ${GD_DATES.includes(a.field) ? (validIso(a.value) ? fmtDay(isoToDay(a.value)) : "cleared") : "(shown below)"}`,
     "guidance.del": () => `Remove guidance "${String((actGd(p, a.id) || {text:a.id}).text).slice(0, 60)}"`,
     "outcome.relate": () => `${who} ${relName(a.rel).toLowerCase()} ${nm("", a.to)}`, "outcome.unrelate": () => `${who} no longer linked to ${nm("", a.to)}`,
-    "outcome.raiseAgain": () => `${who} raised again` + (a.who && a.who.id ? ` by ${nm("", a.who.id)}` : a.role ? ` by ${String(a.role).trim().slice(0, 40)}` : "") +
-      (validIso(a.raised) ? ` on ${fmtDay(isoToDay(a.raised))}` : "") + (CHANNELS.some(c=>c[0] === a.channel) ? ` (${CHANNELS.find(c=>c[0] === a.channel)[1].toLowerCase()})` : "") +
-      (String(a.impact || "").trim() ? `: ${String(a.impact).trim().slice(0, 120)}` : ""),
+    "outcome.raiseAgain": () => { const w = a.who && a.who.id ? (a.who.type === "group" ? ((p.groups || []).find(g=>g.id === a.who.id) || {}).name || "a group" : (actPerson(p, a.who.id) || {}).name || "someone") : String(a.role || "").trim().slice(0, 40),
+      src = String(a.source || "").trim().slice(0, 60), ch = CHANNELS.find(c=>c[0] === a.channel), imp = String(a.impact || "").trim();
+      return `${who} raised again` + (w ? ` by ${w}` : "") + (src ? ` at "${src}"` : "") + (validIso(a.raised) ? ` on ${fmtDay(isoToDay(a.raised))}` : "") + (ch ? ` (${ch[1].toLowerCase()})` : "") +
+        (imp ? `: ${imp.length > 120 ? imp.slice(0, 119) + "…" : imp}` : ""); },
     "ref.add": () => `Link "${String(a.title || "a document").trim().slice(0, 60)}" (${String(a.url || "").trim().replace(/^https:\/\//, "").slice(0, 80)}) on ${nm("", a.on)}`, "ref.del": () => `Remove a link from ${nm("", a.on)}`}[id];
   if (more) return more();
   if (say) return say() + ((id === "initiative.add" || id === "task.add") && typeof a.story === "string" && a.story.trim() ? ", with a story (shown below)" : "");
@@ -12123,7 +12124,7 @@ function decideForm(key, text, item, after){ if (!editable()) return null;
     const cites = [...document.querySelectorAll("#decideCites input:checked")].map(x=>x.value), me = meId(), args = {text:t, state:"decided"};
     if (item) args.item = item; if (me && S.people.some(x=>x.id === me)) args.decider = me; if (cites.length) args.guidance = cites;
     let r = NOCHANGE; if (!commit(()=>(r = act("decision.add", args))) || r === NOCHANGE) return;
-    setStatus(`Recorded as a decision${cites.length ? ", citing " + (cites.length === 1 ? "one guidance entry" : cites.length + " guidance entries") : ""}. It's in Plan, Decisions.`); close(); };
+    setStatus(`Recorded as a decision${cites.length ? ", citing " + (cites.length === 1 ? "one guidance entry" : cites.length + " guidance entries") : ""}. It's in Delivery, Decisions.`); close(); };
   return h("form",{class:"decideform",id:"decideForm",onsubmit:e=>{ e.preventDefault(); save(); }},
     h("label",{class:"gdf"}, "What was decided", h("input",{id:"decideText",value:text,maxlength:"300"})),
     live.length ? h("fieldset",{id:"decideCites",class:"gdlanes"}, h("legend",{}, "It relied on (what matters now)"), ...live.map(g=>h("label",{}, h("input",{type:"checkbox",value:g.id}), " ", cutText(g.text, 80))))
@@ -12695,7 +12696,7 @@ function renderReport(){
 function renderTags(){
   const host = $("#tagsWs"); if (!host) return; const can = editable() && !present;
   const uses = id => TAGGED.reduce((a, k)=>a + (S[k] || []).filter(x=>(x.tags || []).includes(id)).length, 0) + S.bars.flatMap(b=>b.tasks || []).filter(t=>(t.tags || []).includes(id)).length + (S.jiraItems || []).filter(x=>x.tags.includes(id)).length;
-  host.replaceChildren(h("div",{class:"jhead"}, h("p",{class:"hint"}, "The plan's own tags, on anything: initiatives, tasks, milestones, notes, and Jira items (kept with their Jira key). Add them from any card. Jira's labels come from Jira and are separate.")),
+  host.replaceChildren(...nonNull(h("div",{class:"jhead"}, h("p",{class:"hint"}, "The plan's own tags, on anything: initiatives, tasks, milestones, notes, and Jira items (kept with their Jira key). Add them from any card. Jira's labels come from Jira and are separate.")),
     (S.tags || []).length ? h("table",{class:"tbl",id:"tagTable"}, h("thead",{}, h("tr",{}, h("th",{},"Tag"), h("th",{},"Color"), h("th",{},"Used on"), h("th",{}))),
       h("tbody",{}, ...S.tags.map(t=>h("tr",{"data-tag":t.id},
         h("td",{}, h("input",{"aria-label":"Tag name",value:t.name,disabled:!can,onchange:e=>{ const v = e.target.value.trim().slice(0,40); if (v) commit(s=>{ s.tags.find(x=>x.id === t.id).name = v; }); }})),
@@ -12704,9 +12705,9 @@ function renderTags(){
         h("td",{}, can ? h("button",{type:"button",class:"btn","data-deltag":t.id,onclick:()=>{ if (!window.confirm(`Delete the tag ${t.name}? It comes off everything it's on.`)) return;
           commit(s=>{ s.tags = s.tags.filter(x=>x.id !== t.id); const off = x => { if (x.tags){ x.tags = x.tags.filter(v=>v !== t.id); if (!x.tags.length) delete x.tags; } };
             TAGGED.forEach(k=>(s[k] || []).forEach(off)); s.bars.forEach(b=>(b.tasks || []).forEach(off)); s.jiraItems = (s.jiraItems || []).map(x=>({...x, tags:x.tags.filter(v=>v !== t.id)})).filter(x=>x.tags.length); }); }},"Delete") : null))))) : h("p",{class:"hint"}, "No tags yet. Add one from any card."),
-    can ? null : h("p",{class:"hint"}, "Click Start editing to rename, recolor or delete tags."));
+    can ? null : h("p",{class:"hint"}, "Click Start editing to rename, recolor or delete tags.")));
 }
-// Settings, then Activity: the change log, newest first, by person. Advice, not an audit.
+// Delivery, then Activity: the change log, newest first, by person. Advice, not an audit.
 // How big the plan file is against what a save can write (2 MB), and what takes the room, so growth is seen early.
 const SIZE_PARTS = [["changes","Activity (change log)"],["bars","Initiatives and tasks"],["deliverables","Deliverables"],["snapshots","Snapshots"],["reports","Status updates"],["commitments","Sprint commitments"],["notes","Notes"],["updates","Updates"],["meetings","Meetings"],["proposals","Jira proposals"],["jiraItems","Jira tags"],["people","People"],["views","Saved views"]];
 function utf8Len(t){ if (typeof TextEncoder !== "undefined") return new TextEncoder().encode(t).length; let n = 0; for (let i = 0; i < t.length; i++){ const c = t.charCodeAt(i); n += c < 0x80 ? 1 : c < 0x800 ? 2 : c >= 0xd800 && c < 0xdc00 ? (i++, 4) : 3; } return n; }
@@ -13800,9 +13801,9 @@ function quickPanel(key){
         const n = clampInt(n0.value, 1, 60, 3), hits = slipImpact(key, n); res.replaceChildren();
         if (!hits.length){ res.append(h("p",{class:"hint"}, "Nothing else moves. It has slack, or nothing waits for it.")); return; }
         const endNow = Math.max(...S.bars.map(b=>barEndDay(b)));
-        res.append(h("p",{class:"hint"}, `${hits.length} other item${hits.length===1?"":"s"} move:`), h("ul",{}, ...hits.slice(0,12).map(y=>h("li",{}, `${y.label} `, h("b",{}, `+${y.days}d`)))),
+        res.append(...nonNull(h("p",{class:"hint"}, `${hits.length} other item${hits.length===1?" moves":"s move"}:`), h("ul",{}, ...hits.slice(0,12).map(y=>h("li",{}, `${y.label} `, h("b",{}, `+${y.days}d`)))),
           hits.length > 12 ? h("p",{class:"hint"}, `…and ${hits.length-12} more.`) : null,
-          hits.some(y=>y.end > endNow) ? h("p",{class:"msg warn"}, "The plan's end date moves too.") : null); }},"Show what moves")), res));
+          hits.some(y=>y.end > endNow) ? h("p",{class:"msg warn"}, "The plan's end date moves too.") : null)); }},"Show what moves")), res));
   }
   return box;
 }
@@ -15984,7 +15985,7 @@ function amendBody(put, setup){
     h("div",{class:"asacts"},h("button",{type:"button",class:"btn sm",id:"analysisCopy",onclick:()=>copyText(analysisGuide(), "the analysis instructions")},"Copy analysis instructions"),
       h("button",{type:"button",class:"btn sm",id:"analysisCopyData",title:"For an assistant that can't read files. Includes the plan and its Jira facts, without notes.",onclick:()=>copyText(analysisPaste(), "the analysis instructions and the plan's data")},"Copy instructions with data"),
       h("button",{type:"button",class:"btn sm",id:"analysisAgents",title:"Put it in the folder with your plan. Copilot and other coding assistants read AGENTS.md on their own.",onclick:()=>download(analysisGuide(), "AGENTS.md", "text/markdown")},"Download AGENTS.md")),
-    h("p",{class:"hint"},"Copy for my assistant and Copy with data put team information on your clipboard: paste it only into an assistant your team is allowed to use.")));
+    h("p",{class:"hint"},"Copy for my assistant and Copy instructions with data put team information on your clipboard: paste it only into an assistant your team is allowed to use.")));
   if (!AM){
     const folders = typeof window.showDirectoryPicker === "function", files = typeof window.showOpenFilePicker === "function";
     if (!folders) put(h("p",{class:"hint",id:"assistantBrowserHelp"}, files ? "Use Edge or Chrome for an automatic private-folder connection, or connect an existing changes file below."
@@ -17272,7 +17273,7 @@ function renderPlanningGuide(){
   };
   const laneIds = new Set(S.lanes.map(l=>"lane:" + l.id));
   const orphanIds = [...new Set([...(S.planningGuide || []).map(row=>row.id), ...(drafts ? drafts.keys() : [])])].filter(id=>id.startsWith("lane:") && !laneIds.has(id));
-  host.replaceChildren(h("div",{class:"jhead"},h("p",{class:"hint"},"Describe how your team organizes work so an assistant can interpret ideas consistently. This shared guide provides planning context; Sightline's rules still apply."),
+  host.replaceChildren(...nonNull(h("div",{class:"jhead"},h("p",{class:"hint"},"Describe how your team organizes work so an assistant can interpret ideas consistently. This shared guide provides planning context; Sightline's rules still apply."),
     h("button",{type:"button",class:"btn",id:"pgSkills",onclick:()=>openPlanningSkills()},"Get planning skills"),
       h("p",{class:"hint"},"The guide supplies context. Optional chat uses a separately configured local companion; saving this guide does not connect an endpoint or organize ideas automatically. Avoid secrets: anyone who can open the plan can read this guide.")),
     !can ? h("p",{class:"hint",id:"pgReadonly"},present ? "Leave presentation mode to edit the planning guide." : tooNew() || locked ? "Guide editing is unavailable while this plan is read-only." : "Click Start editing to change the planning guide.") : null,
@@ -17288,7 +17289,7 @@ function renderPlanningGuide(){
       h("p",{class:"hint",id:"pgPreviewSource"},"Current guide applied in this browser; unapplied field drafts are excluded." + (file.handle ? " Automatic folder context uses the last confirmed shared file. Save the shared plan to include guide changes there." : " This browser copy is the source for assistant context.")),
       gapsList(),
       h("pre",{id:"pgPreview",tabindex:"0",style:{whiteSpace:"pre-wrap",overflowWrap:"anywhere",maxHeight:"400px",overflow:"auto"}},planningGuideText()),
-      h("button",{type:"button",class:"btn",id:"pgCopy",onclick:()=>copyText(planningGuideText(),"the planning guide instructions")},"Copy instructions")));
+      h("button",{type:"button",class:"btn",id:"pgCopy",onclick:()=>copyText(planningGuideText(),"the planning guide instructions")},"Copy instructions"))));
   updateDraftState();
   if (focused){ const next = document.getElementById(focused); if (next && !next.disabled){ next.focus({preventScroll:true}); if (start != null && typeof next.setSelectionRange === "function") next.setSelectionRange(start, end); } }
 }
