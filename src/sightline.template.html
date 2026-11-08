@@ -14861,20 +14861,25 @@ function amKnock(r, ops, base = S){ const real = S, own = new Set((ops || []).fl
   catch(e){ return 0; } finally { S = real; dropJiraMemos(); } }
 // One read at a time; a read that finishes after a disconnect or a plan switch is dropped.
 let amReading = null;
+// Reading waits only while a change is being edited or something is being dragged. Typing in any other field doesn't stop
+// a rewritten file from being read (and reported in the results file); only the redraw waits, until focus leaves the field.
+const amReadHeld = () => !!((UI.amEditing && sel && sel.type === "amend" && document.getElementById("amEdit-" + UI.amEditing)) || drag || tdrag);
+function amShow(me){ if (AM !== me) return; if (assistantInteractionBusy()){ me.drawLater = true; return; } me.drawLater = false; render(); }
+document.addEventListener("focusout", ()=>setTimeout(()=>{ if (AM && AM.drawLater && !assistantInteractionBusy()) amShow(AM); }, 0));
 async function amRead(quiet){
-  if (!AM || !AM.handle || AM.chatReview) return; if (assistantInteractionBusy()){ if (!quiet) setStatus("Finish editing before refreshing assistant changes."); return; } if (amReading) return amReading;
+  if (!AM || !AM.handle || AM.chatReview) return; if (amReadHeld()){ if (!quiet) setStatus("Finish editing before refreshing assistant changes."); return; } if (amReading) return amReading;
   const me = AM; amReading = (async ()=>{
-    try { if ((await me.handle.queryPermission({mode:"read"})) !== "granted"){ if (AM !== me || me.chatReview || assistantInteractionBusy()) return; const was = me.paused; me.paused = true; if (!quiet) setStatus("Amendments are paused: reconnect the file (Roadmap)."); if (!was) render(); return; }
-      const f = await me.handle.getFile(); if (AM !== me || me.chatReview || assistantInteractionBusy()) return;
-      if (f.size > AM_MAX_BYTES){ me.error = `The amendments file is over ${AM_MAX_BYTES / 1024} KB.`; me.file = null; me.hash = ""; render(); return; }
-      const text = await f.text(), hash = hashText(text); if (AM !== me || me.chatReview || assistantInteractionBusy()) return;
+    try { if ((await me.handle.queryPermission({mode:"read"})) !== "granted"){ if (AM !== me || me.chatReview || amReadHeld()) return; const was = me.paused; me.paused = true; if (!quiet) setStatus("Amendments are paused: reconnect the file (Roadmap)."); if (!was) amShow(me); return; }
+      const f = await me.handle.getFile(); if (AM !== me || me.chatReview || amReadHeld()) return;
+      if (f.size > AM_MAX_BYTES){ me.error = `The amendments file is over ${AM_MAX_BYTES / 1024} KB.`; me.file = null; me.hash = ""; amShow(me); return; }
+      const text = await f.text(), hash = hashText(text); if (AM !== me || me.chatReview || amReadHeld()) return;
       const wasPaused = me.paused; me.paused = false; me.readAt = Date.now();
-      if (hash === me.hash && !me.error){ if (wasPaused) render(); return; }
+      if (hash === me.hash && !me.error){ if (wasPaused) amShow(me); return; }
       const r = amParse(text); me.hash = hash; me.name = me.handle.name; me.error = r.error || ""; me.file = r.file || null;     // a broken file pauses Apply: no old copy is used
       if (r.file){ const n = r.file.changes.length; me.held = {}; if (!me.ownRev || me.ownRev.batch !== r.file.batchId) me.ownRev = null;
         setStatus(quiet ? `Your assistant's amendments changed: ${n} in ${me.name}.` : `Read ${n} amendment${n === 1 ? "" : "s"} from ${me.name}.`); }
-    } catch(e){ if (AM !== me || me.chatReview || assistantInteractionBusy()) return; me.error = "Couldn't read the amendments file: " + String(e.message || e).slice(0, 120); me.file = null; me.hash = ""; }
-    render(); })().finally(()=>{ amReading = null; });
+    } catch(e){ if (AM !== me || me.chatReview || amReadHeld()) return; me.error = "Couldn't read the amendments file: " + String(e.message || e).slice(0, 120); me.file = null; me.hash = ""; }
+    amShow(me); })().finally(()=>{ amReading = null; });
   return amReading;
 }
 async function amConnect(){ if (!window.showOpenFilePicker){ setStatus("This browser can't open files. Use Edge or Chrome."); return; }
@@ -15069,6 +15074,7 @@ function assistantView(){
       "argTypes says what each type means. A type ending in Id is a reference: that id must be in the plan, or added earlier in the same change (risk.add and decision.add take an initiative's id as item). A setter's value takes the type of its field in fields. sightline-app.py check refuses the same types, references and values the page does; whether a change makes sense today (a dropped item, a Jira-owned date) is only checked when it's applied.",
       "Write one JSON file: {kind:'sightline-amendments', version:1, planId, batchId, createdAt, source:'assistant', basedOn:{planRevision}, changes:[...]}.",
       "Each change: {id, summary, ops:[...]} with a stable id; a change applies whole or not at all. Keep ids stable when you rewrite the file.",
+      "Rewriting the amendments file is fine: an open page reads it again when its contents change, even under the same batchId. While someone is editing a change in Sightline, the read waits until they finish.",
       "Ops: add {op:'add', type:'deliverable', id:'dv-…', value:{name, line?, kind?, stage?, target?, release?, lane?, owners?, jira?, note?, source?}};",
       "set {op:'set', type:'deliverable', id, field, prev, value} where prev is the value you see now (null when empty) and value null clears it;",
       "link / unlink {op:'link'|'unlink', type:'deliverable', id, jira:['ABC-12']}; propose {op:'propose', key:'ABC-12', field:'sprint|assignee|points|status|labels+|labels-', value, why}.",
@@ -15306,10 +15312,10 @@ async function assistantTick(){
   try {
     if ((await me.dir.queryPermission({mode:"readwrite"})) !== "granted"){ if (alive()){ me.paused = true; if (!assistantInteractionBusy()) render(); } return; }
     if (!alive()) return;
-    if (!assistantInteractionBusy() && !me.chatReview){
+    if (!amReadHeld() && !me.chatReview){
       try { const hd = await me.dir.getFileHandle(ASSISTANT_FILES.amendments); if (!alive() || me.chatReview) return; me.handle = hd; await amRead(true); }
       catch(e){ if (!alive() || me.chatReview) return;
-        if (e.name === "NotFoundError"){ const had = !!(me.handle || me.file || me.error); me.handle = null; me.file = null; me.hash = ""; me.error = ""; if (had) render(); }
+        if (e.name === "NotFoundError"){ const had = !!(me.handle || me.file || me.error); me.handle = null; me.file = null; me.hash = ""; me.error = ""; if (had) amShow(me); }
         else { me.error = "Couldn't read assistant changes. Reconnect the folder."; me.file = null; if (!assistantInteractionBusy()) render(); } }
     }
     if (alive()){ await amAuto(); assistantScheduleExport(); await chatPoll(); }

@@ -577,6 +577,10 @@ python sightline-app.py --version          # must print the appVersion in sightl
 python sightline-app.py check <assistant folder> sightline-amendments.json --json
 ```
 
+Rewrite `sightline-amendments.json` as often as you need, even under the same `batchId`: an open page reads it again
+when its contents change, and the results file reports the new state. While someone is editing a change in Sightline,
+or dragging, the read waits until they finish.
+
 It checks the batch against the context file, using the types the page exports: each action's `args`, a setter's
 `fields`, and `argTypes`. A type ending in `Id` (like `initiativeId`) is a reference, so the check refuses an id that
 isn't in the plan, or that names another kind of item, with the page's own words. A choice like `high|med|low` refuses
