@@ -21,7 +21,7 @@ Check [build availability](availability.md) before using version-specific instru
 ## Use any AI assistant
 
 Open **Connect assistant** (in the menu under your name, top right, until an assistant is connected; then the
-assistant button in the toolbar). Under **Setup and files**, open **Use any AI assistant** (since 1.182.0):
+assistant button in the toolbar). Under **Setup and files**, open **Use any AI assistant**:
 
 - **Copy for my assistant** copies the sightline-plan skill and a digest of the plan's data, without notes: the top
   of the work order, open requests, outcomes with a priority, what matters now, the people, groups and workstreams,
@@ -38,7 +38,7 @@ Each copy puts team information on your clipboard, so paste it only into an assi
 ### Analyze with any assistant
 
 To ask questions about the plan, without changing it, any assistant will do, including your company's own. The same
-**Use any AI assistant** row has (since 1.130.0):
+**Use any AI assistant** row has:
 
 - **Copy analysis instructions** copies read-only instructions that name each Sightline file, what it holds, who owns
   which facts (Jira owns its issues, the team owns what it added) and how to read dates, estimates and coverage.
@@ -57,9 +57,9 @@ The instructions are read-only.
 **Ctrl+C** (⌘C on a Mac) when no text is selected. It copies a short reference: the item's name, its type and id as the
 export writes them (for example `[bar:c4]`), its Jira key and epics, the plan's id and revision, whether your copy is
 saved, and when Jira was last synced. Paste it and ask, for example *"How many stories are in this, and how many are
-done?"* For more, choose **Copy** > **With its details, for your assistant** (or type **details** in Find): it adds the item's
+done?"* For more, choose **Copy** → **With its details, for your assistant** (or type **details** in Find): it adds the item's
 record from the export and, for an initiative, its epics' story counts and its stories, so an assistant that can't read
-files can answer too. **Copy your starred items for your assistant** copies a reference for each of your stars. Notes
+files can answer too. Type **starred** in Find for **Copy your starred items for your assistant**, which copies a reference for each of your stars. Notes
 are never copied. Each copy is your team's plan data, so paste it only into an assistant your team allows. To have an
 assistant propose changes, use **Copy for my assistant** above or the private folder below.
 
@@ -206,7 +206,7 @@ an allowance for meetings, support or interruptions unless the team's chosen inp
 Ask the assistant to separate calculated constraints from assumptions, keep points within the team's estimation
 system, and list the missing estimates or evidence before claiming the roadmap fits. It can discuss
 hypothetical changes, but the export holds no scenarios. To see what a new piece of work, a move or a different work
-order would do, use **What if** in **Delivery → Capacity**, Forecast, under the work order (since 1.184.0): Sightline
+order would do, use **What if we take on something new, or move something up?** in **Delivery → Capacity**, Forecast, under the work order (since 1.184.0; it appears once some initiative has an effort): Sightline
 runs the forecast on a copy of the plan and says whether it fits, what would finish later or sooner, and what has no
 estimate. Nothing is saved, and it isn't an assistant action: the assistant suggests trying it there.
 
@@ -371,7 +371,8 @@ what matters now** in **Delivery → Capacity**, Forecast, above the work order.
   mistakes.
 - A decision cites what it relied on with `decision.set` {id, field: guidance, value: [ids]}, or a `guidance` list on
   `decision.add`. People choose it in the **Relied on** column of **Delivery → Decisions**, and **Record this as a
-  decision** under the work order records an order or a priority as a decision (since 1.184.0).
+  decision**, under the work order or under an outcome's **Priority**, records the order or the priority as a
+  decision (since 1.184.0).
 - Every one of these always waits for a person, and any reorder it suggests is its own `initiative.order` change.
 
 Asked why something is above something else, the skill gives the reason recorded at the time, then, separately,
@@ -424,7 +425,7 @@ into them:
 - **How it fits** (since 1.184.0): `outcome.relate` {id, to, rel} with `supports`, `competes` or `match` (may be the
   same as). A person sees it under **Fits with the roadmap** on the capture.
 - **Links, not copies** (since 1.184.0): `ref.add` {on, url, title?} links the email, ticket or document where it
-  lives, on a capture or an initiative. A link starts with `https://`. Sightline warns when an address looks like it
+  lives, on an outcome (including a capture) or an initiative. A link starts with `https://`. Sightline warns when an address looks like it
   carries a key or signature, since anyone who reads the plan could open it. Never paste the message itself in.
 - **Closing one**: `outcome.handoff` {id, initiative or jira} or `outcome.drop` with a reason; `outcome.reopen` puts
   it back.
@@ -447,7 +448,7 @@ are never applied on their own. Each says why it waits:
 
 - Anything the team heard: a new capture, raised again, a handoff, its evidence, a relation or a Jira link on a
   capture, and work linked to deliver one.
-- Every link to a document or message (`ref.add`), on a capture or anywhere else.
+- Every link to a document or message (`ref.add`), on an outcome (including a capture) or an initiative.
 - An outcome's priority: `class`, `why` or `reconsider`.
 - The work order (`initiative.order`).
 - What matters now (`guidance.add`, `guidance.set`, `guidance.del`) and a decision's citation of it.
@@ -539,7 +540,7 @@ Changing a timebox's length and deleting one aren't available to the assistant y
 
 ## Sorting Jira work
 
-The assistant can make the first pass at **Work > Sort Jira work**: it reads the issues waiting there against what each workstream is for (**Settings > Planning guide**) and the initiatives already on the plan, and proposes where each one belongs. A person reviews every placement in Sightline, at every assistant level, including **Apply everything except deleting Jira-linked work**. The assistant never changes Jira, and the sync stays the only thing that talks to it.
+The assistant can make the first pass at **Work → Sort Jira work**: it reads the issues waiting there against what each workstream is for (**Settings → Planning guide**) and the initiatives already on the plan, and proposes where each one belongs. A person reviews every placement in Sightline, at every assistant level, including **Apply everything except deleting Jira-linked work**. The assistant never changes Jira, and the sync stays the only thing that talks to it.
 
 The context file lists the work under `jiraSort`:
 

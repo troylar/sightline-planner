@@ -37,8 +37,9 @@ python3 /trusted/helpers/sightline-jira-sync.py sync /path/to/plan.json --board 
 ```
 
 `42` and `DEMO` are invented examples. Replace them deliberately with your own board and search. The helper reads
-more than search results: it also reads your server's fields, statuses, resolutions and project versions, and the
-board, its columns and its sprints, all with GET requests. Server/search configuration stays
+more than search results, all with GET requests: your server's fields and project versions, and with `--board` the
+board's columns and sprints. `inspect` also reads statuses and resolutions, and `setup` checks the token with
+`/myself`. Server/search configuration stays
 local to the token holder and is never taken from the shared plan. `--save` remembers this plan's sync settings on
 that computer, in `jira.json` in your own Sightline settings folder (`%APPDATA%\Sightline` on Windows,
 `~/.config/Sightline` elsewhere), never in the shared folder. The default output is a **jira** folder beside the plan:
@@ -76,8 +77,8 @@ configuring startup behavior. Run trusted helper code from your own computer, ne
 ## Epics and how statuses read
 
 An initiative linked to epics is measured by the epics' stories (for example "3/4 stories"), never by the epic's own
-status. The sync counts each epic's children into `status.json`. An epic counts on one initiative: the epic box says
-which initiative already has it.
+status. The sync counts each epic's children into `status.json`. An epic counts on one initiative: adding an epic that's already on another
+initiative is refused, and the status line names that initiative.
 
 **Settings → Jira connection → How Jira statuses show in Sightline** lists each status in use, grouped by your board's
 columns when the sync ran with `--board`. Automatic comes from the board's columns, then Jira's own categories;

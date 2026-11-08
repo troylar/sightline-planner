@@ -84,11 +84,11 @@ explain the calculated capacity constraints. No in-app endpoint connection is re
 
 Older exports support a narrower analysis; do not claim they contain this data. See [what the planning export contains](assistant-workflow.md#planning-data-for-your-external-assistant) and the [large-roadmap workflow](large-roadmaps.md).
 
-## Using the in-app companion instead
+## Using the in-page chat instead
 
 The companion uses Sightline's built-in operation protocol and your saved **Planning guide**. It does not discover
 or load these skill files automatically. You can use the same style of request in chat; installing skills doesn't
-change the companion's capabilities. [Set up in-app conversation](assistant-workflow.md#talk-to-your-company-endpoint).
+change the companion's capabilities. [Set up the in-page chat](assistant-workflow.md#talk-to-your-company-endpoint).
 
 ## Make the skill yours
 

@@ -21,8 +21,8 @@ Point at a workstream's name to check its description, and keep the team's skill
 For a grooming session, ask for *prep our grooming*. The skill returns a short agenda that starts with decisions: at
 most five topics, each with why, the evidence and the result to aim for. **Work → Today** shows the same kind of
 agenda under **Prep our grooming** (since 1.184.0), with **Copy the agenda** for the invite, and **Sightline noticed**
-at the top of Today points out a request that keeps coming up, top work with no estimate or no Jira link, and
-committed work queued behind work that's only if there's room. None of it changes the plan.
+at the top of Today points out up to three things: a request that came up twice in two weeks, top work with no estimate or no Jira link, 
+committed work queued behind work that's only if there's room, and guidance that starts, ends or is due for review. None of it changes the plan.
 
 Use the available evidence. Older exports do not contain the richer planning data described in the
 [large-roadmap guide](large-roadmaps.md); supply missing material deliberately rather than guessing.
@@ -36,7 +36,7 @@ A person's name in a conversation does not assign them the work. Ask:
 > we did not decide them. Separate open decisions from amendments. Prepare a small, independently reviewable batch.
 
 Review the proposed changes in Sightline while the reasoning is still fresh. They're grouped by topic, and a change
-to the work order or what matters most is a decision card you accept on its own. Put anything the assistant can't
+to the work order, an outcome's priority or **What matters now** is a decision card you accept on its own. Put anything the assistant can't
 propose into the normal UI. Save according to the visible state. The workflow uses supplied
 notes; it does not record meeting audio.
 
@@ -90,7 +90,7 @@ a recap is often pasted where others read it. Closed and reopened come from the 
 Neither saves anything to the plan (since 1.134.0).
 
 When someone states a priority ("the VP wants Dashboard first"), the skill records it as their request. The work
-order and an outcome's priority change only when the team decides. Try the change first with **What if** in
+order and an outcome's priority change only when the team decides. Try the change first with **What if we take on something new, or move something up?** in
 **Delivery → Capacity**, Forecast, then use **Record this as a decision** under the work order so the reason stays
 with it, citing what matters now if it relied on it.
 

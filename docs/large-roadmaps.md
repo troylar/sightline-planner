@@ -4,7 +4,7 @@ If you are new to Sightline, read the [worked planning session](roadmap-planning
 a set of overlapping requests becomes a source reconciliation, a capacity question, and three decisions.
 
 Start with the mess you actually have: goals, commitments, meeting notes, questions, Jira work, and more ideas
-than the team can tackle at once. Use your external AI tool to turn that into a sequence of decisions, with
+than the team can tackle at once. Use the AI assistant you already work with to turn that into a sequence of decisions, with
 reviewable changes attached. [Connect your assistant first](assistant-workflow.md) through a private folder, or, for
 an assistant you can only paste into, use **Copy for my assistant** and **Paste proposed changes** in the assistant
 panel. The copy is a digest that says what it left out; **Copy more about it** adds one topic when the assistant asks.
@@ -18,11 +18,11 @@ Ask:
 > Read the current context. Tell me which plan and snapshot it represents, what it includes, what is omitted,
 > and which parts of this planning question the evidence cannot answer.
 
-The context includes capacity, dependency, risk and decision data in its `planning` section. Check for
-`planning.version: 1` and read `coverage` before relying on it; copies older than 1.96.0 don't write it.
-[Build availability](availability.md).
+The private folder's context file includes capacity, dependency, risk and decision data in its `planning` section.
+Check for `planning.version: 1` and read `coverage` before relying on it; copies older than 1.96.0 don't write it.
+**Copy for my assistant** gives a shorter digest without that section. [Build availability](availability.md).
 
-On an older build, provide any additional evidence deliberately, as separate read-only input to your tool.
+When the context doesn't hold what you need, provide the evidence deliberately, as separate read-only input to your tool.
 Do not tell it to search personal folders or overwrite your shared plan. Without the relevant evidence,
 organization is possible but a capacity-backed delivery forecast is not established.
 

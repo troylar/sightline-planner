@@ -33,7 +33,7 @@ freshness and assistant context remain independent of chart visibility. `harness
 return-to-Timeline behavior, filters, selection/deep links, Days/Weeks and live Jira facts.
 
 Text inputs update the model, history and dirty state synchronously, then combine derived rendering while typing.
-The deferred update is cancelled when a full render supersedes it. Regression checks cover immediate model changes,
+The deferred update is canceled when a full render supersedes it. Regression checks cover immediate model changes,
 undo, cursor retention and the deferred screen update without depending on a machine-specific time threshold.
 
 The connected-assistant regression harness (`harness100`) counts payload builds and file writes. View changes and unchanged foreground checks must add neither; real saved-source, Jira, proposal and receipt changes must still refresh outputs. A Chrome Incognito smoke test also verified that ordinary navigation left context/results modification times unchanged after a proposal was reviewed and applied.

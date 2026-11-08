@@ -27,8 +27,9 @@ Keep the original notes and give each source a reference. They do not need to be
 
 Connect your plan's [private assistant folder](assistant-workflow.md), or use **Copy for my assistant** for an
 assistant you can only paste into, then give your assistant these notes and the relevant planning evidence. Ask it
-to read the current context before interpreting them. If the
-context has no `planning` section (copies older than 1.96.0), supply that evidence deliberately.
+to read the current context before interpreting them. The paste route sends a short digest without capacity data
+or dependency and allocation changes, so for this exercise use the private folder, or paste the capacity evidence
+yourself. If the folder's context has no `planning` section (copies older than 1.96.0), supply that evidence too.
 [Check availability](availability.md).
 
 > Reconcile every source against the current plan. Reuse existing IDs where there is a match. Separate agreed
@@ -73,9 +74,10 @@ The next decisions are concrete:
 3. **Choose a tradeoff using complete enough evidence.** Clarify N09, then discuss reducing scope, sequencing work later, or changing the target. Record what remains uncertain.
 
 Ask the assistant to explain alternatives in the conversation. To see what one alternative does to the forecast,
-try it in **What if** under the work order in **Delivery → Capacity**, Forecast (since 1.184.0): Sightline works it out
-on a copy of the plan, says what would finish later or sooner, and names the work it couldn't count because it has
-no estimate, so N09's unestimated issues stay visible. Nothing is saved. A confident answer without the missing inputs
+try it in **What if we take on something new, or move something up?** under the work order in **Delivery → Capacity**,
+Forecast (since 1.184.0): Sightline works it out on a copy of the plan, says what would finish later or sooner, and
+names any initiative in the work order that has no estimate yet. It doesn't count Jira issues without points, so
+N09 still has to be supplied as evidence. Nothing is saved. A confident answer without the missing inputs
 is still an assumption.
 
 ## Turn the chosen direction into reviewed changes

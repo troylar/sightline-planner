@@ -99,7 +99,7 @@ paste into, open the assistant panel (**Shift+A**, or **Connect assistant** in t
 plan, **Copy more about it** adds one topic when the assistant asks, and **Paste proposed changes** takes its reply back.
 Each proposed change opens for your review; nothing applies on its own.
 
-The panel also has an optional in-page chat, the **Planning assistant**, for teams that set up a company endpoint.
+The **Planning assistant** panel also has an optional in-page chat, for teams that set up a company endpoint.
 **Plan with AI** on the Roadmap selects the displayed quarters, and **Ask assistant about this** on an outcome selects
 it; the chat shows **Working on** above the composer, and nothing is sent until you choose **Send**. **Switch context**
 changes the selection while keeping your text, and **Test reply** checks for a response. See the
@@ -112,16 +112,16 @@ an idea you start typing while the save finishes is retained. Copy or submit dra
 Today distinguishes no work loaded, missing Jira status data, and incomplete connected data. Its attention flags
 describe the available plan and sync; a quiet summary does not establish delivery feasibility.
 In the Team view it also lists captures **Waiting in triage** for over 30 days.
-At the top, **Sightline noticed** shows up to three things worth a look, worked out from the plan: a request that keeps
-coming up, top work with no estimate, committed work queued behind work that's only if there's room, and guidance that
-starts, ends or is due for review. **Prep our grooming** gives a short agenda, at most five topics, to copy into the
+At the top, **Sightline noticed** shows up to three things worth a look, worked out from the plan: a request that came
+up twice in two weeks, top work with no estimate or no Jira link, committed work queued behind work that's only if
+there's room, and guidance that starts, ends or is due for review. **Prep our grooming** gives a short agenda, at most five topics, to copy into the
 meeting invite. Neither changes the plan.
 
 On **Capacity**, the **Forecast** section holds **What matters now** (dated guidance the team writes down, which never
 moves anything), the **Work order** (the order the team takes initiatives, which the forecast follows), and
 **What if we take on something new, or move something up?**, which works it out on a copy of the plan: nothing is saved
-and nothing moves. On the Roadmap, each outcome has a **Priority** (Committed, Supports a commitment, or If there's
-room), with **Why it matters** and **Reconsider when**. An assistant's change to the guidance, the work order or a priority always waits for a person.
+and nothing moves. In an outcome's editor, **Priority** is Committed, Supporting, or If there's room (the picker spells
+them out as "Supports a commitment" and so on), with **Why it matters** and **Reconsider when**. An assistant's change to the guidance, the work order or a priority always waits for a person.
 
 Open the menu at the right of the header (**Choose yourself**, or your initials once you have) and choose **Choose yourself** or **You: [name]** to identify yourself for Mine and author stamps. This is a browser preference, not a verified identity. The same menu has text size, theme, **What's new** and help.
 

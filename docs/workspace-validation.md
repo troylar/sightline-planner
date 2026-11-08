@@ -42,7 +42,7 @@ Version 1.87.0 passed **2,372/2,372 checks across 104 suites** on October 8, 202
 
 Firefox executed the final build and showed the explanatory startup failure for an altered-script copy blocked by CSP. Chrome displayed the final release, but native automation did not complete the file picker, so this release's recovery flow has not been verified through a live browser file round trip. API mock checks do not establish operating-system file-provider or cloud synchronization behavior.
 
-No OneDrive installation or second-device test environment was available. The [OneDrive setup and two-device checklist](onedrive.md) records seven live cases as **Not run**, including actual sync delays, offline reconnection, file replacement and conflict copies. A local save remains distinct from OneDrive upload completion.
+No OneDrive installation or second-device test environment was available. The [OneDrive setup and two-device checklist](onedrive.md) records seven live cases (as recorded then) as **Not run**, including actual sync delays, offline reconnection, file replacement and conflict copies. A local save remains distinct from OneDrive upload completion.
 
 <details>
 <summary>Version 1.87.0 per-suite results</summary>

@@ -22,7 +22,7 @@ node test/skill-evals/run.js prepare /tmp/sightline-skill-evaluation
 Each case contains a self-contained copy of the sightline-plan skill, a request, and synthetic plan/context files.
 Since 1.184.0 every case uses that one skill; earlier versions gave each case one of the specialist skills it replaced
 (`sightline-status`, `sightline-review-plan`, `sightline-planning-guide`, `sightline-edit-plan`,
-`sightline-meeting-to-plan` or `sightline-plan-roadmap`). Some
+`sightline-meeting-to-plan` or `sightline-plan-roadmap`; the seventh, `sightline-sort-jira`, had no case). Some
 also contain proposals and results. Preparation refuses an existing directory to avoid reusing old answers.
 An optional final argument to `prepare` selects another skills root for a comparison run. Pass the same skills root to `check` when evaluating that version.
 

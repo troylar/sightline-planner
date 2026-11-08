@@ -32,7 +32,7 @@ navigating, reviewing and applying.
 - Change the plan after the assistant read it, then bring back its changes. The user must understand why the
   assistant needs to read the plan again; this pilot does not validate automatic rebasing.
 
-**Optional: the in-app conversation.** Only if the team uses the
+**Optional: the in-page chat.** Only if the team uses the
 [company endpoint companion](assistant-workflow.md#first-four-quarter-planning-session), also record the configured
 endpoint and model, and check:
 

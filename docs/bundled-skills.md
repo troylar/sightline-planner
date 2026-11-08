@@ -43,5 +43,5 @@ changes made after that build. To get newer skills, get the newer **sightline.ht
 compare or install its skill. There is no background download or automatic overwrite.
 
 A running assistant still needs access to the plan's [private context folder](assistant-workflow.md). Installing
-the skill doesn't connect a model or change the in-app chat. See [the planning skill](skills.md)
+the skill doesn't connect a model or change the in-page chat. See [the planning skill](skills.md)
 for ordinary-language requests you can start with.

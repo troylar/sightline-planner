@@ -49,10 +49,10 @@ or any chat assistant you paste into with **Copy for my assistant**. With the **
 piece against existing work (a new request, one more report of an existing one, a decision, a risk, or a question),
 answers what you asked, and helps you think through choices.
 
-<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/assistant-light.png" aria-label="Open full-size assistant setup screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/assistant-dark.png"><img src="docs/images/assistant-light.png" alt="Actual Sightline Setup and files, Use any AI assistant: Copy for my assistant, Paste proposed changes, and Copy more about a topic." width="1440"></picture></a>
+<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/assistant-light.png" aria-label="Open full-size assistant setup screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/assistant-dark.png"><img src="docs/images/assistant-light.png" alt="Actual Sightline Setup and files, Use any AI assistant: Copy for my assistant, Paste proposed changes, and Copy more about it." width="1440"></picture></a>
 
 *Your conversation stays in your own assistant. Sightline gives it the plan and the skill, and reviews what it
-proposes. The chat built into the page is optional.*
+proposes. The in-page chat is optional.*
 
 > Account for every request. Match it to existing work, flag a possible duplicate, retain it as an idea, or
 > identify a decision. Suggest an arrangement around outcomes. Keep commitments separate from suggestions.
@@ -68,25 +68,27 @@ proposes. The chat built into the page is optional.*
 *An invented exercise, not a screenshot or captured AI response. [Follow all ten source notes through the planning session](docs/roadmap-planning-example.md).*
 
 Compare scope, sequencing, and workload options in the conversation. To see what one option does to the forecast,
-use **What if** in Capacity's Forecast: it works on a copy of the plan, says what would finish later or earlier and
+use **What if we take on something new, or move something up?** in Capacity's Forecast: it works on a copy of the plan, says what would finish later or earlier and
 what has no estimate yet, and saves nothing. Then ask for proposals for the changes you choose.
 
-**Say what matters, and why.** Give each outcome a priority (**Committed**, **Supports a commitment**, or **If
+**Say what matters, and why.** Give each outcome a priority (**Committed**, **Supporting**, or **If
 there's room**: rocks, pebbles, and sand) with a reason. Set the team's **Work order** in Capacity's Forecast; the
 forecast gives people to the work at the top first. Write down **What matters now** for the period, with dates and a
 review date. Requests keep who asked, how it came in, and why it matters, and wait in **To triage** until someone
 hands them off or declines them. Your assistant can suggest any of this; a person decides.
 
 **Capacity needs evidence.** Known load, availability, missing estimates, and dependencies matter. An outcome
-count alone cannot tell you what fits. The assistant context includes capacity, dependencies, risks, and
-decisions, but it covers known scheduled Jira points and configured availability, not every form of demand, so
-supply other evidence deliberately.
+count alone cannot tell you what fits. Through the private folder, the assistant's context includes capacity,
+dependencies, risks, and decisions; **Copy for my assistant** sends a shorter digest without them, so paste that
+evidence yourself. Either way it covers known scheduled Jira points and configured availability, not every form of
+demand.
 [Capacity reasoning](docs/large-roadmaps.md#3-ask-what-actually-constrains-delivery) · [Build availability](docs/availability.md).
 
 ## 4. Review changes before they become the plan
 
 See before/after values, grouped by the topic each change is about. Apply, edit, or skip each proposal. A change
-to the work order or what matters now is a decision you accept on its own, never in a batch. Use Undo for a
+to the work order, an outcome's priority or reason, or what matters now is a decision you accept on its own, never in
+a batch. Use Undo for a
 just-applied plan edit. Your assistant's conversation and proposal file do not silently change the shared plan.
 With an assistant you can only paste into, choose **Paste proposed changes** and paste its reply; each change still
 opens for your review.
@@ -124,8 +126,9 @@ changed from supplied evidence. [Run a team planning session](docs/team-planning
 There is no planning server or account to set up. Shared files need coordinated editing and handoffs: locks are
 advisory, author names are not verified identities, and a local save does not prove cloud delivery. Use file-service
 permissions for access. The page makes no network requests: its font is embedded too. Connect the plan's folder
-(**Delivery → Activity**, **Connect the plan's folder…**) and, as you save, older snapshots, status updates and item
-updates move into history files beside the plan, one per quarter, so the plan file stays small.
+(**Delivery → Activity**, **Connect the plan's folder…**) and, when you save while editing, snapshots, status updates
+and item updates older than 30 days move into history files beside the plan, one per quarter, so the plan file stays
+small. Each item's latest update and the newest snapshot and status update stay in the plan file.
 
 [Assistant setup](docs/assistant-workflow.md) · [Jira setup](docs/jira.md) · [Sharing and recovery](docs/onedrive.md).
 
