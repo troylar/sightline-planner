@@ -134,9 +134,10 @@ setTimeout(()=>{
 
   // H10 a value of the wrong shape gets the same plain sentence from both, with no internal type names
   const shapes = [["risk.add", {id:"risk-s1", text:"x", owners:"Avery"}], ["workstream.setReserve", {id:ev("S.lanes[0].id"), reserve:"lots"}], ["decision.add", {id:"dec-s1", text:"x", due:"someday soon"}],
-    ["outcome.set", {id:"dv-h1", field:"askedBy", value:7}], ["initiative.order", {ids:"m2"}]].map(([a, x], i)=>({id:"s" + i, summary:a, ops:[{op:"action", action:a, args:x}]}));
+    ["outcome.set", {id:"dv-h1", field:"askedBy", value:7}], ["initiative.order", {ids:"m2"}], ["initiative.del", {id:5}], ["person.add", {id:"p-s1", name:"N", outside:"yes"}]].map(([a, x], i)=>({id:"s" + i, summary:a, ops:[{op:"action", action:a, args:x}]}));
   const sc = check(shapes, ctx2).by, sp = shapes.map(c=>page(c.ops).reason), sameWords = shapes.every((c, i)=>(sc[c.id] || []).join() === sp[i]);
-  ok("H10 a wrong-shaped value: the same sentence from page and checker, in plain words", sameWords && sp.every(x=>/ must be | is one of /.test(x) && !/Id\b|\bstr\b|\biso\b|\bint\b/.test(x)), sp.join(" | ") + " // " + shapes.map(c=>(sc[c.id] || []).join("; ")).join(" | "));
+  ok("H10b …with \"an\" before a vowel", sp.includes("id must be the id of an initiative.") && !sp.some(x=>/ a [aeiou]/.test(x)), sp.join(" | "));
+  ok("H10 a wrong-shaped value: the same sentence from page and checker, in plain words", sameWords && sp.every(x=>/ must be | is one of | isn't a valid (value|id|list|number)\./.test(x) && !/Id\b|\bstr\b|\biso\b|\bint\b/.test(x)), sp.join(" | ") + " // " + shapes.map(c=>(sc[c.id] || []).join("; ")).join(" | "));
   // H11 a day in words is a date for both; a blank clears where blank is allowed
   const words = [{id:"w1", summary:"Escalate next friday", ops:[{op:"action", action:"risk.add", args:{id:"risk-w1", text:"x", escalateBy:"next friday"}}]},
     {id:"w2", summary:"Clear who asked", ops:[{op:"action", action:"outcome.set", args:{id:"dv-h1", field:"askedBy", value:""}}]}];
