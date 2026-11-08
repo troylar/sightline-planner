@@ -5,7 +5,17 @@ account is needed for this example. [Back to the tour](../README.md).
 
 ## Open the example
 
-Build the public source with Git, Node.js 18+, Python 3.10+, and Bash:
+Install it with Node.js 18 or later:
+
+```sh
+npx @troylar/sightline install my-sightline
+```
+
+Open **my-sightline/sightline.html** in desktop Chrome or Edge, choose **File → Open shared plan…**, and select
+**my-sightline/example/plan.json**. Every other example file this guide names under **examples/northstar/** is in
+**my-sightline/example/**.
+
+Or build the public source with Git, Node.js 18+, Python 3.10+, and Bash:
 
 ```sh
 git clone https://github.com/troylar/sightline-planner.git sightline
@@ -14,9 +24,9 @@ npm ci
 ./build.sh
 ```
 
-Open **dist/sightline.html** in desktop Chrome or Edge. Choose **File → Open shared plan…** and select
-**examples/northstar/plan.json**. This is synthetic work, safe to explore. Choose Avery Stone for the example author stamps if asked; this is not a login. Your HTML is the app; the JSON is the plan.
-Public npm and release downloads are not available yet; [check availability](availability.md) before using other instructions.
+In a source build, open **dist/sightline.html** in desktop Chrome or Edge. Choose **File → Open shared plan…** and
+select **examples/northstar/plan.json**. This is synthetic work, safe to explore. Choose Avery Stone for the example author stamps if asked; this is not a login. Your HTML is the app; the JSON is the plan.
+Release downloads aren't published; [check which version each install route gives you](availability.md).
 
 Choose **Product updates → Roadmap**. Select **Four quarters**, starting **Q4 2026**. Find:
 
@@ -24,7 +34,7 @@ Choose **Product updates → Roadmap**. Select **Four quarters**, starting **Q4 
 - **Explore a workspace for partners**, an idea for Later. Keep it there throughout this exercise.
 
 Jira is optional. To populate the delivery views, connect **examples/northstar/jira** through
-**Settings → Jira connection**. This is a dated documentation snapshot; freshness warnings can be expected as it ages.
+**Settings → Jira connection**, then **Connect the Jira folder…**. This is a dated documentation snapshot; freshness warnings can be expected as it ages.
 
 ## Start with the rough notes
 
@@ -77,8 +87,10 @@ Do not connect both batches at once.
 
 Preserve any example edits you want first. Choose **File → Open a copy…** and select
 **examples/northstar/blank-plan.json**. This opens an empty, detached plan rather than linking writes to the
-example file. In Settings, set your plan title and calendar before scheduling work. On Roadmap, add an outcome
-in **New roadmap idea**, such as “New teams can create their first shared plan.” Keep unknown timing and owners unknown.
+example file. Type your plan title at the top of the page, then in **Settings → Plan details** choose **Edit plan
+details…** to set its start date and sprint length before scheduling work. On Roadmap, add an outcome in **New
+roadmap idea**, such as “New teams can create their first shared plan.” Keep unknown timing and owners unknown. A
+request someone raised goes to **+ Capture a request or idea** instead; it waits in **To triage** with who asked.
 
 Choose **File → Save as a new shared plan…** and save a separate JSON file. Confirm that the toolbar identifies
 it as a shared plan. Close and reopen the app, choose **File → Open shared plan…**, and select that file.
@@ -87,13 +99,22 @@ copied separately.
 
 ## Bring your own assistant
 
+Use the AI assistant you already work with. If it can read files:
+
 1. Open your own plan and connect a private folder using **Connect assistant → Connect your assistant** (in the menu under your name).
-2. Choose **Copy instructions for your assistant**. Paste them into your external coding tool with that folder's location.
-3. Point it at the source checkout's **skills/** folder, or install the individual skill folders where it discovers them.
+2. Under **Setup and files → Files and assistant handoff**, choose **Copy instructions**. Paste them into your assistant with that folder's location.
+3. Give it the **sightline-plan** skill: from **.sightline/skills/** in an npm install, the source checkout's
+   **skills/** folder, or **Setup and files → Planning skills and team guidance → Planning skills** in the app. If
+   it has the seven skills earlier versions installed, remove those.
 4. Start with a small real request. The assistant reads fresh context and writes proposals; you review and apply them here.
+
+If your assistant can only take a paste, open **Connect assistant** and, under **Setup and files → Use any AI
+assistant**, choose **Copy for my assistant**. Paste it into your assistant with what you heard or your question.
+When it replies with changes, choose **Paste proposed changes** and paste the reply; each change opens for your
+review. If it asks about a topic, type the topic and choose **Copy more about it**.
 
 > Read my current context. Group these notes against existing outcomes, keep suggestions separate from decisions,
 > and show the three questions that matter most. Do not invent owners or dates. Prepare only the changes I request.
 
-You do not need to use the in-app **Send** button for an external tool. Continue in that tool's conversation.
+You do not need the optional in-app **Send** button. Continue in your assistant's own conversation.
 [Complete external setup](assistant-workflow.md) · [Work through a large roadmap](large-roadmaps.md) · [Run a planning meeting](team-planning.md).

@@ -5,8 +5,8 @@ Sightline opens the plan file on your computer. OneDrive carries that file betwe
 ## Set up the shared plan
 
 1. Put the shared JSON or YAML plan in a team folder that everyone using it is allowed to read and edit.
-2. On each computer, make the plan and any connected Jira files available offline. In File Explorer or Finder, choose **Always keep on this device**. Microsoft documents this option for offline availability in [Sync SharePoint files and folders](https://support.microsoft.com/en-us/onedrive/sync/sharepoint-training/sync-sharepoint-files-and-folders).
-3. Wait for OneDrive to finish downloading the folder, then open Sightline in Edge or Chrome. Choose **File → Open shared plan** and select the local file. Connect the local Jira folder if your team uses it.
+2. On each computer, make the plan, its **history** folder (if it has one) and any connected Jira files available offline. In File Explorer or Finder, choose **Always keep on this device**. Microsoft documents this option for offline availability in [Sync SharePoint files and folders](https://support.microsoft.com/en-us/onedrive/sync/sharepoint-training/sync-sharepoint-files-and-folders).
+3. Wait for OneDrive to finish downloading the folder, then open Sightline in Edge or Chrome. Choose **File → Open shared plan** and select the local file. Connect the local Jira folder if your team uses it. If the plan keeps history files, connect the folder the plan is in on **Delivery → Activity** with **Connect the plan's folder…**.
 4. Leave **File → Check for teammates' saves every 15 s** on to pick up local changes; this is enabled by default unless you previously turned it off. Use **Refresh** before starting work. Check OneDrive's own status before handing the plan to a teammate.
 5. Edit one at a time: **Start editing**, **Save**, then **Done editing**. Agree who is editing when a computer is offline or sync is paused.
    The file only changes when the plan does: **Save** with nothing changed writes nothing, and **Done editing** with nothing changed puts the file back exactly as it was before **Start editing**, with the same revision.
@@ -20,6 +20,19 @@ The page shows its last confirmed local read or save. Automatic checks can notic
 The edit lock is stored in the same shared file, so it also travels through OneDrive. Two offline computers can each believe editing is available. Sightline checks local content before saving, keeps backups for detected clashes, and preserves unsaved drafts, but it cannot guarantee that an unseen cloud update will never cross a save. Keep both versions if OneDrive produces a conflict copy.
 
 If another person starts editing while you have unsaved changes, Sightline keeps your browser copy, undo history and recovery draft. Review the conflict choices before replacing either version. After a file-read failure, **Try again** reconnects from your current browser contents, including edits made since the failure. An unchanged file preserves your edits; a changed file is merged or presented for conflict review. When you and a teammate both change what the same task or initiative waits for, both sets of links are kept, and a link one of you removed stays removed. A link that would make work wait for itself through the other person's links isn't merged: their version wins, yours is backed up, and Sightline says which link wasn't kept and why. A newer unsupported file format keeps your edits available for download and requires updating Sightline before saving.
+
+## History files travel with the plan
+
+Older snapshots, status updates and item updates live in history files in a **history** folder beside the plan, one
+file per calendar quarter. Keep that folder with the plan: to share the plan somewhere else, copy the plan's whole
+folder. **Save as a new shared plan** is refused for a plan whose history is in files, since it would leave them behind.
+
+When someone saves while editing, entries older than 30 days are copied to their quarter's file. They leave the plan
+file only at a later save, once a read that began at least five minutes after the last write still shows them, because
+a sync service can put an older file back. If a quarter's file is missing or can't be read, Sightline names the quarter,
+doesn't write over that file, and keeps what would go there in the plan file.
+
+If Sightline doesn't start, its first suggestion is to wait for OneDrive to finish syncing, then reload.
 
 ## Keep assistant folders personal
 

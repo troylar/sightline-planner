@@ -1,5 +1,10 @@
 # Workspace and assistant validation
 
+This is the validation record for versions 1.86.0 and 1.87.0, kept as history. Its counts, harness numbers and browser
+checks describe those builds, not the current release. For the current build, run `./build.sh` and `./test/run.sh`,
+which report every suite's count. The [OneDrive two-device checklist](onedrive.md#two-device-check-before-a-team-rollout)
+now has eight cases, all still **Not run**.
+
 The version 1.86.0 changes preserve the offline HTML application and plan schema. Synthetic plans are used throughout validation.
 
 ## Automated checks

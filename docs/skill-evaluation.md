@@ -1,10 +1,10 @@
-# Evaluate the planning skills
+# Evaluate the planning skill
 
 **Source-tool availability:** the optional runner below requires a checkout containing
-`test/skill-evals/run.js`. It is not part of public-source 1.94.0 or the installed skill folders.
+`test/skill-evals/run.js`. It is not part of the npm package or the installed skill folder.
 Use the acceptance criteria for manual independent review when that runner is absent.
 
-These tasks test an assistant following the installed instructions, separately from the application's
+These tasks test an assistant following the installed **sightline-plan** skill, separately from the application's
 deterministic regression suite. All plans, people and proposals are synthetic. No endpoint credentials,
 network calls or real assistant folders are needed.
 Run from a trusted source checkout with the development dependencies installed (`npm ci`); the evaluation
@@ -19,7 +19,10 @@ Build first, then prepare a **new** temporary directory:
 node test/skill-evals/run.js prepare /tmp/sightline-skill-evaluation
 ```
 
-Each case contains a self-contained copy of its skill, a request, and synthetic plan/context files. Some
+Each case contains a self-contained copy of the sightline-plan skill, a request, and synthetic plan/context files.
+Since 1.184.0 every case uses that one skill; earlier versions gave each case one of the specialist skills it replaced
+(`sightline-status`, `sightline-review-plan`, `sightline-planning-guide`, `sightline-edit-plan`,
+`sightline-meeting-to-plan` or `sightline-plan-roadmap`). Some
 also contain proposals and results. Preparation refuses an existing directory to avoid reusing old answers.
 An optional final argument to `prepare` selects another skills root for a comparison run. Pass the same skills root to `check` when evaluating that version.
 
@@ -46,6 +49,12 @@ checker output and reviewer findings together. Re-run after material skill chang
 proof of a later version's behavior. A single successful run does not measure reliability across models.
 
 ## Semantic acceptance criteria
+
+The cases and criteria below were written for the specialist skills and are unchanged since 1.184.0 moved every case
+to sightline-plan. One has a known gap: in `meeting`, the new skill may record the requested idea as a capture (an
+`outcome.add` action with a capture type), while the file check still looks for a plain unscheduled outcome. Review a
+`meeting` file-check failure against the skill's own rules before calling it a regression. The criteria don't yet
+cover what 1.184.0 added: sorting pasted input, evidence, links, what matters now, grooming or tracker checks.
 
 | Case | Expected decision and explanation |
 | --- | --- |

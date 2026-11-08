@@ -46,7 +46,7 @@ The optional Python helper reads Jira Data Center and writes files the page read
 | `src/js-yaml.min.js` | Vendored js-yaml; embedded by the build; do not hand-edit. |
 | `src/releases.json` | Release history and application version source. |
 | `build.sh` | Validates releases, embeds assets, computes CSP hashes, and checks JavaScript syntax. |
-| `skills/*/SKILL.md` | Maintained planning skills; embedded in the HTML at build time and distributed unchanged. |
+| `skills/sightline-plan/SKILL.md` | The maintained planning skill (one skill since 1.184.0); embedded in the HTML at build time and distributed unchanged. |
 | `dist/sightline.html`, `dist/app.js` | Generated build outputs; never hand-edit or add to Git. |
 | `CHANGELOG.md` | Generated from releases; update through `build.sh`. |
 | `test/harness*.js` | Node/jsdom regression checks using synthetic data. |
@@ -54,6 +54,8 @@ The optional Python helper reads Jira Data Center and writes files the page read
 | `test/test_build.py` | Build validation and safe release embedding checks. |
 | `test/test_jira_sync.py` | Offline checks for the sync helper and amendment checker. |
 | `tools/sightline-jira-sync.py` | Standard-library Python Jira helper and offline amendment checker. |
+| `tools/sightline-app.py` | Standard-library helper that sends an assistant's batch through the private assistant folder and waits for outcomes. |
+| `tools/sightline-assistant.py` | Optional standard-library mailbox helper for a company AI endpoint; never changes a plan or Jira output. |
 | `tools/check-private.sh` | Private-term scan; see privacy rules below. |
 | `tools/make-demo.py` | Synthetic demo generator; `demo/` is ignored. |
 | `docs/workspaces.md` | Audience-oriented navigation and view/filter scope. |
@@ -103,7 +105,9 @@ SIGHTLINE_HTML=/path/to/old.html node test/harnessN.js
   amendments; 91–94 onboarding/navigation; 96–98 timeline grouping; and 99–103
   workspaces, assistant integration, and shared-file refresh/recovery. Harness104
   covers interrupted editing; 105 composer drafts, Find, focus and header geometry;
-  106 on-demand rendering; and 107 atomic limits and amendment idempotency. Read
+  106 on-demand rendering; and 107 atomic limits and amendment idempotency. 185–187
+  cover history files; 188–189 outcome priority and the work order; 190 paste-only
+  assistants; and 191–192 guidance and intake evidence. Read
   the harness before choosing where a new check belongs.
 - The runner requires a successful child exit and an exact matching passed count.
   Failures and timeouts retain their full diagnostics. Keep these guarantees when
@@ -149,8 +153,14 @@ SIGHTLINE_HTML=/path/to/old.html node test/harnessN.js
 - Copy recovery must preserve both originals, show missing current-only work, and
   require a deliberate choice plus normal Save before replacing shared contents.
   Previewing a copy must not change either file. See `docs/onedrive.md` for limits.
-- Check serialized UTF-8 byte size before every plan write. Current constants
-  allow 2 MiB writes and 5 MiB reads; do not confuse character length with bytes.
+- Check serialized UTF-8 byte size and entry count before every plan write. Current
+  constants allow 2 MiB and 60,000 entries per write (`MAX_BYTES`, `MAX_NODES`) and
+  5 MiB and 400,000 entries per read (`MAX_READ_BYTES`, `MAX_READ_NODES`); do not
+  confuse character length with bytes.
+- History files live in `history/<planId>/` beside the plan, one per calendar quarter
+  (`2026-Q3.json`, split into `2026-Q3.2.json` and on when full). Saves while editing
+  copy snapshots, status updates and item updates older than 30 days there; an entry
+  leaves the plan file only at a later save that reads it back. Activity is not moved.
 - Register new optional persisted features in `featuresIn` and `KNOWN_FEATURES` so
   older copies open unsupported plans read-only rather than discard fields.
 - An incompatible plan-format change must update `SCHEMA`, add a `MIGRATIONS` step,

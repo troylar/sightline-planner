@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Northstar \u00b7 Product delivery",
-    "start": "2026-09-21",
+    "start": "2026-10-05",
     "weeks": 16,
     "sprintWeeks": 2,
     "firstSprint": 40,
@@ -10,7 +10,16 @@
       "DEMO-12"
     ],
     "planId": "p-northstar-example",
-    "revision": 1
+    "revision": 1,
+    "workOrder": [
+      "bar-demo-1",
+      "bar-demo-5",
+      "bar-demo-2",
+      "bar-demo-3",
+      "bar-demo-4",
+      "bar-demo-12",
+      "bar-release"
+    ]
   },
   "lanes": [
     {
@@ -18,21 +27,32 @@
       "name": "Integrations",
       "who": "Avery \u00b7 Blake",
       "note": "",
-      "color": "#2c6fbb"
+      "color": "#2c6fbb",
+      "members": [
+        "p-avery",
+        "p-blake"
+      ]
     },
     {
       "id": "search",
       "name": "Search",
       "who": "Morgan",
       "note": "",
-      "color": "#1f8a70"
+      "color": "#1f8a70",
+      "members": [
+        "p-morgan"
+      ]
     },
     {
       "id": "plat",
       "name": "Platform",
       "who": "Casey \u00b7 Jordan",
       "note": "",
-      "color": "#7a4fb3"
+      "color": "#7a4fb3",
+      "members": [
+        "p-casey",
+        "p-jordan"
+      ]
     }
   ],
   "people": [
@@ -118,7 +138,15 @@
       "status": "inprogress",
       "dependsOn": [],
       "tasks": [],
-      "datesFrom": "manual"
+      "datesFrom": "manual",
+      "delivers": [
+        "dv-onboard"
+      ],
+      "effort": {
+        "low": 4,
+        "likely": 6,
+        "high": 9
+      }
     },
     {
       "id": "bar-demo-2",
@@ -135,7 +163,15 @@
       "status": "inprogress",
       "dependsOn": [],
       "tasks": [],
-      "datesFrom": "manual"
+      "datesFrom": "manual",
+      "delivers": [
+        "dv-search"
+      ],
+      "effort": {
+        "low": 3,
+        "likely": 5,
+        "high": 8
+      }
     },
     {
       "id": "bar-demo-3",
@@ -152,7 +188,15 @@
       "status": "inprogress",
       "dependsOn": [],
       "tasks": [],
-      "datesFrom": "manual"
+      "datesFrom": "manual",
+      "delivers": [
+        "dv-integrations"
+      ],
+      "effort": {
+        "low": 2,
+        "likely": 4,
+        "high": 6
+      }
     },
     {
       "id": "bar-demo-4",
@@ -169,7 +213,12 @@
       "status": "inprogress",
       "dependsOn": [],
       "tasks": [],
-      "datesFrom": "manual"
+      "datesFrom": "manual",
+      "effort": {
+        "low": 1,
+        "likely": 2,
+        "high": 3
+      }
     },
     {
       "id": "bar-demo-5",
@@ -186,7 +235,15 @@
       "status": "inprogress",
       "dependsOn": [],
       "tasks": [],
-      "datesFrom": "manual"
+      "datesFrom": "manual",
+      "delivers": [
+        "dv-onboard"
+      ],
+      "effort": {
+        "low": 2,
+        "likely": 3,
+        "high": 5
+      }
     },
     {
       "id": "bar-demo-12",
@@ -204,7 +261,12 @@
       "dependsOn": [],
       "tasks": [],
       "datesFrom": "manual",
-      "parked": true
+      "parked": true,
+      "effort": {
+        "low": 2,
+        "likely": 3,
+        "high": 4
+      }
     },
     {
       "id": "bar-release",
@@ -225,7 +287,7 @@
         {
           "id": "t-notes",
           "label": "Write the release notes",
-          "start": "2026-11-02",
+          "start": "2026-11-16",
           "days": 3,
           "status": "notstarted",
           "owners": [
@@ -237,7 +299,7 @@
           "id": "t-ranking",
           "label": "Ranking weights sign-off",
           "jira": "DEMO-107",
-          "start": "2026-10-05",
+          "start": "2026-10-19",
           "days": 2,
           "status": "done",
           "owners": [
@@ -245,12 +307,31 @@
           ],
           "dependsOn": []
         }
-      ]
+      ],
+      "effort": {
+        "low": 1,
+        "likely": 2,
+        "high": 3
+      }
     }
   ],
   "milestones": [],
   "gates": [],
-  "decisions": [],
+  "decisions": [
+    {
+      "id": "dec-pilot",
+      "text": "Onboarding comes before the partner integrations this quarter",
+      "state": "decided",
+      "owners": [
+        "p-avery"
+      ],
+      "due": "",
+      "item": "",
+      "guidance": [
+        "gd-pilot"
+      ]
+    }
+  ],
   "risks": [],
   "baseline": null,
   "sprints": [
@@ -302,7 +383,9 @@
       "lane": "int",
       "owners": [
         "p-avery"
-      ]
+      ],
+      "class": "rock",
+      "why": "Promised to the pilot teams for their first planning session"
     },
     {
       "id": "dv-search",
@@ -311,7 +394,9 @@
       "kind": "new",
       "stage": "planned",
       "target": "2027-Q1",
-      "lane": "search"
+      "lane": "search",
+      "class": "pebble",
+      "why": "Support asks about this every week"
     },
     {
       "id": "dv-integrations",
@@ -320,7 +405,9 @@
       "kind": "new",
       "stage": "idea",
       "target": "2027-Q2",
-      "lane": "int"
+      "lane": "int",
+      "class": "sand",
+      "why": "Worth doing when there is room"
     },
     {
       "id": "dv-ai",
@@ -336,6 +423,68 @@
       "name": "Explore a workspace for partners",
       "stage": "idea",
       "target": "later"
+    },
+    {
+      "id": "dv-req-export",
+      "name": "Export a plan summary for the weekly review",
+      "stage": "idea",
+      "capture": "request",
+      "askedBy": {
+        "type": "person",
+        "id": "p-morgan"
+      },
+      "raised": "2026-10-30",
+      "channel": "meeting",
+      "impact": "Saves an hour of copying before each review",
+      "origin": "weekly-review",
+      "about": [
+        {
+          "id": "dv-onboard",
+          "rel": "supports"
+        }
+      ]
+    },
+    {
+      "id": "dv-req-sso",
+      "name": "Sign in with the company account",
+      "stage": "idea",
+      "capture": "request",
+      "role": "a customer",
+      "raised": "2026-11-02",
+      "channel": "email",
+      "impact": "Blocks two pilot teams from joining",
+      "origin": "pilot-email-1",
+      "raisedAgain": [
+        {
+          "id": "ra-sso-1",
+          "role": "support",
+          "raised": "2026-11-06",
+          "channel": "support",
+          "origin": "support-ticket-7"
+        }
+      ]
+    },
+    {
+      "id": "dv-req-alerts",
+      "name": "Notifications are broken",
+      "stage": "idea",
+      "capture": "request",
+      "askedBy": {
+        "type": "person",
+        "id": "p-riley"
+      },
+      "raised": "2026-11-07",
+      "channel": "chat"
+    }
+  ],
+  "guidance": [
+    {
+      "id": "gd-pilot",
+      "text": "Get the pilot teams planning before adding new integrations",
+      "why": "The pilot decides next year's rollout",
+      "from": "2026-10-05",
+      "through": "2027-03-31",
+      "reviewOn": "2027-01-15"
     }
   ]
 }

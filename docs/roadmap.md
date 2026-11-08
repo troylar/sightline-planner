@@ -27,6 +27,18 @@ Status (2026-09-27): 1.17–1.24 built as PRs #21–#28, the safety release as 1
 as 1.26 (#30). Step 8 started with the standup board as 1.27. The retrospective and canvas views, and write-back
 (step 9), need decisions first.
 
+Since then (to 1.184.0, from [the release history](../CHANGELOG.md)):
+
+- **Step 8, views:** the standup board (1.27) became Cards (1.40) and then **Sprint** (1.58), the current Jira sprint's
+  work by person. A separate **Cards** page for the plan's Jira work arrived in 1.125.0. The retrospective and the
+  free-form canvas haven't shipped.
+- **Step 7, proposed changes:** also made by dragging a card to another status or sprint on Cards (1.125.0), and
+  listed under **Work → Jira change proposals**.
+- **Step 9, write-back:** not shipped. The sync has no apply command and only makes GET requests to Jira.
+- **Sizes:** plans have opened up to 5 MB since 1.19.0, while saves stay under 2 MB. Since 1.175.5 a save is also
+  refused past 60,000 entries, and a plan opens up to 400,000. Since 1.178.0 and 1.179.0, older snapshots, status
+  updates and item updates move to history files beside the plan, one per calendar quarter.
+
 | Release | What | Needs |
 |---|---|---|
 | 1.17.0 | **From Jira vs Added here at a glance:** two looks, legend, sprint headers, counts with units, layers (Everyone / Jira only), hidden counts | none |
@@ -222,11 +234,13 @@ vision.md principle 12. Plan work around a Jira item is never deleted because a 
 
 1. **`applyJira` writes Jira's status and dates into the plan** (vision gap 8). From 1.20 those writes are kept out of
    the change log and never stamped as an edit. They're replaced with draw-time values after 1.24; that's a wide
-   change, because rollups, rescheduling, warnings and Today all read the stored dates.
+   change, because rollups, rescheduling, warnings and Today all read the stored dates. Fixed in 1.66.1: Jira's status
+   and sprint dates stay on screen only, and saves, drafts, backups, downloads and merges keep the plan's own values.
 2. **Following Jira's sprints copies them into the plan** (gap 7). Names and goals become read-only in 1.18. The copy
    stays, since the plan's sprints are its time grid.
 3. **Adding from Jira copies status.** Stopped in 1.18.
 4. **Older pages drop unknown fields.** Handled by the 1.19 foundation.
 5. **The note author can be changed.** Locked in 1.20.
 6. **Some view settings are global rather than per plan.** New ones are keyed by plan.
-7. **Undo keeps up to 200 whole-plan snapshots.** Capped by size in 1.19.
+7. **Undo keeps up to 200 whole-plan snapshots.** Capped by size in 1.19. Since 1.65.0, older steps are kept as the
+   small change records that undo them.
