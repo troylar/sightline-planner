@@ -54,7 +54,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     const r1 = X(`(()=>{ const p = clone(S); return runAction(p, "outcome.raiseAgain", {id:"dv-sso", ask:"a3", origin:"mtg-2"}).reason; })()`);
     ok("E9 recording the same report again (same origin) is refused: a forwarded copy isn't a new report", /forwarded copy isn't a new report/.test(String(r1)), String(r1));
     const r2 = X(`(()=>{ const p = clone(S); return [runAction(clone(p), "outcome.add", {name:"x", capture:"request", channel:"fax"}), runAction(clone(p), "outcome.add", {name:"x", capture:"request", impact:"two\\nlines"}), runAction(clone(p), "ref.add", {on:"c1", url:"http://x.example.com"}), runAction(clone(p), "outcome.relate", {id:"dv-sso", to:"dv-sso", rel:"match"})].map(r=>r.reason).join(" | "); })()`);
-    ok("E10 an unknown channel, a two-line impact, a non-https link and a link to itself are refused", /Channel is one of/.test(r2) && /one line/.test(r2) && /https/.test(r2) && /itself/.test(r2), r2);
+    ok("E10 an unknown channel, a two-line impact, a non-https link and a link to itself are refused", /channel is one of/i.test(r2) && /one line/.test(r2) && /https/.test(r2) && /itself/.test(r2), r2);
     X(`commit(()=>{ act("outcome.relate", {id:"dv-sso", to:"c3", rel:"supports"}); act("ref.add", {on:"c1", url:"https://tracker.example.com/x", title:"Thread"}); })`);
     ok("E11 relate and ref.add change the plan, and undo takes them back", J(`dvById("dv-sso").about.map(x=>x.id)`).join(",") === "c2,c3" && J(`S.bars.find(b=>b.id==="c1").refs.length`) === 2
       && (X("undo()"), J(`dvById("dv-sso").about.map(x=>x.id)`).join(",") === "c2" && J(`S.bars.find(b=>b.id==="c1").refs.length`) === 1));

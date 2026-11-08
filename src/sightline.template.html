@@ -8865,7 +8865,7 @@ function relDay(v, p){ if (typeof v !== "string") return null; if (validIso(v)) 
   return null; }
 // Day arguments said in words become dates before anything checks them, so the review shows the date that will be used.
 const DATE_FIELDS = new Set(["raised","from","until","leaves","escalateBy","due","date","day","through","reviewOn"]);     // fields a .set action takes as a date
-const dateArg = (A, k, args) => (/^(iso|isoOrNull|isoOrAfter)\??$/.test(A.args[k] || "") && args[k] !== "after") || (k === "value" && /\.set$/.test(A.id) && DATE_FIELDS.has(args.field));
+const dateArg = (A, k, args) => (/(^|\|)(iso|isoOrNull|isoOrAfter)(\||\??$)/.test(A.args[k] || "") && args[k] !== "after") || (k === "value" && /\.set$/.test(A.id) && DATE_FIELDS.has(args.field));
 // Why words that look like a day aren't one here, when there's a better reason than the list of forms.
 function relWhy(v){ const t = typeof v === "string" ? v.trim().toLowerCase().replace(/\s+/g, " ") : "";
   return t === "this sprint" ? "today isn't in any sprint in this plan" : t === "next sprint" ? "this plan has no sprint after today" : ""; }
@@ -8888,17 +8888,64 @@ const ACT_ARG = {
   who: v => v === null || validWho(v),
   weights: v => v === null || (!!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length <= 20 && Object.entries(v).every(([k, x])=>ACT_ARG.id(k) && Number.isInteger(x))),
 };
+// References: an id that must name something in the plan (in the plan being changed, so an earlier op in the same change
+// counts). [noun, find, where the assistant view lists them, their coverage entries]. The view exports this table as argTypes, and
+// sightline-app.py check reads it from there, so both refuse the same ids with the same words.
+const ACT_REF = {
+  initiativeId:["initiative", (p, id)=>actBar(p, id), "initiatives", "initiatives"], taskId:["task", (p, id)=>actTask(p, id), "initiatives[].tasks", "tasks"],
+  outcomeId:["deliverable", (p, id)=>actDv(p, id), "deliverables", "deliverables"], itemId:["item", (p, id)=>actItem(p, id), "deliverables, initiatives", "deliverables, initiatives"],
+  personId:["person", (p, id)=>actPerson(p, id), "planning.people", "people"], groupId:["group", (p, id)=>actOf(p, "groups", id), "planning.groups", "groups"],
+  workstreamId:["workstream", (p, id)=>actLane(p, id), "planning.workstreams", "workstreams"], milestoneId:["milestone", (p, id)=>actMs(p, id), "planning.milestones", "milestones"],
+  gateId:["gate", (p, id)=>actGate(p, id), "planning.gates", "gates"], guidanceId:["guidance entry", (p, id)=>actOf(p, "guidance", id), "planning.guidance", ""],
+  skillId:["skill", (p, id)=>actSkill(p, id), "planning.skills", "skills"], meetingId:["meeting", (p, id)=>actMeet(p, id), "planning.meetings", "meetings"],
+  riskId:["risk", (p, id)=>actOf(p, "risks", id), "planning.risks", "risks"], decisionId:["decision", (p, id)=>actOf(p, "decisions", id), "planning.decisions", "decisions"],
+  timeboxId:["timebox", (p, id)=>actSprint(p, id) >= 0, "planning.timeboxes.list", "timeboxes"],
+};
+// What an add makes, so an id given to it can be referred to later in the same change.
+const ACT_CREATES = {"initiative.add":"initiativeId", "task.add":"taskId", "outcome.add":"outcomeId", "person.add":"personId", "group.add":"groupId", "workstream.add":"workstreamId",
+  "milestone.add":"milestoneId", "gate.add":"gateId", "guidance.add":"guidanceId", "risk.add":"riskId", "decision.add":"decisionId", "skill.add":"skillId", "sprint.add":"timeboxId"};
+const actArgTypes = () => ({about:"An argument's type is one or more choices joined by |, with ? at the end when it can be left out: a type below, a reference below, either with [] for a list, blank (\"\"), null, or any other word for exactly that value (high|med|low). A setter's value takes the type its field has in fields; a field not listed there can't be set this way. creates names what an add makes, so its id can be used by a later op in the same change.",
+  types:{id:"an id: letters, digits and . _ : @ -", ids:"a list of ids", str:"text up to 4,000 characters", num:"a number", int:"a whole number", bool:"true or false", iso:"a date, YYYY-MM-DD",
+    isoOrAfter:'a date, or "after"', isoOrNull:"a date, or null", idOrBlank:"an id, or empty", keys:"a list of Jira keys", who:"{type: person or group, id}", weights:"{workstream id: weight}", any:"any value"},
+  refs:Object.fromEntries(Object.entries(ACT_REF).map(([k, [noun, , where, cov]])=>[k, {noun, in:where, coverage:cov, missing:`That ${noun} isn't in the plan.`}]))});
+// A type is one or more choices joined by |: a type in ACT_ARG, a reference in ACT_REF, either one with [] for a list of
+// them, blank (""), null, or any other word for that exact value (high|med|low). A trailing ? means it can be left out.
+const actAlts = t => t.replace(/\?$/, "").split("|");
+const actRefOf = alt => ACT_REF[alt.replace(/\[\]$/, "")] ? alt.replace(/\[\]$/, "") : null;
+function actAltOk(alt, v){
+  if (alt === "blank") return v === "";
+  if (alt === "null") return v === null;
+  if (alt.endsWith("[]")){ const b = alt.slice(0, -2); return Array.isArray(v) && v.length <= 500 && v.every(x=>actAltOk(b, x)); }
+  if (ACT_REF[alt]) return ACT_ARG.id(v);
+  if (ACT_ARG[alt]) return ACT_ARG[alt](v);
+  return v === alt; }
+function actArgProblem(k, t, v){ const ty = t.replace(/\?$/, ""), alts = actAlts(t);
+  if (alts.length === 1 && ACT_ARG[ty]){
+    if ((ty === "str" || ty === "any") && typeof v === "string" && v.length > 4000) return `${k} is up to 4,000 characters.`;
+    if ((ty === "iso" || ty === "isoOrNull" || (ty === "isoOrAfter" && v !== "after")) && relWhy(v)) return `${k} isn't a date here: ${relWhy(v)}.`;
+    return ACT_ARG[ty](v) ? null : `${k} isn't a valid ${ty === "isoOrAfter" ? `date (${REL_HELP}), or "after"` : ty === "iso" || ty === "isoOrNull" ? `date (${REL_HELP})` : ty === "ids" || ty === "keys" ? "list" : ty === "id" ? "id" : ty === "num" || ty === "int" ? "number" : ty === "weights" ? "split ({workstream id: weight})" : "value"}.`; }
+  if (alts.some(x=>actAltOk(x, v))) return null;
+  if (typeof v === "string" && v.length > 4000 && alts.includes("str")) return `${k} is up to 4,000 characters.`;
+  const words = alts.filter(x=>x !== "blank" && x !== "null" && !ACT_REF[x.replace(/\[\]$/, "")] && !ACT_ARG[x.replace(/\[\]$/, "")]);
+  if (words.length === alts.filter(x=>x !== "blank" && x !== "null").length) return `${k} is one of ${words.join(", ")}${alts.includes("blank") ? ", or empty" : alts.includes("null") ? ", or null" : ""}.`;
+  return `${k} isn't a valid ${alts.map(x=>x === "blank" ? "empty text" : x === "iso" ? `date (${REL_HELP})` : x.endsWith("[]") ? `list of ${x.slice(0, -2)} ids` : actRefOf(x) ? `${x} id` : x).join(" or ")}.`; }
+// The type of each argument this call gives, a setter's value by its field (fields), so references can be checked.
+const actTypes = (a, args) => Object.entries(a.args).filter(([k])=>k in args && args[k] !== undefined).map(([k, t])=>[k, k === "value" && a.fields && typeof args.field === "string" && Object.hasOwn(a.fields, args.field) ? a.fields[args.field] : t]);
 // args: {name: "type"} or "type?" when it can be left out. prev, when an action knows its current value, is always allowed.
 function actArgsProblem(a, args){
   if (!args || typeof args !== "object" || Array.isArray(args)) return "The arguments must be an object.";
   for (const k of Object.keys(args)) if (!(k in a.args) && !(k === "prev" && a.cur)) return `${a.id} has no argument called ${k}.`;
-  for (const [k, t] of Object.entries(a.args)){ const opt = t.endsWith("?"), ty = opt ? t.slice(0, -1) : t;
-    if (!(k in args) || args[k] === undefined){ if (opt) continue; return `${a.id} needs ${k}.`; }
-    if ((ty === "str" || ty === "any") && typeof args[k] === "string" && args[k].length > 4000) return `${k} is up to 4,000 characters.`;
-    if ((ty === "iso" || ty === "isoOrNull" || (ty === "isoOrAfter" && args[k] !== "after")) && relWhy(args[k])) return `${k} isn't a date here: ${relWhy(args[k])}.`;
-    if (!ACT_ARG[ty](args[k])) return `${k} isn't a valid ${ty === "isoOrAfter" ? `date (${REL_HELP}), or "after"` : ty === "iso" || ty === "isoOrNull" ? `date (${REL_HELP})` : ty === "ids" || ty === "keys" ? "list" : ty === "id" ? "id" : ty === "num" || ty === "int" ? "number" : ty === "weights" ? "split ({workstream id: weight})" : "value"}.`; }
+  for (const [k, t] of Object.entries(a.args)) if ((!(k in args) || args[k] === undefined) && !t.endsWith("?")) return `${a.id} needs ${k}.`;
+  for (const [k, t] of actTypes(a, args)){ const why = actArgProblem(k === "value" && t !== a.args.value ? args.field : k, t, args[k]); if (why) return why; }
   return null;
 }
+// Every reference resolves in the plan: an id that's blank, null or a listed word isn't a reference.
+function actRefProblem(p, a, args){
+  for (const [k, t] of actTypes(a, args)){ const alts = actAlts(t), v = args[k], refs = alts.filter(actRefOf);
+    if (!refs.length || alts.some(x=>!actRefOf(x) && actAltOk(x, v))) continue;
+    const ids = Array.isArray(v) ? v : [v], kinds = refs.map(actRefOf);
+    for (const id of ids) if (!kinds.some(r=>ACT_REF[r][1](p, id))) return actMissing(ACT_REF[kinds[0]][0]); }
+  return null; }
 const actMissing = what => ({code:"invalid", reason:`That ${what} isn't in the plan.`});
 const actInvalid = reason => ({code:"invalid", reason});
 function runAction(plan, id, args = {}, ctx = {}){
@@ -8908,6 +8955,7 @@ function runAction(plan, id, args = {}, ctx = {}){
   const was = S; S = plan;                                    // the helpers read S: point them at the plan being changed
   try {
     if (a.done && a.done(plan, args)) return {ok:true, nochange:true};            // an add whose item is already in the plan, as asked
+    const gone = actRefProblem(plan, a, args); if (gone) return {ok:false, code:gone.code, reason:gone.reason};
     if (a.cur && "prev" in args){ const now = a.cur(plan, args); if (now !== undefined && !jeq(now, args.prev) && !(a.prevAs && a.prevAs(plan, args, args.prev))){
       const {prev, ...rest} = args, probe = clone(plan); S = probe;              // already what it asks for: nothing to do, not a conflict
       const already = !(a.check && a.check(probe, rest, ctx)) && a.run(probe, rest, ctx) === NOCHANGE; S = plan;
@@ -9037,7 +9085,7 @@ const optCur = (x, k) => clone(x[k] ?? (k === "needs" || k === "skills" ? [] : "
 const BAR_SET = {label:"str", chartName:"str", kind:"str", owners:"ids", datesFrom:"str", story:"str", needs:"ids", aiHint:"str"};
 const setStory = (x, v) => { const s = v.trim() ? v : undefined; if ((x.story || undefined) === s) return NOCHANGE; if (s === undefined) delete x.story; else x.story = s; };
 const storyTooLong = v => typeof v === "string" && v.length > STORY_MAX ? actInvalid("A story is up to 4,000 characters.") : undefined;
-defAction("initiative.add", {scope:"initiatives", risk:"routine", done:(p, a)=>!!a.id && !!actBar(p, a.id) && actBar(p, a.id).label === (a.label ?? (a.parent ? "New sub-initiative" : "New initiative")), args:{id:"id?", lane:"id?", parent:"id?", start:"num?", day:"iso?", span:"num?", label:"str?", owners:"ids?", tags:"ids?", story:"str?"},
+defAction("initiative.add", {scope:"initiatives", risk:"routine", done:(p, a)=>!!a.id && !!actBar(p, a.id) && actBar(p, a.id).label === (a.label ?? (a.parent ? "New sub-initiative" : "New initiative")), args:{id:"id?", lane:"workstreamId?", parent:"initiativeId?", start:"num?", day:"iso?", span:"num?", label:"str?", owners:"personId[]?", tags:"ids?", story:"str?"},
   check:(p, a)=>{ if (!actFreeId(p, a.id) || actTaken(p, a.id)) return actInvalid(`${a.id} is already used.`); if (storyTooLong(a.story)) return storyTooLong(a.story); const par = a.parent && actBar(p, a.parent);
     if ((a.start === undefined) === (a.day === undefined)) return actInvalid("Give start (weeks from the plan's start) or day (YYYY-MM-DD), not both."); if (a.day !== undefined) a = {...a, start:amIsoWeek(p, a.day)};
     if (a.parent && !par) return actMissing("parent initiative"); if (!par && a.lane && !p.lanes.some(l=>l.id === a.lane)) return actMissing("workstream");
@@ -9049,7 +9097,7 @@ defAction("initiative.add", {scope:"initiatives", risk:"routine", done:(p, a)=>!
       owners: a.owners ? [...a.owners] : par ? [...own(par)] : [], jira:"", status:"notstarted", dependsOn:[], tasks:[], datesFrom:"manual", ...(a.tags && a.tags.length ? {tags:[...a.tags]} : {}), ...storyField(a.story)};
     if (par) p.bars.splice(lastIndexOfTree(par) + 1, 0, b); else p.bars.push(b);
     return id; }});
-defAction("initiative.set", {scope:"initiatives", risk:"routine", args:{id:"id", field:"str", value:"any"},
+defAction("initiative.set", {scope:"initiatives", risk:"routine", args:{id:"initiativeId", field:"str", value:"any"}, fields:{...BAR_SET, kind:KINDS.map(k=>k[0]).join("|"), owners:"personId[]", datesFrom:"manual|tasks"},
   cur:(p, a)=>{ const b = actBar(p, a.id); return b && a.field in BAR_SET ? optCur(b, a.field) : undefined; },
   prevAs:(p, a, v)=>{ const b = actBar(p, a.id); return !!b && a.field === "label" && v === barTitle(b); },   // a linked item's label is shown as Jira's summary
   check:(p, a)=>{ const b = actBar(p, a.id); if (!b) return actMissing("initiative");
@@ -9067,13 +9115,13 @@ defAction("initiative.set", {scope:"initiatives", risk:"routine", args:{id:"id",
     if (a.field === "datesFrom"){ if (!["manual","tasks"].includes(a.value)) return actInvalid("Dates come from manual or tasks."); if (a.value === "tasks" && (!hasTasks(b) || hasKids(b))) return "Only an initiative with tasks (and nothing inside it) can take its dates from them."; }
     if (a.field === "owners" && !actPeople(p, a.value)) return actMissing("person"); },
   run:(p, a)=>{ if (a.field === "story") return setStory(actBar(p, a.id), a.value); if (a.field === "aiHint" || a.field === "needs") return setOpt(actBar(p, a.id), a.field, a.value); const b = actBar(p, a.id), v = a.field === "chartName" ? a.value.slice(0, 60) : a.field === "owners" ? [...a.value] : a.value; if (jeq(b[a.field], v)) return NOCHANGE; b[a.field] = v; }});
-defAction("initiative.setStatus", {scope:"initiatives", risk:"routine", args:{id:"id", status:"str"},
+defAction("initiative.setStatus", {scope:"initiatives", risk:"routine", args:{id:"initiativeId", status:"notstarted|inprogress|done|atrisk"},
   cur:(p, a)=>actBar(p, a.id)?.status,
   check:(p, a)=>{ const b = actBar(p, a.id); if (!b) return actMissing("initiative"); if (!STATUS_IDS.includes(a.status)) return actInvalid(`Status is one of ${STATUS_IDS.join(", ")}.`);
     if (rolls(b)) return hasKids(b) ? "Its status comes from what's inside it." : "Its status comes from its tasks.";
     const L = jiraLockOf(b); if (L && L.status) return jiraStatusMsg(L); },
   run:(p, a)=>{ const b = actBar(p, a.id); if (b.status === a.status) return NOCHANGE; b.status = a.status; }});
-defAction("initiative.move", {scope:"schedule", risk:"routine", args:{id:"id", start:"num?", day:"iso?", span:"num?"},
+defAction("initiative.move", {scope:"schedule", risk:"routine", args:{id:"initiativeId", start:"num?", day:"iso?", span:"num?"},
   cur:(p, a)=>{ const b = actBar(p, a.id); return b ? {start:b.start, span:b.span} : undefined; },
   // prev as the context shows it: start (or day) as a date, weeks (or span) as a number; only the parts given are compared
   prevAs:(p, a, v)=>{ const b = actBar(p, a.id), d = v && typeof v === "object" ? v.day ?? (typeof v.start === "string" ? v.start : undefined) : undefined, n = v && typeof v === "object" ? v.weeks ?? v.span : undefined;
@@ -9085,21 +9133,21 @@ defAction("initiative.move", {scope:"schedule", risk:"routine", args:{id:"id", s
     if (a.start !== undefined) b.start = Math.max(0, Math.min(W - b.span, a.start));
     if (a.span !== undefined) b.span = Math.max(.5, Math.min(W - b.start, a.span));
     if (b.start === s0 && b.span === n0) return NOCHANGE; }});
-defAction("initiative.setLane", {scope:"initiatives", risk:"routine", args:{id:"id", lane:"id"},
+defAction("initiative.setLane", {scope:"initiatives", risk:"routine", args:{id:"initiativeId", lane:"workstreamId"},
   cur:(p, a)=>actBar(p, a.id)?.lane,
   check:(p, a)=>{ if (!actBar(p, a.id)) return actMissing("initiative"); if (!p.lanes.some(l=>l.id === a.lane)) return actMissing("workstream"); },
   run:(p, a)=>moveBarToLane(a.id, a.lane) || NOCHANGE});
-defAction("initiative.setParent", {scope:"initiatives", risk:"routine", args:{id:"id", parent:"idOrBlank"},
+defAction("initiative.setParent", {scope:"initiatives", risk:"routine", args:{id:"initiativeId", parent:"initiativeId|blank"},
   cur:(p, a)=>{ const b = actBar(p, a.id); return b ? b.parent || "" : undefined; },
   check:(p, a)=>{ const b = actBar(p, a.id); if (!b) return actMissing("initiative"); if (!a.parent) return;
     if (!actBar(p, a.parent)) return actMissing("parent initiative"); if (a.parent === a.id || isInside(a.parent, a.id)) return "It can't go inside itself."; },
   run:(p, a)=>(a.parent ? moveBarTo(a.id, a.parent, "inside") : moveBarToLane(a.id, actBar(p, a.id).lane)) || NOCHANGE});
-defAction("initiative.place", {scope:"initiatives", risk:"routine", args:{id:"id", target:"id", zone:"str"},
+defAction("initiative.place", {scope:"initiatives", risk:"routine", args:{id:"initiativeId", target:"initiativeId", zone:"before|after|inside"},
   check:(p, a)=>{ if (!actBar(p, a.id)) return actMissing("initiative"); if (!actBar(p, a.target)) return actMissing("initiative to place it by");
     if (!["before","after","inside"].includes(a.zone)) return actInvalid("Zone is before, after or inside.");
     if (a.target === a.id || isInside(a.target, a.id)) return "It can't go inside itself."; },
   run:(p, a)=>moveBarTo(a.id, a.target, a.zone) || NOCHANGE});
-defAction("initiative.del", {done:(p, a)=>!actBar(p, a.id), scope:"initiatives", risk:"risky", args:{id:"id"},
+defAction("initiative.del", {done:(p, a)=>!actBar(p, a.id), scope:"initiatives", risk:"risky", args:{id:"initiativeId"},
   check:(p, a)=>{ if (!actBar(p, a.id)) return actMissing("initiative"); },
   run:(p, a)=>{ const all = [actBar(p, a.id), ...descendantsOf(a.id)], ids = new Set(all.map(b=>b.id)), gone = new Set(all.flatMap(b=>(b.tasks||[]).map(t=>t.id)));
     p.updates = (p.updates||[]).filter(u=>!ids.has(u.item.slice(4)) && !gone.has(u.item.slice(5)));
@@ -9127,7 +9175,7 @@ function afterStart(p, deps, t){ const hs = holidaySet(p), L = deps.map(id=>actT
 const taskStart = (p, iso) => dayToIso(nextWork(Math.max(isoToDay(p.meta.start), isoToDay(iso)), holidaySet(p)));
 // Forecast inputs: effort on a leaf initiative, what it delivers, and leaving it out on purpose.
 const effortArg = v => v == null || (typeof v === "number" && Number.isFinite(v) && v >= .5 && v <= 520 && Math.round(v * 2) === v * 2);
-defAction("initiative.setEffort", {scope:"initiatives", risk:"routine", args:{id:"id", likely:"num?", low:"num?", high:"num?", at:"iso?"},
+defAction("initiative.setEffort", {scope:"initiatives", risk:"routine", args:{id:"initiativeId", likely:"num?", low:"num?", high:"num?", at:"iso?"},
   cur:(p, a)=>{ const b = actBar(p, a.id); return b ? clone(b.effort ?? null) : undefined; },
   check:(p, a)=>{ const b = actBar(p, a.id); if (!b) return actMissing("initiative");
     if (hasKids(b, p)) return actInvalid("Its effort is the sum of what's inside it. Set effort on those instead.");
@@ -9139,24 +9187,24 @@ defAction("initiative.setEffort", {scope:"initiatives", risk:"routine", args:{id
     if (b.effort && b.effort.low === e.low && b.effort.likely === e.likely && b.effort.high === e.high && !a.at) return NOCHANGE; b.effort = e; }});
 // The team's work order (vision.md principle 17): the whole list, in order; [] clears it. A person's call, so it always
 // waits for one, whatever the level. Jira-dated work keeps its sprint, so it isn't put in the order.
-defAction("initiative.order", {scope:"initiatives", risk:"floor", args:{ids:"ids"},
+defAction("initiative.order", {scope:"initiatives", risk:"floor", args:{ids:"initiativeId[]"},
   cur:p=>[...((p.meta || {}).workOrder || [])],
   check:(p, a)=>{ const ids = a.ids || []; if (new Set(ids).size !== ids.length) return actInvalid("Each initiative is in the work order once.");
     if (ids.length > WO_MAX) return actInvalid(`The work order holds up to ${WO_MAX} initiatives.`);
     const had = new Set((p.meta || {}).workOrder || []);           // one already in the order that Jira dates since stays where it is; the forecast skips it
     for (const id of ids){ const b = actBar(p, id); if (!b) return actMissing("initiative"); if (!had.has(id) && b.jira && jiraLockOf(b)?.dates) return actInvalid(`Jira's sprint sets ${barTitle(b)}'s dates, so the work order doesn't change it.`); } },
   run:(p, a)=>{ const ids = [...(a.ids || [])]; if (jeq((p.meta.workOrder || []), ids)) return NOCHANGE; if (ids.length) p.meta.workOrder = ids; else delete p.meta.workOrder; }});
-defAction("initiative.setScope", {scope:"initiatives", risk:"routine", args:{id:"id", scope:"str"},
+defAction("initiative.setScope", {scope:"initiatives", risk:"routine", args:{id:"initiativeId", scope:"in|out"},
   cur:(p, a)=>{ const b = actBar(p, a.id); return b ? (b.scope === "out" ? "out" : "in") : undefined; },
   check:(p, a)=>{ if (!actBar(p, a.id)) return actMissing("initiative"); if (!["in","out"].includes(a.scope)) return actInvalid('Scope is "in" or "out".'); },
   run:(p, a)=>{ const b = actBar(p, a.id); if ((b.scope === "out") === (a.scope === "out")) return NOCHANGE; if (a.scope === "out") b.scope = "out"; else delete b.scope; }});
-defAction("initiative.delivers.add", {scope:"initiatives", risk:"routine", args:{id:"id", outcome:"id"}, done:(p, a)=>(actBar(p, a.id)?.delivers || []).includes(a.outcome),
+defAction("initiative.delivers.add", {scope:"initiatives", risk:"routine", args:{id:"initiativeId", outcome:"outcomeId"}, done:(p, a)=>(actBar(p, a.id)?.delivers || []).includes(a.outcome),
   check:(p, a)=>{ const b = actBar(p, a.id); if (!b) return actMissing("initiative"); if (!actDv(p, a.outcome)) return actMissing("deliverable"); if ((b.delivers || []).length >= 50) return actInvalid("An initiative delivers up to 50 things."); },
   run:(p, a)=>{ const b = actBar(p, a.id); if ((b.delivers || []).includes(a.outcome)) return NOCHANGE; b.delivers = [...(b.delivers || []), a.outcome]; }});
-defAction("initiative.delivers.remove", {scope:"initiatives", risk:"routine", args:{id:"id", outcome:"id"}, done:(p, a)=>!(actBar(p, a.id)?.delivers || []).includes(a.outcome),
+defAction("initiative.delivers.remove", {scope:"initiatives", risk:"routine", args:{id:"initiativeId", outcome:"outcomeId"}, done:(p, a)=>!(actBar(p, a.id)?.delivers || []).includes(a.outcome),
   check:(p, a)=>{ if (!actBar(p, a.id)) return actMissing("initiative"); },
   run:(p, a)=>{ const b = actBar(p, a.id), n = (b.delivers || []).filter(x=>x !== a.outcome); if (n.length === (b.delivers || []).length) return NOCHANGE; if (n.length) b.delivers = n; else delete b.delivers; }});
-defAction("task.add", {scope:"tasks", risk:"routine", done:(p, a)=>{ const f = a.id && actTask(p, a.id); return !!f && f.b.id === a.bar && f.t.label === (a.label ?? "New task"); }, args:{id:"id?", bar:"id", start:"iso?", after:"ids?", days:"int?", rough:"bool?", label:"str?", owners:"ids?", tags:"ids?", story:"str?"},
+defAction("task.add", {scope:"tasks", risk:"routine", done:(p, a)=>{ const f = a.id && actTask(p, a.id); return !!f && f.b.id === a.bar && f.t.label === (a.label ?? "New task"); }, args:{id:"id?", bar:"initiativeId", start:"iso?", after:"ids?", days:"int?", rough:"bool?", label:"str?", owners:"personId[]?", tags:"ids?", story:"str?"},
   check:(p, a)=>{ if (!actFreeId(p, a.id) || actTaken(p, a.id)) return actInvalid(`${a.id} is already used.`); if (storyTooLong(a.story)) return storyTooLong(a.story); if (!actBar(p, a.bar)) return actMissing("initiative");
     if (a.start === undefined && a.after === undefined) return actInvalid("Give a start, or after: the tasks it starts after.");
     if (a.after){ if (!a.after.length) return actInvalid("after lists the tasks it starts after; leave it out to give only a start."); if (a.id && a.after.includes(a.id)) return "A task can't start after itself.";
@@ -9169,7 +9217,7 @@ defAction("task.add", {scope:"tasks", risk:"routine", done:(p, a)=>{ const f = a
     t.start = given && after ? (given > after ? given : after) : given || after;
     if (deps.length) t.dependsOn = deps; if (a.rough) t.rough = true;
     b.tasks.push(t); return id; }});
-defAction("task.set", {scope:"tasks", risk:"routine", args:{id:"id", field:"str", value:"any"},
+defAction("task.set", {scope:"tasks", risk:"routine", args:{id:"taskId", field:"str", value:"any"}, fields:{...TASK_SET, owners:"personId[]"},
   cur:(p, a)=>{ const f = actTask(p, a.id); return !f || !(a.field in TASK_SET) ? undefined : a.field === "rough" ? !!f.t.rough : optCur(f.t, a.field); },
   check:(p, a)=>{ if (!actTask(p, a.id)) return actMissing("task");
     if (a.field === "start" || a.field === "days") return actInvalid("Use task.move to change its dates.");
@@ -9184,12 +9232,12 @@ defAction("task.set", {scope:"tasks", risk:"routine", args:{id:"id", field:"str"
   run:(p, a)=>{ if (a.field === "story") return setStory(actTask(p, a.id).t, a.value);
     if (a.field === "rough"){ const {t} = actTask(p, a.id); if (!!t.rough === a.value) return NOCHANGE; if (a.value) t.rough = true; else delete t.rough; return; }
     const {t} = actTask(p, a.id), v = a.field === "owners" ? [...a.value] : a.value; if (jeq(t[a.field], v)) return NOCHANGE; t[a.field] = v; }});
-defAction("task.setStatus", {scope:"tasks", risk:"routine", args:{id:"id", status:"str"},
+defAction("task.setStatus", {scope:"tasks", risk:"routine", args:{id:"taskId", status:"notstarted|inprogress|done|atrisk"},
   cur:(p, a)=>actTask(p, a.id)?.t.status,
   check:(p, a)=>{ const f = actTask(p, a.id); if (!f) return actMissing("task"); if (!STATUS_IDS.includes(a.status)) return actInvalid(`Status is one of ${STATUS_IDS.join(", ")}.`);
     const L = jiraLockOf(f.t); if (L && L.status) return jiraStatusMsg(L); },
   run:(p, a)=>{ const {t} = actTask(p, a.id); if (t.status === a.status) return NOCHANGE; t.status = a.status; }});
-defAction("task.move", {scope:"schedule", risk:"routine", args:{id:"id", start:"isoOrAfter?", days:"int?"},
+defAction("task.move", {scope:"schedule", risk:"routine", args:{id:"taskId", start:"isoOrAfter?", days:"int?"},
   cur:(p, a)=>{ const f = actTask(p, a.id); return f ? {start:f.t.start, days:f.t.days} : undefined; },
   prevAs:(p, a, v)=>{ const f = actTask(p, a.id); return !!f && validIso(v) && v === f.t.start; },          // the start alone, as the card shows it
   check:(p, a)=>{ const f = actTask(p, a.id); if (!f) return actMissing("task"); if (a.start === undefined && a.days === undefined) return actInvalid("Give a start, working days, or both.");
@@ -9200,20 +9248,20 @@ defAction("task.move", {scope:"schedule", risk:"routine", args:{id:"id", start:"
   run:(p, a)=>{ const {t} = actTask(p, a.id), s0 = t.start, d0 = t.days;
     if (a.days !== undefined) t.days = a.days; if (a.start !== undefined) t.start = a.start === "after" ? afterStart(p, t.dependsOn, t) : taskStart(p, a.start);
     if (t.start === s0 && t.days === d0) return NOCHANGE; }});
-defAction("task.moveTo", {scope:"tasks", risk:"routine", args:{id:"id", bar:"id"},
+defAction("task.moveTo", {scope:"tasks", risk:"routine", args:{id:"taskId", bar:"initiativeId"},
   cur:(p, a)=>actTask(p, a.id)?.b.id,
   check:(p, a)=>{ const f = actTask(p, a.id); if (!f) return actMissing("task"); const nb = actBar(p, a.bar); if (!nb) return actMissing("initiative");
     if (nb !== f.b && nb.kind === "waiting") return "A waiting or unstaffed item can't hold tasks."; },
   run:(p, a)=>{ const {t, b} = actTask(p, a.id), nb = actBar(p, a.bar); if (nb === b) return NOCHANGE;
     b.tasks = b.tasks.filter(x=>x.id !== t.id); nb.tasks.push(t); if (!b.tasks.length) b.datesFrom = "manual"; }});
-defAction("task.link", {scope:"schedule", risk:"routine", args:{id:"id", after:"id"},
+defAction("task.link", {scope:"schedule", risk:"routine", args:{id:"taskId", after:"taskId"},
   check:(p, a)=>{ if (!actTask(p, a.id)) return actMissing("task"); if (!actTask(p, a.after)) return actMissing("task it starts after");
     if (a.id === a.after || taskReaches(a.after, a.id)) return "That would create a loop."; },
   run:(p, a)=>{ const {t} = actTask(p, a.id); if ((t.dependsOn || []).includes(a.after)) return NOCHANGE; t.dependsOn = [...new Set([...(t.dependsOn||[]), a.after])]; }});
-defAction("task.unlink", {scope:"schedule", risk:"routine", args:{id:"id", after:"id"},
+defAction("task.unlink", {scope:"schedule", risk:"routine", args:{id:"taskId", after:"taskId"},
   check:(p, a)=>{ if (!actTask(p, a.id)) return actMissing("task"); },
   run:(p, a)=>{ const {t} = actTask(p, a.id); if (!(t.dependsOn || []).includes(a.after)) return NOCHANGE; t.dependsOn = t.dependsOn.filter(y=>y !== a.after); }});
-defAction("task.del", {done:(p, a)=>!actTask(p, a.id), scope:"tasks", risk:"risky", args:{id:"id"},
+defAction("task.del", {done:(p, a)=>!actTask(p, a.id), scope:"tasks", risk:"risky", args:{id:"taskId"},
   check:(p, a)=>{ if (!actTask(p, a.id)) return actMissing("task"); },
   run:(p, a)=>{ const f = actTask(p, a.id); p.updates = (p.updates||[]).filter(u=>u.item !== "task:" + a.id); f.b.tasks = f.b.tasks.filter(t=>t.id !== a.id);
     p.bars.forEach(b=>(b.tasks||[]).forEach(t=>{ t.dependsOn = (t.dependsOn||[]).filter(x=>x !== a.id); })); if (!f.b.tasks.length) f.b.datesFrom = "manual"; return f.b.id; }});
@@ -9235,7 +9283,7 @@ const evPut = (o, a) => evFields(a, o);
 const capReports = d => [{who:d.askedBy, raised:d.raised, channel:d.channel, role:d.role, origin:d.origin, impact:d.impact, source:d.source, first:true}, ...(d.raisedAgain || [])];
 const dvChange = (p, id, fn) => { const x = actDv(p, id), before = dvWords(x); if (fn(x) === NOCHANGE) return NOCHANGE; dvSettle(x, before); };
 const dvTargetOk = t => t === "later" || !!periodRange(t);
-defAction("outcome.add", {scope:"outcomes", risk:"routine", done:(p, a)=>!!a.id && (actDv(p, a.id) || {}).name === a.name.trim().slice(0, 120), args:{id:"id?", name:"str", source:"str?", target:"str?", release:"id?", date:"iso?", jira:"keys?", capture:"str?", askedBy:"who?", raised:"iso?", lane:"id?", channel:"str?", impact:"str?", role:"str?", origin:"str?"},
+defAction("outcome.add", {scope:"outcomes", risk:"routine", done:(p, a)=>!!a.id && (actDv(p, a.id) || {}).name === a.name.trim().slice(0, 120), args:{id:"id?", name:"str", source:"str?", target:"str?", release:"id?", date:"iso?", jira:"keys?", capture:"idea|request|gap|question?", askedBy:"who?", raised:"iso?", lane:"workstreamId?", channel:"meeting|email|chat|support|bug|other?", impact:"str?", role:"str?", origin:"str?"},
   check:(p, a)=>{ if (!actFreeId(p, a.id)) return actInvalid(`${a.id} is already used.`); if (!a.name.trim()) return actInvalid("Give it a name.");
     const cp = captureProblem(p, a); if (cp) return cp;
     if ((p.deliverables || []).length >= DV_MAX) return `A plan holds up to ${DV_MAX} deliverables. Drop or delete some first.`;
@@ -9250,7 +9298,7 @@ defAction("outcome.add", {scope:"outcomes", risk:"routine", done:(p, a)=>!!a.id 
     evPut(d, a);
     if ((d.target || d.release || d.date) && !d.capture) d.stage = "planned";
     (p.deliverables = p.deliverables || []).push(d); return id; }});
-defAction("outcome.set", {scope:"outcomes", risk:"routine", args:{id:"id", field:"str", value:"any"},
+defAction("outcome.set", {scope:"outcomes", risk:"routine", args:{id:"outcomeId", field:"str", value:"any"}, fields:{name:"str", line:"str", note:"str", kind:"new|improved|fixed|blank", lane:"workstreamId|blank", owners:"personId[]", stage:"str", aiHint:"str", capture:CAPTURE_TYPES.map(c=>c[0]).join("|") + "|blank", raised:"iso|blank", askedBy:"who", class:DV_CLASSES.join("|") + "|blank", why:"str", reconsider:"str", channel:CHANNELS.map(c=>c[0]).join("|") + "|blank", impact:"str", role:"str", origin:"str"},
   cur:(p, a)=>{ const d = actDv(p, a.id); return d && a.field in DV_SET ? clone(d[a.field] ?? "") : undefined; },
   check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable");
     if (["target","date"].includes(a.field)) return actInvalid("Use outcome.setTarget to change its timing.");
@@ -9277,32 +9325,32 @@ defAction("outcome.set", {scope:"outcomes", risk:"routine", args:{id:"id", field
     if (a.field === "owners"){ const x = actDv(p, a.id); if (jeq(x.owners || [], v)) return NOCHANGE; if (v.length) x.owners = v; else delete x.owners; return; }
     return dvChange(p, a.id, x=>{ if (a.field === "stage"){ if (x.stage === v) return NOCHANGE; x.stage = v; delete x.dropReason; return; }
       if ((x[a.field] || "") === v) return NOCHANGE; if (v) x[a.field] = v; else delete x[a.field]; }); }});
-defAction("outcome.setTarget", {scope:"outcomes", risk:"routine", args:{id:"id", target:"str?", date:"iso?"},
+defAction("outcome.setTarget", {scope:"outcomes", risk:"routine", args:{id:"outcomeId", target:"str?", date:"iso?"},
   cur:(p, a)=>{ const d = actDv(p, a.id); return d ? {target:d.target || "", date:d.date || "", release:d.release || ""} : undefined; },
   check:(p, a)=>{ if (!actDv(p, a.id)) return actMissing("deliverable"); if (a.target && a.date) return actInvalid("Give a target or a date, not both.");
     if (a.target && !dvTargetOk(a.target)) return actInvalid("Target is a year, half or quarter (2027, 2027-H1, 2027-Q2) or later."); },
   run:(p, a)=>dvChange(p, a.id, x=>{ if (a.date){ x.date = a.date; delete x.release; x.target = quarterOf(isoToDay(a.date)); return; }
     if (a.target) x.target = a.target; else delete x.target; delete x.release; delete x.date; if (!a.target && x.stage === "planned") x.stage = "idea"; })});
-defAction("outcome.setRelease", {scope:"outcomes", risk:"routine", args:{id:"id", release:"idOrBlank"},
+defAction("outcome.setRelease", {scope:"outcomes", risk:"routine", args:{id:"outcomeId", release:"idOrBlank"},
   cur:(p, a)=>{ const d = actDv(p, a.id); return d ? d.release || "" : undefined; },
   check:(p, a)=>{ if (!actDv(p, a.id)) return actMissing("deliverable"); if (a.release && !relById(a.release)) return actInvalid("That release isn't in the Jira files."); },
   run:(p, a)=>dvChange(p, a.id, x=>{ if (!a.release){ if (!x.release) return NOCHANGE; delete x.release; return; }
     const r = relById(a.release); x.release = a.release; delete x.date; if (r.date) x.target = quarterOf(isoToDay(r.date)); })});
-defAction("outcome.linkJira", {scope:"outcomes", risk:"routine", args:{id:"id", keys:"keys"},
+defAction("outcome.linkJira", {scope:"outcomes", risk:"routine", args:{id:"outcomeId", keys:"keys"},
   check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); const keys = a.keys.map(k=>k.trim().toUpperCase()).filter(k=>JKEY.test(k));
     if (!keys.length) return actInvalid("That isn't a Jira key (like ABC-123).");
     if (new Set([...(d.jira || []), ...keys]).size > DV_MAX_KEYS) return `A deliverable links up to ${DV_MAX_KEYS} Jira issues. Link its epics or features instead of every story.`; },
   run:(p, a)=>dvChange(p, a.id, x=>{ const cur = new Set(x.jira || []), n0 = cur.size; a.keys.map(k=>k.trim().toUpperCase()).filter(k=>JKEY.test(k)).forEach(k=>cur.add(k)); if (cur.size === n0) return NOCHANGE; x.jira = [...cur]; })});
-defAction("outcome.unlinkJira", {scope:"outcomes", risk:"routine", args:{id:"id", key:"str"},
+defAction("outcome.unlinkJira", {scope:"outcomes", risk:"routine", args:{id:"outcomeId", key:"str"},
   check:(p, a)=>{ if (!actDv(p, a.id)) return actMissing("deliverable"); },
   run:(p, a)=>dvChange(p, a.id, x=>{ if (!(x.jira || []).includes(a.key)) return NOCHANGE; x.jira = x.jira.filter(y=>y !== a.key); if (!x.jira.length) delete x.jira; })});
-defAction("outcome.drop", {scope:"outcomes", risk:"routine", args:{id:"id", reason:"str?"},
+defAction("outcome.drop", {scope:"outcomes", risk:"routine", args:{id:"outcomeId", reason:"str?"},
   check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); if (d.capture && !String(a.reason || "").trim()) return actInvalid("Say why it's declined: whoever asked will want to know.");
     if (d.handoff && d.stage !== "dropped") return actInvalid("It's handed off already. Reopen it first to decline it."); },
   run:(p, a)=>dvChange(p, a.id, x=>{ if (x.stage === "dropped") return NOCHANGE; x.stage = "dropped"; const why = String(a.reason || "").trim(); if (why) x.dropReason = why.slice(0, 300); })});
 // A capture handed off to an initiative or a Jira issue is closed as a capture; nothing is marked done or planned, and
 // the Jira issue stays Jira's (only its key is kept). Reopen puts it back on the triage list.
-defAction("outcome.handoff", {scope:"outcomes", risk:"routine", args:{id:"id", initiative:"id?", jira:"str?"},
+defAction("outcome.handoff", {scope:"outcomes", risk:"routine", args:{id:"outcomeId", initiative:"initiativeId?", jira:"str?"},
   cur:(p, a)=>{ const d = actDv(p, a.id); return d ? clone(d.handoff || null) : undefined; },
   check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); if (!d.capture) return actInvalid("Only a captured item is handed off. Give it a capture type first.");
     if (d.stage === "dropped") return actInvalid("It's declined. Reopen it first to hand it off.");
@@ -9311,13 +9359,13 @@ defAction("outcome.handoff", {scope:"outcomes", risk:"routine", args:{id:"id", i
     if (a.jira && !JKEY.test(String(a.jira).trim().toUpperCase())) return actInvalid("That isn't a Jira key (like ABC-123)."); },
   run:(p, a)=>{ const x = actDv(p, a.id), v = a.initiative ? {to:"initiative", id:a.initiative} : {to:"jira", key:String(a.jira).trim().toUpperCase()};
     if (jeq(x.handoff || null, v)) return NOCHANGE; x.handoff = v; }});
-defAction("outcome.reopen", {scope:"outcomes", risk:"routine", args:{id:"id"},
+defAction("outcome.reopen", {scope:"outcomes", risk:"routine", args:{id:"outcomeId"},
   check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); if (!d.handoff && d.stage !== "dropped") return actInvalid("It's open already."); },
   run:(p, a)=>dvChange(p, a.id, x=>{ delete x.handoff; if (x.stage === "dropped"){ x.stage = "idea"; delete x.dropReason; } })});
 // Raised again: one more time someone asked for a capture, kept with who, which meeting and when. It doesn't reopen a
 // closed capture; it records that the ask came up again.
 const AGAIN_ID = /^[A-Za-z0-9._-]{1,60}$/;
-defAction("outcome.raiseAgain", {scope:"outcomes", risk:"routine", args:{id:"id", ask:"id", who:"who?", raised:"iso?", source:"str?", channel:"str?", impact:"str?", role:"str?", origin:"str?"},
+defAction("outcome.raiseAgain", {scope:"outcomes", risk:"routine", args:{id:"outcomeId", ask:"id", who:"who?", raised:"iso?", source:"str?", channel:"meeting|email|chat|support|bug|other?", impact:"str?", role:"str?", origin:"str?"},
   done:(p, a)=>{ const d = actDv(p, a.id); return !!d && (d.raisedAgain || []).some(x=>x.id === a.ask); },
   check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); if (!d.capture) return actInvalid("Only a captured item is raised again. Give it a capture type first.");
     if (!AGAIN_ID.test(a.ask)) return actInvalid("Give the ask an id of letters, digits, dot, dash or underscore (up to 60).");
@@ -9330,16 +9378,16 @@ defAction("outcome.raiseAgain", {scope:"outcomes", risk:"routine", args:{id:"id"
     const src = String(a.source || "").trim().slice(0, 60); if (src) o.source = src; evPut(o, a); (x.raisedAgain = x.raisedAgain || []).push(o); }});
 // Link a capture to related work (vision.md: its fit with the roadmap is stated). A link names; it never hands off or plans.
 const actItem = (p, id) => actDv(p, id) || actBar(p, id);
-defAction("outcome.relate", {scope:"outcomes", risk:"routine", args:{id:"id", to:"id", rel:"str"},
+defAction("outcome.relate", {scope:"outcomes", risk:"routine", args:{id:"outcomeId", to:"itemId", rel:"supports|competes|match"},
   cur:(p, a)=>{ const d = actDv(p, a.id); return d ? ((d.about || []).find(x=>x.id === a.to) || {}).rel || "" : undefined; },
   check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); if (!actItem(p, a.to)) return actMissing("item it relates to");
     if (a.to === a.id) return actInvalid("It can't relate to itself."); if (!RELS.some(r=>r[0] === a.rel)) return actInvalid(`Rel is one of ${RELS.map(r=>r[0]).join(", ")}.`);
     if (!(d.about || []).some(x=>x.id === a.to) && (d.about || []).length >= ABOUT_MAX) return actInvalid(`It relates to ${ABOUT_MAX} items already; that's the most it keeps.`); },
   run:(p, a)=>{ const d = actDv(p, a.id), L = d.about || [], x = L.find(y=>y.id === a.to); if (x){ if (x.rel === a.rel) return NOCHANGE; x.rel = a.rel; return; } d.about = [...L, {id:a.to, rel:a.rel}]; }});
-defAction("outcome.unrelate", {scope:"outcomes", risk:"routine", args:{id:"id", to:"id"},
+defAction("outcome.unrelate", {scope:"outcomes", risk:"routine", args:{id:"outcomeId", to:"itemId"},
   check:(p, a)=>{ if (!actDv(p, a.id)) return actMissing("deliverable"); },
   run:(p, a)=>{ const d = actDv(p, a.id); if (!(d.about || []).some(x=>x.id === a.to)) return NOCHANGE; d.about = d.about.filter(x=>x.id !== a.to); if (!d.about.length) delete d.about; }});
-defAction("ref.add", {scope:"outcomes", risk:"floor", args:{on:"id", id:"id?", url:"str", title:"str?"},
+defAction("ref.add", {scope:"outcomes", risk:"floor", args:{on:"itemId", id:"id?", url:"str", title:"str?"},
   done:(p, a)=>!!a.id && ((actItem(p, a.on) || {}).refs || []).some(r=>r.id === a.id),
   check:(p, a)=>{ const x = actItem(p, a.on); if (!x) return actMissing("item"); if (!REF_URL.test(String(a.url).trim())) return actInvalid("A link starts with https:// and has no spaces.");
     if (a.id && !EV_ID.test(a.id)) return actInvalid("Give the link an id of letters, digits, dot, dash or underscore (up to 60).");
@@ -9347,15 +9395,15 @@ defAction("ref.add", {scope:"outcomes", risk:"floor", args:{on:"id", id:"id?", u
     if ((x.refs || []).some(r=>r.url === String(a.url).trim())) return actInvalid("That link is already on it.");
     if ((x.refs || []).length >= REF_MAX) return actInvalid(`It holds ${REF_MAX} links already; that's the most it keeps.`); },
   run:(p, a)=>{ const x = actItem(p, a.on), id = a.id || newId("ref"); (x.refs = x.refs || []).push({id, url:String(a.url).trim(), title:evLine(a.title, 120) || "Link", added:{by:meId() || "", at:new Date().toISOString().slice(0, 16) + "Z"}}); return id; }});
-defAction("ref.del", {scope:"outcomes", risk:"routine", args:{on:"id", id:"id"},
+defAction("ref.del", {scope:"outcomes", risk:"routine", args:{on:"itemId", id:"id"},
   check:(p, a)=>{ if (!actItem(p, a.on)) return actMissing("item"); },
   run:(p, a)=>{ const x = actItem(p, a.on); if (!(x.refs || []).some(r=>r.id === a.id)) return NOCHANGE; x.refs = x.refs.filter(r=>r.id !== a.id); if (!x.refs.length) delete x.refs; }});
-defAction("outcome.unraise", {scope:"outcomes", risk:"risky", args:{id:"id", ask:"id"},
+defAction("outcome.unraise", {scope:"outcomes", risk:"risky", args:{id:"outcomeId", ask:"id"},
   done:(p, a)=>{ const d = actDv(p, a.id); return !!d && !(d.raisedAgain || []).some(x=>x.id === a.ask); },
   check:(p, a)=>{ const d = actDv(p, a.id); if (!d) return actMissing("deliverable"); if (!(d.raisedAgain || []).some(x=>x.id === a.ask)) return actMissing("ask"); },
   run:(p, a)=>{ const x = actDv(p, a.id); x.raisedAgain = x.raisedAgain.filter(y=>y.id !== a.ask); if (!x.raisedAgain.length) delete x.raisedAgain; }});
 const dvSeen = d => { const {edited, ...r} = d; return r; };
-defAction("outcome.del", {done:(p, a)=>!actDv(p, a.id), scope:"outcomes", risk:"risky", args:{id:"id"}, stale:"Someone changed it since you opened it, so it wasn't deleted. Look at their change, then delete again if you still want to.",
+defAction("outcome.del", {done:(p, a)=>!actDv(p, a.id), scope:"outcomes", risk:"risky", args:{id:"outcomeId"}, stale:"Someone changed it since you opened it, so it wasn't deleted. Look at their change, then delete again if you still want to.",
   cur:(p, a)=>{ const d = actDv(p, a.id); return d ? dvSeen(d) : undefined; },
   check:(p, a)=>{ if (!actDv(p, a.id)) return actMissing("deliverable"); },
   run:(p, a)=>{ p.deliverables = p.deliverables.filter(x=>x.id !== a.id); }});
@@ -9371,46 +9419,46 @@ const idCheck = (p, a) => a.id && (!actFreeId(p, a.id) || actTaken(p, a.id)) ? a
 const linkCheck = (p, a) => { const b = actBar(p, a.id), x = actBar(p, a.after); if (!b) return actMissing("initiative"); if (!x) return actMissing("initiative it starts after");
   if (a.id === a.after) return "An initiative can't start after itself."; if (x.parked) return `${chartLabel(x)} is parked, so nothing can wait for it.`;
   if (reaches(a.after, a.id)) return "That would create a loop."; if (sameTree(a.id, a.after)) return "One of these is inside the other, so it can't wait for it."; };
-defAction("link.add", {scope:"schedule", risk:"routine", args:{id:"id", after:"id"}, check:linkCheck,
+defAction("link.add", {scope:"schedule", risk:"routine", args:{id:"initiativeId", after:"initiativeId"}, check:linkCheck,
   warn:(p, a)=>{ const b = actBar(p, a.id), L = b && jiraLockOf(b); return L && L.dates && depProblems(b).length ? [`${chartLabel(b)} is dated by its Jira sprint, so it doesn't move: it now starts before ${chartLabel(actBar(p, a.after))} ends.`] : []; },
   run:(p, a)=>{ const b = actBar(p, a.id); if (b.dependsOn.includes(a.after)) return NOCHANGE; b.dependsOn = [...b.dependsOn, a.after]; }});
-defAction("link.preview", {scope:"schedule", risk:"routine", preview:"link.add", args:{id:"id", after:"id"}, check:linkCheck, run:()=>NOCHANGE});
-defAction("link.remove", {scope:"schedule", risk:"routine", args:{id:"id", after:"id"},
+defAction("link.preview", {scope:"schedule", risk:"routine", preview:"link.add", args:{id:"initiativeId", after:"initiativeId"}, check:linkCheck, run:()=>NOCHANGE});
+defAction("link.remove", {scope:"schedule", risk:"routine", args:{id:"initiativeId", after:"initiativeId"},
   check:(p, a)=>{ if (!actBar(p, a.id)) return actMissing("initiative"); },
   run:(p, a)=>{ const b = actBar(p, a.id); if (!b.dependsOn.includes(a.after)) return NOCHANGE; b.dependsOn = b.dependsOn.filter(x=>x !== a.after); }});
-defAction("initiative.waitFor", {scope:"schedule", risk:"routine", args:{id:"id", gate:"id"},
+defAction("initiative.waitFor", {scope:"schedule", risk:"routine", args:{id:"initiativeId", gate:"id"},
   check:(p, a)=>{ if (!actBar(p, a.id)) return actMissing("initiative"); if (!actGate(p, a.gate) && !(p.blocks || []).some(x=>x.id === a.gate)) return actMissing("gate or process block"); },
   run:(p, a)=>{ const b = actBar(p, a.id); if ((b.waitsFor || []).includes(a.gate)) return NOCHANGE; b.waitsFor = [...(b.waitsFor || []), a.gate]; }});
-defAction("initiative.unwait", {scope:"schedule", risk:"routine", args:{id:"id", gate:"id"},
+defAction("initiative.unwait", {scope:"schedule", risk:"routine", args:{id:"initiativeId", gate:"id"},
   check:(p, a)=>{ if (!actBar(p, a.id)) return actMissing("initiative"); },
   run:(p, a)=>{ const b = actBar(p, a.id); if (!(b.waitsFor || []).includes(a.gate)) return NOCHANGE; b.waitsFor = b.waitsFor.filter(x=>x !== a.gate); }});
 
 // Workstreams ("lanes" in the data)
 const colorOk = v => /^#[0-9a-f]{6}$/i.test(v);
-defAction("workstream.add", {scope:"people", risk:"routine", done:(p, a)=>!!a.id && (actLane(p, a.id) || {}).name === a.name.trim(), args:{id:"id?", name:"str", members:"ids?", color:"str?"},
+defAction("workstream.add", {scope:"people", risk:"routine", done:(p, a)=>!!a.id && (actLane(p, a.id) || {}).name === a.name.trim(), args:{id:"id?", name:"str", members:"personId[]?", color:"str?"},
   check:(p, a)=>{ const e = idCheck(p, a); if (e) return e; if (!a.name.trim() || a.name.length > 80) return actInvalid("A workstream's name is 1 to 80 characters.");
     if (a.members && !actPeople(p, a.members)) return actMissing("person"); if (a.color && !colorOk(a.color)) return actInvalid("Color is like #2c6fbb."); },
   run:(p, a)=>{ const id = actNewId(p, a, "lane"); p.lanes.push({id, name:a.name.trim(), members:[...new Set(a.members || [])], note:"", color:(a.color || "#5c6878").toLowerCase()}); return id; }});
-defAction("workstream.rename", {scope:"people", risk:"routine", args:{id:"id", name:"str"},
+defAction("workstream.rename", {scope:"people", risk:"routine", args:{id:"workstreamId", name:"str"},
   cur:(p, a)=>actLane(p, a.id)?.name,
   check:(p, a)=>{ if (!actLane(p, a.id)) return actMissing("workstream"); if (!a.name.trim() || a.name.length > 80) return actInvalid("A workstream's name is 1 to 80 characters."); },
   run:(p, a)=>{ const l = actLane(p, a.id); if (l.name === a.name.trim()) return NOCHANGE; l.name = a.name.trim(); }});
-defAction("workstream.addMember", {scope:"people", risk:"routine", args:{id:"id", person:"id"},
+defAction("workstream.addMember", {scope:"people", risk:"routine", args:{id:"workstreamId", person:"personId"},
   check:(p, a)=>{ if (!actLane(p, a.id)) return actMissing("workstream"); if (!actPerson(p, a.person)) return actMissing("person"); },
   run:(p, a)=>{ const l = actLane(p, a.id); if (laneMembers(l).includes(a.person)) return NOCHANGE; l.members = [...laneMembers(l), a.person]; }});
-defAction("workstream.removeMember", {scope:"people", risk:"routine", args:{id:"id", person:"id"},
+defAction("workstream.removeMember", {scope:"people", risk:"routine", args:{id:"workstreamId", person:"personId"},
   check:(p, a)=>{ if (!actLane(p, a.id)) return actMissing("workstream"); },
   run:(p, a)=>{ const l = actLane(p, a.id); if (!laneMembers(l).includes(a.person)) return NOCHANGE; l.members = laneMembers(l).filter(x=>x !== a.person); }});
 
 const reserveArg = v => v === null || (Number.isInteger(v) && v >= 0 && v <= 90);
-defAction("workstream.setReserve", {scope:"people", risk:"routine", args:{id:"id", reserve:"any"},
+defAction("workstream.setReserve", {scope:"people", risk:"routine", args:{id:"workstreamId", reserve:"int|null"},
   cur:(p, a)=>{ const l = actLane(p, a.id); return l ? l.reserve ?? null : undefined; },
   check:(p, a)=>{ if (!actLane(p, a.id)) return actMissing("workstream"); if (!reserveArg(a.reserve)) return actInvalid("Reserve is a whole percent from 0 to 90, or null for the team's."); },
   run:(p, a)=>{ const l = actLane(p, a.id); if ((l.reserve ?? null) === a.reserve) return NOCHANGE; if (a.reserve === null) delete l.reserve; else l.reserve = a.reserve; }});
 // The rest of a workstream's card: its note, color, start and end dates, its place in the list, and deleting it once
 // nothing points at it. Its guidance is the Planning guide's (guide.setWorkstream).
 const LANE_SET = {note:80, color:0, from:0, until:0};
-defAction("workstream.set", {scope:"people", risk:"routine", args:{id:"id", field:"str", value:"str"},
+defAction("workstream.set", {scope:"people", risk:"routine", args:{id:"workstreamId", field:"str", value:"str"}, fields:{note:"str", color:"str", from:"iso|blank", until:"iso|blank"},
   cur:(p, a)=>{ const l = actLane(p, a.id); return l && a.field in LANE_SET ? l[a.field] ?? "" : undefined; },
   check:(p, a)=>{ const l = actLane(p, a.id); if (!l) return actMissing("workstream");
     if (a.field === "name") return actInvalid("Use workstream.rename to change its name.");
@@ -9423,7 +9471,7 @@ defAction("workstream.set", {scope:"people", risk:"routine", args:{id:"id", fiel
       const from = a.field === "from" ? a.value : l.from, until = a.field === "until" ? a.value : l.until; if (from && until && until < from) return actInvalid("A workstream can't end before it starts."); } },
   run:(p, a)=>{ const l = actLane(p, a.id), v = a.field === "color" ? a.value.toLowerCase() : a.field === "note" ? a.value.trim() : a.value;
     if ((l[a.field] ?? "") === v) return NOCHANGE; if (!v && a.field !== "note") delete l[a.field]; else l[a.field] = v; }});
-defAction("workstream.move", {scope:"people", risk:"routine", args:{id:"id", index:"int"},
+defAction("workstream.move", {scope:"people", risk:"routine", args:{id:"workstreamId", index:"int"},
   cur:(p, a)=>{ const i = p.lanes.findIndex(l=>l.id === a.id); return i < 0 ? undefined : i; },
   check:(p, a)=>{ if (!actLane(p, a.id)) return actMissing("workstream"); if (a.index < 0 || a.index >= p.lanes.length) return actInvalid(`index is from 0 to ${p.lanes.length - 1}.`); },
   run:(p, a)=>{ const i = p.lanes.findIndex(l=>l.id === a.id); if (i === a.index) return NOCHANGE; const [l] = p.lanes.splice(i, 1); p.lanes.splice(a.index, 0, l); }});
@@ -9470,12 +9518,12 @@ function laneIdProblem(p, l, id){
 function reidLane(p, from, to){ const l = actLane(p, from); if (!l || from === to) return false;
   l.id = to; l.was = [...new Set([...(l.was || []), from])].filter(x=>x !== to); if (!l.was.length) delete l.was;
   relane(p, new Map([[from, to]])); return true; }
-defAction("workstream.reid", {scope:"people", risk:"floor", args:{lane:"id", id:"id"},
+defAction("workstream.reid", {scope:"people", risk:"floor", args:{lane:"workstreamId", id:"id"},
   done:(p, a)=>{ const l = actLane(p, a.id); return !!l && (a.lane === a.id || (l.was || []).includes(a.lane)); },
   cur:(p, a)=>actLane(p, a.lane) ? a.lane : undefined,
   check:(p, a)=>{ const l = actLane(p, a.lane); if (!l) return actMissing("workstream"); const e = laneIdProblem(p, l, a.id); if (e) return actInvalid(e); },
   run:(p, a)=>{ if (!reidLane(p, a.lane, a.id)) return NOCHANGE; }});
-defAction("workstream.del", {done:(p, a)=>!actLane(p, a.id), scope:"people", risk:"floor", args:{id:"id"},
+defAction("workstream.del", {done:(p, a)=>!actLane(p, a.id), scope:"people", risk:"floor", args:{id:"workstreamId"},
   check:(p, a)=>{ const l = actLane(p, a.id); if (!l) return actMissing("workstream"); if (p.lanes.length === 1) return "A plan keeps at least one workstream.";
     const r = laneRefs(p, a.id); if (r.length) return `${l.name} still has ${r.join("; ")}. Move or remove those first.`; },
   run:(p, a)=>{ p.lanes = p.lanes.filter(l=>l.id !== a.id); p.planningGuide = (p.planningGuide || []).filter(x=>x.id !== "lane:" + a.id); }});
@@ -9490,7 +9538,7 @@ defAction("guide.set", {scope:"guide", risk:"routine", args:{section:"str", valu
   check:(p, a)=>{ if (!PG_IDS.includes(a.section)) return actInvalid(`section is one of ${PG_IDS.join(", ")}.`); if (a.value.length > PG_TEXT) return actInvalid("A section is up to 4,000 characters.");
     return guideFull(p, a.section); },
   run:(p, a)=>guidePut(p, a.section, a.value)});
-defAction("guide.setWorkstream", {scope:"guide", risk:"routine", args:{lane:"id", value:"str"},
+defAction("guide.setWorkstream", {scope:"guide", risk:"routine", args:{lane:"workstreamId", value:"str"},
   cur:(p, a)=>actLane(p, a.lane) ? planningGuideValue("lane:" + a.lane, p) : undefined,
   check:(p, a)=>{ if (!actLane(p, a.lane)) return actMissing("workstream"); if (a.value.length > PG_TEXT) return actInvalid("Guidance is up to 4,000 characters.");
     return guideFull(p, "lane:" + a.lane); },
@@ -9507,7 +9555,7 @@ function gdCheck(f, v){
   return actInvalid(`Guidance's ${f} can't be set this way; to change what it covers, add a new entry that replaces it.`); }
 const gdSpan = g => g.from && g.through && g.through < g.from ? actInvalid("It can't end before it starts.") : null;
 function gdPut(g, f, v){ v = typeof v === "string" ? (f === "text" || f === "why" ? v.replace(/\s+/g, " ").trim() : v.trim()) : v; if (v) g[f] = v; else delete g[f]; }
-defAction("guidance.add", {scope:"guide", risk:"floor", args:{id:"id?", text:"str", why:"str?", lanes:"ids?", from:"iso?", through:"iso?", reviewOn:"iso?", supersedes:"id?"},
+defAction("guidance.add", {scope:"guide", risk:"floor", args:{id:"id?", text:"str", why:"str?", lanes:"workstreamId[]?", from:"iso?", through:"iso?", reviewOn:"iso?", supersedes:"guidanceId?"},
   done:(p, a)=>!!a.id && (actGd(p, a.id) || {}).text === String(a.text || "").replace(/\s+/g, " ").trim(),
   check:(p, a)=>{ const e = idCheck(p, a); if (e) return e; if ((p.guidance || []).length >= GD_MAX) return actInvalid(`A plan holds up to ${GD_MAX} guidance entries.`);
     for (const f of GD_FIELDS){ if (a[f] === undefined) continue; const why = gdCheck(f, a[f]); if (why) return why; }
@@ -9520,13 +9568,13 @@ defAction("guidance.add", {scope:"guide", risk:"floor", args:{id:"id?", text:"st
     if (old){ g.supersedes = old.id; const end = g.from || dayToIso(todayDay());                        // the old entry ends the day this one starts
       if (!old.through || old.through > end) old.through = old.from && old.from > end ? old.from : end; }
     (p.guidance || (p.guidance = [])).push(g); return id; }});
-defAction("guidance.set", {scope:"guide", risk:"floor", args:{id:"id", field:"str", value:"str"},
+defAction("guidance.set", {scope:"guide", risk:"floor", args:{id:"guidanceId", field:"str", value:"str"}, fields:{text:"str", why:"str", through:"iso|blank", reviewOn:"iso|blank"},
   cur:(p, a)=>{ const g = actGd(p, a.id); return g && GD_EDIT.includes(a.field) ? g[a.field] || "" : undefined; },
   check:(p, a)=>{ const g = actGd(p, a.id); if (!g) return actMissing("guidance entry");
     if (a.field === "from") return actInvalid("To change when guidance starts, add a new entry that replaces it.");
     return gdCheck(a.field, a.value) || gdSpan({...g, [a.field]:a.value}); },
   run:(p, a)=>{ const g = actGd(p, a.id), was = JSON.stringify(g); gdPut(g, a.field, a.value); if (JSON.stringify(g) === was) return NOCHANGE; }});
-defAction("guidance.del", {scope:"guide", risk:"floor", args:{id:"id"}, done:(p, a)=>!actGd(p, a.id),
+defAction("guidance.del", {scope:"guide", risk:"floor", args:{id:"guidanceId"}, done:(p, a)=>!actGd(p, a.id),
   check:(p, a)=>actGd(p, a.id) ? null : actMissing("guidance entry"),
   run:(p, a)=>{ p.guidance = p.guidance.filter(g=>g.id !== a.id);
     p.decisions.forEach(x=>{ if (!x.guidance) return; x.guidance = x.guidance.filter(id=>id !== a.id); if (!x.guidance.length) delete x.guidance; }); }});
@@ -9560,33 +9608,33 @@ const skillLabelProblem = (p, label, id) => { const t = label.trim(); if (!t || 
 defAction("skill.add", {scope:"people", risk:"floor", done:(p, a)=>!!actSkill(p, a.id) && skillKey(actSkill(p, a.id).label) === skillKey(a.label), args:{id:"id", label:"str"},
   check:(p, a)=>{ if (actSkill(p, a.id)) return actInvalid(`${a.id} is already used.`); if ((p.skills || []).length >= SKILL_MAX) return `A plan holds up to ${SKILL_MAX} skills.`; return skillLabelProblem(p, a.label, a.id); },
   run:(p, a)=>{ (p.skills = p.skills || []).push({id:a.id, label:a.label.trim()}); return a.id; }});
-defAction("skill.rename", {scope:"people", risk:"routine", args:{id:"id", label:"str"},
+defAction("skill.rename", {scope:"people", risk:"routine", args:{id:"skillId", label:"str"},
   cur:(p, a)=>actSkill(p, a.id)?.label,
   check:(p, a)=>actSkill(p, a.id) ? skillLabelProblem(p, a.label, a.id) : actMissing("skill"),
   run:(p, a)=>{ const x = actSkill(p, a.id); if (x.label === a.label.trim()) return NOCHANGE; x.label = a.label.trim(); }});
-defAction("skill.remove", {done:(p, a)=>!actSkill(p, a.id), scope:"people", risk:"risky", args:{id:"id"},
+defAction("skill.remove", {done:(p, a)=>!actSkill(p, a.id), scope:"people", risk:"risky", args:{id:"skillId"},
   check:(p, a)=>{ const x = actSkill(p, a.id); if (!x) return actMissing("skill"); const u = skillUses(p, a.id); if (u.n) return `${x.label} is used by ${skillUseText(u)}. Take it off them first.`; },
   run:(p, a)=>{ p.skills = p.skills.filter(x=>x.id !== a.id); }});
 // A meeting's note: what it's for, shown on its card in markdown.
 const actMeet = (p, id) => (p.meetings || []).find(m=>m.id === id);
-defAction("meeting.set", {scope:"schedule", risk:"routine", args:{id:"id", field:"str", value:"str"},
+defAction("meeting.set", {scope:"schedule", risk:"routine", args:{id:"meetingId", field:"str", value:"str"}, fields:{note:"str"},
   cur:(p, a)=>{ const m = actMeet(p, a.id); return m && a.field === "note" ? m.note || "" : undefined; },
   check:(p, a)=>{ if (!actMeet(p, a.id)) return actMissing("meeting"); if (a.field !== "note") return actInvalid(`A meeting's ${a.field} can't be set this way (note).`); if (a.value.length > 500) return actInvalid("A meeting's note is up to 500 characters."); },
   run:(p, a)=>{ const m = actMeet(p, a.id), v = a.value.trim() ? a.value : ""; if ((m.note || "") === v) return NOCHANGE; m.note = v; }});
 // People
 const PERSON_SET = {name:60, role:60, initials:3, days:0, color:0}, PERSON_DATES = {from:"The day they join", leaves:"The day they leave"}, PERSON_OPT = ["skills","aiHint"];
-defAction("person.add", {scope:"people", risk:"floor", done:(p, a)=>!!a.id && (actPerson(p, a.id) || {}).name === a.name.trim(), args:{id:"id?", name:"str", role:"str?", days:"int?", outside:"any?"},
+defAction("person.add", {scope:"people", risk:"floor", done:(p, a)=>!!a.id && (actPerson(p, a.id) || {}).name === a.name.trim(), args:{id:"id?", name:"str", role:"str?", days:"int?", outside:"bool?"},
   check:(p, a)=>{ const e = idCheck(p, a); if (e) return e; if (!a.name.trim() || a.name.length > 60) return actInvalid("A name is 1 to 60 characters.");
     if (p.people.length >= 200) return "A plan holds up to 200 people."; if (a.role && a.role.length > 60) return actInvalid("A role is up to 60 characters.");
     if (a.days !== undefined && (a.days < 1 || a.days > 5)) return actInvalid("Days per week are from 1 to 5."); },
   run:(p, a)=>{ const id = actNewId(p, a, "person"), pp = mkPerson(id, a.name.trim(), p.people.length, a.outside === true);
     if (a.role) pp.role = a.role.trim(); if (a.days) pp.days = a.days; p.people.push(pp); return id; }});
 // A group: a named set of people, such as a team that asks for things. Members may be none (a team outside the plan).
-defAction("group.add", {scope:"people", risk:"floor", done:(p, a)=>!!a.id && ((p.groups || []).find(g=>g.id === a.id) || {}).name === a.name.trim(), args:{id:"id?", name:"str", members:"ids?"},
+defAction("group.add", {scope:"people", risk:"floor", done:(p, a)=>!!a.id && ((p.groups || []).find(g=>g.id === a.id) || {}).name === a.name.trim(), args:{id:"id?", name:"str", members:"personId[]?"},
   check:(p, a)=>{ const e = idCheck(p, a); if (e) return e; if (!a.name.trim() || a.name.length > 60) return actInvalid("A name is 1 to 60 characters.");
     if ((p.groups || []).length >= 200) return "A plan holds up to 200 groups."; if (a.members && !actPeople(p, a.members)) return actMissing("person"); },
   run:(p, a)=>{ const id = actNewId(p, a, "group"); (p.groups = p.groups || []).push({id, name:a.name.trim(), members:[...new Set(a.members || [])]}); return id; }});
-defAction("person.set", {scope:"people", risk:"routine", args:{id:"id", field:"str", value:"any"},
+defAction("person.set", {scope:"people", risk:"routine", args:{id:"personId", field:"str", value:"any"}, fields:{name:"str", role:"str", initials:"str", days:"int", color:"str", from:"iso|blank", leaves:"iso|blank", skills:"ids", aiHint:"str"},
   cur:(p, a)=>{ const x = actPerson(p, a.id); return x && PERSON_OPT.includes(a.field) ? optCur(x, a.field) : x && (a.field in PERSON_SET || a.field in PERSON_DATES) ? x[a.field] ?? "" : undefined; },
   check:(p, a)=>{ const x = actPerson(p, a.id); if (!x) return actMissing("person");
     if (a.field === "skills") return skillsProblem(p, a.value);
@@ -9603,23 +9651,23 @@ defAction("person.set", {scope:"people", risk:"routine", args:{id:"id", field:"s
   run:(p, a)=>{ if (PERSON_OPT.includes(a.field)) return setOpt(actPerson(p, a.id), a.field, a.value); if (a.field in PERSON_DATES){ const x = actPerson(p, a.id); if ((x[a.field] || "") === a.value) return NOCHANGE; if (a.value) x[a.field] = a.value; else delete x[a.field]; return; }
     const x = actPerson(p, a.id), v = a.field === "initials" ? (a.value.toUpperCase() || autoInitials(x.name)) : a.field === "color" ? a.value.toLowerCase() : typeof a.value === "string" ? a.value.trim() : a.value;
     if (x[a.field] === v) return NOCHANGE; x[a.field] = v; }});
-defAction("person.setAlloc", {scope:"people", risk:"routine", args:{id:"id", alloc:"any"},
+defAction("person.setAlloc", {scope:"people", risk:"routine", args:{id:"personId", alloc:"int|null"},
   cur:(p, a)=>{ const x = actPerson(p, a.id); return x ? x.alloc ?? null : undefined; },
   check:(p, a)=>{ if (!actPerson(p, a.id)) return actMissing("person"); if (a.alloc !== null && !(Number.isInteger(a.alloc) && a.alloc >= 0 && a.alloc <= 100)) return actInvalid("Allocation is a whole percent from 0 to 100, or null for days per week."); },
   run:(p, a)=>{ const x = actPerson(p, a.id); if ((x.alloc ?? null) === a.alloc) return NOCHANGE; if (a.alloc === null) delete x.alloc; else x.alloc = a.alloc; }});
-defAction("person.setSplit", {scope:"people", risk:"routine", args:{id:"id", lanes:"weights"},
+defAction("person.setSplit", {scope:"people", risk:"routine", args:{id:"personId", lanes:"weights"},
   cur:(p, a)=>{ const x = actPerson(p, a.id); return x ? clone(x.lanes ?? null) : undefined; },
   check:(p, a)=>{ const x = actPerson(p, a.id); if (!x) return actMissing("person"); if (a.lanes === null) return null;
     if (typeof a.lanes !== "object" || Array.isArray(a.lanes) || !Object.keys(a.lanes).length || Object.keys(a.lanes).length > 20) return actInvalid("The split is {workstream id: weight}, with weights from 0 to 100, or null to split evenly.");
     for (const [k, v] of Object.entries(a.lanes)){ const l = actLane(p, k); if (!l) return actMissing("workstream"); if (!laneMembers(l).includes(x.id)) return actInvalid(`They aren't in ${l.name}. Add them to it first.`);
       if (!(Number.isInteger(v) && v >= 0 && v <= 100)) return actInvalid("Each weight is a whole number from 0 to 100."); } },
   run:(p, a)=>{ const x = actPerson(p, a.id); if (jeq(x.lanes ?? null, a.lanes)) return NOCHANGE; if (a.lanes === null) delete x.lanes; else x.lanes = {...a.lanes}; }});
-defAction("person.timeOff.add", {scope:"people", risk:"routine", args:{id:"id", from:"iso", to:"iso?", note:"str?"},
+defAction("person.timeOff.add", {scope:"people", risk:"routine", args:{id:"personId", from:"iso", to:"iso?", note:"str?"},
   check:(p, a)=>{ const x = actPerson(p, a.id); if (!x) return actMissing("person"); if (a.to && a.to < a.from) return actInvalid("Time off can't end before it starts.");
     if (x.off.length >= 100) return "A person holds up to 100 stretches of time off."; },
   run:(p, a)=>{ const x = actPerson(p, a.id), o = {from:a.from, to:a.to || a.from, note:String(a.note || "").slice(0, 60)};
     if (x.off.some(y=>y.from === o.from && y.to === o.to)) return NOCHANGE; x.off.push(o); }});
-defAction("person.timeOff.del", {scope:"people", risk:"routine", args:{id:"id", from:"iso"},
+defAction("person.timeOff.del", {scope:"people", risk:"routine", args:{id:"personId", from:"iso"},
   check:(p, a)=>{ if (!actPerson(p, a.id)) return actMissing("person"); },
   run:(p, a)=>{ const x = actPerson(p, a.id), n = x.off.length; x.off = x.off.filter(o=>o.from !== a.from); if (x.off.length === n) return NOCHANGE; }});
 
@@ -9639,27 +9687,27 @@ defAction("holiday.del", {scope:"schedule", risk:"routine", args:{date:"iso"}, d
   check:(p, a)=>{ if (!holHas(p, a.date)) return actMissing("holiday"); },
   run:(p, a)=>{ p.holidays = p.holidays.filter(x=>x.date !== a.date); }});
 
-defAction("forecast.setReserve", {scope:"schedule", risk:"routine", args:{reserve:"any"},
+defAction("forecast.setReserve", {scope:"schedule", risk:"routine", args:{reserve:"int|null"},
   cur:p=>(p.meta.forecast || {}).reserve ?? null,
   check:(p, a)=>reserveArg(a.reserve) ? null : actInvalid("The team reserve is a whole percent from 0 to 90, or null for none."),
   run:(p, a)=>{ if (((p.meta.forecast || {}).reserve ?? null) === a.reserve) return NOCHANGE; if (a.reserve === null) delete p.meta.forecast; else p.meta.forecast = {...(p.meta.forecast || {}), reserve:a.reserve}; }});
 // Milestones: a calendar day becomes the chart position the way the card's date field does it.
 const msAt = (p, iso) => Math.max(0, Math.min(p.meta.weeks, (isoToDay(iso) - isoToDay(p.meta.start)) / 7));
 const MS_SET = {what:"str", label:"str", stretchLabel:"str", status:"str", lane:"idOrBlank", owners:"ids", dep:"str", story:"str", aiHint:"str"}, MS_KEY = {label:"date", stretchLabel:"stretch"};
-defAction("milestone.add", {scope:"milestones", risk:"routine", done:(p, a)=>!!a.id && (actMs(p, a.id) || {}).what === a.what.trim(), args:{id:"id?", what:"str", day:"iso?", lane:"id?", status:"str?", owners:"ids?", after:"ids?"},
+defAction("milestone.add", {scope:"milestones", risk:"routine", done:(p, a)=>!!a.id && (actMs(p, a.id) || {}).what === a.what.trim(), args:{id:"id?", what:"str", day:"iso?", lane:"workstreamId?", status:"commit|gated|unconfirmed?", owners:"personId[]?", after:"initiativeId[]?"},
   check:(p, a)=>{ const e = idCheck(p, a); if (e) return e; if (!a.what.trim()) return actInvalid("Say what the milestone is.");
     if (a.lane && !actLane(p, a.lane)) return actMissing("workstream"); if (a.status && !MSTATUS.includes(a.status)) return actInvalid(`Status is one of ${MSTATUS.join(", ")}.`);
     if (a.owners && !actPeople(p, a.owners)) return actMissing("person"); if (a.after && a.after.some(x=>!actBar(p, x))) return actMissing("initiative it's done after"); },
   run:(p, a)=>{ const id = actNewId(p, a, "ms");
     p.milestones.push({id, date:"", owners:[...(a.owners || [])], stretch:"", what:a.what.trim(), dep:"", status:a.status || "commit", lane:a.lane || p.lanes[0]?.id || "", at: a.day ? msAt(p, a.day) : null, stretchAt:null, after:[...new Set(a.after || [])]}); return id; }});
-defAction("milestone.move", {scope:"schedule", risk:"routine", args:{id:"id", day:"isoOrNull", stretch:"any?"}, edit:{day:["date", "Date (YYYY-MM-DD; blank clears a stretch date)"], stretch:["bool", "The stretch date"]},
+defAction("milestone.move", {scope:"schedule", risk:"routine", args:{id:"milestoneId", day:"isoOrNull", stretch:"bool?"}, edit:{day:["date", "Date (YYYY-MM-DD; blank clears a stretch date)"], stretch:["bool", "The stretch date"]},
   cur:(p, a)=>{ const m = actMs(p, a.id), at = m ? (a.stretch === true ? m.stretchAt : m.at) : undefined; return at === undefined ? undefined : at == null ? null : amWeekIso(p, at); },   // a date, as prev is written
   prevAs:(p, a, v)=>{ const m = actMs(p, a.id); return !!m && typeof v === "number" && v === (a.stretch === true ? m.stretchAt : m.at); },   // the week number, as the context's at shows it
   check:(p, a)=>{ const m = actMs(p, a.id); if (!m) return actMissing("milestone");
     if (a.day === null && a.stretch !== true) return actInvalid("Only a stretch date can be cleared (stretch: true, day: null).");
     if (a.stretch !== true && (m.after || []).length) return `${m.what || "This milestone"} is placed after the initiatives it follows, so it moves when they do. Change what it follows instead.`; },
   run:(p, a)=>{ const m = actMs(p, a.id), k = a.stretch === true ? "stretchAt" : "at", at = a.day === null ? null : msAt(p, a.day); if (m[k] === at) return NOCHANGE; m[k] = at; if (k === "stretchAt" && at === null) m.stretch = ""; if (k === "at" && !m.lane) m.lane = p.lanes[0]?.id || ""; }});
-defAction("milestone.set", {scope:"milestones", risk:"routine", args:{id:"id", field:"str", value:"any"},
+defAction("milestone.set", {scope:"milestones", risk:"routine", args:{id:"milestoneId", field:"str", value:"any"}, fields:{...MS_SET, status:MSTATUS.join("|"), lane:"workstreamId|blank", owners:"personId[]"},
   cur:(p, a)=>{ const m = actMs(p, a.id); return m && a.field in MS_SET ? clone(m[MS_KEY[a.field] || a.field] ?? "") : undefined; },
   check:(p, a)=>{ if (!actMs(p, a.id)) return actMissing("milestone");
     if (a.field === "at" || a.field === "date" || a.field === "day") return actInvalid("Use milestone.move to change its date (field label is the optional text shown instead).");
@@ -9672,26 +9720,26 @@ defAction("milestone.set", {scope:"milestones", risk:"routine", args:{id:"id", f
     if (a.field === "lane" && a.value && !actLane(p, a.value)) return actMissing("workstream");
     if (a.field === "owners" && !actPeople(p, a.value)) return actMissing("person"); },
   run:(p, a)=>{ const m = actMs(p, a.id), k = MS_KEY[a.field] || a.field, v = Array.isArray(a.value) ? [...a.value] : a.value; if (k === "story") return setStory(m, v); if (k === "aiHint") return setOpt(m, k, v); if (jeq(m[k], v)) return NOCHANGE; m[k] = v; }});
-defAction("milestone.doneWhen.add", {scope:"milestones", risk:"routine", args:{id:"id", bar:"id"},
+defAction("milestone.doneWhen.add", {scope:"milestones", risk:"routine", args:{id:"milestoneId", bar:"initiativeId"},
   check:(p, a)=>{ if (!actMs(p, a.id)) return actMissing("milestone"); if (!actBar(p, a.bar)) return actMissing("initiative"); },
   run:(p, a)=>{ const m = actMs(p, a.id); if ((m.after || []).includes(a.bar)) return NOCHANGE; m.after = [...(m.after || []), a.bar]; }});
-defAction("milestone.doneWhen.remove", {scope:"milestones", risk:"routine", args:{id:"id", bar:"id"},
+defAction("milestone.doneWhen.remove", {scope:"milestones", risk:"routine", args:{id:"milestoneId", bar:"initiativeId"},
   check:(p, a)=>{ if (!actMs(p, a.id)) return actMissing("milestone"); },
   run:(p, a)=>{ const m = actMs(p, a.id); if (!(m.after || []).includes(a.bar)) return NOCHANGE; m.after = m.after.filter(x=>x !== a.bar); }});
-defAction("milestone.del", {done:(p, a)=>!actMs(p, a.id), scope:"milestones", risk:"risky", args:{id:"id"},
+defAction("milestone.del", {done:(p, a)=>!actMs(p, a.id), scope:"milestones", risk:"risky", args:{id:"milestoneId"},
   check:(p, a)=>{ if (!actMs(p, a.id)) return actMissing("milestone"); },
   run:(p, a)=>{ p.milestones = p.milestones.filter(m=>m.id !== a.id); }});
 
 // Gates
 const GATE_SET = {gate:"str", label:"str", blocks:"str", owners:"ids", description:"str", aiHint:"str"}, GATE_KEY = {label:"neededBy"};
-defAction("gate.add", {scope:"milestones", risk:"routine", done:(p, a)=>!!a.id && (actGate(p, a.id) || {}).gate === a.gate.trim(), args:{id:"id?", gate:"str", day:"iso?", label:"str?", blocks:"str?", owners:"ids?"},
+defAction("gate.add", {scope:"milestones", risk:"routine", done:(p, a)=>!!a.id && (actGate(p, a.id) || {}).gate === a.gate.trim(), args:{id:"id?", gate:"str", day:"iso?", label:"str?", blocks:"str?", owners:"personId[]?"},
   check:(p, a)=>{ const e = idCheck(p, a); if (e) return e; if (!a.gate.trim()) return actInvalid("Name the gate."); if (a.owners && !actPeople(p, a.owners)) return actMissing("person"); },
   run:(p, a)=>{ const id = actNewId(p, a, "gate"); p.gates.push({id, gate:a.gate.trim(), date:a.day || "", neededBy:a.label ?? (a.day ? fmtDay(isoToDay(a.day)) : ""), blocks:a.blocks || "", owners:[...(a.owners || [])]}); return id; }});
-defAction("gate.move", {scope:"schedule", risk:"routine", args:{id:"id", day:"str"},
+defAction("gate.move", {scope:"schedule", risk:"routine", args:{id:"gateId", day:"str"},
   cur:(p, a)=>actGate(p, a.id)?.date,
   check:(p, a)=>{ if (!actGate(p, a.id)) return actMissing("gate"); if (a.day && !validIso(a.day)) return actInvalid("day is YYYY-MM-DD, or empty to take it off the chart."); },
   run:(p, a)=>{ const g = actGate(p, a.id); if (g.date === a.day) return NOCHANGE; g.date = a.day; if (g.date) g.neededBy = fmtDay(isoToDay(g.date)); }});
-defAction("gate.set", {scope:"milestones", risk:"routine", args:{id:"id", field:"str", value:"any"},
+defAction("gate.set", {scope:"milestones", risk:"routine", args:{id:"gateId", field:"str", value:"any"}, fields:{...GATE_SET, owners:"personId[]"},
   cur:(p, a)=>{ const g = actGate(p, a.id); return g && a.field in GATE_SET ? clone(g[GATE_KEY[a.field] || a.field] ?? "") : undefined; },
   check:(p, a)=>{ if (!actGate(p, a.id)) return actMissing("gate"); if (a.field === "date" || a.field === "day") return actInvalid("Use gate.move to change its date.");
     if (!(a.field in GATE_SET)) return actInvalid(`A gate's ${a.field} can't be set this way.`); if (!ACT_ARG[GATE_SET[a.field]](a.value)) return actInvalid(`That isn't a valid ${a.field}.`);
@@ -9699,14 +9747,14 @@ defAction("gate.set", {scope:"milestones", risk:"routine", args:{id:"id", field:
     if (a.field === "aiHint") return hintProblem(a.value);
     if (a.field === "owners" && !actPeople(p, a.value)) return actMissing("person"); },
   run:(p, a)=>{ const g = actGate(p, a.id), k = GATE_KEY[a.field] || a.field, v = Array.isArray(a.value) ? [...a.value] : a.value; if (k === "description" || k === "aiHint") return setOpt(g, k, v); if (jeq(g[k], v)) return NOCHANGE; g[k] = v; }});
-defAction("gate.del", {done:(p, a)=>!actGate(p, a.id), scope:"milestones", risk:"risky", args:{id:"id"},
+defAction("gate.del", {done:(p, a)=>!actGate(p, a.id), scope:"milestones", risk:"risky", args:{id:"gateId"},
   check:(p, a)=>{ if (!actGate(p, a.id)) return actMissing("gate"); },
   run:(p, a)=>{ p.gates = p.gates.filter(g=>g.id !== a.id); p.bars.forEach(b=>{ b.waitsFor = (b.waitsFor || []).filter(x=>x !== a.id); }); }});
 
 // Timeboxes: a plan timebox's name and goal, one more at the end, or as many as reach a date (Settings' Add timeboxes
 // through, 60 at most per call). The rules are Settings' own (sprintProblem); Jira's sprints are Jira's.
 const actSprint = (p, id) => (p.sprints || []).findIndex(x=>x.id === id);
-defAction("sprint.set", {scope:"timeboxes", risk:"routine", args:{id:"id", field:"str", value:"any"},
+defAction("sprint.set", {scope:"timeboxes", risk:"routine", args:{id:"timeboxId", field:"str", value:"any"}, fields:{name:"str", goal:"str"},
   cur:(p, a)=>{ const i = actSprint(p, a.id); return i >= 0 && !p.sprints[i].jira && (a.field === "name" || a.field === "goal") ? p.sprints[i][a.field] ?? "" : undefined; },   // a Jira sprint: Jira's, not changed since
   check:(p, a)=>{ const i = actSprint(p, a.id); if (i < 0) return actMissing("timebox");
     if (p.sprints[i].jira) return SPRINT_JIRA_MSG;
@@ -9763,23 +9811,23 @@ function jiraPlaceWhy(p, a, kind, tid){
   return null; }
 function jiraPlaceRun(p, a, kind, tid){ const pile = new Map(sortPile().map(x=>[x.key, x])), items = jiraKeysOf(a).map(k=>pile.get(k)).filter(Boolean);
   return items.length && jiraPlace(p, [{items, kind, tid}], jiraIdOf(p)) ? undefined : NOCHANGE; }
-defAction("jira.toWorkstream", {scope:"jira", risk:"routine", args:{keys:"keys", lane:"id", epic:"str?"},
+defAction("jira.toWorkstream", {scope:"jira", risk:"routine", args:{keys:"keys", lane:"workstreamId", epic:"str?"},
   done:(p, a)=>jiraPlaceDone(p, a, "lane", a.lane), check:(p, a)=>jiraPlaceWhy(p, a, "lane", a.lane), run:(p, a)=>jiraPlaceRun(p, a, "lane", a.lane)});
-defAction("jira.toInitiative", {scope:"jira", risk:"routine", args:{keys:"keys", id:"id", epic:"str?"},
+defAction("jira.toInitiative", {scope:"jira", risk:"routine", args:{keys:"keys", id:"initiativeId", epic:"str?"},
   done:(p, a)=>jiraPlaceDone(p, a, "bar", a.id), check:(p, a)=>jiraPlaceWhy(p, a, "bar", a.id), run:(p, a)=>jiraPlaceRun(p, a, "bar", a.id)});
 defAction("jira.notOurs", {scope:"jira", risk:"routine", args:{keys:"keys"},
   done:(p, a)=>jiraPlaceDone(p, a, "skip"), check:(p, a)=>jiraPlaceWhy(p, a, "skip"), run:(p, a)=>jiraPlaceRun(p, a, "skip")});
 function jiraEpicWhy(p, a){ const k = upKey(a.epic); if (!JKEY.test(k)) return actInvalid(`${String(a.epic).slice(0, 40)} isn't a Jira key.`);
   const j = issueOf(k); if (!j) return actInvalid(`${k} isn't in this plan's Jira files.`); if (!isEpic(j)) return actInvalid(`${k} isn't an epic. Place a story with jira.toWorkstream or jira.toInitiative.`);
   if (!jiraEpicList().some(x=>x.key === k)) return actInvalid(`${k} is a feature under another epic. Place that epic, or its stories one by one.`); return null; }
-defAction("jira.epicLink", {scope:"jira", risk:"routine", args:{epic:"str", id:"id"},
+defAction("jira.epicLink", {scope:"jira", risk:"routine", args:{epic:"str", id:"initiativeId"},
   done:(p, a)=>{ const b = epicOwner(upKey(a.epic), p.bars); return !!b && b.id === a.id && !b.parked; },
   check:(p, a)=>{ const why = jiraEpicWhy(p, a); if (why) return why; const b = actBar(p, a.id); if (!b) return actMissing("initiative");
     if (!jiraTakes(b, p)) return {code:"stale", reason:`"${String(barTitle(b)).slice(0, 60)}" can't take Jira work: it's parked, waiting, has sub-initiatives, or is one Jira issue itself.`};
     const own = epicOwner(upKey(a.epic), p.bars); if (own && own.id !== b.id && !own.parked) return {code:"stale", reason:`${upKey(a.epic)} is already on "${String(barTitle(own)).slice(0, 60)}", so it wasn't moved.`};   // parked elsewhere: it moves, as in the epic box
     if (!(b.epics || []).includes(upKey(a.epic)) && (b.epics || []).length >= 50) return actInvalid(`"${String(barTitle(b)).slice(0, 60)}" already has 50 epics, the most an initiative holds.`); },
   run:(p, a)=>epicLinkIn(p, upKey(a.epic), a.id)});
-defAction("jira.epicNew", {scope:"jira", risk:"routine", args:{epic:"str", lane:"id", id:"id?"},
+defAction("jira.epicNew", {scope:"jira", risk:"routine", args:{epic:"str", lane:"workstreamId", id:"id?"},
   done:(p, a)=>{ const b = epicOwner(upKey(a.epic), p.bars); return !!b && !b.parked && b.lane === a.lane && (!a.id || b.id === a.id); },
   check:(p, a)=>{ const why = jiraEpicWhy(p, a); if (why) return why; if (!actLane(p, a.lane)) return actMissing("workstream");
     const own = epicOwner(upKey(a.epic), p.bars); if (own) return {code:"stale", reason:`${upKey(a.epic)} is already on "${String(barTitle(own)).slice(0, 60)}", so it wasn't moved.`};
@@ -9804,7 +9852,7 @@ defAction("jira.unhide", {scope:"jira", risk:"routine", args:{keys:"keys"},
   run:(p, a)=>unhideIn(p, jiraKeysOf(a)) ? undefined : NOCHANGE});
 // The team's card layout on the Cards page (each person can still use their own in their browser).
 const CARD_SET = {fields:"the fields, in order", density:"the density", width:"the width"};
-defAction("cards.set", {scope:"guide", risk:"routine", args:{field:"str", value:"any"},
+defAction("cards.set", {scope:"guide", risk:"routine", args:{field:"str", value:"any"}, fields:{fields:"str[]", density:CARD_DENSITY.map(x=>x[0]).join("|"), width:"fixed|points"},
   cur:(p, a)=>a.field in CARD_SET ? clone((normCardLayout(p.meta.cardLayout) || CARD_LAYOUT0)[a.field]) : undefined,
   check:(p, a)=>{ if (!(a.field in CARD_SET)) return actInvalid(`field is one of ${Object.keys(CARD_SET).join(", ")}.`);
     if (a.field === "fields"){ if (!Array.isArray(a.value) || !a.value.length) return actInvalid("fields is a list of at least one field."); const bad = a.value.find(f=>!CARD_LAYOUT_FIELDS.some(x=>x[0] === f)); if (bad) return actInvalid(`${String(bad).slice(0, 30)} isn't a card field. They are ${CARD_LAYOUT_FIELDS.map(x=>x[0]).join(", ")}.`); }
@@ -9832,17 +9880,19 @@ function rdPut(x, key, f, v){ if (f === "guidance"){ if (v.length) x.guidance = 
   if (key === "risks" && f === "state"){ if (v === "closed") x.state = "closed"; else delete x.state; return; }
   if ((f in FOLLOW || f === "escalateBy" || f === "decider" || f === "aiHint") && !v){ delete x[f]; return; } x[f] = v; }
 const RD_FIELDS = {risks:["text","sev","state","owners","item","next","waitingOn","escalateBy","aiHint"], decisions:["text","state","owners","item","due","decider","next","waitingOn","escalateBy","aiHint","guidance"]};
+const RD_TYPES = {text:"str", sev:"high|med|low", owners:"personId[]", item:"initiativeId|blank", next:"str", waitingOn:"str", escalateBy:"iso|blank", aiHint:"str",
+  due:"iso|blank", decider:"personId|blank", guidance:"guidanceId[]"}, rdType = (key, f) => f === "state" ? (key === "risks" ? "open|closed" : "open|decided") : RD_TYPES[f];
 [["risk","risks","risk"], ["decision","decisions","dec"]].forEach(([name, key, pre])=>{
-  const extra = Object.fromEntries(RD_FIELDS[key].filter(f=>f !== "text").map(f=>[f, "any?"]));
+  const extra = Object.fromEntries(RD_FIELDS[key].filter(f=>f !== "text").map(f=>[f, rdType(key, f) + "?"])), fields = Object.fromEntries(RD_FIELDS[key].map(f=>[f, rdType(key, f)]));
   defAction(name + ".add", {scope:"risks", risk:"routine", args:{id:"id?", text:"str", ...extra}, done:(p, a)=>!!a.id && (actOf(p, key, a.id) || {}).text === a.text,
     check:(p, a)=>{ const e = idCheck(p, a); if (e) return e; for (const f of RD_FIELDS[key]){ if (a[f] === undefined) continue; const why = rdCheck(p, key, f, a[f]); if (why) return why; } },
     run:(p, a)=>{ const id = actNewId(p, a, pre), x = key === "risks" ? {id, sev:"med", text:"", owners:[], item:""} : {id, text:"", state:"open", owners:[], due:"", item:""};
       RD_FIELDS[key].forEach(f=>{ if (a[f] !== undefined) rdPut(x, key, f, a[f]); }); p[key].push(x); return id; }});
-  defAction(name + ".set", {scope:"risks", risk:"routine", args:{id:"id", field:"str", value:"any"},
+  defAction(name + ".set", {scope:"risks", risk:"routine", args:{id:name + "Id", field:"str", value:"any"}, fields,
     cur:(p, a)=>{ const x = actOf(p, key, a.id); return x && RD_FIELDS[key].includes(a.field) ? clone(a.field === "state" ? x.state || "open" : x[a.field] ?? "") : undefined; },
     check:(p, a)=>actOf(p, key, a.id) ? (RD_FIELDS[key].includes(a.field) ? rdCheck(p, key, a.field, a.value) : actInvalid(`A ${name}'s ${a.field} can't be set this way.`)) : actMissing(name),
     run:(p, a)=>{ const x = actOf(p, key, a.id), was = JSON.stringify(x); rdPut(x, key, a.field, a.value); if (JSON.stringify(x) === was) return NOCHANGE; }});
-  defAction(name + ".del", {done:(p, a)=>!actOf(p, key, a.id), scope:"risks", risk:"risky", args:{id:"id"},
+  defAction(name + ".del", {done:(p, a)=>!actOf(p, key, a.id), scope:"risks", risk:"risky", args:{id:name + "Id"},
     check:(p, a)=>actOf(p, key, a.id) ? null : actMissing(name),
     run:(p, a)=>{ p[key] = p[key].filter(x=>x.id !== a.id); }});
 });
@@ -15016,6 +15066,7 @@ function assistantView(){
     guide:[
       "# Writing Sightline amendments (version 1)",
       "Read each action's args from actions in this file and use them exactly; never guess field names.",
+      "argTypes says what each type means. A type ending in Id is a reference: that id must be in the plan, or added earlier in the same change (risk.add and decision.add take an initiative's id as item). A setter's value takes the type of its field in fields. sightline-app.py check refuses the same types, references and values the page does; whether a change makes sense today (a dropped item, a Jira-owned date) is only checked when it's applied.",
       "Write one JSON file: {kind:'sightline-amendments', version:1, planId, batchId, createdAt, source:'assistant', basedOn:{planRevision}, changes:[...]}.",
       "Each change: {id, summary, ops:[...]} with a stable id; a change applies whole or not at all. Keep ids stable when you rewrite the file.",
       "Ops: add {op:'add', type:'deliverable', id:'dv-…', value:{name, line?, kind?, stage?, target?, release?, lane?, owners?, jira?, note?, source?}};",
@@ -15051,7 +15102,9 @@ function assistantView(){
       "Cards (cards): cards.set {field:'fields'|'density'|'width', value, prev} changes the team's card layout (fields is an ordered list from cards.fields; density is compact, normal or detailed; width is fixed or points). People can still use their own layout. Hiding: jira.hide {keys, why?} keeps Jira items off the plan's views the plan's own way for each, and the review says which: a story is switched off in its epic's initiative, an epic is parked (its initiative and stories leave the timeline), an issue the plan doesn't show is marked not ours. jira.unhide {keys} brings them back; cards.hidden lists what's hidden and why. Plan work (a Jira task, or an initiative that is one Jira issue) can't be hidden: say so instead. Never hide work to make a report look better.",
       "Read coverage before claiming completeness. Missing exported records may be omitted by the byte budget, not deleted. Capacity includes only loaded Jira sprint scope; do not invent estimates for unestimated or plan-only work.",
       "Then check it offline: python sightline-app.py check <this folder> <your file> --json, using the sightline-app.py published beside this page (python sightline-app.py --version must print this file's appVersion). Fix anything invalid before telling the person; Sightline checks again when they apply."].join("\n"),
-    actions:Object.values(planActions).filter(a=>!a.preview).map(a=>({id:a.id, desc:a.desc, scope:a.scope, risk:a.risk, args:{...a.args, ...(a.cur ? {prev:"any?"} : {})}})),
+    argTypes:actArgTypes(),
+    actions:Object.values(planActions).filter(a=>!a.preview).map(a=>({id:a.id, desc:a.desc, scope:a.scope, risk:a.risk, args:{...a.args, ...(a.cur ? {prev:"any?"} : {})},
+      ...(a.fields ? {fields:a.fields} : {}), ...(ACT_CREATES[a.id] ? {creates:ACT_CREATES[a.id]} : {})})),
     choices:{targets:targetChoices().map(x=>x[0]), kinds:DV_KINDS.map(x=>x[0]), stages:DV_STAGES.map(x=>x[0]), proposalFields:PROPOSAL_FIELDS.map(x=>x[0]),
       lanes:S.lanes.map(l=>({id:l.id, name:l.name})), people:S.people.filter(p=>!p.inactive).map(p=>({id:p.id, name:p.name, outside:!!p.external})),
       releases:(JIRA && JIRA.releases || []).map(r=>({id:r.id, name:r.name, date:r.date || null, released:!!r.released}))},
