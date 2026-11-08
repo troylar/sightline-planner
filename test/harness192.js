@@ -182,7 +182,7 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
 
     { const lab = id => [...(d.querySelectorAll(`#${id} .snl`) || [])].map(x=>x.textContent.trim());
       const del = lab("snp-delivery"), set = lab("snp-settings");
-      ok("W1 hints and messages name places by their menu labels: Delivery, then Activity and Decisions; Settings, then Work calendar; Copy instructions with data",
+      ok("W11 hints and messages name places by their menu labels: Delivery, then Activity and Decisions; Settings, then Work calendar; Copy instructions with data",
         del.includes("Activity") && del.includes("Decisions") && set.includes("Work calendar") && d.getElementById("offHint").textContent.includes("Settings → Work calendar") &&
         html.includes("See Delivery, then Activity.") && html.includes("It's in Delivery, Decisions.") && html.includes("Copy for my assistant and Copy instructions with data put") &&
         !/See Settings, then Activity|It's in Plan, Decisions|Copy with data put|Settings → Calendar\./.test(html), JSON.stringify({del, set})); }

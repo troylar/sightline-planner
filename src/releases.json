@@ -16,7 +16,7 @@
       "kind": "fixed",
       "area": "Everywhere",
       "title": "No stray \"null\"",
-      "before": "The word \"null\" could appear under the forecast's critical chain, at the end of Settings, Tags and the Planning guide while you weren't editing, and after the list in If this slips, which also said \"1 other item move\".",
+      "before": "The word \"null\" could appear under the forecast's critical chain, at the end of Settings, Tags while you were editing, in the Planning guide, and after the list in If this slips, which also said \"1 other item move\".",
       "now": "Nothing extra shows, and If this slips says \"1 other item moves\".",
       "where": "Capacity, Forecast; Settings, Tags and Planning guide; an item's If this slips"
     },
