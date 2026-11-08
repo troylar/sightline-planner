@@ -1,6 +1,7 @@
 // A rewritten amendments file reaches an open page (issue 169): typing in a field that has nothing to do with the change
-// doesn't stop the page reading it again and reporting it in the results file. Only the redraw waits for focus to leave
-// the field. Editing that change in Sightline, or dragging, still holds the read. Fixture: fixtures/batch-plan.js on the
+// doesn't stop the page reading it again and reporting it in the results file. Only the redraw waits, to the next poll
+// after focus leaves the field (never on the leaving click), and any other redraw clears it. Editing that change in
+// Sightline (its editor or its Jira placement), or dragging, still holds the read. Fixture: fixtures/batch-plan.js on the
 // sample plan.
 const {JSDOM, VirtualConsole} = require("jsdom"), fs = require("fs"), path = require("path"), crypto = require("crypto");
 const DIST = process.env.SIGHTLINE_HTML || path.join(__dirname, "..", "dist", "sightline.html");
@@ -45,25 +46,46 @@ async function page(){
     const good = [{id:"c1", summary:"A decision about the adapter work", ops:[act("decision.add", {id:"dec-h", text:"Pick the adapter", item:"m2"})]}];
     const put = changes => { const f = dir.files.get("sightline-amendments.json"); const t = batch(...P(), {changes, batchId:"batch-same"});
       if (f && f.getFile) f.text = t; else dir.files.set("sightline-amendments.json", fileHandle("sightline-amendments.json", t)); };
+    let pollFn = null; const realSI = w.setInterval; w.setInterval = (fn, ms) => { pollFn = fn; return 0; }; ev("amPoll()"); w.setInterval = realSI;
+    const poll = async()=>{ pollFn(); await wait(80); };
+    ev("window.h194renders = 0; const h194r = render; render = function(){ h194renders++; return h194r.apply(this, arguments); }");
+    const renders = () => ev("h194renders"), zero = () => ev("h194renders = 0");
     put(bad); ev("assistantTick()"); await wait(80); await exportNow();
     const st = () => JSON.parse(ev("JSON.stringify(AM && AM.file ? AM.file.changes.map(c=>amCheck(c, S).status) : null)"));
     ok("R1 the first file is read: its one change is invalid", JSON.stringify(st()) === '["invalid"]', JSON.stringify(st()));
     // Focus a text field elsewhere on the page and type into it.
     const box = d.createElement("input"); box.type = "text"; box.id = "h194box"; d.body.append(box); box.focus(); box.value = "half a word";
     ok("R2 (setup) a text field has focus", d.activeElement === box && ev("assistantInteractionBusy()") === true);
-    put(good); await ev("assistantTick()"); await wait(80); await exportNow();
+    zero(); put(good); await ev("assistantTick()"); await wait(80); await exportNow();
     ok("R3 the rewrite under the same batchId is read while the field has focus", JSON.stringify(st()) === '["ready"]', JSON.stringify(st()));
     const res = results(), ch = (res.changes || []).find(c=>c.id === "c1") || {};
     ok("R4 …and the results file reports the corrected change, not the old one", ch.status && ch.status !== "invalid", JSON.stringify(ch).slice(0, 300));
-    ok("R5 …without a redraw: the field keeps focus and what was typed", d.activeElement === box && box.value === "half a word" && d.body.contains(box));
-    box.blur(); await wait(30);
-    ok("R6 when focus leaves, the page redraws once with the new file", ev("AM.drawLater") === false, String(ev("AM.drawLater")));
+    ok("R5 …without a redraw: no render ran, and the field keeps focus and what was typed", renders() === 0 && d.activeElement === box && box.value === "half a word" && d.body.contains(box), "renders " + renders());
+    const btn = d.createElement("button"); btn.id = "h194btn"; (d.getElementById("side") || d.body).append(btn);
+    box.blur(); btn.focus(); await wait(30);
+    ok("R6 leaving the field doesn't redraw at once, so the click that left it still lands on its button", renders() === 0 && d.body.contains(btn) && ev("AM.drawLater") === true, "renders " + renders());
+    btn.blur(); await poll();
+    ok("R6b …the next poll redraws exactly once with the new file", renders() === 1 && ev("AM.drawLater") === false, "renders " + renders());
+    await poll();
+    ok("R6c …and the poll after that doesn't redraw again", renders() === 1, "renders " + renders());
+    // Any other redraw clears the pending one.
+    box.focus(); put(bad); await ev("assistantTick()"); await wait(80); box.blur();
+    ok("R6d (setup) another rewrite while typing leaves a redraw pending", ev("AM.drawLater") === true && JSON.stringify(st()) === '["invalid"]');
+    zero(); ev("render()"); await poll();
+    ok("R6e a redraw for some other reason clears it: the poll adds none", renders() === 1 && ev("AM.drawLater") === false, "renders " + renders());
+    put(good); await ev("assistantTick()"); await wait(80);
     // Editing that change in Sightline still holds the read.
     ev("UI.amEditing = 'c1'; sel = {type:'amend', id:'c1'}"); const ed = d.createElement("div"); ed.id = "amEdit-c1"; d.body.append(ed);
     put(bad); await ev("assistantTick()"); await wait(80);
     ok("R7 while that change is being edited, a rewrite waits", JSON.stringify(st()) === '["ready"]', JSON.stringify(st()));
     ed.remove(); ev("UI.amEditing = null; sel = null"); await ev("assistantTick()"); await wait(80);
     ok("R8 …and is read once the edit is done", JSON.stringify(st()) === '["invalid"]', JSON.stringify(st()));
+    // Choosing where a Jira issue goes (its own editor, no amEdit- element) holds the read too.
+    ev("UI.amEditing = 'c1'; sel = {type:'amend', id:'c1'}"); const jd = d.createElement("select"); jd.id = "amjd-c1"; d.body.append(jd);
+    put(good); await ev("assistantTick()"); await wait(80);
+    ok("R8b while a Jira placement is being chosen, a rewrite waits", JSON.stringify(st()) === '["invalid"]', JSON.stringify(st()));
+    jd.remove(); ev("UI.amEditing = null; sel = null"); await ev("assistantTick()"); await wait(80);
+    ok("R8c …and is read once it's chosen", JSON.stringify(st()) === '["ready"]', JSON.stringify(st()));
     ok("R9 the guide says a rewrite under the same batchId is picked up", /reads it again when its contents change, even under the same batchId/.test(ev("String(assistantView().guide)")));
     ok("R10 no script errors", !w.errs.length, w.errs.join(" | "));
   } catch(e){ ok("no exception", false, e.stack); }

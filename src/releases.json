@@ -9,7 +9,7 @@
       "area": "Assistant",
       "title": "Rewritten assistant changes show up while you type elsewhere",
       "before": "If your cursor was in any field on the page, such as a search box or a note, Sightline skipped reading the assistant's amendments file. A corrected file could sit unread for minutes, and the results your assistant reads kept showing the old problems.",
-      "now": "Sightline reads the file again as soon as it changes, even under the same batch id, and reports it to your assistant right away. Only the panel's redraw waits until you leave the field, so nothing you're typing is lost. Editing a change in Sightline, or dragging, still holds the read until you finish.",
+      "now": "Sightline reads the file again within about 30 seconds of a change, even under the same batch id, and reports it to your assistant. Only the panel's redraw waits until after you leave the field, so nothing you're typing is lost. Editing a change in Sightline, including where a Jira issue goes, or dragging, still holds the read until you finish.",
       "where": "Roadmap, the assistant panel"
     }
   ]

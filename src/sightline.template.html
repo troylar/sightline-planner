@@ -6823,7 +6823,7 @@ function reselect(){
   new Set([...was, ...now].map(el=>el.closest(".shelf")).filter(Boolean)).forEach(g=>{      // a shelf's one tab stop, as shelfGroup sets it
     const tl = g.querySelectorAll(".shtile"); tl.forEach(t=>t.setAttribute("tabindex", "-1")); (g.querySelector(".shtile.selected") || tl[0])?.setAttribute("tabindex", "0"); });
 }
-function render(keepChart){
+function render(keepChart){ if (typeof AM !== "undefined" && AM) AM.drawLater = false;
   const kept = keepChart === true && chartKeeps();
   cancelDerived();
   closePeek(); dropJiraMemos(); surfMemo = null;
@@ -14873,11 +14873,12 @@ function amKnock(r, ops, base = S){ const real = S, own = new Set((ops || []).fl
   catch(e){ return 0; } finally { S = real; dropJiraMemos(); } }
 // One read at a time; a read that finishes after a disconnect or a plan switch is dropped.
 let amReading = null;
-// Reading waits only while a change is being edited or something is being dragged. Typing in any other field doesn't stop
-// a rewritten file from being read (and reported in the results file); only the redraw waits, until focus leaves the field.
-const amReadHeld = () => !!((UI.amEditing && sel && sel.type === "amend" && document.getElementById("amEdit-" + UI.amEditing)) || drag || tdrag);
-function amShow(me){ if (AM !== me) return; if (assistantInteractionBusy()){ me.drawLater = true; return; } me.drawLater = false; render(); }
-document.addEventListener("focusout", ()=>setTimeout(()=>{ if (AM && AM.drawLater && !assistantInteractionBusy()) amShow(AM); }, 0));
+// Reading waits only while a change is being edited (its own editor, or a Jira placement's) or something is being
+// dragged. Typing in any other field doesn't stop a rewritten file from being read and reported in the results file;
+// only the redraw waits, to the next poll after the field is left (never on the click that leaves it, which a redraw
+// would swallow). Any other redraw draws it too.
+const amReadHeld = () => !!((UI.amEditing && sel && sel.type === "amend" && (document.getElementById("amEdit-" + UI.amEditing) || document.getElementById("amjd-" + UI.amEditing))) || drag || tdrag);
+function amShow(me){ if (AM !== me) return; if (assistantInteractionBusy()){ me.drawLater = true; return; } render(); }
 async function amRead(quiet){
   if (!AM || !AM.handle || AM.chatReview) return; if (amReadHeld()){ if (!quiet) setStatus("Finish editing before refreshing assistant changes."); return; } if (amReading) return amReading;
   const me = AM; amReading = (async ()=>{
@@ -14900,7 +14901,7 @@ async function amConnect(){ if (!window.showOpenFilePicker){ setStatus("This bro
 async function amReconnect(){ if (AM && AM.dir) return assistantReconnect(); if (!AM || !AM.handle) return amConnect(); try { if ((await AM.handle.requestPermission({mode:"read"})) === "granted") await amRead(false); } catch(e){ amConnect(); } }
 function amDisconnect(){ if (AM && AM.pasted){ AM = null; amMemo = null; amTried = ""; if (sel && sel.type === "amend") sel = null; amRestore(); render(); setStatus("Closed the pasted changes. Nothing in the plan changed."); return; }
   chatAbandon("Disconnected. Late replies will be ignored."); kvDel("amend:" + S.meta.planId); kvDel("assistantDir:" + S.meta.planId); clearTimeout(assistantExportTimer); AM = null; clearInterval(amTimer); amTimer = null; if (sel && sel.type === "amend") sel = null; render(); setStatus("Disconnected the amendments file. Nothing in the plan changed."); }
-function amPoll(){ clearInterval(amTimer); amTimer = setInterval(()=>{ if (AM && !AM.paused && (!document.hidden || amLevel() !== "review")) assistantTick(); }, AM_POLL_MS); }
+function amPoll(){ clearInterval(amTimer); amTimer = setInterval(()=>{ if (AM && AM.drawLater) amShow(AM); if (AM && !AM.paused && (!document.hidden || amLevel() !== "review")) assistantTick(); }, AM_POLL_MS); }
 function amRestore(){ const pid = S.meta.planId; if (amTried === pid) return; chatAbandon("The plan changed. Send a new request to continue."); amTried = pid; AM = null; amMemo = null; clearInterval(amTimer); amTimer = null;       // another plan: its own file, or none
   Promise.all([kvGet("assistantDir:" + pid), kvGet("amend:" + pid)]).then(([dir, hd])=>{
     if (S.meta.planId !== pid || AM) return;

@@ -8,7 +8,7 @@ A corrected file reaches an open page.
 
 ### Fixed
 
-- **Rewritten assistant changes show up while you type elsewhere** (Assistant). Sightline reads the file again as soon as it changes, even under the same batch id, and reports it to your assistant right away. Only the panel's redraw waits until you leave the field, so nothing you're typing is lost. Editing a change in Sightline, or dragging, still holds the read until you finish. *Where:* Roadmap, the assistant panel
+- **Rewritten assistant changes show up while you type elsewhere** (Assistant). Sightline reads the file again within about 30 seconds of a change, even under the same batch id, and reports it to your assistant. Only the panel's redraw waits until after you leave the field, so nothing you're typing is lost. Editing a change in Sightline, including where a Jira issue goes, or dragging, still holds the read until you finish. *Where:* Roadmap, the assistant panel
 
 ## 1.184.2 · Nov 8, 2026
 
