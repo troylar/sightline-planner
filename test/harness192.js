@@ -31,6 +31,14 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     raw.bars = raw.bars.map(b=>b.id === "c1" ? {...b, refs:[{id:"rb", url:"https://wiki.example.com/c1", title:"Design"}]} : b);
     w.RAW = JSON.stringify(raw);
     const n = J(`normalize(JSON.parse(RAW), false)`), sso = (n.deliverables || []).find(x=>x.id === "dv-sso") || {};
+    const again = J(`(()=>{ const p = normalize(JSON.parse(RAW), false), nm = p.people.find(x=>x.id === "${person2}").name; p.groups = [{id:"grp-sup", name:"Support desk"}];
+      const L = a => actLine("outcome.raiseAgain", {id:"dv-sso", ask:"ra-x", ...a}, p);
+      return [L({role:"support", channel:"support", origin:"ticket-9", impact:"A third team is waiting"}), L({who:{type:"person", id:"${person2}"}, source:"Weekly review", raised:"2026-11-02", channel:"meeting"}),
+        L({who:{type:"group", id:"grp-sup"}}), L({who:{type:"group", id:"grp-gone"}}), L({role:"   "}), L({impact:"x".repeat(200)}), nm]; })()`);
+    ok("E1b reviewing a repeated report reads as a sentence: who (a person, group or role), where, when, how it came in and why it matters, never an id or the origin", Array.isArray(again) &&
+      again[0] === '"SSO for the pilot" raised again by support (support ticket): A third team is waiting' && again[1] === `"SSO for the pilot" raised again by ${again[6]} at "Weekly review" on Nov 2 (meeting)` &&
+      again[2] === '"SSO for the pilot" raised again by Support desk' && again[3] === '"SSO for the pilot" raised again by a group' && again[4] === '"SSO for the pilot" raised again' &&
+      again[5].endsWith("x…") && again[5].length < 170 && !/raiseAgain|ra-x|ticket-9|grp-/.test(again.join(" ")), JSON.stringify(again));
     ok("E1 a capture keeps its channel, a one-line impact (spaces tidied), a role cut to 40, and its origin", sso.channel === "email" && sso.impact === "Blocks the pilot" && sso.role.length === 40 && sso.origin === "msg-1", JSON.stringify(sso).slice(0, 300));
     ok("E2 links keep one per item, never to itself or with an unknown kind", JSON.stringify(sso.about) === JSON.stringify([{id:"c2", rel:"competes"}]), JSON.stringify(sso.about));
     ok("E3 references keep only https links, with a title", JSON.stringify((sso.refs || []).map(r=>r.id)) === JSON.stringify(["r1"]) && (n.bars.find(b=>b.id === "c1").refs || [])[0].title === "Design", JSON.stringify(sso.refs));
@@ -172,6 +180,12 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("K2 Today offers it, and Copy the agenda copies plain text with minutes and aims", !!sec && (d.querySelector("#groomCopy").click(), true) && /Grooming agenda \(30 minutes/.test(X("window.__clip") || "") && /Aim: /.test(X("window.__clip") || ""));
     ok("K3 preparing it changes nothing", (()=>{ const p0 = X("JSON.stringify(planOfRecord(S))"); X("groomAgenda(); groomText(groomAgenda())"); return X("JSON.stringify(planOfRecord(S))") === p0; })());
 
+    { const lab = id => [...(d.querySelectorAll(`#${id} .snl`) || [])].map(x=>x.textContent.trim());
+      const del = lab("snp-delivery"), set = lab("snp-settings");
+      ok("W11 hints and messages name places by their menu labels: Delivery, then Activity and Decisions; Settings, then Work calendar; Copy instructions with data",
+        del.includes("Activity") && del.includes("Decisions") && set.includes("Work calendar") && d.getElementById("offHint").textContent.includes("Settings → Work calendar") &&
+        html.includes("See Delivery, then Activity.") && html.includes("It's in Delivery, Decisions.") && html.includes("Copy for my assistant and Copy instructions with data put") &&
+        !/See Settings, then Activity|It's in Plan, Decisions|Copy with data put|Settings → Calendar\./.test(html), JSON.stringify({del, set})); }
     ok("Z1 no page errors", !X("window.errs").length, X("window.errs.join(' | ')"));
   } catch(e){ ok("crash", false, e.stack); }
   console.log(R.join("\n")); const f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`\n${R.length - f}/${R.length} passed`); process.exit(f ? 1 : 0);
