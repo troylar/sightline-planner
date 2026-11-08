@@ -8939,7 +8939,7 @@ function actArgProblem(k, t, v){ const ty = t.replace(/\?$/, ""), alts = actAlts
 function actTypeWords(k, alts, types, nouns){ const base = x => x.replace(/\[\]$/, ""), isWord = x => x !== "blank" && x !== "null" && !nouns[base(x)] && !types[base(x)];
   const words = alts.filter(isWord), tail = alts.includes("blank") ? ", or empty" : alts.includes("null") ? ", or null" : "";
   if (words.length && words.length === alts.filter(x=>x !== "blank" && x !== "null").length) return `${k} is one of ${words.join(", ")}${tail}.`;
-  const say = x => x === "blank" ? "empty" : x === "null" ? "null" : nouns[base(x)] ? (x.endsWith("[]") ? `a list of ${nouns[base(x)]} ids` : `the id of a ${nouns[base(x)]}`) : types[base(x)] ? (x.endsWith("[]") ? `a list of ${types[base(x)]}` : types[base(x)]) : `"${x}"`;
+  const say = x => x === "blank" ? "empty" : x === "null" ? "null" : nouns[base(x)] ? (x.endsWith("[]") ? `a list of ${nouns[base(x)]} ids` : `the id of ${/^[aeiou]/.test(nouns[base(x)]) ? "an" : "a"} ${nouns[base(x)]}`) : types[base(x)] ? (x.endsWith("[]") ? `a list of ${types[base(x)]}` : types[base(x)]) : `"${x}"`;
   return `${k} must be ${alts.map(say).join(", or ")}.`; }
 // The type of each argument this call gives, a setter's value by its field (fields), so references can be checked.
 const actTypes = (a, args) => Object.entries(a.args).filter(([k])=>k in args && args[k] !== undefined).map(([k, t])=>[k, k === "value" && a.fields && typeof args.field === "string" && Object.hasOwn(a.fields, args.field) ? a.fields[args.field] : t]);

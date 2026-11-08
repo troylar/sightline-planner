@@ -199,7 +199,7 @@ def type_problem(k: str, t: str, v, refs: dict, words_for: dict) -> str | None:
         return None
     if len(alts) == 1 and alts[0] in BASE_TYPES:
         b = alts[0]
-        return f"{k} isn't a valid {'date (YYYY-MM-DD)' if b.startswith('iso') else 'list' if b in ('ids', 'keys') else 'number' if b in ('num', 'int') else b}."
+        return f"{k} isn't a valid {'date (YYYY-MM-DD)' if b.startswith('iso') else 'list' if b in ('ids', 'keys') else 'id' if b == 'id' else 'number' if b in ('num', 'int') else 'split ({workstream id: weight})' if b == 'weights' else 'value'}."
     return type_words(k, alts, words_for, {r: x.get("noun") or r for r, x in refs.items()})
 
 
@@ -217,7 +217,8 @@ def type_words(k: str, alts: list, types: dict, nouns: dict) -> str:
         if x == "null":
             return "null"
         if base(x) in nouns:
-            return f"a list of {nouns[base(x)]} ids" if x.endswith("[]") else f"the id of a {nouns[base(x)]}"
+            n = nouns[base(x)]
+            return f"a list of {n} ids" if x.endswith("[]") else f"the id of {'an' if n[:1] in 'aeiou' else 'a'} {n}"
         if base(x) in types:
             return f"a list of {types[base(x)]}" if x.endswith("[]") else types[base(x)]
         return f'"{x}"'
