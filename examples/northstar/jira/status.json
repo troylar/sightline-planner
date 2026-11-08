@@ -1,8 +1,8 @@
 {
   "kind": "sightline-jira-status",
   "version": 1,
-  "snapshot": "1d9080c92f7a804f",
-  "generatedAt": "2026-11-08T14:20:31+00:00",
+  "snapshot": "48380ca4669d718c",
+  "generatedAt": "2026-11-08T14:52:33+00:00",
   "jiraBase": "https://jira.example.com",
   "issues": {
     "DEMO-1": {
@@ -1376,7 +1376,7 @@
       "description": "Made-up release for the demo."
     }
   ],
-  "releasesAt": "2026-11-08T14:20:31+00:00",
+  "releasesAt": "2026-11-08T14:52:33+00:00",
   "dev": {
     "DEMO-103": {
       "prs": [
@@ -1386,13 +1386,13 @@
           "status": "OPEN",
           "author": "Blake Rivera",
           "repo": "demo-api",
-          "updated": "2026-11-05T06:24:31+00:00",
+          "updated": "2026-11-05T06:56:33+00:00",
           "reviewers": 1,
           "approved": 1
         }
       ],
       "branches": 1,
-      "at": "2026-11-08T14:24:31+00:00"
+      "at": "2026-11-08T14:56:33+00:00"
     },
     "DEMO-104": {
       "prs": [
@@ -1402,18 +1402,18 @@
           "status": "MERGED",
           "author": "Casey Nguyen",
           "repo": "demo-api",
-          "updated": "2026-11-07T08:24:31+00:00",
+          "updated": "2026-11-07T08:56:33+00:00",
           "reviewers": 3,
           "approved": 3
         }
       ],
       "branches": 1,
-      "at": "2026-11-08T14:24:31+00:00"
+      "at": "2026-11-08T14:56:33+00:00"
     },
     "DEMO-108": {
       "prs": [],
       "branches": 1,
-      "at": "2026-11-08T14:24:31+00:00"
+      "at": "2026-11-08T14:56:33+00:00"
     },
     "DEMO-109": {
       "prs": [
@@ -1423,7 +1423,7 @@
           "status": "DECLINED",
           "author": "Riley Patel",
           "repo": "demo-infra",
-          "updated": "2026-11-08T09:24:31+00:00",
+          "updated": "2026-11-08T09:56:33+00:00",
           "reviewers": 2,
           "approved": 2
         },
@@ -1433,13 +1433,13 @@
           "status": "OPEN",
           "author": "Riley Patel",
           "repo": "demo-web",
-          "updated": "2026-11-05T06:24:31+00:00",
+          "updated": "2026-11-05T06:56:33+00:00",
           "reviewers": 0,
           "approved": 0
         }
       ],
       "branches": 2,
-      "at": "2026-11-08T14:24:31+00:00"
+      "at": "2026-11-08T14:56:33+00:00"
     },
     "DEMO-122": {
       "prs": [
@@ -1449,7 +1449,7 @@
           "status": "OPEN",
           "author": "Blake Rivera",
           "repo": "demo-api",
-          "updated": "2026-11-06T12:24:31+00:00",
+          "updated": "2026-11-06T12:56:33+00:00",
           "reviewers": 2,
           "approved": 2
         },
@@ -1459,13 +1459,13 @@
           "status": "MERGED",
           "author": "Blake Rivera",
           "repo": "demo-api",
-          "updated": "2026-11-06T12:24:31+00:00",
+          "updated": "2026-11-06T12:56:33+00:00",
           "reviewers": 1,
           "approved": 1
         }
       ],
       "branches": 2,
-      "at": "2026-11-08T14:24:31+00:00"
+      "at": "2026-11-08T14:56:33+00:00"
     },
     "DEMO-126": {
       "prs": [
@@ -1475,13 +1475,13 @@
           "status": "OPEN",
           "author": "Morgan Lee",
           "repo": "demo-api",
-          "updated": "2026-11-07T18:24:31+00:00",
+          "updated": "2026-11-07T18:56:33+00:00",
           "reviewers": 2,
           "approved": 1
         }
       ],
       "branches": 1,
-      "at": "2026-11-08T14:24:31+00:00"
+      "at": "2026-11-08T14:56:33+00:00"
     },
     "DEMO-190": {
       "prs": [
@@ -1491,13 +1491,13 @@
           "status": "MERGED",
           "author": "Riley Patel",
           "repo": "demo-api",
-          "updated": "2026-11-07T18:24:31+00:00",
+          "updated": "2026-11-07T18:56:33+00:00",
           "reviewers": 0,
           "approved": 0
         }
       ],
       "branches": 1,
-      "at": "2026-11-08T14:24:31+00:00"
+      "at": "2026-11-08T14:56:33+00:00"
     }
   },
   "burndown": {

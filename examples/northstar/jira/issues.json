@@ -1,8 +1,8 @@
 {
   "kind": "sightline-jira-issues",
   "version": 2,
-  "snapshot": "1d9080c92f7a804f",
-  "generatedAt": "2026-11-08T14:20:31+00:00",
+  "snapshot": "48380ca4669d718c",
+  "generatedAt": "2026-11-08T14:52:33+00:00",
   "jiraBase": "https://jira.example.com",
   "searches": [
     {

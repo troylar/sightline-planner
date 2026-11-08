@@ -40,7 +40,8 @@ Stone as the viewer, and writes `docs/images/<shot>-light.png` and `-dark.png`:
   grouped by topic, with Apply, Skip and Edit.
 - **assistant**: Setup and files, **Use any AI assistant** open: **Copy for my assistant**, **Paste proposed
   changes** and **Copy more about it**.
-- **whatif**: Capacity, Forecast, **What if we take on something new, or move something up?** for the invented sign-in request, with the forecast table below.
+- **whatif**: Capacity, Forecast, the what-if result for the invented sign-in request (2 to 5 person-weeks), with the
+  forecast table, critical chain and load below.
 - **bundled-skills**: the Planning skills dialog with the one bundled skill.
 
 **This browser only** stays visible because the capture uses a detached copy, not a shared file. The capture does

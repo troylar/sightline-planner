@@ -84,7 +84,7 @@ says whether a new ask fits, what would finish later or sooner, and what has no 
 whole options in the conversation or a separate working document. Recalculate when inputs change; a persuasive
 explanation is not validation of the numbers.
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="images/whatif-dark.png"><img src="images/whatif-light.png" alt="Actual Sightline What if: an invented sign-in request with 2 to 5 person-weeks fits, finishing about three weeks out, and nothing else slips; the forecast table, critical chain and load by workstream follow." width="1440"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="images/whatif-dark.png"><img src="images/whatif-light.png" alt="Actual Sightline what-if result, labeled What-if: not the plan: an invented sign-in request fits, finishing about Dec 3 (high Dec 25), and nothing else slips; the forecast table, critical chain and load by workstream follow." width="1440"></picture>
 
 Choose one option, then ask for the supported changes as a proposal batch. Starts-after links, people and their
 time (allocation, workstream split, time off), holidays, reserves, effort, workstreams, milestones, gates, risks,

@@ -21,8 +21,9 @@ Point at a workstream's name to check its description, and keep the team's skill
 For a grooming session, ask for *prep our grooming*. The skill returns a short agenda that starts with decisions: at
 most five topics, each with why, the evidence and the result to aim for. **Work → Today** shows the same kind of
 agenda under **Prep our grooming** (since 1.184.0), with **Copy the agenda** for the invite, and **Sightline noticed**
-at the top of Today points out up to three things: a request that came up twice in two weeks, top work with no estimate or no Jira link, 
-committed work queued behind work that's only if there's room, and guidance that starts, ends or is due for review. None of it changes the plan.
+at the top of Today points out up to three things: a request that came up twice in two weeks, top work with no
+estimate or no Jira link, committed work queued behind work that's only if there's room, and guidance that starts,
+ends or is due for review. None of it changes the plan.
 
 Use the available evidence. Older exports do not contain the richer planning data described in the
 [large-roadmap guide](large-roadmaps.md); supply missing material deliberately rather than guessing.

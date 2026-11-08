@@ -37,6 +37,7 @@ members = {'int': ['p-avery', 'p-blake'], 'search': ['p-morgan'], 'plat': ['p-ca
 for l in plan['lanes']:
     if l['id'] in members:
         l['members'] = members[l['id']]
+        l.pop('who', None)
 efforts = {'bar-demo-1': (4, 6, 9), 'bar-demo-5': (2, 3, 5), 'bar-demo-2': (3, 5, 8), 'bar-demo-3': (2, 4, 6), 'bar-demo-4': (1, 2, 3), 'bar-demo-12': (2, 3, 4), 'bar-release': (1, 2, 3)}
 for b in plan['bars']:
     if b['id'] in efforts:

@@ -25,7 +25,6 @@
     {
       "id": "int",
       "name": "Integrations",
-      "who": "Avery \u00b7 Blake",
       "note": "",
       "color": "#2c6fbb",
       "members": [
@@ -36,7 +35,6 @@
     {
       "id": "search",
       "name": "Search",
-      "who": "Morgan",
       "note": "",
       "color": "#1f8a70",
       "members": [
@@ -46,7 +44,6 @@
     {
       "id": "plat",
       "name": "Platform",
-      "who": "Casey \u00b7 Jordan",
       "note": "",
       "color": "#7a4fb3",
       "members": [

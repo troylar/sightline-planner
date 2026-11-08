@@ -34,7 +34,7 @@ Move from the quarter-level discussion to initiatives, tasks, milestones, and de
 **From Jira** alongside work **Added here**. Use saved views to focus on a team or workstream while keeping
 hidden work findable.
 
-<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/timeline-light.png" aria-label="Open full-size timeline screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/timeline-dark.png"><img src="docs/images/timeline-light.png" alt="Actual Sightline Timeline: initiatives and tasks across workstreams, with Jira context and plan work together." width="1440"></picture></a>
+<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/timeline-light.png" aria-label="Open full-size timeline screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/timeline-dark.png"><img src="docs/images/timeline-light.png" alt="Actual Sightline Timeline: Jira epics and their stories by sprint across workstreams, with gates, Jira releases and roadmap deliverables above." width="1440"></picture></a>
 
 *Jira owns issue facts. Sightline owns the plan around them. Arranging work here does not update Jira.*
 
@@ -108,7 +108,7 @@ Today opens with **Sightline noticed** (up to three things worth a look) and off
 agenda for the next grooming session that starts with decisions. Neither changes the plan. Use **Customer release
 notes** for customer wording. Return to Roadmap for the broader direction.
 
-<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/today-light.png" aria-label="Open full-size today screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/today-dark.png"><img src="docs/images/today-light.png" alt="Actual Sightline Today view: Sightline noticed a request that came up twice and work with no estimate, and Prep our grooming offers a two-topic agenda, with Jira freshness and coverage." width="1440"></picture></a>
+<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/today-light.png" aria-label="Open full-size today screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/today-dark.png"><img src="docs/images/today-light.png" alt="Actual Sightline Today view: Sightline noticed a request that came up twice in two weeks, and Prep our grooming turns it into a one-topic agenda with a decision to make, with Jira freshness and coverage." width="1440"></picture></a>
 
 *The same invented plan, viewed for daily attention. Check scope and freshness before relying on the summary.*
 
