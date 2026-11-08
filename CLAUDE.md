@@ -16,7 +16,7 @@ change that doesn't fit the charter changes `vision.md` first, in its own PR.
 
 | Path | What it is |
 |------|-----------|
-| `src/sightline.template.html` | **The source.** All HTML, CSS and JS (~5,500 lines). Edit this. |
+| `src/sightline.template.html` | **The source.** All HTML, CSS and JS (~18,000 lines). Edit this. |
 | `src/js-yaml.min.js` | Vendored js-yaml 4.1.0 (MIT). Embedded at build time. Do not edit. |
 | `src/fonts/` | Vendored Instrument Sans (SIL OFL 1.1), pinned in `fonts.json`, embedded as data URIs. Do not edit. |
 | `dist/sightline.html` | Build output. Generated — **never edit by hand**, it is overwritten. |
@@ -93,17 +93,19 @@ prevention is the only real control.
 - **Build the DOM with the `h(tag, attrs, ...kids)` helper**, not `innerHTML`. There is one
   `innerHTML` use today; do not add more. Anything from a plan file or Jira is untrusted and
   is rendered as text.
-- **Read-only Jira.** The sync script only calls `GET /rest/api/2/search`, keeps the PAT in the
-  OS credential store (Windows Credential Manager / macOS keychain), and writes
-  `jira-status.json` atomically. The browser never sees a token.
+- **Read-only Jira.** The sync script only makes `GET` requests (`/rest/api/2/search`, plus the field, status,
+  resolution, `myself`, project-version and agile board endpoints it needs), keeps the PAT in the
+  OS credential store (Windows Credential Manager / macOS keychain), and writes `jira/status.json` (and
+  `jira/issues.json`) beside the plan atomically. The page also reads the older `jira-status.json` /
+  `jira-issues.json` names. The browser never sees a token.
 - **The Jira search belongs to whoever runs the sync.** `--jql` / `--filter` come from that person's command
   line, never from the shared plan: the search runs with their token and its results land in a file the
-  team can read (`jira-issues.json`, separate from `jira-status.json`), so a plan editor must not be able
+  team can read (`issues.json`, separate from `status.json`), so a plan editor must not be able
   to aim someone else's token. Issues from the search are
   only offered in the page; nothing joins the plan until someone editing clicks Add. Skips are shared in
   `meta.jiraSkip`.
 - **Epics are counted, not copied.** `bar.epics` lists epic keys; the script counts their children (by Epic Link,
-  Parent Link, and `parent`, whichever the server has) into `rollups` in `jira-status.json`. An initiative linked
+  Parent Link, and `parent`, whichever the server has) into `rollups` in `status.json`. An initiative linked
   to epics is compared with its stories, never the epic's own status, which sits at In Progress for months.
 - **Who added what is stamped in one place**, `stampAuthors` in `commit` (after the edit, before automatic moves), as
   `added {by, at}` / `edited {by, at}` on every `STAMPED` collection and tasks. Never set them by hand. `added` never
@@ -118,7 +120,8 @@ prevention is the only real control.
   set `PLAN_SCHEMA` in `tools/sightline-jira-sync.py` to match (tests check), teach the sync's plan reading the new
   shape, and say in the release note that older copies will open the plan read-only. The first save in the new format
   downloads the old file as a backup. The Jira files carry their own `version`: bump `STATUS_FORMAT` / `ISSUES_FORMAT`
-  in the sync and `JIRA_FORMATS` in the page together. Writes stay under 2 MB (`MAX_BYTES`); reads accept up to 5 MB.
+  in the sync and `JIRA_FORMATS` in the page together. Writes stay under 2 MB (`MAX_BYTES`) and 60,000 entries (`MAX_NODES`); reads accept up to
+  5 MB and 400,000 entries (`MAX_READ_BYTES`, `MAX_READ_NODES`).
 - **Count epics through `epicCounts(key, offSet)`**, which is cached per draw: never build a stand-in bar to call
   `epicRollup`. Every draw-time cache (stories, counts, the epic list) is dropped by `dropJiraMemos()` in `render` and
   `commit`, and checks which `JIRA` object it was built from. Add new caches there. Stale future sprints are decided
@@ -137,12 +140,12 @@ prevention is the only real control.
 - **"Workstream" in the interface, `lanes` in the data.** Rows are called workstreams everywhere a person reads them;
   the plan file, code and CSS keep `lanes` / `lane` so older copies and the sync keep working. Rename labels by exact
   string, never by pattern: a regex over string literals once rewrote code (`S.lanes` -> `S.workstreams`).
-- **The sync is per user, per server, per plan.** Local config (`%APPDATA%/Sightline/jira.json`, never in the
-  shared folder) holds `servers` {host: base, fields} and `plans` {normcased plan path: jira, board, jql, folder,
+- **The sync is per user, per server, per plan.** Local config (`%APPDATA%/Sightline/jira.json` on Windows,
+  `~/.config/Sightline/jira.json` elsewhere, never in the shared folder) holds `servers` {host: base, fields} and `plans` {normcased plan path: jira, board, jql, folder,
   every}. Tokens are per host in the credential store. Nothing that aims a token lives in the shared folder, and a
   copied project folder has no settings until its owner runs `sync --save`. Jira files go in `jira/` beside the plan.
-- **Never run the token from the shared folder.** `install` copies the script to `%APPDATA%/Sightline/bin` and puts
-  a launcher in the user's Startup folder; `warn_if_shared()` warns otherwise. No .bat/.cmd in the shared folder.
+- **Never run the token from the shared folder.** `install` copies the script to the config folder's `bin` and, on Windows,
+  puts a launcher in the user's Startup folder (elsewhere it prints the `watch` command to run); `warn_if_shared()` warns otherwise. No .bat/.cmd in the shared folder.
 - **What a Jira status means comes from `jiraState()`, in this order:** the team's `meta.jiraStatusMap` /
   `meta.jiraResMap`, abandoned resolutions (`ABANDON_RES`), abandoned statuses (`ABANDON_ST`), the board's columns
   (last = done, to-do category = not started, else in progress), then Jira's category. Jira's categories alone are
@@ -158,7 +161,7 @@ prevention is the only real control.
   `h-` hash and an email-like user name is dropped. Name similarity only *suggests*; a link needs a click,
   and an unlinked assignee is never guessed from their display name.
 - **Never write what you can't read back.** Every write path (Save, quick update, new shared plan) checks the
-  serialized size in bytes against `MAX_BYTES` *before* writing. The read limit is enforced on open, so an
+  serialized size in bytes against `MAX_BYTES`, and its entries against `MAX_NODES`, *before* writing. The read limit is enforced on open, so an
   oversize write would leave a file nobody can open.
 - **Never drop a user's edit without a copy.** Where a teammate's newer value wins (rebase), back up the local
   version first — the same rule `refresh(discard)` and the conflict banner already follow.
@@ -172,8 +175,9 @@ prevention is the only real control.
 
 ## Known security gaps
 
-- Decision and risk text have no length cap (notes are capped at 500), so one long paste can push a
-  plan toward the 2 MB limit. The write-size check now refuses it with a clear message.
+- Decision and risk text typed in the Decisions and Risks tables, or read from a plan file, has no length cap
+  (an assistant's `decision.*` / `risk.*` changes are capped at 4,000 characters; notes at 500), so one long paste
+  can push a plan toward the 2 MB limit. The write-size check refuses it with a clear message.
 
 ## Working style
 

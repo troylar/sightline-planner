@@ -5,7 +5,7 @@ repository, a customized skill folder, or a downloaded plan.
 
 | Route | What you get |
 | --- | --- |
-| npm: `npx @troylar/sightline install <folder>` | The released app, planning skills, example plan, and Python helpers, all of one version. |
+| npm: `npx @troylar/sightline install <folder>` | The released app, the **sightline-plan** skill, example plan, and Python helpers, all of one version. |
 | Public source: [troylar/sightline-planner](https://github.com/troylar/sightline-planner) | The latest merged source. Build it to get the same files. |
 | GitHub release HTML download | Not published. Use npm or a source build. |
 
@@ -19,13 +19,18 @@ With Node.js 18 or later:
 npx @troylar/sightline install my-sightline
 ```
 
-Open **my-sightline/sightline.html** in desktop Chrome or Edge. The planning skills are in
+Open **my-sightline/sightline.html** in desktop Chrome or Edge. The **sightline-plan** skill is in
 **my-sightline/.sightline/skills/** and an invented example is in **my-sightline/example/**. No model account or
-Jira server is needed for the example. `npx @troylar/sightline skills --to <folder>` installs only the skills, and
+Jira server is needed for the example. `npx @troylar/sightline skills --to <folder>` installs only the skill, and
 `npx @troylar/sightline helpers` prints where the Python helpers are.
 
 Install never replaces a different file that's already there. To update, install into a new folder and open your
-existing plan from the new app.
+existing plan from the new app. Since 1.184.0 the one **sightline-plan** skill replaces the seven skills earlier
+versions installed: point your assistant at the new folder and remove the older `sightline-` skill folders it reads,
+so it doesn't follow old instructions.
+
+Update everyone's copy together. An older copy opens a plan that uses newer features read-only, so it can't save the
+plan and drop them: for example, a copy older than 1.184.0 opens a plan with request evidence or links read-only.
 
 ## Build from source
 

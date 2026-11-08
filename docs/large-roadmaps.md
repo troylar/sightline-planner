@@ -4,8 +4,10 @@ If you are new to Sightline, read the [worked planning session](roadmap-planning
 a set of overlapping requests becomes a source reconciliation, a capacity question, and three decisions.
 
 Start with the mess you actually have: goals, commitments, meeting notes, questions, Jira work, and more ideas
-than the team can tackle at once. Use your external AI tool to turn that into a sequence of decisions, with
-reviewable changes attached. [Connect your assistant first](assistant-workflow.md).
+than the team can tackle at once. Use the AI assistant you already work with to turn that into a sequence of decisions, with
+reviewable changes attached. [Connect your assistant first](assistant-workflow.md) through a private folder, or, for
+an assistant you can only paste into, use **Copy for my assistant** and **Paste proposed changes** in the assistant
+panel. The copy is a digest that says what it left out; **Copy more about it** adds one topic when the assistant asks.
 
 You do not need a perfect backlog before starting. You do need to know which evidence the assistant can see.
 
@@ -16,11 +18,11 @@ Ask:
 > Read the current context. Tell me which plan and snapshot it represents, what it includes, what is omitted,
 > and which parts of this planning question the evidence cannot answer.
 
-Public-source 1.94.0 supports roadmap editing context. **Richer automatic capacity, dependency, risk and decision
-exports require 1.96.0 or later**. Check for `planning.version: 1` and read `coverage`; do not assume a newer
-export because the guide describes one. [Build availability](availability.md).
+The private folder's context file includes capacity, dependency, risk and decision data in its `planning` section.
+Check for `planning.version: 1` and read `coverage` before relying on it; copies older than 1.96.0 don't write it.
+**Copy for my assistant** gives a shorter digest without that section. [Build availability](availability.md).
 
-On an older build, provide any additional evidence deliberately, as separate read-only input to your tool.
+When the context doesn't hold what you need, provide the evidence deliberately, as separate read-only input to your tool.
 Do not tell it to search personal folders or overwrite your shared plan. Without the relevant evidence,
 organization is possible but a capacity-backed delivery forecast is not established.
 
@@ -50,7 +52,7 @@ behind a claim that the whole roadmap was updated.
 
 ## 3. Ask what actually constrains delivery
 
-For a 1.96.0+ planning export, ask:
+Then ask:
 
 > Use the supplied capacity calculations and issue facts. Show which people or periods are constrained,
 > where load or capacity is unknown, and which dependencies or decisions could stop the work. Separate
@@ -75,13 +77,20 @@ That is an illustrative answer, not a customer result or a measured promise abou
 > Compare protecting the launch date, protecting the team's workload, and reducing scope. For each choice,
 > list what would move or be deferred, the assumptions, and the evidence still missing. Do not apply anything.
 
-Keep hypothetical scenarios in the conversation or a separate working document. Sightline does not currently
-provide an automatic scenario simulator or a saved scenario workspace. Recalculate when inputs change; a
-persuasive explanation is not validation of the numbers.
+To test one change against the forecast, use **Capacity → Forecast → What if we take on something new, or move
+something up?** (1.184.0 or later). It works on a copy of the plan, with the same people, time off and work order, and
+says whether a new ask fits, what would finish later or sooner, and what has no estimate. It is labeled
+"What-if: not the plan", and nothing is saved. Sightline has no saved scenario workspace, so keep comparisons of
+whole options in the conversation or a separate working document. Recalculate when inputs change; a persuasive
+explanation is not validation of the numbers.
 
-Choose one option, then ask for the supported changes as a proposal batch. Starts-after links, people, workstreams,
-milestones, gates, risks and decisions are actions the batch can carry; capacity rates and sprint settings still need
-manual UI updates.
+<picture><source media="(prefers-color-scheme: dark)" srcset="images/whatif-dark.png"><img src="images/whatif-light.png" alt="Actual Sightline what-if result, labeled What-if: not the plan: an invented sign-in request fits, finishing about Dec 3 (high Dec 25), and nothing else slips; the forecast table, critical chain and load by workstream follow." width="1440"></picture>
+
+Choose one option, then ask for the supported changes as a proposal batch. Starts-after links, people and their
+time (allocation, workstream split, time off), holidays, reserves, effort, workstreams, milestones, gates, risks,
+decisions, timebox names, goals and new timeboxes are actions the batch can carry. Changes to the work order, an
+outcome's priority or what matters now are decisions you review one at a time. Anything the batch can't carry needs a
+manual update in the page.
 
 ## 5. Close the loop
 

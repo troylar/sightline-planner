@@ -37,9 +37,15 @@ python3 /trusted/helpers/sightline-jira-sync.py sync /path/to/plan.json --board 
 ```
 
 `42` and `DEMO` are invented examples. Replace them deliberately with your own board and search. The helper reads
-more than search results, including relevant issue, board and sprint endpoints. Server/search configuration stays
+more than search results, all with GET requests: your server's fields and project versions, and with `--board` the
+board's columns and sprints. `inspect` also reads statuses and resolutions, and `setup` checks the token with
+`/myself`. Server/search configuration stays
 local to the token holder and is never taken from the shared plan. `--save` remembers this plan's sync settings on
-that computer. The default output is a **jira** folder beside the plan.
+that computer, in `jira.json` in your own Sightline settings folder (`%APPDATA%\Sightline` on Windows,
+`~/.config/Sightline` elsewhere), never in the shared folder. The default output is a **jira** folder beside the plan:
+`status.json` holds the plan's issues, its epics' story counts and, with `--board`, the board's sprints; `issues.json`
+holds what `--jql`, `--filter` or `--search` found. `inspect` prints your statuses, resolutions, a board's sprints and
+sample issues, and `forget` removes a stored token.
 
 ## Connect the output in Sightline
 
@@ -49,7 +55,7 @@ that computer. The default output is a **jira** folder beside the plan.
    first** before choosing to follow Jira's sprints.
 4. Use **Work → Sort Jira work** to arrange returned issues. Open an item: **From Jira** stays read-only;
    **Added here** is your planning context.
-   Your assistant can propose where each issue goes (the **Sort Jira work** skill); you review every placement in
+   Your assistant can propose where each issue goes (the **sightline-plan** skill, which since 1.184.0 also sorts Jira work); you review every placement in
    **Changes** before anything joins the plan, and nothing is written to Jira. See
    [Sorting Jira work](assistant-workflow.md#sorting-jira-work).
    On the Timeline, a bar with no Jira key was added here and isn't tracked in Jira (hover it to see). Once the plan
@@ -63,8 +69,21 @@ that computer. The default output is a **jira** folder beside the plan.
    rings that person's circles. The initials come from the plan's people and Jira's display names. No pictures are
    fetched. If two people share initials, each gets a third letter.
 
-For repeated syncs, run `python3 /trusted/helpers/sightline-jira-sync.py watch`. Read `install --help` before
+For repeated syncs, run `python3 /trusted/helpers/sightline-jira-sync.py watch`: it keeps every plan you saved with
+`--save` in sync, on a schedule and soon after a plan is saved. `install` copies the helper into your own settings
+folder and, on Windows, starts `watch` when you sign in; `uninstall` stops that. Read `install --help` before
 configuring startup behavior. Run trusted helper code from your own computer, never a mutable shared folder.
+
+## Epics and how statuses read
+
+An initiative linked to epics is measured by the epics' stories (for example "3/4 stories"), never by the epic's own
+status. The sync counts each epic's children into `status.json`. An epic counts on one initiative: adding an epic that's already on another
+initiative is refused, and the status line names that initiative.
+
+**Settings → Jira connection → How Jira statuses show in Sightline** lists each status in use, grouped by your board's
+columns when the sync ran with `--board`. Automatic comes from the board's columns, then Jira's own categories;
+resolutions like Won't Do, Duplicate and Cancelled show as Abandoned. Change any that are wrong: the whole team sees the
+same, and Jira itself doesn't change.
 
 ## Read freshness literally
 

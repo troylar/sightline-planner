@@ -15,8 +15,8 @@ npx playwright install chromium
 ./test/run.sh
 ```
 
-The suite includes five layout checks in a real browser, and it fails if Playwright isn't installed, so a local pass
-means the same as CI's. To skip them on purpose, run `SIGHTLINE_NO_BROWSER=1 ./test/run.sh`; the run still says they
+The suite includes browser suites for layout jsdom can't check (listed in `browser_checks` in **test/run.sh**),
+and it fails if Playwright isn't installed, so a local pass means the same as CI's. To skip them on purpose, run `SIGHTLINE_NO_BROWSER=1 ./test/run.sh`; the run still says they
 were skipped.
 
 Edit **src/sightline.template.html**, never generated **dist/** files. Build before testing: harnesses execute
@@ -31,7 +31,7 @@ generates the changelog. The npm version must match the newest release.
 
 Every feature that lets people create, edit or delete something must be doable by external assistants too. In the
 same change, add the matching assistant actions (stable ids, preconditions, how Sightline detects they're done, and a
-review level), export the data in the assistant context, update the companion skill and the protocol docs, and test
+review level), export the data in the assistant context, update the **sightline-plan** skill and the protocol docs, and test
 it at each assistant level.
 
 Use `type(scope): description` commits. Describe the problem, resulting behavior and validation in the PR.
@@ -53,16 +53,17 @@ AI reply or imply a screenshot verifies cloud sync. [Screenshot capture notes](d
 ## Prepare a release
 
 Run the build and full suite, inspect `npm pack --dry-run`, then test the real packed tarball in a disposable
-folder. Keep npm's runtime dependencies empty. The package should contain the built HTML, CLI, six skills,
+folder. Keep npm's runtime dependencies empty. The package should contain the built HTML, CLI, the **sightline-plan** skill,
 trusted helpers, synthetic example and documentation, with no local credentials or generated mailbox files.
 Git tags and release assets must match the tested source commit and package version. Publication is a separate,
 deliberate action after validation.
 
 ## Keep the first-session promise
 
-The README starts with a working source-build path. Before advertising npm or a release asset, run the
-[public availability checks](docs/availability.md#before-changing-the-advertised-download-route); a dry run
-or changelog entry is not publication evidence.
+The README starts with the npm install and a working source-build path. Before changing an advertised install
+route or adding a release asset, run the
+[public availability checks](docs/availability.md#before-changing-an-install-route); a dry run or changelog entry
+is not publication evidence.
 
 Keep the [prepared brain-dump session](docs/getting-started.md) reproducible. Its notes, proposal file and
 before/after table must agree. Validate proposals against the invented Northstar plan and inspect the rendered

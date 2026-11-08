@@ -1,0 +1,34 @@
+{
+  "kind": "sightline-amendments",
+  "version": 1,
+  "planId": "p-northstar-example",
+  "batchId": "northstar-intake-example",
+  "createdAt": "2026-11-08T09:00:00Z",
+  "source": "assistant",
+  "basedOn": {
+    "planRevision": 1
+  },
+  "changes": [
+    {
+      "id": "sso-again",
+      "summary": "Support heard the sign-in request again; one more report on the existing request",
+      "ops": [
+        {"op": "action", "action": "outcome.raiseAgain", "args": {"id": "dv-req-sso", "ask": "ra-sso-2", "role": "support", "channel": "support", "origin": "support-ticket-9", "impact": "A third pilot team is waiting on it"}}
+      ]
+    },
+    {
+      "id": "bulk-move",
+      "summary": "New request from the planning meeting: move many items to another workstream at once",
+      "ops": [
+        {"op": "action", "action": "outcome.add", "args": {"id": "dv-req-bulk", "name": "Move many items to another workstream at once", "capture": "request", "askedBy": {"type": "person", "id": "p-blake"}, "channel": "meeting", "impact": "Reorganizing a workstream takes an afternoon", "origin": "planning-meeting"}}
+      ]
+    },
+    {
+      "id": "clarify-onboarding",
+      "summary": "Make the onboarding outcome easier to explain",
+      "ops": [
+        {"op": "set", "type": "deliverable", "id": "dv-onboard", "field": "name", "prev": "Get new teams to their first shared plan", "value": "Help new teams start planning together in minutes"}
+      ]
+    }
+  ]
+}

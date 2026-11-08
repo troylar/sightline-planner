@@ -33,7 +33,7 @@ freshness and assistant context remain independent of chart visibility. `harness
 return-to-Timeline behavior, filters, selection/deep links, Days/Weeks and live Jira facts.
 
 Text inputs update the model, history and dirty state synchronously, then combine derived rendering while typing.
-The deferred update is cancelled when a full render supersedes it. Regression checks cover immediate model changes,
+The deferred update is canceled when a full render supersedes it. Regression checks cover immediate model changes,
 undo, cursor retention and the deferred screen update without depending on a machine-specific time threshold.
 
 The connected-assistant regression harness (`harness100`) counts payload builds and file writes. View changes and unchanged foreground checks must add neither; real saved-source, Jira, proposal and receipt changes must still refresh outputs. A Chrome Incognito smoke test also verified that ordinary navigation left context/results modification times unchanged after a proposal was reviewed and applied.
@@ -70,7 +70,13 @@ Each plan mixes in the hard shapes:
 - notes, decisions and risks.
 
 A plan covers at most 104 weeks, so XL is drawn over two years. XL's Jira file is past the page's read limits (5 MB and
-9,000 issues), so the harness loads it in memory to measure the drawing only. The report says so.
+9,000 issues), so the harness loads it in memory to measure the drawing only. A plan past what a save may write (2 MB or
+60,000 entries) is also opened in memory rather than as a file, since the page would open it read-only. The report says
+so.
+
+**Years of use.** Add `-1y` or `-2y` to a size (`M-1y`, `L-2y`) for a plan that has been used that long: finished work,
+updates, notes, decisions and risks, snapshots, status updates, sprint commitments, meetings, saved views, a full
+Activity log, and who added what on everything (`node test/perf/gen.js M-1y`).
 
 **Scenarios.** Plans are built around today's date, so the page runs on its real clock: a stand-in `Date` costs
 measurable time in every draw. The same size, seed and day give the same plan (`PERF_TODAY` rebuilds another day's).
@@ -113,4 +119,6 @@ the way a person does: a file handle through `adopt`, then the Jira folder throu
   gets worse, and the entry is removed when a fix brings it under budget.
 - `--compare baseline.json` flags any scenario more than 20% slower than the baseline. Compare only runs from the same
   machine.
-- CI runs S and M on every change against `budgets-ci.json`, which is calibrated for the CI runner. L and XL run by hand.
+- CI runs S, M and M-1y on every change, without throttling and 3 runs each, against `budgets-ci.json`, which is
+  calibrated for the CI runner. It reports missed budgets without failing (`--report-only`). L, XL and L-2y run by hand
+  (`npm run perf -- --sizes L,XL,L-2y`).

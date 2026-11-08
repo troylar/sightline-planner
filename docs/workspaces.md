@@ -8,9 +8,9 @@ The menu runs down the left side. At the top are your pinned pages: Today, Sprin
 change them. Below them, every page has one home in a group:
 
 - **Work**: Today shows attention and next actions. Sprint shows the current sprint by person, workstream or epic. Sort Jira work places synced issues on the plan. Cards shows the plan's Jira work as cards by workstream. Jira change proposals reviews what the sync suggests.
-- **Delivery**, in three parts. Plan: Timeline shows planned work. List shows the same work as rows. Capacity shows the forecast, people and time off. Review: Status update, Milestones, Gates, Decisions and Risks support delivery reviews. History: Snapshots and Activity.
+- **Delivery**, in three parts. Plan: Timeline shows planned work. List shows the same work as rows. Capacity shows the forecast, people and time off. Review: Status update, Milestones, Gates, Decisions and Risks support delivery reviews. History: Snapshots and Activity. Activity also shows how full the plan file is and is where you connect the plan's folder for its history files.
 - **Product updates**: Roadmap explains what the team plans to ship. Customer release notes opens the customer wording approved for each Jira release.
-- **Settings**: Plan (Tags, Cards, Planning guide), Team (Team, Work calendar, Meetings, Timeboxes and ceremonies) and Connections (Jira connection).
+- **Settings**: Plan (Plan details, Tags, Cards, Planning guide), Team (Team, Work calendar, Meetings, Timeboxes and ceremonies) and Connections (Jira connection).
 
 Groups start closed. Click a group's heading to open or fold it; the group you're in opens unless its page is pinned.
 A number shows only when something needs you, such as high risks on Risks or what needs attention on Today, and a
@@ -91,13 +91,19 @@ years, and Later view. Work outside the four-quarter window is counted; **Show i
 moving or deleting it. Done and dropped counts still have their own show controls. Broad targets span the quarters
 they overlap. Fiscal calendars are not configured by this view.
 
-Choose **Plan with AI** to select the displayed quarters, or open an outcome and choose **Ask assistant about this**.
-The **Planning assistant** shows **Working on** above the composer. Paste notes or describe a change, then **Send**
-once. These actions do not send or apply anything on their own. An untouched generated starter follows a new
-selection. A question you have written keeps its original selection; **Switch context** deliberately changes that
-selection while keeping your text. **Test reply** checks for a response, and **Connection and setup**, under **Setup and files** at the end of the panel, holds detailed
-instructions. Read the [first planning session](assistant-workflow.md#first-four-quarter-planning-session)
-for the in-app route. External tools use the [private-folder session](assistant-workflow.md#your-first-external-planning-session) and their own conversation.
+Most teams plan with the AI tool they already use, in its own conversation. Connect it to a
+[private assistant folder](assistant-workflow.md#use-an-external-assistant) and follow the
+[private-folder session](assistant-workflow.md#your-first-external-planning-session). For an assistant you can only
+paste into, open the assistant panel (**Shift+A**, or **Connect assistant** in the menu under your name), then under
+**Setup and files**, **Use any AI assistant**: **Copy for my assistant** copies the planning skill and a digest of the
+plan, **Copy more about it** adds one topic when the assistant asks, and **Paste proposed changes** takes its reply back.
+Each proposed change opens for your review; nothing applies on its own.
+
+The **Planning assistant** panel also has an optional in-page chat, for teams that set up a company endpoint.
+**Plan with AI** on the Roadmap selects the displayed quarters, and **Ask assistant about this** on an outcome selects
+it; the chat shows **Working on** above the composer, and nothing is sent until you choose **Send**. **Switch context**
+changes the selection while keeping your text, and **Test reply** checks for a response. See the
+[in-app session](assistant-workflow.md#first-four-quarter-planning-session).
 
 Unsubmitted **New roadmap idea** text stays with its plan during navigation and redraws in this tab's session. It is not
 included in the saved plan or assistant context until added. Successful submission clears only the submitted text;
@@ -105,7 +111,17 @@ an idea you start typing while the save finishes is retained. Copy or submit dra
 
 Today distinguishes no work loaded, missing Jira status data, and incomplete connected data. Its attention flags
 describe the available plan and sync; a quiet summary does not establish delivery feasibility.
-In the Team view it also lists captures that have waited in To triage for over 30 days.
+In the Team view it also lists captures **Waiting in triage** for over 30 days.
+At the top, **Sightline noticed** shows up to three things worth a look, worked out from the plan: a request that came
+up twice in two weeks, top work with no estimate or no Jira link, committed work queued behind work that's only if
+there's room, and guidance that starts, ends or is due for review. **Prep our grooming** gives a short agenda, at most five topics, to copy into the
+meeting invite. Neither changes the plan.
+
+On **Capacity**, the **Forecast** section holds **What matters now** (dated guidance the team writes down, which never
+moves anything), the **Work order** (the order the team takes initiatives, which the forecast follows), and
+**What if we take on something new, or move something up?**, which works it out on a copy of the plan: nothing is saved
+and nothing moves. In an outcome's editor, **Priority** is Committed, Supporting, or If there's room (the picker spells
+them out as "Supports a commitment" and so on), with **Why it matters** and **Reconsider when**. An assistant's change to the guidance, the work order or a priority always waits for a person.
 
 Open the menu at the right of the header (**Choose yourself**, or your initials once you have) and choose **Choose yourself** or **You: [name]** to identify yourself for Mine and author stamps. This is a browser preference, not a verified identity. The same menu has text size, theme, **What's new** and help.
 

@@ -1,8 +1,8 @@
 # Run the team from a clear next decision
 
 Use the same plan for the roadmap conversation, delivery review, daily attention and leadership update.
-Let your external assistant prepare the discussion and capture proposals; leave the team with an understandable
-set of decisions. [Set up the assistant folder](assistant-workflow.md).
+Let your own AI assistant, with the **sightline-plan** skill, prepare the discussion and capture proposals; leave the
+team with an understandable set of decisions. [Set up the assistant folder, or use Copy for my assistant](assistant-workflow.md).
 
 ## Before the planning meeting
 
@@ -18,6 +18,13 @@ Before a first session, ask the assistant what it can't see yet:
 
 Point at a workstream's name to check its description, and keep the team's skills in **Settings → Team**.
 
+For a grooming session, ask for *prep our grooming*. The skill returns a short agenda that starts with decisions: at
+most five topics, each with why, the evidence and the result to aim for. **Work → Today** shows the same kind of
+agenda under **Prep our grooming** (since 1.184.0), with **Copy the agenda** for the invite, and **Sightline noticed**
+at the top of Today points out up to three things: a request that came up twice in two weeks, top work with no
+estimate or no Jira link, committed work queued behind work that's only if there's room, and guidance that starts,
+ends or is due for review. None of it changes the plan.
+
 Use the available evidence. Older exports do not contain the richer planning data described in the
 [large-roadmap guide](large-roadmaps.md); supply missing material deliberately rather than guessing.
 
@@ -29,8 +36,9 @@ A person's name in a conversation does not assign them the work. Ask:
 > Capture the agreed plan changes and the ideas we asked to retain. Leave owners and dates unknown where
 > we did not decide them. Separate open decisions from amendments. Prepare a small, independently reviewable batch.
 
-Review supported amendments in Sightline while the reasoning is still fresh. Put unsupported decisions, risks,
-people or dependency edits into the normal UI. Save according to the visible state. The workflow uses supplied
+Review the proposed changes in Sightline while the reasoning is still fresh. They're grouped by topic, and a change
+to the work order, an outcome's priority or **What matters now** is a decision card you accept on its own. Put anything the assistant can't
+propose into the normal UI. Save according to the visible state. The workflow uses supplied
 notes; it does not record meeting audio.
 
 ## After the meeting
@@ -52,10 +60,12 @@ for customer wording. A proposed or planned outcome is not something that shippe
 Meetings raise things that aren't work yet: "the support team wants to hear when the release process changes", "we
 have no way to send release notes to the teams that use them". Keep them in the plan as captures (since 1.131.0):
 
-- Paste your notes into your assistant with the meeting-to-plan skill. It proposes one capture per item: a request,
-  idea, process gap or question, with who asked (a person or a group already in the plan), the meeting and its date,
-  and the workstream when it's clear. A team that isn't in the plan yet comes as a new group, which always waits for
-  your review.
+- Paste your notes into your assistant with the sightline-plan skill, along with anything else you heard: an email,
+  a chat thread, a bug report. It proposes one capture per observation: a request, idea, process gap or question,
+  with who asked (a person or a group already in the plan, or a role such as "support"), where it came from and when,
+  a one-line impact, and the workstream when it's clear. It links the original message instead of pasting it in, and
+  a forwarded copy of the same message isn't counted again (since 1.184.0). A team that isn't in the plan yet comes as
+  a new group. Captures, raised again and links always wait for your review.
 - Or capture one by hand, live in the meeting: **Add** (or press A, then C) → **Capture a request or idea**, or
   **+ Capture a request or idea** in To triage. Only what was raised is needed; who asked and the workstream stay
   unknown unless you pick them, and the meeting and its date carry over to the next capture. **Capture and add
@@ -64,7 +74,10 @@ have no way to send release notes to the teams that use them". Keep them in the 
   there** adds this meeting, who asked and the date to that one instead of capturing it twice; **Capture** keeps it
   separate. Nothing is ever merged on its own. A capture's card lists every time it was raised again, with
   **Record it** to add one by hand and **Remove** to take one out, and its row in To triage says how many times it's
-  come up. Your assistant does the same with the meeting-to-plan skill (since 1.133.0).
+  come up. Your assistant does the same with the sightline-plan skill.
+- A capture's card keeps its evidence (since 1.184.0): **Came through**, **Their role then** and **Impact**, a count of
+  reports, askers and channels, **Fits with the roadmap** (supports, competes with, or may be the same as other work)
+  and **Documents and messages**, links to where the originals live.
 - **To triage**, on the Roadmap, lists open captures by workstream, oldest first, with **Unassigned** last. Open one
   to **Hand off** (to an initiative or a Jira issue) or **Decline** with a reason; **Reopen** puts it back.
 - A capture still open after 30 days also shows on **Today**, in the **Team** view, under **Waiting in triage** (oldest
@@ -76,6 +89,11 @@ naming no one else. **Meeting recap** says what's new, raised again, closed and 
 another day if you like), with how many are still open. It leaves out who asked unless you tick **Say who asked**, since
 a recap is often pasted where others read it. Closed and reopened come from the plan's change log, which keeps 30 days.
 Neither saves anything to the plan (since 1.134.0).
+
+When someone states a priority ("the VP wants Dashboard first"), the skill records it as their request. The work
+order and an outcome's priority change only when the team decides. Try the change first with **What if we take on something new, or move something up?** in
+**Delivery → Capacity**, Forecast, then use **Record this as a decision** under the work order so the reason stays
+with it, citing what matters now if it relied on it.
 
 A date doesn't commit a capture, and handing it off doesn't mark anything done: those stay roadmap decisions. A Jira
 issue it became stays Jira's; the plan keeps only its key. Captures sit in the shared plan file, so write them as you'd

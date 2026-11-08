@@ -9,15 +9,33 @@ not as reliable performance or usability statistics.
 
 ## Four-quarter AI planning pilot
 
-Use an isolated synthetic plan and approved synthetic requests for the AI writing exercise. Follow the
-[first-session workflow](assistant-workflow.md#first-four-quarter-planning-session). Record the configured endpoint
-and model in the team's private test notes, along with Sightline version, browser and plan size; omit credentials.
-Measure assistant waiting time separately from time spent navigating, reviewing and applying.
+Use an isolated synthetic plan and approved synthetic requests for the AI writing exercise. Most teams use their own
+AI assistant, so test that route first: a file-capable assistant with a
+[private assistant folder](assistant-workflow.md#your-first-external-planning-session), or a chat assistant through
+[Copy for my assistant and Paste proposed changes](assistant-workflow.md#use-any-ai-assistant), each with the
+sightline-plan skill. Record which kind of assistant was used in the team's private test notes, along with Sightline
+version, browser and plan size; omit credentials. Measure assistant waiting time separately from time spent
+navigating, reviewing and applying.
 
 - First launch: the welcome choices appear without another navigation click. Empty Today explains that there is
   no work to assess. Jira-linked work without status data offers a connection action.
 - Choose four exact quarters, including a year boundary. Find an outcome outside the range and recover it through
   Long range. Confirm that changing the range did not change the plan file.
+- Paste one small roadmap excerpt, plus an invented email that repeats one of its requests, into the assistant.
+  Check that its reply says what it understood, connects the repeat to the existing request instead of counting it
+  twice, and asks one question about anything too vague to act on.
+- Bring its changes back (the folder, or **Paste proposed changes**). Review them by topic, accept a decision card on
+  its own, apply an agreed change, confirm the local save, then Undo. Confirm that new requests, raised-again records
+  and links waited for review. Repeat the request and inspect for duplicate proposals before applying anything.
+- When the assistant asks about a topic in a paste-only conversation, use **Copy more about it** and check that the
+  person finds it without help.
+- Change the plan after the assistant read it, then bring back its changes. The user must understand why the
+  assistant needs to read the plan again; this pilot does not validate automatic rebasing.
+
+**Optional: the in-page chat.** Only if the team uses the
+[company endpoint companion](assistant-workflow.md#first-four-quarter-planning-session), also record the configured
+endpoint and model, and check:
+
 - Keep a question draft, run Test reply, and confirm the draft remains. Simulate an unavailable companion and
   check that the person can find recovery instructions without losing the draft.
 - Type an unsubmitted roadmap idea, open Plan with AI, visit another workspace, and return. Confirm the idea
@@ -25,10 +43,8 @@ Measure assistant waiting time separately from time spent navigating, reviewing 
 - Open Ask assistant about this for two outcomes without typing. Working on must follow the second outcome.
   Type a question, then choose another outcome. The existing text and context must stay until Switch context is
   chosen. Confirm that a single Send carries the actual notes or change request with the intended selection.
-- Organize one small roadmap excerpt, review item matches and unresolved fields, apply an agreed change, confirm
-  the local save, then Undo. Repeat the request and inspect for duplicate proposals before applying anything.
 - During another request, change the plan, then inspect the stale reply. The user must understand why a new request
-  is needed; this pilot does not validate automatic rebasing or scenario branching.
+  is needed.
 
 Proposed targets are a useful first roadmap slice within 30 minutes and a common multi-item revision within one
 minute including review. Record actual times and failure reasons. These are adoption targets, not measured

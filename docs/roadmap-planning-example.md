@@ -25,10 +25,12 @@ Keep the original notes and give each source a reference. They do not need to be
 | N09 | Five requested Platform issues have no estimates. Support demand is not represented in those capacity numbers. |
 | N10 | Leadership wants a launch update explaining what is committed, what is uncertain, and what needs a decision. |
 
-Connect your plan's [private assistant folder](assistant-workflow.md), then give your external tool these notes
-and the relevant planning evidence. Ask it to read the current context before interpreting them. On public
-1.94.0, the automatic context is narrower than the 1.96.0 planning export; additional evidence must be supplied
-deliberately. [Check availability](availability.md).
+Connect your plan's [private assistant folder](assistant-workflow.md), or use **Copy for my assistant** for an
+assistant you can only paste into, then give your assistant these notes and the relevant planning evidence. Ask it
+to read the current context before interpreting them. The paste route sends a short digest without capacity data
+or dependency and allocation changes, so for this exercise use the private folder, or paste the capacity evidence
+yourself. If the folder's context has no `planning` section (copies older than 1.96.0), supply that evidence too.
+[Check availability](availability.md).
 
 > Reconcile every source against the current plan. Reuse existing IDs where there is a match. Separate agreed
 > scope, possible duplicates, ideas, constraints, and decisions. Do not invent owners, estimates, or dates.
@@ -71,17 +73,23 @@ The next decisions are concrete:
 2. **Resolve the shared bottleneck.** Which work gets the specialist's time, and what does that mean for N04's migration dependency?
 3. **Choose a tradeoff using complete enough evidence.** Clarify N09, then discuss reducing scope, sequencing work later, or changing the target. Record what remains uncertain.
 
-Ask the assistant to explain alternatives in the conversation. Sightline does not provide an automatic scenario
-simulator. A confident answer without the missing inputs is still an assumption.
+Ask the assistant to explain alternatives in the conversation. To see what one alternative does to the forecast,
+try it in **What if we take on something new, or move something up?** under the work order in **Delivery → Capacity**,
+Forecast (since 1.184.0): Sightline works it out on a copy of the plan, says what would finish later or sooner, and
+names any initiative in the work order that has no estimate yet. It doesn't count Jira issues without points, so
+N09 still has to be supplied as evidence. Nothing is saved. A confident answer without the missing inputs
+is still an assumption.
 
 ## Turn the chosen direction into reviewed changes
 
-Once the team decides, ask for the supported edits as proposals. For example, retain N06 as an unscheduled idea
-and refine an existing outcome's wording after its scope is agreed. Review the actual before/after values in
+Once the team decides, ask for the supported edits as proposals. For example, retain N06 as an unscheduled idea,
+record N02 as a request from sales, linked to N01's outcome as possibly the same thing until scope is settled, and refine an
+existing outcome's wording after its scope is agreed. The request and its link wait for a person to review them. Review the actual before/after values in
 Sightline. Edit, skip, or apply each proposal, then follow the visible save state.
 
-Dependency, allocation, risk, or decision changes may need normal UI edits. The assistant's operation guide defines
-what it can propose; a read-only export does not grant it additional editing powers. Writing proposals never
+The assistant's operation guide defines what it can propose, including dependencies, allocation, risks and
+decisions; anything it doesn't list needs a normal UI edit. A change to the work order or an outcome's priority is a
+decision the team accepts on its own. A read-only export does not grant it additional editing powers. Writing proposals never
 authorizes it to overwrite the shared plan or Jira files.
 
 Finally, have the assistant reread fresh context and matching results and draft the update requested in N10:

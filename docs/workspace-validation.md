@@ -1,5 +1,10 @@
 # Workspace and assistant validation
 
+This is the validation record for versions 1.86.0 and 1.87.0, kept as history. Its counts, harness numbers and browser
+checks describe those builds, not the current release. For the current build, run `./build.sh` and `./test/run.sh`,
+which report every suite's count. The [OneDrive two-device checklist](onedrive.md#two-device-check-before-a-team-rollout)
+now has eight cases, all still **Not run**.
+
 The version 1.86.0 changes preserve the offline HTML application and plan schema. Synthetic plans are used throughout validation.
 
 ## Automated checks
@@ -37,7 +42,7 @@ Version 1.87.0 passed **2,372/2,372 checks across 104 suites** on October 8, 202
 
 Firefox executed the final build and showed the explanatory startup failure for an altered-script copy blocked by CSP. Chrome displayed the final release, but native automation did not complete the file picker, so this release's recovery flow has not been verified through a live browser file round trip. API mock checks do not establish operating-system file-provider or cloud synchronization behavior.
 
-No OneDrive installation or second-device test environment was available. The [OneDrive setup and two-device checklist](onedrive.md) records seven live cases as **Not run**, including actual sync delays, offline reconnection, file replacement and conflict copies. A local save remains distinct from OneDrive upload completion.
+No OneDrive installation or second-device test environment was available. The [OneDrive setup and two-device checklist](onedrive.md) records seven live cases (as recorded then) as **Not run**, including actual sync delays, offline reconnection, file replacement and conflict copies. A local save remains distinct from OneDrive upload completion.
 
 <details>
 <summary>Version 1.87.0 per-suite results</summary>
