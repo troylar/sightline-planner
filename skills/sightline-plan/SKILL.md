@@ -77,11 +77,7 @@ Give no score; explain with facts a person can check.
 
 ## Own lists
 
-`planning.own` is each person's own list: one line each, an `owner`, an optional `pin` (a reminder, not a schedule), `relatesTo`, `closed`.
-
-- "Put X on my list": propose `own.add` {id, text, owner?, pin?, rel?}. Never add to someone's list because their name came up.
-- `own.set` (text, owner, pin, rel), `own.close` (done, or notdoing with a why), `own.reopen`, `own.del`; `own.toTask` {id, initiativeId} makes it a task.
-- A relation never closes anything, Jira's included.
+`planning.own`: each person's list (`owner`, `pin`, `relatesTo`, `closed`). "Put X on my list": `own.add`, never for someone who just came up. Also `own.set`, `own.close` (done or notdoing), `own.reopen`, `own.del`, `own.toTask`. A relation closes nothing.
 
 ## Prep our grooming
 
