@@ -615,7 +615,7 @@ body.presenting #filterBtn,body.presenting #viewSave{display:none!important}
 @media (max-width:900px){.tgrid{grid-template-columns:1fr}}
 .tcol{display:flex;flex-direction:column;gap:12px;min-width:0}
 .tsec{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:10px 12px}
-.tsec.tnoticed{border-left:4px solid var(--accent)} .tsec.bad{border-left:4px solid var(--bad)} .tsec.warn{border-left:4px solid var(--warn)} .tsec.good{border-left:4px solid var(--good,#3a8a5a)}
+.tsec.tnoticed{border-left:4px solid var(--accent)} .tsec.tmatters{border-left:4px solid var(--ink-2)} .tmatters .dvb{margin-left:6px} .tmatters small{display:block} .tmatters-empty{margin:0} .tsec.bad{border-left:4px solid var(--bad)} .tsec.warn{border-left:4px solid var(--warn)} .tsec.good{border-left:4px solid var(--good,#3a8a5a)}
 .repbar{display:flex;gap:8px;margin:8px 0;flex-wrap:wrap;align-items:center}.repbar label{margin-right:2px;font-weight:600}.repsecs{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}.repsec textarea{width:100%;box-sizing:border-box;font:inherit;font-size:13px}.reppast{margin-top:18px}.repfrozen{white-space:pre-wrap;background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:10px;font:inherit;font-size:13px;max-width:80ch}#repTable td.acts{display:flex;gap:6px;justify-content:flex-end}
 .bwclist{list-style:none;margin:6px 0 10px;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px}.bwc{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}.bwc-ic{width:16px;text-align:center;font-weight:700}.bwc.ok .bwc-ic{color:var(--ok)}.bwc.warn .bwc-ic{color:var(--warn,#b26b00)}.bwcgo{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.bwcgo input{flex:1;min-width:220px;max-width:560px}.bwcrec p{margin:4px 0}.bwcw>header .seg{margin-left:auto}
 .amedit{margin:8px 0;padding:8px;border:1px solid var(--rule);border-radius:6px;display:flex;flex-direction:column;gap:8px}.amop{border:0;padding:0;margin:0;display:grid;gap:6px}.amop legend{font-weight:600;font-size:12.5px;margin-bottom:2px}.amf input,.amf textarea,.amf select{width:100%;box-sizing:border-box;font:inherit}
@@ -16958,7 +16958,25 @@ function groomSection(){ if (tooNew()) return null; const A = groomAgenda(); if 
         x.compare ? h("button",{type:"button",class:"btn sm",onclick:()=>openWhatIf({kind:"move", id:x.compare.id, at:x.compare.at})}, "Compare an order") : null)))),
     A.rest ? h("p",{class:"hint",id:"groomRest"}, `Outside today's agenda: ${A.rest} other open request${A.rest === 1 ? "" : "s"}. None was declined or scheduled.`) : null,
     h("div",{class:"qrow"}, h("button",{type:"button",class:"btn sm",id:"groomCopy",onclick:()=>copyText(groomText(A), "the grooming agenda")}, "Copy the agenda"), h("span",{class:"hint"}, "Worked out from the plan just now. Nothing was changed."))); }
-function noticedSection(){ if (tooNew()) return null; const xs = noticed(); if (!xs.length) return null;
+// What matters now, at the top of Today: the live guidance, read-only. Ended entries stay in Forecast as history; editing
+// happens there too. A guidance notice about an entry shown here becomes a tag on its row instead of a second line.
+const MATTERS_TOP = 5;
+function mattersLive(t0 = todayDay()){ return (S.guidance || []).map(g=>({g, st:guidanceState(g, t0)})).filter(x=>x.st.state !== "ended")
+  .sort((a, b)=>(a.st.state === "upcoming") - (b.st.state === "upcoming") || (a.st.state === "upcoming" ? a.g.from.localeCompare(b.g.from) : 0)); }
+function addGuidanceFromToday(){ UI.gdForm = {mode:"add"}; goWs("people"); setTimeout(()=>$("#gdText")?.focus(), 0); }
+function mattersSection(){ if (tooNew()) return null; const t0 = todayDay(), live = mattersLive(t0);
+  if (!live.length) return editable() ? h("p",{class:"hint tmatters-empty",id:"tMattersEmpty"}, "Nothing is set for what matters now. ",
+    h("button",{type:"button",class:"btn sm",id:"tMattersAdd",onclick:addGuidanceFromToday}, "Add what matters now")) : null;
+  const shown = live.slice(0, MATTERS_TOP), more = live.length - shown.length, isNew = g => g.from && isoToDay(g.from) >= t0 - NOTICE_DAYS && isoToDay(g.from) <= t0;
+  return h("section",{class:"tsec tmatters","data-tsec":"What matters now","aria-labelledby":"tMattersH"},
+    h("header",{}, h("h3",{id:"tMattersH"}, icon("target"), "What matters now"), h("span",{class:"hint"}, "What the team agreed to weigh. It explains choices; it never moves anything.")),
+    h("ul",{}, ...shown.map(({g, st})=>h("li",{class:"trow","data-matters":g.id}, h("div",{class:"tmain"},
+      h("span",{}, h("button",{type:"button",class:"linkish tname",onclick:()=>showGuidance(g.id)}, g.text),
+        st.state === "upcoming" ? h("span",{class:"dvb","data-mtag":"upcoming"}, "Upcoming") : null, st.review ? h("span",{class:"dvb gdrev","data-mtag":"review"}, "Review due") : null,
+        st.state === "active" && isNew(g) ? h("span",{class:"dvb","data-mtag":"new"}, "New") : null),
+      g.why ? h("small",{class:"tmwhy"}, "Why: " + g.why) : null, h("small",{}, gdScope(g) + " · " + gdWhen(g)))))),
+    more ? h("p",{class:"hint",id:"tMattersMore"}, h("button",{type:"button",class:"linkish",onclick:()=>showGuidance(shown.length < live.length ? live[shown.length].g.id : "")}, `and ${more} more`)) : null); }
+function noticedSection(){ if (tooNew()) return null; const inMatters = new Set(mattersLive().slice(0, MATTERS_TOP).map(x=>x.g.id)), xs = noticed().filter(x=>!(x.type === "guidance" && inMatters.has(x.id))); if (!xs.length) return null;
   return h("section",{class:"tsec tnoticed","data-tsec":"Sightline noticed","aria-labelledby":"tNoticedH"},
     h("header",{}, h("h3",{id:"tNoticedH"}, icon("star"), "Sightline noticed"), h("span",{class:"hint"}, "Worked out from the plan just now. Nothing was changed.")),
     h("ul",{}, ...xs.map(x=>h("li",{class:"trow","data-notice":x.kind}, h("div",{class:"tmain"}, h("span",{}, x.text)),
@@ -17004,7 +17022,7 @@ function renderToday(){
         h("button",{type:"button","aria-pressed":String(scope==="me"),id:"tMe",onclick:()=>{ if (!me){ whoAmI(null, ()=>{ UI.todayScope = "me"; saveUI(); render(); }); return; } UI.todayScope = "me"; saveUI(); render(); }}, me ? "Mine" : "Mine…"),
         h("button",{type:"button","aria-pressed":String(scope==="team"),id:"tTeam",onclick:()=>{ UI.todayScope = "team"; saveUI(); render(); }},"Team"))),
     todaySummary(D, scope),
-    noticedSection(), groomSection(),
+    mattersSection(), noticedSection(), groomSection(),
     h("div",{class:"tgrid"},
       h("div",{class:"tcol"},
         ...(()=>{ const secs = [section("flag", "Escalate", "Risks and decisions past their escalate-by date, and decisions past when they were needed", D.escalate.map(e=>{ const x = e.x, over = Math.max(0, workBetween(e.by + 1, t0, hs));
