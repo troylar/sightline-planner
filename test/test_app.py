@@ -182,6 +182,18 @@ with tempfile.TemporaryDirectory() as tmp:
                                                   {"id": "o2", "summary": "has one", "ops": [plan_it("dv-2")]}])))
     ok("a release the context left out isn't refused, and nor is planning an outcome that has one", out(p).get("ok") is True and not out(p).get("lines"), p.stdout + p.stderr)
 
+    # A placement checked against jiraSort is the context's: after an op that may change it (a new initiative), the page decides.
+    put(f, "sightline-assistant-view.json", {"kind": "sightline-assistant-view", "version": 1, "plan": {"id": "p-app", "revision": 4},
+                                             "actions": [{"id": "initiative.add", "args": {"id": "id?", "label": "str?"}, "creates": "initiativeId"},
+                                                         {"id": "jira.toInitiative", "args": {"keys": "keys", "id": "str"}}],
+                                             "jiraSort": {"issues": [{"key": "ABC-101"}], "placed": {}, "epics": [], "targets": {"initiatives": [], "workstreams": []}}})
+    to_new = {"op": "action", "action": "jira.toInitiative", "args": {"keys": ["ABC-101"], "id": "b-new"}}
+    p = run("check", str(f), str(batch(f, changes=[{"id": "j1", "summary": "new home", "ops": [{"op": "action", "action": "initiative.add", "args": {"id": "b-new", "label": "New"}}, to_new]},
+                                                  {"id": "j2", "summary": "alone", "ops": [to_new]}])))
+    lines = out(p).get("lines", [])
+    ok("a placement on an initiative made earlier in the change isn't checked against the context's targets",
+       not any(x.startswith("change j1") for x in lines), p.stdout + p.stderr)
+
     ok("the tool uses only the standard library", all(not line.startswith(("import requests", "from requests")) for line in TOOL.read_text().splitlines()))
     ok("it never touches the context or results files", '"w"' not in TOOL.read_text().split("def write_atomic")[0])
 

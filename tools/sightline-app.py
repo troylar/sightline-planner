@@ -295,7 +295,7 @@ def js_trim(v) -> str:
 # check isn't mirrored here, by a plain op, by an earlier change, or given prev; or an add that may be a replay) is
 # dropped from it, and nothing is said about an item the copy doesn't hold. The page checks again.
 def working_copy(ctx: dict) -> dict:
-    s = {"dv": {}, "own": {}, "tasks": {}, "bars": {}, "parent": {}, "refs": {}, "graph": True, "touched": set(), "ids": set(), "converted": set(),
+    s = {"dv": {}, "own": {}, "tasks": {}, "bars": {}, "parent": {}, "refs": {}, "graph": True, "touched": set(), "ids": set(), "converted": set(), "sortMoved": False,
          "releases": {r.get("id"): bool(r.get("date")) for r in (ctx.get("choices") or {}).get("releases") or [] if isinstance(r, dict)},
          "cut": not ((ctx.get("coverage") or {}).get("complete") is True)}
     rc = (ctx.get("coverage") or {}).get("choices.releases")
@@ -324,6 +324,9 @@ def working_copy(ctx: dict) -> dict:
             s["own"][o["id"]] = bool(o.get("closed"))
     s["ids"] = {*s["dv"], *s["bars"], *s["tasks"], *s["own"]}
     return s
+
+
+SORT_MOVERS = ("jira.", "initiative.", "workstream.", "task.", "own.toTask")
 
 
 def fresh(s: dict, i) -> bool:
@@ -687,6 +690,7 @@ def check_offline(folder: Path, batch: dict) -> list:
                 if o["op"] == "add" and o.get("type") in ADDS and isinstance(o.get("id"), str):
                     made.setdefault(ADDS[o["type"]], set()).add(o["id"])
                 legacy_apply(state, o)
+                state["sortMoved"] = True
                 continue
             op_ok = len(bad)
             name, args = o.get("action"), o.get("args")
@@ -698,6 +702,10 @@ def check_offline(folder: Path, batch: dict) -> list:
                 continue
             spec, fields, removes = actions[name], acts[name].get("fields"), acts[name].get("removes") or []
             done = maybe_done(state, name, args)      # the page skips its reference checks for an op already done
+            kind = acts[name].get("creates")
+            if not done and kind in refs and isinstance(args.get("id"), str):     # any add whose id may be there already
+                ids, whole = index.get(kind, (set(), False))
+                done = args["id"] in ids or args["id"] in made.get(kind, set()) or not whole
             for k in args:
                 if k not in spec:
                     bad.append(f"{where}: {name} has no argument {k!r}.")
@@ -720,9 +728,11 @@ def check_offline(folder: Path, batch: dict) -> list:
                 made.setdefault(acts[name]["creates"], set()).add(args["id"])
             if name == "own.toTask" and isinstance(args.get("id"), str):     # the own item becomes a task with its id
                 made.setdefault("taskId", set()).add(args["id"])
+            if name == "workstream.reid" and isinstance(args.get("id"), str):     # the workstream's new id
+                made.setdefault("workstreamId", set()).add(args["id"])
             if name.endswith(".add") and "id" in spec and not (isinstance(args.get("id"), str) and args["id"]):
                 bad.append(f"{where}: give the new item an id (like risk-vendor-limits), so reading the file again can't add it twice.")
-            if str(name).startswith("jira.") and name not in ("jira.hide", "jira.unhide"):      # hiding isn't a placement
+            if str(name).startswith("jira.") and name not in ("jira.hide", "jira.unhide") and not state["sortMoved"]:   # hiding isn't a placement
                 bad.extend(f"{where}: {x}" for x in check_jira_place(ctx.get("jiraSort") or {}, name, args))
             if len(bad) == op_ok:       # an op the page refuses changes nothing, so the ops after it are checked without it
                 why = state_problem(state, name, args)
@@ -730,6 +740,8 @@ def check_offline(folder: Path, batch: dict) -> list:
                     bad.append(f"{where}: {why}")
                 else:
                     state_apply(state, name, args)
+                    if str(name).startswith(SORT_MOVERS):     # jiraSort is the context's: after these, placements are the page's call
+                        state["sortMoved"] = True
     return bad
 
 

@@ -616,7 +616,7 @@ can't prove an id is missing, so it doesn't refuse one it can't see. Since 1.187
 order, the way the panel does, so an op is checked against what the ones before it did: setting an outcome's stage to
 planned before `outcome.setTarget` gives it a target is refused ("Pick a target to plan it."), and so are handing off a
 declined capture, declining one that's handed off, reopening one that's open, moving a closed own item into an
-initiative, a starts-after link that makes a loop and the same link added twice. It never refuses what Sightline would
+initiative, a starts-after link that makes a loop and a reference whose URL is already on the item. It never refuses what Sightline would
 accept: an op Sightline treats as already done passes, and about an item an earlier change touched, or one a plain
 `set` changed, it says nothing and leaves the answer to Sightline. Checks that need the whole plan, such as a date Jira
 owns or a task that's late, happen when Sightline applies the change. A published copy refuses, with exit code 4, when the page that wrote the folder's files is a different version. Copies run from the repository aren't stamped and don't compare.
