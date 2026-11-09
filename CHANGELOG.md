@@ -10,6 +10,14 @@ Your own list, first on Today.
 
 - **Keep your own list beside the team's work** (Today). In Mine, Today starts with your own list. Type what you're working on and press Enter, or press Q. Check an item off and it moves to Done today, with Undo. The ⋯ menu pins it to today, marks it not doing, links it to an initiative or Jira issue, or moves it into an initiative. My Jira issues sits beside it. Older copies of Sightline open a plan with lists read-only. *Where:* Work, Today, Mine
 
+## 1.186.0 · Nov 9, 2026
+
+Risks and decisions about outcomes and requests.
+
+### New
+
+- **A risk or decision can be about an outcome or a captured request** (Roadmap). Affects now lists outcomes and requests, in their own group, after the initiatives. On their cards and details, an open decision shows as "Waiting on: …" and an open risk as "Risk (high): …". To triage marks a waiting request, and an initiative shows those of requests handed off to it. Their stage, priority and dates don't change. Older copies open such a plan read-only. *Where:* Delivery, the Risks and Decisions tables; Roadmap, outcome cards, their details and To triage
+
 ## 1.185.0 · Nov 9, 2026
 
 What matters now, on Today.

@@ -15,6 +15,21 @@
   ]
 },
 {
+  "version": "1.186.0",
+  "date": "2026-11-09",
+  "headline": "Risks and decisions about outcomes and requests",
+  "changes": [
+    {
+      "kind": "new",
+      "area": "Roadmap",
+      "title": "A risk or decision can be about an outcome or a captured request",
+      "before": "A risk's or decision's Affects column listed only initiatives, so a question about a request that wasn't planned yet had nowhere to point.",
+      "now": "Affects now lists outcomes and requests, in their own group, after the initiatives. On their cards and details, an open decision shows as \"Waiting on: …\" and an open risk as \"Risk (high): …\". To triage marks a waiting request, and an initiative shows those of requests handed off to it. Their stage, priority and dates don't change. Older copies open such a plan read-only.",
+      "where": "Delivery, the Risks and Decisions tables; Roadmap, outcome cards, their details and To triage"
+    }
+  ]
+},
+{
   "version": "1.185.0",
   "date": "2026-11-09",
   "headline": "What matters now, on Today",

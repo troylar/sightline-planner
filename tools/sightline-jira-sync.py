@@ -1895,10 +1895,10 @@ ACTIONS = {
     "jira.hide": ({"keys": "keys", "why": "str?"}, False),
     "jira.unhide": ({"keys": "keys"}, False),
     "cards.set": ({"field": "str", "value": "any"}, True),
-    "risk.add": ({"id": "id?", "text": "str", "sev": "high|med|low?", "state": "open|closed?", "owners": "personId[]?", "item": "initiativeId|blank?", "next": "str?", "waitingOn": "str?", "escalateBy": "iso|blank?", "aiHint": "str?"}, False),
+    "risk.add": ({"id": "id?", "text": "str", "sev": "high|med|low?", "state": "open|closed?", "owners": "personId[]?", "item": "initiativeId|outcomeId|blank?", "next": "str?", "waitingOn": "str?", "escalateBy": "iso|blank?", "aiHint": "str?"}, False),
     "risk.set": ({"id": "riskId", "field": "str", "value": "any"}, True),
     "risk.del": ({"id": "riskId"}, False),
-    "decision.add": ({"id": "id?", "text": "str", "state": "open|decided?", "owners": "personId[]?", "item": "initiativeId|blank?", "due": "iso|blank?", "decider": "personId|blank?", "next": "str?", "waitingOn": "str?", "escalateBy": "iso|blank?", "aiHint": "str?", "guidance": "guidanceId[]?"}, False),
+    "decision.add": ({"id": "id?", "text": "str", "state": "open|decided?", "owners": "personId[]?", "item": "initiativeId|outcomeId|blank?", "due": "iso|blank?", "decider": "personId|blank?", "next": "str?", "waitingOn": "str?", "escalateBy": "iso|blank?", "aiHint": "str?", "guidance": "guidanceId[]?"}, False),
     "decision.set": ({"id": "decisionId", "field": "str", "value": "any"}, True),
     "decision.del": ({"id": "decisionId"}, False),
 }
@@ -1907,7 +1907,7 @@ ACT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,79}$")
 ACT_REF_BY_NOUN = {"initiative": "bar", "link": "bar", "task": "task", "outcome": "dv", "workstream": "lane", "person": "person", "skill": "skill", "meeting": "meeting",
                    "milestone": "ms", "gate": "gate", "risk": "risk", "decision": "dec", "sprint": "sprint", "jira": "bar", "own": "own"}
 ACT_REF_BY_ARG = {"outcome": "dv", "after": "bar", "parent": "bar", "target": "bar", "bar": "bar", "lane": "lane", "person": "person",
-                  "owners": "person", "members": "person", "item": "bar", "decider": "person", "owner": "person", "initiativeId": "bar"}
+                  "owners": "person", "members": "person", "item": "bar|dv", "decider": "person", "owner": "person", "initiativeId": "bar"}
 
 
 _ACT_BASE = {"id", "isoOrNull", "isoOrAfter", "idOrBlank", "ids", "str", "num", "int", "bool", "iso", "keys", "any", "who", "weights"}
