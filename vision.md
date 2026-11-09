@@ -180,14 +180,14 @@ Each principle is a test a change can pass or fail.
 | Notes, tags and dependencies on Jira items | Plan | Sightline | Added here, attached by Jira key |
 | How a Jira status shows here (the status map) | Plan | Sightline | Marked as the team's reading of Jira |
 | Plan items: initiatives, tasks, milestones, gates, meetings, notes, process blocks, plan timeboxes | Plan | Sightline | "Added here", with who added them |
-| A person's own items: what they're working on, what it relates to, when it was done | Plan | Sightline | On their list, with them as owner; open to anyone with the plan |
-| What's on a person's day: their Jira issues, tasks, requests, decisions and risks | Computed by Sightline from the plan and Jira's facts | Inputs in Jira and Sightline | One list, each item marked as Jira's or the plan's |
+| A person's own items: what they're working on, what they relate to, when and how they were closed | Plan | Sightline | Added here, with who added them; on their owner's list in Today |
+| What's on a person's Today: their own items, Jira issues, tasks, requests, decisions and risks | Computed by Sightline from the plan and Jira's facts | Inputs in Jira and Sightline | One list, each item marked as Jira's or the plan's |
 | A short chart label or lead for a Jira item | Plan | Sightline | Labeled as the plan's, next to Jira's title |
 | Progress counts | Computed by Sightline from Jira's facts and the plan's choices | Inputs in Jira and Sightline | Count with unit, scope and freshness |
 | Effort ranges, skills, workstream shares, scenarios | Plan | Sightline | Added here, with who added them |
 | Forecast finishes, critical chain, workstream load | Computed by Sightline from the plan's inputs and Jira's facts | Inputs in Jira and Sightline | Likely and high finish, with the reason for each wait and what the forecast assumed |
 | Saved team views and tag colors | Plan | Sightline | Named views; tag style |
-| History: snapshots, saved status updates, older item updates, the Activity log | Plan, kept in history files beside it | Sightline | By period, with who added each entry; a period that couldn't be read is named |
+| History: snapshots, saved status updates, older item updates, the Activity log, closed own items | Plan, kept in history files beside it | Sightline | By period, with who added each entry; a period that couldn't be read is named |
 | Captured requests and ideas: what was raised, its capture type, who asked, its source and meeting date, and what became of it | Plan | Sightline | Added here, with who added them and who asked |
 | How long a captured item has been open, and what it was handed off to | Computed by Sightline from the plan | Inputs in Sightline | Age from when it was added; unknown shown as unknown |
 | What I've hidden from my own view | The viewer | That viewer's browser | View indicator with hidden counts |
@@ -224,22 +224,43 @@ people, authors and layers.
 Sightline is also where each person runs their own work, in relation to everything else going on. The team's wall is
 the context; a person's own list is where they start their day.
 
-- **Everyone has their own list.** People put in what they're working on as fast as they can type it, and close it
-  out when it's done. An item on it needs nothing else: no initiative, date, estimate or Jira key.
-- **All of your stuff in one place.** Beside your own items, Sightline shows everything that is yours elsewhere: your
-  Jira issues, plan tasks you own, requests you were asked to look at, decisions you owe, risks you hold, and what
-  matters now. Each item says what it relates to. That's computed from the plan and the Jira files, never copied.
-- **Related, not filed.** An item can point at an initiative, outcome, request or Jira issue to show what it's part
-  of, without becoming part of it. Moving it into an initiative, as a plan task, is a deliberate step; from then on
-  it follows the plan's rules for tasks.
-- **Open, like the rest of the plan.** Your items live in the shared plan with you as their owner, and anyone who can
-  open the plan can see them. Show and hide work on them like everything else. Sightline makes no promise that they
-  are private.
-- **Finishing is the point.** Checking something off records when it was done. Done items stay visible as what you
-  got done, feed your standup and status update when you share them, and move to the history files with the rest of
-  the plan's history, so the plan file holds what's open now.
-- **The wall rule still holds.** Your list never changes a Jira fact. Jira issues on it are read-only, close in
-  Jira, and show as done after the next sync.
+- **Everyone has their own list.** People put in what they're working on as fast as they can type it, one line of up
+  to 500 characters, and close it out when it's done. An item needs nothing else: no initiative, date, estimate or
+  Jira key. An item can be pinned to a day ("today"); otherwise it's on the list until it's closed.
+- **Own items are plan items.** They're saved in the plan, with an owner and who added them (anyone can add one to
+  someone else's list, and an assistant can propose one through a reviewed change). Like every plan item, anyone who
+  can open the plan can see and change them, keeping the creator and showing the last editor; Sightline makes no
+  promise that they're private. "You" is the same unverified "who am I" the page already uses.
+- **All of your stuff in one place.** The **Today** view shows your own items, then what is yours elsewhere, worked
+  out from the plan and the Jira files and never copied:
+  - your Jira issues: open issues whose Jira assignee matches your linked Jira user key. Someone not linked to Jira is
+    asked to link, and is never matched by display name;
+  - plan tasks and initiatives you own that are started, due or late;
+  - captured requests you own;
+  - decisions you own or decide, and risks you own.
+
+  What matters now is shown beside the list as context, not as one of your items. Own items appear only in Today and
+  on standup cards; they're undated, so they aren't on the timeline or the roadmap.
+- **Related, not filed.** An own item can point at one or more initiatives, outcomes, requests or Jira issues (a
+  story too), saved by stable ID or Jira key; the related Jira item is never copied, and one the sync no longer
+  returns shows as not in the last sync. A relation never closes anything, in either direction: Jira finishing an
+  issue doesn't check off an item related to it. Moving an item into an initiative is a deliberate step that can be
+  undone: it becomes a plan task with the same ID, creator and owner, leaves the own list (it then shows once, as a
+  plan task you own), and follows the plan's rules for tasks. A Jira key it was related to becomes the task's Jira
+  link only if the person chooses it, and then Jira owns its dates and status.
+- **Closing out.** An item is closed as done, or as not doing (with an optional reason); neither is deleting, and a
+  closed item can be reopened. Both record who closed it and when. Jira issues in Today are read-only, close in Jira,
+  and show as done (or abandoned, as `jiraState()` reads them) after the next sync.
+- **Finishing is the point, and the plan stays small.** Items closed in the last 30 days stay in the plan file and
+  show as what you got done; older ones move to the history files, filed by the quarter they were closed. Showing
+  older ones reads history and follows its rules: never waiting on it, and naming a quarter that couldn't be read.
+  Sharing what you got done in a standup or status update copies it into that update, which is then a dated record.
+- **Show and hide.** The list is per owner; showing and hiding someone's items is a view preference like any other,
+  and hidden items are counted.
+- **The wall rule still holds.** Nothing on the list changes a Jira fact.
+- **The format.** Own items are a new saved field: a copy that doesn't know it opens the plan read-only. Teammates'
+  edits merge item by item, so two people checking off different items both keep their change. Moving closed items
+  to history is a new kind of history entry, so an older copy can't read those history files and says so.
 
 ## Captured requests and ideas
 
@@ -324,7 +345,7 @@ Everything above is input. Two moments turn it into a decision.
 The wall is the data; views are lenses on it:
 
 - **Timeline** (weeks and days): where work sits in time.
-- **Today**: what needs attention now.
+- **Today**: your own list and everything of yours from the plan and Jira, then what needs attention now.
 - **Standup cards** (next): the current sprint's work, Jira and plan items, by person.
 - **Retrospective** (later): what finished, slipped, was abandoned or switched off, and the notes around it.
 - **Free-form canvas** (later): the literal whiteboard, arranged by hand, for thinking rather than scheduling.
@@ -351,8 +372,8 @@ authorization; the token holder decides.
 
 ## The plan and its history
 
-A plan in daily use piles up history: snapshots, saved status updates, the dated updates on each item, and the
-Activity log. After a year that history is most of the file, and the file reaches the size limit. So the plan file
+A plan in daily use piles up history: snapshots, saved status updates, the dated updates on each item, the
+Activity log, and people's closed own items. After a year that history is most of the file, and the file reaches the size limit. So the plan file
 holds what the team is planning now, and history lives in history files in a folder beside the plan, one file per
 calendar quarter. Each entry goes in the quarter of its own date, so every copy files it the same way. The edit lock,
 backups, drafts and the Jira files are not history.
@@ -401,7 +422,7 @@ backups, drafts and the Jira files are not history.
 - Meeting requests and ideas are captured as roadmap ideas with a capture type, who asked and what became of
   them, kept apart from delivery stage. Requesters are existing people and groups; there is no separate list of
   teams yet.
-- History (snapshots, saved status updates, older item updates, the Activity log) lives in history files beside the
+- History (snapshots, saved status updates, older item updates, the Activity log, closed own items) lives in history files beside the
   plan, one per period; the plan file holds what's being planned now.
 - Sightline reads three kinds of input: trackers (Jira first), signals and references. The rules for Jira apply to
   any tracker.
@@ -411,14 +432,14 @@ backups, drafts and the Jira files are not history.
   objectives.
 - Intake from any channel is a shared assistant skill that writes reviewed captures, not a separate store.
 - Tracker items are drafted in the plan and created by a person.
-- Each person keeps their own list in the shared plan, beside everything of theirs computed from the plan and Jira;
-  it's open like the rest of the plan, and finished items move to the history files.
+- Each person keeps their own list in the shared plan and sees it in Today, beside everything of theirs computed from
+  the plan and Jira. It's open like the rest of the plan; items closed over 30 days ago move to the history files.
 - A risk or decision can be about an initiative, an outcome or a captured request. The outcome or request shows
   what it's waiting on and its risks; nothing about its stage, priority or dates changes because of them.
 
 **Open**
 
-- Can anyone edit anyone's plan items? Recommended: yes, keeping the creator and showing the last editor.
+- Can anyone edit anyone's plan items, own items included? Recommended: yes, keeping the creator and showing the last editor.
 - Can anyone delete anyone's item? Recommended: yes after showing what goes with it (children, notes, links), with a
   way to bring it back.
 - Is a note's text editable only by its author? Recommended: the page asks before editing someone else's words, and
@@ -426,7 +447,7 @@ backups, drafts and the Jira files are not history.
 - Should one person's hidden choices follow them across computers?
 - Finished work in a long-lived plan: on the biggest plans that run two years, finished initiatives and tasks alone
   can reach the size limit. Should a plan roll forward, moving finished work into its history?
-  Decide after history files ship.
+  Decided for own items (closed over 30 days ago); still open for initiatives and tasks.
 - Who sets an outcome's class: anyone, or the product owner? Recommended: anyone, showing who set it.
 - How long before an open capture asks "Still true?" Recommended: 90 days, set per plan.
 - How to keep a long-lived capture's evidence small once it has many reports.
