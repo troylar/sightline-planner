@@ -380,8 +380,8 @@ authorization; the token holder decides.
 A plan in daily use piles up history: snapshots, saved status updates, the dated updates on each item, the
 Activity log, and people's closed own items. After a year that history is most of the file, and the file reaches
 the size limit. So the plan file holds what the team is planning now, and history lives in history files in a folder
-beside the plan, one file per calendar quarter. Each entry goes in the quarter of its own date, so every copy files it the same way. The edit lock,
-backups, drafts and the Jira files are not history.
+beside the plan, one file per calendar quarter. Each entry goes in the quarter of its own date, so every copy files
+it the same way. The edit lock, backups, drafts and the Jira files are not history.
 
 - **The plan file is enough to plan.** Opening, drawing and saving the plan never wait on history. The plan keeps
   what it needs to draw today, such as each item's latest update and the newest snapshot and status update; older
