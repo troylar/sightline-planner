@@ -2,6 +2,8 @@
 // Cleaning on load, the older-copy flag, every own.* action (toTask with undo), merging item by item, the Today order and
 // pins, checking off into Done today with undo, not doing, Jira issues matched by user key and never by name, the prompt
 // to link, the team's count, read-only views, the Q shortcut. The sample plan (every name invented).
+// A zone west of UTC, so a late-evening Jira resolution falls on the next UTC day: "today" is the viewer's day.
+process.env.TZ = "America/New_York";
 const {JSDOM, VirtualConsole} = require("jsdom"), fs = require("fs"), path = require("path"), {spawnSync} = require("child_process");
 const DIST = process.env.SIGHTLINE_HTML || path.join(__dirname, "..", "dist", "sightline.html");
 const html = fs.readFileSync(DIST, "utf8").replace(/<link[^>]+fonts[^>]+>/, "");
@@ -66,14 +68,17 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("A9 own.reopen opens it again", run("own.reopen", {id:"o-b"}).ok && !("closed" in own("o-b")));
     ok("A10 own.del removes it", run("own.del", {id:"o-b"}).ok && own("o-b") === null);
     run("own.reopen", {id:"o-new"});
+    X(`S.own.find(x=>x.id === "o-new").added = {by:"${other}", at:"2026-10-01T09:00:00.000Z"};`);
     const addedBefore = own("o-new").added;
     r = run("own.toTask", {id:"o-new", initiativeId:bar2});
     const task = J(`(()=>{ const f = actTask(S, "o-new"); return f ? {bar:f.b.id, label:f.t.label, owners:f.t.owners, added:f.t.added, start:f.t.start} : null; })()`);
-    ok("A11 own.toTask makes a plan task with the same id, creator and owner, and it leaves the list", r.ok && own("o-new") === null && task && task.bar === bar2 && task.label === "Call the vendor" && JSON.stringify(task.owners) === JSON.stringify([me]) && JSON.stringify(task.added) === JSON.stringify(addedBefore), JSON.stringify([r, task]));
+    ok("A11 own.toTask makes a plan task with the same id, creator and owner, and it leaves the list", r.ok && addedBefore.by === other && own("o-new") === null && task && task.bar === bar2 && task.label === "Call the vendor" && JSON.stringify(task.owners) === JSON.stringify([me]) && JSON.stringify(task.added) === JSON.stringify(addedBefore), JSON.stringify([r, task]));
     X(`undo(); render();`);
     ok("A12 …and undo puts it back on the list, not in the initiative", !!own("o-new") && J(`!!actTask(S, "o-new")`) === false);
     ok("A13 …a closed item has to be reopened first", run("own.close", {id:"o-new", as:"done"}).ok && /Reopen it first/.test(run("own.toTask", {id:"o-new", initiativeId:bar2}).reason));
     run("own.reopen", {id:"o-new"});
+    X(`window.PB = clone(planOfRecord(S)); S.own = S.own.filter(x=>x.id !== "o-new"); putBack(PB);`); await wait(20);
+    ok("PB1 putBack restores own items an older copy dropped", !!own("o-new") && own("o-new").text === "Call the vendor");
 
     // ---- the assistant sees the list and the actions
     const view = J(`assistantView()`), acts = (view.actions || []).filter(a=>/^own\./.test(a.id)).map(a=>a.id);
@@ -91,6 +96,29 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     const M = J(`(()=>{ const m = mergePlans(BASE, MINE, THEIRS); return m ? {own:m.plan.own, kept:m.kept.length} : null; })()`), mo = id => ((M && M.own) || []).find(x=>x.id === id) || {};
     ok("M1 two people closing different items both keep their change", mo("m-a").closed && mo("m-a").closed.as === "done" && mo("m-b").closed && mo("m-b").closed.why === "Dropped", JSON.stringify(M));
     ok("M2 …a teammate's rename and my new item both stay, with nothing kept aside", mo("m-c").text === "Gamma, renamed" && mo("m-d").text === "Mine new" && M.kept === 0);
+    // moving an item into an initiative while a teammate renames or closes it: it shows once, and my move goes to the backup
+    const mv = edit => J(`(()=>{ const B = clone(BASE), Mi = clone(BASE), T = clone(BASE); const bb = Mi.bars.find(b=>b.id === "${bar2}");
+      Mi.own = Mi.own.filter(x=>x.id !== "m-c"); bb.tasks = [...(bb.tasks || []), {id:"m-c", label:"Gamma", start:"${day(0)}", days:1, owners:["${me}"], jira:"", status:"notstarted"}];
+      ${edit}; const m = mergePlans(B, Mi, T); if (!m) return null; const p = m.plan;
+      return {own:(p.own || []).filter(x=>x.id === "m-c").length, task:p.bars.flatMap(b=>b.tasks || []).filter(t=>t.id === "m-c").length, text:((p.own || []).find(x=>x.id === "m-c") || {}).text, closed:!!((p.own || []).find(x=>x.id === "m-c") || {}).closed, aside:m.kept.length + m.keptDel.length}; })()`);
+    let mvr = mv(`T.own.find(x=>x.id === "m-c").text = "Gamma, renamed"`);
+    ok("MV1 I move an item into an initiative while a teammate renames it: it shows once, with their words, and my move is kept aside for the backup", mvr && mvr.own + mvr.task === 1 && mvr.text === "Gamma, renamed" && mvr.aside > 0, JSON.stringify(mvr));
+    mvr = mv(`T.own.find(x=>x.id === "m-c").closed = {as:"done", by:"${other}", at:"2026-11-09T09:00:00.000Z"}`);
+    ok("MV2 …or closes it: still once, closed, and kept aside", mvr && mvr.own + mvr.task === 1 && mvr.closed && mvr.aside > 0, JSON.stringify(mvr));
+    mvr = J(`(()=>{ const B = clone(BASE), T = clone(BASE), Mi = clone(BASE); const bb = T.bars.find(b=>b.id === "${bar2}");
+      T.own = T.own.filter(x=>x.id !== "m-c"); bb.tasks = [...(bb.tasks || []), {id:"m-c", label:"Gamma", start:"${day(0)}", days:1, owners:["${me}"], jira:"", status:"notstarted"}];
+      Mi.own.find(x=>x.id === "m-c").text = "Gamma, mine"; const m = mergePlans(B, Mi, T); const p = m.plan;
+      return {n:(p.own || []).filter(x=>x.id === "m-c").length + p.bars.flatMap(b=>b.tasks || []).filter(t=>t.id === "m-c").length, lost:m.skipped.length}; })()`);
+    ok("MV3 a teammate moves it while I rename it: once, as their task, and my rename is counted as lost (so it's backed up)", mvr && mvr.n === 1 && mvr.lost > 0, JSON.stringify(mvr));
+    // one person deletes while another edits
+    const de = J(`(()=>{ const B = clone(BASE), Mi = clone(BASE), T = clone(BASE); Mi.own = Mi.own.filter(x=>x.id !== "m-a"); T.own.find(x=>x.id === "m-a").text = "Alpha, renamed";
+      const m1 = mergePlans(B, Mi, T); const B2 = clone(BASE), Mi2 = clone(BASE), T2 = clone(BASE); Mi2.own.find(x=>x.id === "m-a").text = "Alpha, mine"; T2.own = T2.own.filter(x=>x.id !== "m-a");
+      const m2 = mergePlans(B2, Mi2, T2); return {kept:(m1.plan.own.find(x=>x.id === "m-a") || {}).text, keptDel:m1.keptDel.length, gone:!m2.plan.own.some(x=>x.id === "m-a"), lost:m2.skipped.length}; })()`);
+    ok("DE1 I delete an item a teammate renamed: theirs stays and my delete is kept aside; I rename one they deleted: it stays deleted and my edit is counted for the backup", de.kept === "Alpha, renamed" && de.keptDel === 1 && de.gone && de.lost === 1, JSON.stringify(de));
+    // what it's part of merges item by item
+    const rl = J(`(()=>{ const B = clone(BASE), Mi = clone(BASE), T = clone(BASE); B.own[0].rel = [{type:"bar", id:"${bar}"}, {jira:"ABC-1"}]; Mi.own[0].rel = [{type:"bar", id:"${bar}"}, {jira:"ABC-2"}]; T.own[0].rel = [{type:"bar", id:"${bar}"}, {jira:"ABC-1"}, {type:"bar", id:"${bar2}"}];
+      const m = mergePlans(B, Mi, T); return (m.plan.own.find(x=>x.id === "m-a") || {}).rel; })()`);
+    ok("RL1 what an item is part of merges item by item: both sides' additions stay, and my removal stays removed", JSON.stringify((rl || []).map(r=>r.jira || r.id).sort()) === JSON.stringify(["ABC-2", bar, bar2].sort()), JSON.stringify(rl));
 
     // ---- Today, Mine: the list first
     X(`S.own = [
@@ -139,6 +167,10 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     check("t-new"); await wait(20);
     ok("K5 …with reduced motion, nothing animates and it still moves", !w.ANIM.length && doneRows().includes("t-new"), JSON.stringify(w.ANIM));
     X(`undo(); render();`); await wait(20); delete w.Element.prototype.animate; w.Element.prototype.getBoundingClientRect = rect; w.REDUCE = false;
+    X(`window.QS0 = quickSave; quickSave = ()=>Promise.resolve(false);`); check("t-new"); await wait(20);
+    const cb2 = d.querySelector('[data-own="t-new"] .owncheck');
+    ok("K6 a refused save redraws: the box isn't left ticked and disabled, and the item stays open", cb2 && !cb2.checked && !cb2.disabled && !J(`"closed" in S.own.find(x=>x.id === "t-new")`), cb2 ? `checked ${cb2.checked} disabled ${cb2.disabled}` : "no box");
+    X(`quickSave = QS0;`);
 
     // ---- not doing
     d.querySelector('[data-own="t-later"] .ownmore').click(); await wait(10);
@@ -148,6 +180,12 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("ND2 …it closes as not doing, with the reason, under Done today, and isn't struck through as done", J(`S.own.find(x=>x.id === "t-later").closed.as`) === "notdoing" && /Not doing: The partner pulled out/.test(d.querySelector('#ownDone [data-own="t-later"]').textContent) && d.querySelector('#ownDone [data-own="t-later"]').classList.contains("notdoing"));
     d.querySelector('#ownDone [data-oreopen="t-later"]').click(); await wait(20);
     ok("ND3 Reopen brings it back", rows().includes("t-later") && !doneRows().includes("t-later"));
+    X(`S.own.push({id:"t-week", text:"Closed three days ago", owner:"${me}", closed:{as:"done", by:"${me}", at:new Date(Date.now() - 3 * 864e5).toISOString()}}); render();`); await wait(10);
+    const rec = d.getElementById("ownRecent");
+    ok("RC1 items closed in the last 30 days sit in a collapsed list under Done today; older ones don't", !!rec && !rec.open && rec.querySelector("summary").textContent === "Closed in the last 30 days (1)" && !!rec.querySelector('[data-own="t-week"]') && !rec.querySelector('[data-own="t-gone"]'), rec ? rec.querySelector("summary").textContent : "none");
+    rec && rec.querySelector('[data-oreopen="t-week"]').click(); await wait(20);
+    ok("RC2 …each with Reopen", rows().includes("t-week") && !d.getElementById("ownRecent"));
+    X(`S.own = S.own.filter(x=>x.id !== "t-week"); render();`); await wait(10);
 
     // ---- part of, move into an initiative, delete, from the menu
     d.querySelector('[data-own="t-old"] .ownmore').click(); await wait(10); d.querySelector('[data-own="t-old"] [data-omi="rel"]').click(); await wait(10);
@@ -162,10 +200,15 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("P4 Delete removes it, and undo is offered", !rows().includes("t-old") && /Deleted "Older open item"\./.test(d.getElementById("status").textContent));
     X(`undo(); render();`); await wait(10);
 
+    ok("U1 each related item's chip has an icon and reads \"Part of\", the add line says Press Q, and ⋯ says what's in it", [...d.querySelectorAll('[data-own="t-passed"] [data-orel]')].every(c=>/^Part of /.test(c.textContent) && !!c.querySelector(".ic") && /^Part of/.test(c.title)) && /Press Q anywhere/.test(d.getElementById("ownHelp")?.textContent || "")
+      && d.getElementById("ownAdd").getAttribute("aria-describedby") === "ownHelp" && /pin, not doing/.test(d.querySelector('[data-own="t-old"] .ownmore').title || ""), d.querySelector('[data-own="t-passed"] .ownmeta')?.textContent);
+
     // ---- My Jira issues: by linked user key, never by name
+    const LATE = n => { const t = new Date(); t.setDate(t.getDate() + n); t.setHours(22, 30, 0, 0); return t.toISOString(); };   // 22:30 here is the next day in UTC
     const myName = P[0].name, iss = (sum, key, name, cat, extra = {}) => ({summary:sum, status:cat === "done" ? "Done" : cat === "inprogress" ? "In Progress" : "To Do", category:cat, type:"Story", assigneeKey:key, assignee:name, ...extra});
     w.JS = JSON.stringify({kind:"sightline-jira-status", version:1, generatedAt:new Date().toISOString(), jiraBase:"https://jira.example.com/browse/", missing:[], rollups:{}, sprints:[], issues:{
-      "ABC-1":iss("Fix the login timeout", "U1", "Someone", "inprogress"), "ABC-2":iss("Name twin's issue", "U9", myName, "todo"), "ABC-3":iss("Closed today", "U1", "x", "done", {resolution:"Done", resolvedAt:day(0)}),
+      "ABC-1":iss("Fix the login timeout", "U1", "Someone", "inprogress"), "ABC-2":iss("Name twin's issue", "U9", myName, "todo"), "ABC-3":iss("Closed today", "U1", "x", "done", {resolution:"Done", resolvedAt:LATE(0)}), "ABC-6":iss("Dropped today", "U1", "x", "done", {resolution:"Won't Do", resolvedAt:LATE(0)}),
+      "ABC-7":iss("Closed late yesterday", "U1", "x", "done", {resolution:"Done", resolvedAt:LATE(-1)}),
       "ABC-4":iss("Closed last week", "U1", "x", "done", {resolution:"Done", resolvedAt:day(-7)}), "ABC-5":iss("An epic of mine", "U1", "x", "inprogress", {type:"Epic", isEpic:true})}});
     w.JI = JSON.stringify({kind:"sightline-jira-issues", version:2, generatedAt:new Date().toISOString(), searches:[{name:"Mine", keys:["ABC-8", "ABC-9"]}], issues:[{key:"ABC-8", ...iss("From the search", "U1", "x", "todo")}, {key:"ABC-9", ...iss("Not mine either", "", myName, "todo")}]});
     X(`JIRA = parseJiraStatus(JS); JIRA_ISSUES = parseJiraIssues(JI); S.meta.jiraBase = "https://jira.example.com/browse/"; render();`); await wait(20);
@@ -174,11 +217,12 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("J2 …its button opens my card where I pick my Jira user", J("sel") && J("sel").type === "person" && J("sel").id === me && !!d.getElementById("f-jpick"), JSON.stringify(J("sel")) + " " + X("UI.ws"));
     X(`S.people.find(p=>p.id === "${me}").jira = {key:"U1", user:"u1", name:"Someone"}; goWs("today"); render();`); await wait(20);
     const jk = () => [...d.querySelectorAll("#myJira [data-ojira]")].map(x=>x.dataset.ojira);
-    ok("J3 linked: my open issues from the placed sync and the search file, then any that closed today; never by name, never epics", JSON.stringify(jk()) === '["ABC-1","ABC-8","ABC-3"]', JSON.stringify(jk()));
-    ok("J4 …read-only, with Jira's status and key, marked as Jira's", /In Progress/.test(d.querySelector('[data-ojira="ABC-1"]').textContent) && /ABC-1/.test(d.querySelector('[data-ojira="ABC-1"]').textContent) && !!d.querySelector('[data-ojira="ABC-1"] .jtag')
-      && !d.querySelector("#myJira input, #myJira select") && /done today/.test(d.querySelector('[data-ojira="ABC-3"]').textContent));
+    ok("J3 linked: my open issues from the placed sync and the search file, then any that closed on the viewer's day (not UTC's); never by name, never epics", JSON.stringify(jk()) === '["ABC-1","ABC-8","ABC-3","ABC-6"]', JSON.stringify(jk()));
+    ok("J4 …read-only, with Jira's status and key, marked as Jira's; one abandoned today says so", /In Progress/.test(d.querySelector('[data-ojira="ABC-1"]').textContent) && /ABC-1/.test(d.querySelector('[data-ojira="ABC-1"]').textContent) && !!d.querySelector('[data-ojira="ABC-1"] .jtag') && !d.querySelector('[data-ojira="ABC-1"] .jtag').classList.contains("dvb")
+      && !d.querySelector("#myJira input, #myJira select") && /done today/.test(d.querySelector('[data-ojira="ABC-3"]').textContent) && /abandoned today/.test(d.querySelector('[data-ojira="ABC-6"]').textContent)
+      && !/closed today|done today/.test(d.querySelector('[data-ojira="ABC-6"]').textContent), d.querySelector('[data-ojira="ABC-6"]')?.textContent);
     ok("J5 a related Jira key the sync doesn't have says so, and one it has shows its title", /ABC-12 · not in the last sync/.test(d.querySelector('[data-own="t-passed"] [data-orel="ABC-12"]').textContent)
-      && J(`(()=>{ const o = S.own.find(x=>x.id === "t-passed"); o.rel = [{jira:"ABC-1"}]; render(); return document.querySelector('[data-own="t-passed"] [data-orel="ABC-1"]').textContent; })()`) === "ABC-1 Fix the login timeout");
+      && J(`(()=>{ const o = S.own.find(x=>x.id === "t-passed"); o.rel = [{jira:"ABC-1"}]; render(); return document.querySelector('[data-own="t-passed"] [data-orel="ABC-1"]').textContent; })()`) === "Part of ABC-1 Fix the login timeout");
 
     // ---- Team: a count, grouped by owner; hidden people counted
     X(`UI.todayScope = "team"; render();`); await wait(20);
@@ -191,9 +235,10 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
 
     // ---- read-only: viewers, Present, a plan from a newer copy
     const inputs = () => d.querySelectorAll("#ownSec input, #ownSec .ownmore, #ownSec .ownreopen").length;
+    X(`file.handle = {name:"plan.json"}; render();`); await wait(10); const canWithFile = inputs() > 0;
     X(`locked = true; render();`); await wait(10);
-    ok("R1 a viewer sees the list without inputs", !!d.getElementById("ownList") && rows().length > 0 && inputs() === 0 && !!d.querySelector("#ownSec .ownbox"));
-    X(`locked = false; present = true; render();`); await wait(10);
+    ok("R1 a viewer (a shared file, locked) sees the list without inputs", canWithFile && !!d.getElementById("ownList") && rows().length > 0 && inputs() === 0 && !!d.querySelector("#ownSec .ownbox"));
+    X(`locked = false; file.handle = null; present = true; render();`); await wait(10);
     ok("R2 …so does Present", !!d.getElementById("ownList") && inputs() === 0);
     X(`present = false; S.meta.features = [...(S.meta.features || []), "fromTheFuture9"]; render();`); await wait(10);
     ok("R3 …and a plan from a newer copy", !!d.getElementById("ownList") && inputs() === 0);
@@ -203,7 +248,29 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     X(`goWs("timeline"); render();`); await wait(20);
     d.body.dispatchEvent(new w.KeyboardEvent("keydown", {key:"q", code:"KeyQ", bubbles:true})); await wait(20);
     ok("Q1 Q from the Timeline opens Today with the cursor in the add line", X("UI.ws") === "today" && d.activeElement && d.activeElement.id === "ownAdd", X("UI.ws"));
+    const typeQ = el => { el.focus(); const e = new w.KeyboardEvent("keydown", {key:"q", code:"KeyQ", bubbles:true, cancelable:true}); el.dispatchEvent(e); return !e.defaultPrevented && d.activeElement === el; };
+    X(`render();`); await wait(10); const other0 = d.createElement("input"); d.body.appendChild(other0);
+    ok("Q3 typing q into the add line, or into any other field, types a q", typeQ(d.getElementById("ownAdd")) && typeQ(other0) && X("UI.ws") === "today"); other0.remove();
     ok("Q2 Q is listed in the shortcut help and the command palette, and taken by nothing else", J(`SHORTCUTS.flatMap(g=>g[1]).filter(r=>r[0].includes("Q")).length`) === 1 && J(`COMMANDS.filter(c=>(c.keys || []).includes("Q")).map(c=>c.id)`).join() === "own-add");
+
+    // ---- size: a full list of the longest items stays well under half of what a save may write
+    const W = J(`(()=>{ const p = normalize(JSON.parse(FIX), false), who = p.people[0].id, ds = Array.from({length:OWN_REL}, (_, i)=>({id:"dv-" + String(i).padStart(2, "0") + "x".repeat(70), name:"Outcome " + i, stage:"idea"}));
+      p.deliverables = ds; p.own = Array.from({length:5000}, (_, i)=>({id:"own-" + String(i).padStart(4, "0") + "y".repeat(70), text:"中".repeat(OWN_TEXT), owner:who, pin:"2026-11-09", rel:ds.map(x=>({type:"deliverable", id:x.id})),
+        closed:{as:"notdoing", by:who, at:"2026-11-09T09:00:00.000Z", why:"中".repeat(OWN_WHY)}, added:{by:who, at:"2026-11-09T09:00:00.000Z"}, edited:{by:who, at:"2026-11-09T09:00:00.000Z"}}));
+      const q = normalize(p, false), base = new Blob([serialize(normalize(JSON.parse(FIX), false), "p.json")]).size;
+      return {n:q.own.length, bytes:new Blob([serialize(q, "p.json")]).size - base, max:MAX_BYTES, full:runAction(q, "own.add", {text:"One more"}).reason || ""}; })()`);
+    ok("W1 a full list of the longest items stays well under half of the 2 MB write limit (under 40%), and adding past the cap says why", W && W.bytes < W.max * 0.4 && /up to \d+ items/.test(W.full), JSON.stringify({n:W.n, bytes:W.bytes, full:W.full}));
+
+    // ---- a shared file: moving into an initiative, then undo, writes the item back to the list
+    X(`window.HD = {name:"own-check.json", text:"", writes:0, async queryPermission(){ return "granted"; }, async requestPermission(){ return "granted"; },
+      async getFile(){ return {size:new Blob([HD.text]).size, text:async()=>HD.text, lastModified:1}; },
+      async createWritable(){ let next = ""; return {async write(v){ next = v; }, async abort(){}, async close(){ HD.text = next; HD.writes++; }}; }};
+      const p = normalize(JSON.parse(FIX), false); p.own = [{id:"f-1", text:"Fix the export", owner:"${me}", added:{by:"${me}", at:"2026-11-01T09:00:00.000Z"}}];
+      HD.text = serialize(p, HD.name); installPlan(p, HD.text, HD); goWs("today"); UI.todayScope = "me"; render();`); await wait(50);
+    const inFile = () => J(`(()=>{ const p = JSON.parse(HD.text); return {own:(p.own || []).some(x=>x.id === "f-1"), task:p.bars.some(b=>(b.tasks || []).some(t=>t.id === "f-1"))}; })()`);
+    const okMove = await w.ownDo("moved", "own.toTask", {id:"f-1", initiativeId:bar2}); await wait(50); const f1 = inFile();
+    X(`undo()`); await wait(150); const f2 = inFile();
+    ok("FB1 on a shared file, Move into an initiative writes the task, and undo writes the item back to the list", !!okMove && f1.task && !f1.own && f2.own && !f2.task, JSON.stringify([okMove, f1, f2, d.getElementById("status").textContent]));
 
     ok("Z1 no script errors", !w.errs.length, w.errs.join(" | "));
   } catch(e){ ok("no exception", false, e.stack); }

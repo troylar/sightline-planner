@@ -116,7 +116,7 @@ status line; **⋯** pins it to today or unpins it, marks it **Not doing** (with
 **Part of** (an initiative, an outcome or a Jira key, shown as chips that open it), moves it into an initiative as a task
 you own, or deletes it. Beside it, **My Jira issues** lists the open issues assigned to your linked Jira user, plus any
 that closed today, read-only; if you aren't linked yet, one line offers to link you. Sightline never matches you by
-name. The list is saved in the shared plan, so anyone who opens it can see it. In **Team**, one line counts the open
+name. The list is saved in the shared plan, so anyone who opens it can see it. A plan holds up to 120 items across everyone's lists, closed ones included; items closed in the last 30 days are under **Closed in the last 30 days**, each with Reopen. In **Team**, one line counts the open
 items on people's lists and opens to them by person; people you've hidden are counted, not listed. Viewers and Present
 see the lists without inputs.
 

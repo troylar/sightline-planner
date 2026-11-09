@@ -619,10 +619,10 @@ body.presenting #filterBtn,body.presenting #viewSave{display:none!important}
 /* Your own list, first on Today: an input that invites typing, round checks, quiet chips; motion lives in the script */
 .towngrid{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:14px;align-items:start}.towngrid.one{grid-template-columns:minmax(0,1fr)}@media (max-width:900px){.towngrid{grid-template-columns:1fr}}
 .tsec.town{border-left:4px solid var(--ok)}.tsec.townjira{border-left-color:var(--prog)}.town h3 .ic{color:var(--ok)}.townjira h3 .ic{color:var(--prog)}
-.ownadd{display:flex;align-items:center;gap:8px;margin:2px 0 6px}.ownfield{position:relative;flex:1;min-width:0;display:flex}
-.ownadd input{flex:1;min-width:0;font:inherit;font-size:15px;padding:10px 40px 10px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink)}
+.ownadd{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:2px 0 6px}.ownhelp{flex-basis:100%;margin:0;font-size:11.5px}.ownhelp kbd{font:10.5px/1.4 ui-monospace,monospace;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 4px}.ownfield{position:relative;flex:1;min-width:0;display:flex}
+.ownadd input{flex:1;min-width:0;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink)}
 .ownadd input::placeholder{color:var(--ink-3)}.ownadd input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
-.ownkbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);font:11px/1.5 ui-monospace,monospace;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 5px;color:var(--ink-3);pointer-events:none}.ownadd input:focus ~ .ownkbd{opacity:0}@media (max-width:600px){.ownkbd{display:none}.ownadd input{padding-right:12px}}
+.ownrecent summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--ink-2)}
 .ownlist{gap:0}.trow.ownrow{grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:start;padding:7px 0}
 .ownrow.pinned .owntext{font-weight:600}
 .owncheck{appearance:none;-webkit-appearance:none;flex:none;width:18px;height:18px;margin:1px 0 0;border:1.6px solid var(--ink-3);border-radius:50%;background:transparent;cursor:pointer}
@@ -645,7 +645,7 @@ button.ownchip,a.ownchip{cursor:pointer}.ownchip .ic{width:11px;height:11px;vert
 .ownmark{width:18px;height:18px;margin-top:1px;border-radius:50%;background:var(--ok);color:var(--surface);display:grid;place-items:center;font-weight:700}.ownmark .ic{width:12px;height:12px}
 .notdoing .ownmark{background:var(--ink-3)}.owndone .owntext{color:var(--ink-3);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--ink-3) 60%,transparent)}.owndone.notdoing .owntext{text-decoration:none}
 .ownreopen{font-size:12px;margin-top:1px}
-.ownjira .jk{font-family:ui-monospace,monospace;font-size:12px;font-weight:600;color:var(--prog)}.ownjira.shut .tname{color:var(--ink-3)}.jtag{font-size:10.5px}
+.ownjira .jk{font-family:ui-monospace,monospace;font-size:12px;font-weight:600;color:var(--prog)}.ownjira.shut .tname{color:var(--ink-3)}.jtag{font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3)}
 .ownteam{border:1px solid var(--rule);border-left:4px solid var(--ok);border-radius:10px;background:var(--surface);padding:8px 12px}.ownteam summary{cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600}.ownteam summary .hint{font-weight:400}
 .ownteam summary .ic{width:15px;height:15px;color:var(--ok)}.ownteamgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px 18px;margin-top:8px}
 .ownteamp h4{margin:0 0 4px;font-size:12.5px;display:flex;align-items:center;gap:6px}.ownteamp h4 b{font-size:10.5px;color:var(--ink-2)}.ownteamp ul{margin:0;padding-left:16px;font-size:12.5px;display:flex;flex-direction:column;gap:2px}.ownteamp .ownpin{margin-right:4px}
@@ -1971,7 +1971,8 @@ const STAMPED = ["lanes","bars","milestones","gates","notes","views","sprints","
 // optional day it's pinned to, what it relates to (initiatives, outcomes and requests by id, Jira issues by key) and how
 // it was closed. Closed items stay in the plan for now: moving them to the history files after 30 days is a later slice,
 // since it needs a new kind of history entry.
-const OWN_MAX = 5000, OWN_TEXT = 500, OWN_WHY = 200, OWN_REL = 20, OWN_ID = /^(?!(?:__proto__|constructor|prototype)$)[A-Za-z0-9][A-Za-z0-9_.:@-]{0,79}$/;
+// OWN_MAX keeps a full list of the longest items (about 5.6 KB each at worst, 0.7 MB in all) near a third of MAX_BYTES.
+const OWN_MAX = 120, OWN_TEXT = 500, OWN_WHY = 200, OWN_REL = 20, OWN_ID = /^(?!(?:__proto__|constructor|prototype)$)[A-Za-z0-9][A-Za-z0-9_.:@-]{0,79}$/;
 const ownLine = (v, n) => String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, n);
 function ownRels(L, bars, dvs){ const seen = new Set(), out = [];
   (Array.isArray(L) ? L : []).forEach(r=>{ if (!r || typeof r !== "object" || out.length >= OWN_REL) return;
@@ -2857,10 +2858,12 @@ const setMerge = (b0, mv, tv) => { const B = new Set(b0 || []), M = new Set(mv |
   return [...new Set([...(tv || []), ...[...M].filter(x=>!B.has(x))])].filter(x=>!rem.has(x)); };
 // Lists of records with their own ids (a capture's raised-again asks) merge record by record: both sides' additions are
 // kept, a record I removed stays removed, and my change to a record wins. setMerge can't: cloned objects never match.
-const REC_FIELDS = {deliverables:["raisedAgain","about","refs"], bars:["refs"]};
-const recMerge = (b0, mv, tv) => { const B = new Map((b0 || []).map(x=>[x.id, x])), M = new Map((mv || []).map(x=>[x.id, x])), out = (tv || []).map(x=>clone(x));
-  B.forEach((x, id)=>{ if (!M.has(id)){ const i = out.findIndex(y=>y.id === id); if (i >= 0) out.splice(i, 1); } });
-  M.forEach((x, id)=>{ const i = out.findIndex(y=>y.id === id); if (!B.has(id) || !jeq(B.get(id), x)){ if (i >= 0) out[i] = clone(x); else out.push(clone(x)); } });
+// An own item's relations have no id of their own: they're keyed by the Jira key, or the kind and id of what they point at.
+const REC_FIELDS = {deliverables:["raisedAgain","about","refs"], bars:["refs"], own:["rel"]};
+const REC_KEY = {own:{rel:r=>r.jira || r.type + ":" + r.id}}, recKeyOf = (type, f) => (REC_KEY[type] || {})[f] || (x=>x.id);
+const recMerge = (b0, mv, tv, key = x=>x.id) => { const B = new Map((b0 || []).map(x=>[key(x), x])), M = new Map((mv || []).map(x=>[key(x), x])), out = (tv || []).map(x=>clone(x));
+  B.forEach((x, id)=>{ if (!M.has(id)){ const i = out.findIndex(y=>key(y) === id); if (i >= 0) out.splice(i, 1); } });
+  M.forEach((x, id)=>{ const i = out.findIndex(y=>key(y) === id); if (!B.has(id) || !jeq(B.get(id), x)){ if (i >= 0) out[i] = clone(x); else out.push(clone(x)); } });
   return out; };
 function applyOps(plan, ops){
   const p = clone(plan); p.bars = p.bars || []; p.bars.forEach(b=>{ b.tasks = b.tasks || []; });
@@ -2898,11 +2901,11 @@ function applyOps(plan, ops){
     const arr = p[o.type] = p[o.type] || [], i = arr.findIndex(x=>x.id === o.id);
     if (o.op === "add"){ const v = clone(o.value); if (o.type === "bars") v.tasks = i >= 0 ? arr[i].tasks : (v.tasks || []); if (i >= 0){ const a = arr[i].added;
         (SET_FIELDS[o.type] || []).forEach(f=>{ if (Array.isArray(arr[i][f]) && arr[i][f].length) v[f] = [...new Set([...arr[i][f], ...(v[f] || [])])]; });   // two people adding the same key (a Jira item's tags) both win
-        (REC_FIELDS[o.type] || []).forEach(f=>{ if (Array.isArray(arr[i][f]) && arr[i][f].length) v[f] = recMerge([], v[f], arr[i][f]); });
+        (REC_FIELDS[o.type] || []).forEach(f=>{ if (Array.isArray(arr[i][f]) && arr[i][f].length) v[f] = recMerge([], v[f], arr[i][f], recKeyOf(o.type, f)); });
         Object.assign(arr[i], v); if (a) arr[i].added = a; } else arr.push(v); }
     else if (o.op === "set"){ if (i >= 0 && o.field === "added" && arr[i].added){} else if (i >= 0 && o.field !== "tasks"){
         if ((SET_FIELDS[o.type] || []).includes(o.field) && "prev" in o){ const m = setMerge(o.prev, o.value, arr[i][o.field]); setField(arr[i], o.field, m.length || o.field === "epics" || o.field === "dependsOn" ? m : undefined); }
-        else if ((REC_FIELDS[o.type] || []).includes(o.field) && "prev" in o){ const m = recMerge(o.prev, o.value, arr[i][o.field]); setField(arr[i], o.field, m.length ? m : undefined); }
+        else if ((REC_FIELDS[o.type] || []).includes(o.field) && "prev" in o){ const m = recMerge(o.prev, o.value, arr[i][o.field], recKeyOf(o.type, o.field)); setField(arr[i], o.field, m.length ? m : undefined); }
         else setField(arr[i], o.field, o.value); } else if (i < 0) skipped.push(o); }
     else if (o.op === "del"){ if (i >= 0) arr.splice(i, 1); }
     else if (o.op === "order" && Array.isArray(o.value)){ const pos = new Map(o.value.map((id,k)=>[id,k])); arr.sort((x,y)=>(pos.has(x.id) ? pos.get(x.id) : 1e9) - (pos.has(y.id) ? pos.get(y.id) : 1e9)); }
@@ -4475,7 +4478,7 @@ function mergePlans(base, S, theirs){
       if (o.field === "histParts") Object.entries(theirs.meta.histParts || {}).forEach(([q, n])=>{ if (n > (o.value[q] || 0)) o.value[q] = n; });   // parts only grow: the larger count wins
       return true; }
     if (o.op === "set" && o.type === "meta" && o.field === "capRates"){ o.value = mergeRates(o.prev, o.value, theirs.meta.capRates); if (!o.value.length) o.value = undefined; return true; }
-    if (o.op === "set" && (REC_FIELDS[o.type] || []).includes(o.field)){ const t = theirVal(o.type, o.id, o.field); if (t.has) o.value = recMerge(o.prev, o.value, t.v); return true; }
+    if (o.op === "set" && (REC_FIELDS[o.type] || []).includes(o.field)){ const t = theirVal(o.type, o.id, o.field); if (t.has) o.value = recMerge(o.prev, o.value, t.v, recKeyOf(o.type, o.field)); return true; }
     if (o.op === "set" && (SETF[o.type] || []).includes(o.field)){
       if (o.type === "meta"){ o.value = setMerge(o.prev, o.value, theirs.meta[o.field]); return true; }
       const t = theirVal(o.type, o.id, o.field); if (t.has) o.value = setMerge(o.prev, o.value, t.v); return true; }
@@ -4489,7 +4492,10 @@ function mergePlans(base, S, theirs){
     const t = theirVal(o.type, o.id, o.field); if (!t.has) return true;
     if (jeq(t.v, o.prev) || jeq(t.v, o.value)) return true;
     kept.push(o); return false; });
-  const res = applyOps(theirs, mine);
+  // Moving an own item into an initiative is one step: when its removal from the list is kept aside (a teammate renamed
+  // or closed it meanwhile), the task it became is kept aside too, so it shows once. My version goes to the backup.
+  const moved = new Set(keptDel.filter(o=>o.type === "own").map(o=>o.id));
+  const res = applyOps(theirs, moved.size ? mine.filter(o=>{ if (o.type === "task" && moved.has(o.id)){ kept.push(o); return false; } return true; }) : mine);
   // Guidance one side removed while the other side's decision cites it: keep a copy of the entry, so the citation and
   // the reason it records survive (never drop a user's edit without a copy). Ending it, not removing it, is the normal path.
   const restored = []; { const has = new Set((res.plan.guidance || []).map(g=>g.id));
@@ -9694,7 +9700,7 @@ function ownPut(p, o, f, v){ if (f === "text") o.text = ownLine(v, OWN_TEXT); el
   else if (f === "pin"){ if (v) o.pin = v; else delete o.pin; } else if (f === "rel"){ const r = ownRelArg(p, v); if (r.length) o.rel = r; else delete o.rel; } }
 defAction("own.add", {scope:"own", risk:"floor", args:{id:"id?", text:"str", owner:"personId?", pin:"iso|blank?", rel:"str[]?"},
   done:(p, a)=>!!a.id && (actOwn(p, a.id) || {}).text === ownLine(a.text, OWN_TEXT),
-  check:(p, a)=>{ if (a.id && (!OWN_ID.test(a.id) || ownTaken(p, a.id))) return actInvalid(`${a.id} is already used.`); if ((p.own || []).length >= OWN_MAX) return actInvalid(`A plan holds up to ${OWN_MAX.toLocaleString("en-US")} own items.`);
+  check:(p, a)=>{ if (a.id && (!OWN_ID.test(a.id) || ownTaken(p, a.id))) return actInvalid(`${a.id} is already used.`); if ((p.own || []).length >= OWN_MAX) return actInvalid(`A plan holds up to ${OWN_MAX} items on people's lists. Delete closed ones nobody needs, or move some into initiatives.`);
     for (const f of ["text","owner","pin","rel"]) if (a[f] !== undefined){ const why = ownCheck(p, f, a[f]); if (why) return why; }
     if (!a.owner && !meId()) return actInvalid("Say whose list it goes on (owner)."); },
   run:(p, a)=>{ const id = a.id || newId("own"), o = {id, text:"", owner:a.owner || meId()}; ["text","pin","rel"].forEach(f=>{ if (a[f] !== undefined) ownPut(p, o, f, a[f]); });
@@ -17143,15 +17149,17 @@ const ownAt = o => (o.added && Date.parse(o.added.at)) || 0;
 function ownLists(me, t0 = todayDay()){ const all = (S.own || []).map((o, i)=>({o, i})), mine = all.filter(x=>x.o.owner === me), newest = (a, b)=>ownAt(b.o) - ownAt(a.o) || a.i - b.i;
   const open = mine.filter(x=>!x.o.closed), top = open.filter(x=>x.o.pin && isoToDay(x.o.pin) <= t0).sort((a, b)=>a.o.pin.localeCompare(b.o.pin) || newest(a, b));
   return {top:top.map(x=>x.o), rest:open.filter(x=>!top.includes(x)).sort(newest).map(x=>x.o),
-    done:mine.filter(x=>x.o.closed && stampDay(x.o.closed.at) === t0).sort((a, b)=>Date.parse(b.o.closed.at) - Date.parse(a.o.closed.at)).map(x=>x.o)}; }
+    done:closedIn(mine, t0, t0), recent:closedIn(mine, t0 - OWN_RECENT, t0 - 1)}; }
+const OWN_RECENT = 30, closedIn = (xs, from, to) => xs.filter(x=>{ const c = x.o.closed, k = c && stampDay(c.at); return k != null && k >= from && k <= to; }).sort((a, b)=>Date.parse(b.o.closed.at) - Date.parse(a.o.closed.at)).map(x=>x.o);
 // A related item, by stable id or Jira key: never copied, so one the plan or the sync no longer has says so.
-function ownRelChip(r){ const k = r.jira, b = !k && r.type === "bar" ? barById(r.id) : null, d = !k && r.type === "deliverable" ? dvById(r.id) : null;
+function ownRelChip(r){ const po = () => h("span",{class:"vh"}, "Part of "), k = r.jira, b = !k && r.type === "bar" ? barById(r.id) : null, d = !k && r.type === "deliverable" ? dvById(r.id) : null;
   if (k){ const j = jiraOf(k), lbl = k + (j && j.summary ? " " + cutText(j.summary, 40) : JIRA ? " · not in the last sync" : ""), bar = S.bars.find(x=>upKey(x.jira) === k), tk = !bar && S.bars.flatMap(x=>(x.tasks || []).map(t=>({t, x}))).find(y=>upKey(y.t.jira) === k), st = !bar && !tk && JIRA ? storyByKey(k) : null;
-    if (bar || tk || st) return h("button",{type:"button",class:"ownchip","data-orel":k,title:"Open it in the plan",onclick:()=>bar ? goTo("bar", bar.id) : tk ? goTo("task", tk.t.id) : goTo("story", k)}, lbl);
-    const u = jiraUrl(k); return u ? h("a",{class:"ownchip","data-orel":k,href:u,target:"_blank",rel:"noopener noreferrer",title:`Open ${k} in Jira (opens in a new tab)`}, lbl) : h("span",{class:"ownchip","data-orel":k}, lbl); }
+    if (bar || tk || st) return h("button",{type:"button",class:"ownchip","data-orel":k,title:`Part of ${k}. Open it in the plan`,onclick:()=>bar ? goTo("bar", bar.id) : tk ? goTo("task", tk.t.id) : goTo("story", k)}, icon("link"), po(), lbl);
+    const u = jiraUrl(k); return u ? h("a",{class:"ownchip","data-orel":k,href:u,target:"_blank",rel:"noopener noreferrer",title:`Part of ${k}. Open it in Jira (opens in a new tab)`}, icon("link"), po(), lbl) : h("span",{class:"ownchip","data-orel":k,title:`Part of ${k}`}, icon("link"), po(), lbl); }
   if (!b && !d) return null;
-  return h("button",{type:"button",class:"ownchip","data-orel":r.id,title:b ? "Open the initiative" : "Open the outcome",onclick:()=>goTo(b ? "bar" : "deliverable", r.id)}, cutText(b ? chartLabel(b) : d.name, 48)); }
-function ownDo(what, id, args){ return new Promise(res=>whoAmI(null, ()=>Promise.resolve(quickSave(what, s=>act(id, args, s) === NOCHANGE ? NOCHANGE : undefined)).then(res))); }
+  return h("button",{type:"button",class:"ownchip","data-orel":r.id,title:b ? "Part of this initiative. Open it" : "Part of this outcome. Open it",onclick:()=>goTo(b ? "bar" : "deliverable", r.id)}, icon(b ? "initiative" : "target"), po(), cutText(b ? chartLabel(b) : d.name, 48)); }
+// A refused save redraws, so a check box isn't left ticked and disabled on an item that didn't close.
+function ownDo(what, id, args){ return new Promise(res=>whoAmI(null, ()=>Promise.resolve(quickSave(what, s=>act(id, args, s) === NOCHANGE ? NOCHANGE : undefined)).then(ok=>{ if (!ok && $("#ownSec")) renderToday(); res(ok); }))); }
 const ownSay = (msg, undoable = true) => { setStatus(msg + (undoable ? " Ctrl+Z undoes it." : "")); if (undoable) showToast(msg, "Undo", ()=>undo()); };
 const ownRowEl = id => document.querySelector(`#today [data-own="${CSS.escape(id)}"]`);
 // Motion answers the action: a checked item glides from where it was into Done today, and its check mark lands.
@@ -17171,7 +17179,7 @@ function ownMenu(o, can){ const k = ownUi && ownUi.id === o.id ? ownUi.kind : ""
   const mi = (key, label, fn) => h("button",{type:"button",role:"menuitem",class:"ownmi","data-omi":key,onclick:fn}, label);
   const run = (what, id, args, say) => { ownUi = null; ownDo(what, id, args).then(ok=>{ if (ok) ownSay(say); ownRowEl(o.id)?.querySelector(".ownmore")?.focus(); }); };
   if (!can) return null;
-  const btn = h("button",{type:"button",class:"ownmore","aria-label":`More for ${q}`,"aria-haspopup":"menu","aria-expanded":String(k === "menu"),"data-omore":o.id,onclick:()=>open(k ? null : "menu")}, "⋯");
+  const btn = h("button",{type:"button",class:"ownmore","aria-label":`More for ${q}: pin, not doing, part of, move or delete`,title:"More: pin, not doing, part of, move into an initiative, delete","aria-haspopup":"menu","aria-expanded":String(k === "menu"),"data-omore":o.id,onclick:()=>open(k ? null : "menu")}, "⋯");
   if (!k) return [btn, null];
   const pinned = o.pin && isoToDay(o.pin) <= t0;
   const panel = k === "menu" ? h("div",{class:"ownpanel ownmenu",role:"menu","aria-label":`More for ${q}`,onkeydown:e=>{ esc(e); if (["ArrowDown","ArrowUp"].includes(e.key)){ e.preventDefault(); const bs = [...e.currentTarget.querySelectorAll("button")], i = bs.indexOf(document.activeElement); bs[(i + (e.key === "ArrowDown" ? 1 : -1) + bs.length) % bs.length].focus(); } }},
@@ -17205,26 +17213,28 @@ function ownRow(o, can, t0){ const p = o.pin ? isoToDay(o.pin) : null, [more, pa
   return h("li",{class:"trow ownrow" + (p != null && p <= t0 ? " pinned" : ""),"data-own":o.id,"data-tkey":"own:" + o.id},
     can ? h("input",{type:"checkbox",class:"owncheck","aria-label":`Done: ${o.text}`,onchange:e=>{ e.currentTarget.disabled = true; ownClose(o, "done"); }}) : h("span",{class:"ownbox","aria-hidden":"true"}),
     h("div",{class:"ownmain"}, h("span",{class:"owntext"}, o.text), pin || rels.length ? h("div",{class:"ownmeta"}, pin, ...rels) : null), more || h("span"), panel); }
-function ownDoneRow(o, can){ const nd = o.closed.as === "notdoing";
+function ownDoneRow(o, can, when){ const nd = o.closed.as === "notdoing";
   return h("li",{class:"trow ownrow owndone" + (nd ? " notdoing" : ""),"data-own":o.id,"data-tkey":"own:" + o.id},
     h("span",{class:"ownmark","aria-hidden":"true"}, nd ? "–" : icon("check")),
-    h("div",{class:"ownmain"}, h("span",{class:"owntext"}, h("span",{class:"vh"}, nd ? "Not doing: " : "Done: "), o.text), nd ? h("div",{class:"ownmeta"}, h("span",{class:"ownchip"}, "Not doing" + (o.closed.why ? ": " + o.closed.why : ""))) : null),
+    h("div",{class:"ownmain"}, h("span",{class:"owntext"}, h("span",{class:"vh"}, nd ? "Not doing: " : "Done: "), o.text), nd || when ? h("div",{class:"ownmeta"}, when ? h("span",{class:"ownchip"}, when) : null, nd ? h("span",{class:"ownchip"}, "Not doing" + (o.closed.why ? ": " + o.closed.why : "")) : null) : null),
     can ? h("button",{type:"button",class:"linkish ownreopen","data-oreopen":o.id,onclick:()=>ownDo(`"${cutText(o.text, 60)}" reopened`, "own.reopen", {id:o.id}).then(ok=>{ if (ok){ ownSay(`Reopened "${cutText(o.text, 60)}".`); ownGlide(o.id, null); } })}, "Reopen") : h("span")); }
 function ownSection(me){ const can = ownCan(), t0 = todayDay(), L = ownLists(me, t0), n = L.top.length + L.rest.length;
   const add = can ? h("form",{class:"ownadd",id:"ownAddForm",onsubmit:e=>{ e.preventDefault(); ownAdd($("#ownAdd")); }},
-    h("span",{class:"ownfield"}, h("input",{id:"ownAdd",type:"text",maxlength:String(OWN_TEXT),value:ownDraft,placeholder:"What are you working on?","aria-label":"Add to my list",autocomplete:"off",oninput:e=>{ ownDraft = e.currentTarget.value; }}),
-      h("kbd",{class:"ownkbd",title:"Press Q from anywhere to add to your list"}, "Q")), h("button",{type:"submit",class:"btn",id:"ownAddGo"}, "Add")) : null;
+    h("span",{class:"ownfield"}, h("input",{id:"ownAdd",type:"text",maxlength:String(OWN_TEXT),value:ownDraft,placeholder:"What are you working on?","aria-label":"Add to my list","aria-describedby":"ownHelp",autocomplete:"off",oninput:e=>{ ownDraft = e.currentTarget.value; }})),
+      h("button",{type:"submit",class:"btn",id:"ownAddGo"}, "Add"), h("p",{class:"hint ownhelp",id:"ownHelp"}, "Enter adds it. Press ", h("kbd",{}, "Q"), " anywhere to come back here.")) : null;
   return h("section",{class:"tsec town",id:"ownSec","data-tsec":"My list","aria-labelledby":"ownH"},
     h("header",{}, h("h3",{id:"ownH"}, icon("check"), "My list", h("b",{}, String(n))), h("span",{class:"hint"}, "One line each, in your words. It's saved in the shared plan, so the team can see it too.")),
     add, n ? h("ul",{class:"ownlist",id:"ownList"}, ...[...L.top, ...L.rest].map(o=>ownRow(o, can, t0)))
       : h("p",{class:"hint ownempty",id:"ownEmpty"}, can ? (L.done.length ? "All clear. Add the next thing when it comes up." : "Nothing here yet. Type what you're working on and press Enter.") : `Nothing on ${personName(me)}'s list.`),
-    L.done.length ? h("div",{class:"owndonegrp",id:"ownDone"}, h("h4",{}, icon("check"), "Done today", h("b",{}, String(L.done.length))), h("ul",{class:"ownlist"}, ...L.done.map(o=>ownDoneRow(o, can)))) : null); }
+    L.done.length ? h("div",{class:"owndonegrp",id:"ownDone"}, h("h4",{}, icon("check"), "Done today", h("b",{}, String(L.done.length))), h("ul",{class:"ownlist"}, ...L.done.map(o=>ownDoneRow(o, can)))) : null,
+    L.recent.length ? h("details",{class:"owndonegrp ownrecent",id:"ownRecent",open:!!UI.ownRecentOpen,ontoggle:e=>{ UI.ownRecentOpen = e.currentTarget.open; }},
+      h("summary",{}, `Closed in the last ${OWN_RECENT} days (${L.recent.length})`), h("ul",{class:"ownlist"}, ...L.recent.map(o=>ownDoneRow(o, can, `${WD_SHORT[dow(stampDay(o.closed.at))]} ${fmtDay(stampDay(o.closed.at))}`)))) : null); }
 // Your Jira issues: matched by your linked Jira user key, never by name. Open ones and those that closed today, from
 // the placed items' sync and the search file. Read-only: they change in Jira.
 function myJira(me, t0 = todayDay()){ const pp = personById(me), key = pp && pp.jira && pp.jira.key; if (!key) return null;
-  const by = new Map(), today = dayToIso(t0); [JIRA && JIRA.issues, JIRA_ISSUES && JIRA_ISSUES.issues].forEach(src=>Object.entries(src || {}).forEach(([k, j])=>{ if (!by.has(k) && j && j.assigneeKey === key && !j.isEpic) by.set(k, j); }));
+  const by = new Map(); [JIRA && JIRA.issues, JIRA_ISSUES && JIRA_ISSUES.issues].forEach(src=>Object.entries(src || {}).forEach(([k, j])=>{ if (!by.has(k) && j && j.assigneeKey === key && !j.isEpic) by.set(k, j); }));
   const RANK = {inprogress:0, notstarted:1}, out = [];
-  by.forEach((j, k)=>{ const st = jiraStateOf(j) || {}, shut = st.state === "done" || st.state === "abandoned"; if (!shut || (j.resolvedAt || "").slice(0, 10) === today) out.push({k, j, st, shut}); });
+  by.forEach((j, k)=>{ const st = jiraStateOf(j) || {}, shut = st.state === "done" || st.state === "abandoned" || !!st.abandoned; if (!shut || (j.resolvedAt && stampDay(Date.parse(j.resolvedAt)) === t0)) out.push({k, j, st, shut}); });
   return out.sort((a, b)=>(a.shut - b.shut) || ((RANK[a.st.state] ?? 2) - (RANK[b.st.state] ?? 2)) || a.k.localeCompare(b.k, "en", {numeric:true})); }
 const MYJIRA_TOP = 15;
 function myJiraSection(me){ const pp = personById(me), L = myJira(me), any = !!JIRA || !!JIRA_ISSUES || hasJiraWork();
@@ -17239,8 +17249,8 @@ function myJiraSection(me){ const pp = personById(me), L = myJira(me), any = !!J
     shown.length ? h("ul",{}, ...shown.map(({k, j, st, shut})=>{ const u = jiraUrl(k) || j.url;
       return h("li",{class:"trow small ownjira" + (shut ? " shut" : ""),"data-ojira":k},
         h("div",{class:"tmain"}, h("span",{class:"tname",title:j.summary || k}, h("span",{class:"jk"}, k), " ", j.summary || ""),
-          h("small",{}, [st.label || j.status || "No status", shut ? (st.state === "abandoned" ? "closed today" : "done today") : "", j.sprint || ""].filter(Boolean).join(" · "))),
-        h("span",{class:"tacts"}, h("span",{class:"dvb jtag",title:"Jira's facts, read-only"}, "Jira"), u ? h("a",{class:"linkish",href:u,target:"_blank",rel:"noopener noreferrer","aria-label":`Open ${k} in Jira (opens in a new tab)`}, "Open ↗") : null)); }))
+          h("small",{}, [st.label || j.status || "No status", shut ? (st.state === "abandoned" || st.abandoned ? "abandoned today" : "done today") : "", j.sprint || ""].filter(Boolean).join(" · "))),
+        h("span",{class:"tacts"}, h("span",{class:"jtag",title:"Jira's facts, read-only: they change in Jira"}, "Jira"), u ? h("a",{class:"linkish",href:u,target:"_blank",rel:"noopener noreferrer","aria-label":`Open ${k} in Jira (opens in a new tab)`}, "Open ↗") : null)); }))
       : h("p",{class:"hint",id:"myJiraNone"}, "Nothing open in Jira is assigned to you."),
     L.length > MYJIRA_TOP ? h("p",{class:"hint"}, `and ${L.length - MYJIRA_TOP} more in Jira`) : null); }
 // The team's lists, in Team: a count that opens to each person's open items. Someone your view hides is counted only.
