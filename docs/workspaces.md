@@ -112,12 +112,12 @@ an idea you start typing while the save finishes is retained. Copy or submit dra
 Today distinguishes no work loaded, missing Jira status data, and incomplete connected data. Its attention flags
 describe the available plan and sync; a quiet summary does not establish delivery feasibility.
 In the Team view it also lists captures **Waiting in triage** for over 30 days.
-At the top, **What matters now** (since 1.185.0) lists the team's current guidance, read-only: each entry's words, why,
+Under the summary, **What matters now** (since 1.185.0) lists the team's current guidance, read-only: each entry's words, why,
 scope and dates, tagged Upcoming, New or Review due, at most five, each opening it in Forecast. With nothing set,
 editors see **Add what matters now** and viewers see nothing. Below it, **Sightline noticed** shows up to three things worth a look, worked out from the plan: a request that came
 up twice in two weeks, top work with no estimate or no Jira link, committed work queued behind work that's only if
 there's room, and guidance that ends, or that starts or is due for review but isn't listed above. **Prep our grooming** gives a short agenda, at most five topics, to copy into the
-meeting invite. Neither changes the plan.
+meeting invite. None of them changes the plan.
 
 On **Capacity**, the **Forecast** section holds **What matters now** (dated guidance the team writes down, which never
 moves anything), the **Work order** (the order the team takes initiatives, which the forecast follows), and

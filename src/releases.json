@@ -2,14 +2,14 @@
 {
   "version": "1.185.0",
   "date": "2026-11-09",
-  "headline": "What matters now opens Today",
+  "headline": "What matters now, on Today",
   "changes": [
     {
       "kind": "new",
       "area": "Today",
       "title": "What matters now at the top of Today",
       "before": "What the team agreed to weigh this period lived only in Forecast, so most people never saw it while choosing what to work on.",
-      "now": "Today opens with what matters now: each entry's words, why, the workstreams it covers and its dates, tagged Upcoming, New or Review due. Up to five are listed; click one to see it in Forecast. Sightline noticed no longer repeats those entries. With nothing set, editors get a button to add it.",
+      "now": "Near the top of Today, under the summary, you'll see what matters now: each entry's words, why, the workstreams it covers and its dates, tagged Upcoming, New or Review due. Up to five are listed; click one to see it in Forecast. Sightline noticed no longer repeats those entries. With nothing set, editors get a button to add it.",
       "where": "Work, Today"
     }
   ]

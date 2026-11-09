@@ -4,11 +4,11 @@
 
 ## 1.185.0 · Nov 9, 2026
 
-What matters now opens Today.
+What matters now, on Today.
 
 ### New
 
-- **What matters now at the top of Today** (Today). Today opens with what matters now: each entry's words, why, the workstreams it covers and its dates, tagged Upcoming, New or Review due. Up to five are listed; click one to see it in Forecast. Sightline noticed no longer repeats those entries. With nothing set, editors get a button to add it. *Where:* Work, Today
+- **What matters now at the top of Today** (Today). Near the top of Today, under the summary, you'll see what matters now: each entry's words, why, the workstreams it covers and its dates, tagged Upcoming, New or Review due. Up to five are listed; click one to see it in Forecast. Sightline noticed no longer repeats those entries. With nothing set, editors get a button to add it. *Where:* Work, Today
 
 ## 1.184.3 · Nov 8, 2026
 

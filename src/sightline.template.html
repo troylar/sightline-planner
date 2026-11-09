@@ -16898,13 +16898,13 @@ function todaySummary(D, scope){
 // Sightline noticed: up to three things worth a look, computed from the plan on every draw and never stored. Each says
 // what it saw in counts it can stand behind ("came up 3 times", not "3 people want it") and opens the item it's about.
 const NOTICE_DAYS = 14, NOTICE_TOP = 5;
-function noticed(p = S, t0 = todayDay()){ const out = [], since = t0 - NOTICE_DAYS, bar = id => (p.bars || []).find(b=>b.id === id), nth = ordinal;
+function noticed(p = S, t0 = todayDay(), skip = new Set()){ const out = [], since = t0 - NOTICE_DAYS, bar = id => (p.bars || []).find(b=>b.id === id), nth = ordinal;
   const wo = woList(p).filter(id=>!woTag(bar(id)));          // open work only, numbered the way the Work order list numbers it
-  const gs = (p.guidance || []).map(g=>({g, st:guidanceState(g, t0)})), q = g => `"${cutText(g.text, 80)}"`;
+  const all = (p.guidance || []).map(g=>({g, st:guidanceState(g, t0)})), gs = all.filter(({g})=>!skip.has(g.id)), q = g => `"${cutText(g.text, 80)}"`;
   const began = gs.find(({g, st})=>st.state === "active" && g.from && isoToDay(g.from) >= since);
   const over = gs.filter(({g, st})=>st.state === "ended" && isoToDay(g.through) >= t0 - 30).sort((a, b)=>b.g.through.localeCompare(a.g.through))[0];
   const due = gs.find(({st})=>st.review);
-  if (over){ const n = gdCitedBy(over.g.id, p).length, next = gs.find(({g, st})=>g.supersedes === over.g.id && st.state !== "ended");
+  if (over){ const n = gdCitedBy(over.g.id, p).length, next = all.find(({g, st})=>g.supersedes === over.g.id && st.state !== "ended");
     out.push({kind:"guidance", type:"guidance", id:over.g.id, text:`${q(over.g)} ended ${fmtDay(isoToDay(over.g.through))}` + (next ? `, replaced by ${q(next.g)}` : "") +
       (n ? `. ${n} decision${n === 1 ? "" : "s"} cited it; worth a look whether ${n === 1 ? "it still holds" : "they still hold"}.` : wo.length ? ". Nothing was reordered; worth a look whether the work order still fits." : ".")}); }
   else if (due) out.push({kind:"guidance", type:"guidance", id:due.g.id, text:`${q(due.g)} is due for review: is it still what matters?`});
@@ -16975,8 +16975,8 @@ function mattersSection(){ if (tooNew()) return null; const t0 = todayDay(), liv
         st.state === "upcoming" ? h("span",{class:"dvb","data-mtag":"upcoming"}, "Upcoming") : null, st.review ? h("span",{class:"dvb gdrev","data-mtag":"review"}, "Review due") : null,
         st.state === "active" && isNew(g) ? h("span",{class:"dvb","data-mtag":"new"}, "New") : null),
       g.why ? h("small",{class:"tmwhy"}, "Why: " + g.why) : null, h("small",{}, gdScope(g) + " · " + gdWhen(g)))))),
-    more ? h("p",{class:"hint",id:"tMattersMore"}, h("button",{type:"button",class:"linkish",onclick:()=>showGuidance(shown.length < live.length ? live[shown.length].g.id : "")}, `and ${more} more`)) : null); }
-function noticedSection(){ if (tooNew()) return null; const inMatters = new Set(mattersLive().slice(0, MATTERS_TOP).map(x=>x.g.id)), xs = noticed().filter(x=>!(x.type === "guidance" && inMatters.has(x.id))); if (!xs.length) return null;
+    more ? h("p",{class:"hint",id:"tMattersMore"}, h("button",{type:"button",class:"linkish",onclick:()=>showGuidance(live[MATTERS_TOP].g.id)}, `and ${more} more`)) : null); }
+function noticedSection(){ if (tooNew()) return null; const xs = noticed(S, todayDay(), new Set(mattersLive().slice(0, MATTERS_TOP).map(x=>x.g.id))); if (!xs.length) return null;
   return h("section",{class:"tsec tnoticed","data-tsec":"Sightline noticed","aria-labelledby":"tNoticedH"},
     h("header",{}, h("h3",{id:"tNoticedH"}, icon("star"), "Sightline noticed"), h("span",{class:"hint"}, "Worked out from the plan just now. Nothing was changed.")),
     h("ul",{}, ...xs.map(x=>h("li",{class:"trow","data-notice":x.kind}, h("div",{class:"tmain"}, h("span",{}, x.text)),

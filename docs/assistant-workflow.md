@@ -377,8 +377,8 @@ open **Work → Today**. It never moves anything.
 - Every one of these always waits for a person, and any reorder it suggests is its own `initiative.order` change.
 
 Asked why something is above something else, the skill gives the reason recorded at the time, then, separately,
-what today's guidance would suggest. **Sightline noticed** on Today says when guidance starts, is due for review or
-has ended.
+what today's guidance would suggest. On Today, **What matters now** lists the current entries, tagged New or Review due, and
+**Sightline noticed** says when guidance has ended, or starts or is due for review without being listed.
 
 ### Workstream actions
 

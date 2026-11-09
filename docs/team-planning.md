@@ -22,9 +22,9 @@ For a grooming session, ask for *prep our grooming*. The skill returns a short a
 most five topics, each with why, the evidence and the result to aim for. **Work → Today** shows the same kind of
 agenda under **Prep our grooming** (since 1.184.0), with **Copy the agenda** for the invite, and **Sightline noticed**
 on Today points out up to three things: a request that came up twice in two weeks, top work with no
-estimate or no Jira link, committed work queued behind work that's only if there's room, and guidance that starts,
-ends or is due for review. Above both, **What matters now** (since 1.185.0) shows the team's current guidance
-so the agenda and the work order can be read against it. None of it changes the plan.
+estimate or no Jira link, committed work queued behind work that's only if there's room, and guidance that ends, or
+that starts or is due for review but isn't listed above it. Above both, under the summary, **What matters now** (since
+1.185.0) shows the team's current guidance so the agenda and the work order can be read against it. None of it changes the plan.
 
 Use the available evidence. Older exports do not contain the richer planning data described in the
 [large-roadmap guide](large-roadmaps.md); supply missing material deliberately rather than guessing.

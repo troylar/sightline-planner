@@ -35,11 +35,12 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
       {id:"gd-a", text:"Reduce cloud cost this quarter", why:"The budget was cut", from:day(-40), through:day(60)},
       {id:"gd-b", text:"Keep support load under a day a week", lanes:[lane], from:day(-3)},
       {id:"gd-c", text:"Ship the partner API first", from:day(10), through:day(90)},
+      {id:"gd-e", text:"Hire for the data team", from:day(5)},
       {id:"gd-d", text:"Say no to new dashboards", from:day(-60), reviewOn:day(-1)},
       {id:"gd-old", text:"Freeze the old importer", from:day(-90), through:day(-5)}];
     X(`S.guidance = G.map(g=>({...g})); S = normalize(S, false); goWs("today"); render();`); await wait(20);
-    ok("M4 live entries are listed in their own section, above Sightline noticed", !!sec() && order().indexOf("What matters now") >= 0 && order().indexOf("What matters now") < Math.max(order().indexOf("Sightline noticed"), 99) && order()[0] === "What matters now", JSON.stringify(order()));
-    ok("M5 …active first, then upcoming; an ended entry isn't listed", JSON.stringify([...sec().querySelectorAll("[data-matters]")].map(x=>x.dataset.matters)) === '["gd-a","gd-b","gd-d","gd-c"]',
+    ok("M4 live entries are listed in their own section, above Sightline noticed", !!sec() && order().indexOf("What matters now") >= 0 && order()[0] === "What matters now" && order().indexOf("Sightline noticed") === 1, JSON.stringify(order()));
+    ok("M5 …active first, then upcoming by start date; an ended entry isn't listed", JSON.stringify([...sec().querySelectorAll("[data-matters]")].map(x=>x.dataset.matters)) === '["gd-a","gd-b","gd-d","gd-e","gd-c"]',
       JSON.stringify([...sec().querySelectorAll("[data-matters]")].map(x=>x.dataset.matters)));
     ok("M6 each shows its words, why, scope and dates", /Reduce cloud cost this quarter/.test(row("gd-a").textContent) && /Why: The budget was cut/.test(row("gd-a").textContent) && /Whole plan/.test(row("gd-a").textContent)
       && row("gd-b").textContent.includes(X("S.lanes[0].name")), row("gd-b").textContent);
@@ -50,14 +51,22 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("M8 Sightline noticed doesn't repeat a listed entry as a notice; the ended one, not listed, is still noticed", notes().length === 1 && /Freeze the old importer/.test(notes()[0]), JSON.stringify(notes()));
     X(`S.guidance = S.guidance.filter(g=>g.id !== "gd-old"); render();`); await wait(10);
     ok("M9 …and with only listed entries, Sightline noticed says nothing about guidance", notes().length === 0, JSON.stringify(notes()));
+    // Three other notices are waiting: a listed entry's notice must not take a place among the three and then vanish.
+    X(`(()=>{ const t = dayToIso(todayDay()); S.deliverables.push({id:"cap-h", name:"Export to spreadsheets", capture:"request", stage:"idea", raised:t, raisedAgain:[{id:"ag-1", raised:dayToIso(todayDay() - 1)}]});
+      S.meta.workOrder = S.bars.filter(b=>b.status !== "done" && !b.parked).map(b=>b.id); S.bars.forEach(b=>{ delete b.effort; }); S = normalize(S, false);
+      window.realTC = trackerChecks; trackerChecks = p=>woList(p).slice(0, 1).map(id=>p.bars.find(b=>b.id === id)); render(); })()`); await wait(10);
+    const kinds = () => [...d.querySelectorAll('#today [data-tsec="Sightline noticed"] [data-notice]')].map(x=>x.dataset.notice).join(",");
+    ok("M9b with a listed entry due for review, Sightline noticed still shows three other things", kinds().split(",").length === 3 && !/guidance/.test(kinds()) && X(`noticed().some(x=>x.id === "gd-d")`) === true, kinds());
+    X(`trackerChecks = realTC; S.deliverables = S.deliverables.filter(x=>x.id !== "cap-h"); S.meta.workOrder = []; S = normalize(S, false); render();`); await wait(10);
     ok("M10 nothing on Today edits guidance: no Edit, Replace, End or Remove buttons", !sec().querySelector("[data-gdbtn]") && [...sec().querySelectorAll("button")].every(b=>b.classList.contains("linkish")));
     row("gd-b").querySelector("button").click(); await wait(20);
     ok("M11 an entry's words open it in Forecast", X("UI.ws") === "people" && !!d.querySelector('#gdSec [data-gd="gd-b"]'), X("UI.ws"));
 
     X(`for (let i = 0; i < 4; i++) S.guidance.push({id:"gd-x" + i, text:"Extra focus " + i, from:dayToIso(todayDay() - 30 - i)}); S = normalize(S, false); goWs("today"); render();`); await wait(20);
-    ok("M12 at most five are listed, then \"and N more\"", sec().querySelectorAll("[data-matters]").length === 5 && /and 3 more/.test(d.getElementById("tMattersMore")?.textContent || ""), d.getElementById("tMattersMore")?.textContent);
+    ok("M12 at most five are listed, then \"and N more\"", sec().querySelectorAll("[data-matters]").length === 5 && /and 4 more/.test(d.getElementById("tMattersMore")?.textContent || ""), d.getElementById("tMattersMore")?.textContent);
     d.querySelector("#tMattersMore button").click(); await wait(20);
-    ok("M13 …which opens Forecast at the first one not listed", X("UI.ws") === "people" && !!d.querySelector("#gdSec"));
+    const first = X(`mattersLive()[MATTERS_TOP].g.id`);
+    ok("M13 …which opens Forecast at the first one not listed", X("UI.ws") === "people" && d.activeElement && d.activeElement.closest(`[data-gd]`)?.dataset.gd === first, first + " / " + (d.activeElement && d.activeElement.outerHTML.slice(0, 80)));
     X(`goWs("today"); render();`); await wait(10);
     X(`delete S.guidance.find(g=>g.id === "gd-d").reviewOn; S.guidance.find(g=>g.id === "gd-x3").reviewOn = dayToIso(todayDay() - 1); render();`); await wait(10);
     ok("M14 a notice about an entry past the first five still shows in Sightline noticed", !row("gd-x3") && notes().length === 1 && /Extra focus 3/.test(notes()[0]), JSON.stringify(notes()));
@@ -65,6 +74,10 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("M15 presenting still shows the section, read-only", !!sec() && !sec().querySelector("[data-gdbtn]"));
     X(`present = false; locked = true; render();`); await wait(10);
     ok("M16 a viewer sees the same list", !!sec() && sec().querySelectorAll("[data-matters]").length === 5);
+    X(`locked = false; S.meta.features = [...(S.meta.features || []), "fromTheFuture9"]; render();`); await wait(10);
+    ok("M16b a plan from a newer copy shows no section and no add line", !sec() && !d.getElementById("tMattersEmpty"));
+    X(`S.meta.features = S.meta.features.filter(f=>f !== "fromTheFuture9"); S.guidance = []; present = true; render();`); await wait(10);
+    ok("M16c presenting with nothing set shows no add line", !sec() && !d.getElementById("tMattersEmpty"));
     ok("M17 no script errors", !w.errs.length, w.errs.join(" | "));
   } catch(e){ ok("no exception", false, e.stack); }
   console.log(R.join("\n")); const n = R.length, f = R.filter(x=>x.startsWith("FAIL")).length; console.log(`${n - f}/${n} passed`); process.exit(f ? 1 : 0);
