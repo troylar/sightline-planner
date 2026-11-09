@@ -215,6 +215,43 @@ with tempfile.TemporaryDirectory() as tmp:
     p = run("check", str(f), str(batch(f, changes=[{"id": "k3", "summary": "no such task", "ops": [act("task.set", {"id": "task-zz", "field": "label", "value": "X"})]}])))
     ok("…while a task nothing made is still refused", "change k3, op 1: That task isn't in the plan." in out(p).get("lines", []), p.stdout + p.stderr)
 
+    # An epic made into an initiative gets an id the page picks: an add with that id may be the same one (already done),
+    # and a link or reference to it can't be proved wrong. An own item that may have become a task is still an own item
+    # to a later change, if the context left it out.
+    REF = lambda noun, where, cov, **x: {"noun": noun, "in": where, "coverage": cov, "missing": f"That {noun} isn't in the plan.", **x}
+    put(f, "sightline-assistant-view.json", {"kind": "sightline-assistant-view", "version": 1, "plan": {"id": "p-app", "revision": 4},
+        "argTypes": {"types": {}, "refs": {"initiativeId": REF("initiative", "initiatives", "initiatives"), "outcomeId": REF("deliverable", "deliverables", "deliverables"),
+                                           "itemId": REF("item", "deliverables, initiatives", "deliverables, initiatives", of=["outcomeId", "initiativeId"]),
+                                           "taskId": REF("task", "initiatives[].tasks", "tasks"), "ownId": REF("own item", "planning.own", "own"),
+                                           "workstreamId": REF("workstream", "planning.workstreams", "workstreams")}},
+        "coverage": {"complete": False, "initiatives": {"omitted": 0}, "deliverables": {"omitted": 0}, "tasks": {"omitted": 0}, "workstreams": {"omitted": 0}, "own": {"omitted": 1}},
+        "actions": [{"id": "jira.epicNew", "args": {"epic": "str", "lane": "workstreamId", "id": "id?"}, "creates": "initiativeId"},
+                    {"id": "initiative.add", "args": {"id": "id?", "label": "str?", "parent": "initiativeId?"}, "creates": "initiativeId"},
+                    {"id": "link.add", "args": {"id": "initiativeId", "after": "initiativeId"}},
+                    {"id": "ref.add", "args": {"on": "itemId", "id": "id?", "url": "str"}},
+                    {"id": "own.toTask", "args": {"id": "ownId", "initiativeId": "initiativeId"}},
+                    {"id": "own.set", "args": {"id": "ownId", "field": "str", "value": "any"}, "fields": {"text": "str"}}],
+        "initiatives": [{"id": "m1", "label": "Home", "tasks": []}], "deliverables": [],
+        "planning": {"workstreams": [{"id": "int", "name": "Integrations"}], "own": []},
+        "jiraSort": {"issues": [], "placed": {}, "epics": [{"key": "ABC-901", "state": "new"}], "targets": {"initiatives": [{"id": "m1"}], "workstreams": [{"id": "int"}]}}})
+    p = run("check", str(f), str(batch(f, changes=[
+        {"id": "g2", "summary": "own item into a task", "ops": [act("own.toTask", {"id": "own-x", "initiativeId": "m1"})]},
+        {"id": "g3", "summary": "edit it as an own item", "ops": [act("own.set", {"id": "own-x", "field": "text", "value": "Call the vendor"})]}])))
+    ok("an own item the context left out, that may or may not have become a task, isn't refused", out(p).get("ok") is True and not out(p).get("lines"), p.stdout + p.stderr)
+    whole = json.loads((f / "sightline-assistant-view.json").read_text())
+    whole["coverage"] = {"complete": True}
+    put(f, "sightline-assistant-view.json", whole)
+    p = run("check", str(f), str(batch(f, changes=[
+        {"id": "g1", "summary": "epic, its add again, a link", "ops": [act("jira.epicNew", {"epic": "ABC-901", "lane": "int"}),
+                                                                     act("initiative.add", {"id": "bar-abc-901", "label": "ABC-901", "parent": "m1"}),
+                                                                     act("link.add", {"id": "bar-abc-901", "after": "m1"}),
+                                                                     act("ref.add", {"on": "bar-abc-901", "id": "ref-new", "url": "https://docs.example.com/a"})]}])))
+    ok("an initiative a placement made: its add again may be done, and a link or reference to it isn't refused", out(p).get("ok") is True and not out(p).get("lines"), p.stdout + p.stderr)
+    p = run("check", str(f), str(batch(f, changes=[
+        {"id": "g4", "summary": "epic, then a reference on it", "ops": [act("jira.epicNew", {"epic": "ABC-901", "lane": "int"}),
+                                                                       act("ref.add", {"on": "bar-abc-901", "id": "ref-new", "url": "https://docs.example.com/a"})]}])))
+    ok("…and an item reference (an outcome or an initiative) to it isn't refused either", out(p).get("ok") is True and not out(p).get("lines"), p.stdout + p.stderr)
+
     ok("the tool uses only the standard library", all(not line.startswith(("import requests", "from requests")) for line in TOOL.read_text().splitlines()))
     ok("it never touches the context or results files", '"w"' not in TOOL.read_text().split("def write_atomic")[0])
 

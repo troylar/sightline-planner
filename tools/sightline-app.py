@@ -750,10 +750,6 @@ def check_offline(folder: Path, batch: dict) -> list:
                     bad.append(f"{where}: {why}")
             if acts[name].get("creates") in refs and isinstance(args.get("id"), str):
                 made.setdefault(acts[name]["creates"], set()).add(args["id"])
-            if name == "own.toTask" and isinstance(args.get("id"), str):     # the own item becomes a task with its id
-                made.setdefault("taskId", set()).add(args["id"])
-            if name == "workstream.reid" and isinstance(args.get("id"), str):     # the workstream's new id
-                made.setdefault("workstreamId", set()).add(args["id"])
             if name.endswith(".add") and "id" in spec and not (isinstance(args.get("id"), str) and args["id"]):
                 bad.append(f"{where}: give the new item an id (like risk-vendor-limits), so reading the file again can't add it twice.")
             if str(name).startswith("jira.") and name not in ("jira.hide", "jira.unhide") and not state["sortMoved"]:   # hiding isn't a placement
@@ -766,10 +762,17 @@ def check_offline(folder: Path, batch: dict) -> list:
                     state_apply(state, name, args)
                     if str(name).startswith(SORT_MOVERS):     # jiraSort is the context's: after these, placements are the page's call
                         state["sortMoved"] = True
-                    made_here = (["taskId", "initiativeId"] if str(name).startswith("jira.") and name not in ("jira.hide", "jira.unhide")
-                                 else [kind] if kind in refs and not args.get("id") else [])
-                    for k in made_here:     # ids the page makes up: a reference can't be proved missing any more
-                        index[k] = (index.get(k, (set(), False))[0], False)
+                    # Ids the page makes up, or an item that may now be another kind (an own item that may be a task, a
+                    # workstream that may have a new id): a reference to that kind can't be proved missing any more, and
+                    # an add can't be proved new.
+                    opened = (["taskId", "initiativeId"] if str(name).startswith("jira.") and name not in ("jira.hide", "jira.unhide")
+                              else ["taskId"] if name == "own.toTask" else ["workstreamId"] if name == "workstream.reid"
+                              else [kind] if kind in refs and not args.get("id") else [])
+                    for k in opened:
+                        for kk in [k] + [x for x, r in refs.items() if k in (r.get("of") or [])]:
+                            index[kk] = (index.get(kk, (set(), False))[0], False)
+                    if opened:
+                        state["cut"] = True
     return bad
 
 

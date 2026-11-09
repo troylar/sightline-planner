@@ -79,8 +79,11 @@ setTimeout(()=>{
   cases.forEach((c, i)=>{ if (c.A.creates && typeof c.args.id === "string" && c.args.id.startsWith("new-")) c.args = {...c.args, id:c.args.id.slice(0, 52) + "-" + i}; });
   const changes = cases.map((c, i)=>({id:"c" + i, summary:c.where, ops:[{op:"action", action:c.A.id, args:c.args}]}));
   const {by} = check(changes);
-  // A change that moves an own item into a task makes it a task for the changes after it, as the page would: check those alone
-  cases.forEach((c, i)=>{ if (c.A.id === "own.toTask") by["c" + i] = check([changes[i]]).by["c" + i]; });
+  // Moving an own item into a task, or giving a workstream a new id, leaves the checker unable to prove an id of that kind
+  // missing in the changes after it (the page would know): check those alone
+  const SOLO = c => c.A.id === "own.toTask" || c.A.id === "workstream.reid";
+  const solo = check(changes.filter((c, i)=>!SOLO(cases[i]))).by;
+  cases.forEach((c, i)=>{ by["c" + i] = SOLO(c) ? check([changes[i]]).by["c" + i] : solo["c" + i]; });
   const bad = [], quiet = [], loud = [], TABLE = x => / isn't in the plan\.$| is one of | isn't a valid /.test(x);    // what the shared table decides
   cases.forEach((c, i)=>{ const pg = page([{action:c.A.id, args:c.args}]), py = by["c" + i] || [];
     if (c.want === "nochange"){ if (!pg.ok || !pg.nochange) bad.push(`${c.where}: page said ${pg.reason || "it changed something"}`); if (py.length) loud.push(`${c.where}: checker said ${py.join("; ")}`); }
