@@ -261,18 +261,19 @@ const until = async (f, ms = 5000) => { const t = Date.now(); while (Date.now() 
       const p = normalize(JSON.parse(FIX), false); p.own = [{id:"f-1", text:"Fix the export", owner:"${me}", added:{by:"${me}", at:"2026-11-01T09:00:00.000Z"}}];
       HD.text = serialize(p, HD.name); installPlan(p, HD.text, HD); goWs("today"); UI.todayScope = "me"; render();`); await wait(50);
     const inFile = () => J(`(()=>{ const p = JSON.parse(HD.text); return {own:(p.own || []).some(x=>x.id === "f-1"), task:p.bars.some(b=>(b.tasks || []).some(t=>t.id === "f-1"))}; })()`);
-    const okMove = await w.ownDo("moved", "own.toTask", {id:"f-1", initiativeId:bar2}); await until(()=>inFile().task); const f1 = inFile();
-    X(`undo()`); await until(()=>inFile().own); const f2 = inFile();
+    const okMove = await w.ownDo("moved", "own.toTask", {id:"f-1", initiativeId:bar2}); await until(()=>inFile().task); await until(()=>!J("op.busy")); const f1 = inFile();
+    X(`undo()`); await until(()=>inFile().own); await until(()=>!J("op.busy")); const f2 = inFile();
     ok("FB1 on a shared file, Move into an initiative writes the task, and undo writes the item back to the list", !!okMove && f1.task && !f1.own && f2.own && !f2.task, JSON.stringify([okMove, f1, f2, d.getElementById("status").textContent]));
 
     // ---- size: the write-size check is the limit, not a small cap
-    const putFile = own => X(`(()=>{ const p = normalize(JSON.parse(FIX), false); p.own = ${own}; HD.text = serialize(p, HD.name); HD.writes = 0; installPlan(p, HD.text, HD); render(); })()`);
+    // A fresh handle for each file, so a check left over from an earlier save (it watches its own handle) can't read this one.
+    const putFile = own => X(`(()=>{ const p = normalize(JSON.parse(FIX), false); p.own = ${own}; window.HD = {...HD}; HD.text = serialize(p, HD.name); HD.writes = 0; installPlan(p, HD.text, HD); render(); })()`);
     putFile(`Array.from({length:999}, (_, i)=>({id:"tw-" + i, text:("Follow up on the vendor contract, item " + i).padEnd(60, "."), owner:"${me}", added:{by:"${me}", at:"2026-10-01T09:00:00.000Z"}, ...(i % 2 ? {closed:{as:"done", by:"${me}", at:"2026-10-02T09:00:00.000Z"}} : {})}))`); await wait(30);
     const okTyp = await w.ownDo("added", "own.add", {id:"tw-last", text:"The thousandth item, about sixty characters long, more or less"}); await wait(50);
     const typ = J(`({n:JSON.parse(HD.text).own.length, writes:HD.writes, bytes:new Blob([HD.text]).size})`);
     ok("W1 a 1000-item list of typical length saves", !!okTyp && typ.n === 1000 && typ.writes > 0 && typ.bytes < J("MAX_BYTES"), JSON.stringify(typ));
     putFile(`Array.from({length:300}, (_, i)=>({id:"tb-" + i, text:"中".repeat(500), owner:"${me}", closed:{as:"notdoing", by:"${me}", at:"2026-10-02T09:00:00.000Z", why:"中".repeat(200)}}))`); await wait(30);
-    const before = X("HD.text");
+    await until(()=>!J("op.busy")); X(`setStatus("")`); const before = X("HD.text");
     const okBig = await w.eval(`quickSave("grew the list", s=>{ for (let i = 0; i < 650; i++) s.own.push({id:"tg-" + i, text:"中".repeat(500), owner:"${me}", closed:{as:"notdoing", by:"${me}", at:"2026-10-02T09:00:00.000Z", why:"中".repeat(200)}}); })`); await wait(50);
     ok("W2 a list that pushes the plan past 2 MB is refused with the size message, and nothing is written", !okBig && X("HD.text") === before && J("HD.writes") === 0 && /Not saved: the plan would be [\d.]+ MB, over the 2 MB/.test(d.getElementById("status").textContent) && /people's own lists/i.test(d.getElementById("status").textContent), d.getElementById("status").textContent);
 
