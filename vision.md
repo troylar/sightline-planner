@@ -202,6 +202,7 @@ Each principle is a test a change can pass or fail.
 | What a capture's evidence adds up to, and what's due for review | Computed by Sightline from the plan | Inputs in Sightline | Reports, people, channels and span; "Still true?" |
 | What matters now: dated guidance, its scope, why, who set it, review date and what it replaces | Plan | Sightline | Added here, with who set it; upcoming, active or ended, and review due |
 | Which guidance applies to an item, and which decisions cited it | Computed by Sightline from the plan | Inputs in Sightline | Named guidance with its dates; history kept when it ends |
+| Which risks and decisions are about an outcome or request | Computed by Sightline from the plan | Inputs in Sightline | "Waiting on" and "Risk" lines with the outcome or request; never changes its stage, priority or dates |
 | What a new ask would push out (the jar) | Computed by Sightline from the plan's inputs and the tracker's facts | Inputs in the tracker and Sightline | "What-if: not the plan", with what isn't estimated |
 
 ## People on the wall

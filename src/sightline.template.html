@@ -1273,6 +1273,7 @@ dialog.capdlg{width:min(560px,92vw)}.capdlg form{display:flex;flex-direction:col
 .dvtl{position:absolute;height:20px;display:flex;align-items:center;gap:6px;padding:0 6px;border:1px solid var(--accent);border-left-width:3px;border-radius:4px;background:var(--surface);color:var(--ink);font:inherit;font-size:12px;white-space:nowrap;cursor:pointer;box-sizing:border-box}
 .dvtl:hover,.dvtl:focus-visible{background:var(--rule-2)}.dvtl.selected{outline:2px solid var(--accent)}.dvtl.band{border-style:dashed;background:transparent;color:var(--ink-2)}.dvtl.st-done{border-color:var(--ok);opacity:.8}
 .dvtl-prog{color:var(--ink-3);font-variant-numeric:tabular-nums}.dvtl-ship{position:absolute;z-index:1;pointer-events:none;width:8px;height:8px;background:var(--accent);transform:rotate(45deg)}.dv-ic{color:var(--accent)}
+.dvrd{display:flex;flex-direction:column;gap:1px;font-size:11px;color:var(--ink-2)}.dvrdl.risk-high{color:var(--bad)}.dvrdl.risk-med{color:var(--warn)}
 .dvcard:hover{border-color:var(--accent)}.dvcard.selected{outline:2px solid var(--accent)}.dvcard.st-done{border-left-color:var(--ok);opacity:.8}.dvcard.st-dropped{border-left-color:var(--ink-3);opacity:.6}.dvcard.past{border-left-color:var(--bad)}
 .dvname{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.dvmeta{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11.5px;color:var(--ink-2);align-items:center}
 .dvkind{text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;color:var(--ink-3)}.dvprog{font-variant-numeric:tabular-nums}.dvown{display:inline-flex;gap:2px}.dvown .ini{width:16px;height:16px;font-size:9px}
@@ -1832,7 +1833,7 @@ const MAX_BYTES = 2 * 1024 * 1024, MAX_READ_BYTES = 5 * 1024 * 1024, MAX_DEPTH =
 // Values in one plan the same way: write up to 60,000 (what copies before 1.175.5 can open), read up to 400,000, so a later copy can raise the write limit.
 // Plan format. SCHEMA changes only for a change older copies can't read; new optional parts are named in meta.features,
 // and a copy that finds one it doesn't know opens the plan read-only instead of saving over what it can't see.
-const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1", "stories1", "skills1", "aiHint1", "msStory1", "descriptions1", "laneIds1", "cardLayout1", "hideWhy1", "captures1", "captureAgain1", "rough1", "histFiles1", "priority1", "workOrder1", "guidance1", "evidence1"];
+const KNOWN_FEATURES = ["added", "changes", "tags", "jiraRefs", "proposals", "laneDates", "capacity", "cardViews", "viewZoom", "updateEdits", "inactive", "teamCapacity", "deliverables", "approvals", "snapshots", "reports", "followUps", "commitments", "planningGuide", "appVia1", "forecast1", "capacity1", "viewHide1", "stories1", "skills1", "aiHint1", "msStory1", "descriptions1", "laneIds1", "cardLayout1", "hideWhy1", "captures1", "captureAgain1", "rough1", "histFiles1", "priority1", "workOrder1", "guidance1", "evidence1", "itemOutcome1"];
 // A deliverable's target: a year, a half or a quarter ("2027", "2027-H1", "2027-Q2"), or "later".
 const TARGET_RE = /^(\d{4})(?:-(Q[1-4]|H[12]))?$/;
 const PR_DRAFT_RE = /^\s*[\[(]?\s*(draft|wip)\s*[\])]?\s*[:\-]?\s/i;    // a draft pull request's title: "Draft: …", "[WIP] …"
@@ -1982,6 +1983,7 @@ const featuresIn = plan => { const f = [];
   if ((plan.guidance || []).length || (plan.decisions || []).some(x=>x && (x.guidance || []).length)) f.push("guidance1");
   const ev = x => x && (x.channel || x.impact || x.role || x.origin);
   if ((plan.deliverables || []).some(d=>d && (ev(d) || (d.about || []).length || (d.refs || []).length || (d.raisedAgain || []).some(ev))) || (plan.bars || []).some(b=>b && (b.refs || []).length)) f.push("evidence1");
+  { const dv = new Set((plan.deliverables || []).map(d=>d && d.id)); if ([...(plan.decisions || []), ...(plan.risks || [])].some(x=>x && x.item && dv.has(x.item))) f.push("itemOutcome1"); }     // a risk or decision about an outcome or request
   if ((plan.bars || []).some(b=>b && (b.tasks || []).some(t=>t && t.rough === true))) f.push("rough1");
   if ((plan.snapshots || []).length) f.push("snapshots");
   if ((plan.reports || []).length) f.push("reports");
@@ -2450,8 +2452,8 @@ function normalize(input, strict){
     // What happens next on each: the next action, who or what it waits on, when to escalate, and (decisions) who decides.
     const follow = (x, o) => { const put = (k, v) => { if (v) o[k] = v; };
       put("next", str(x.next).slice(0, 200)); put("waitingOn", str(x.waitingOn).slice(0, 80)); put("escalateBy", validIso(x.escalateBy) ? x.escalateBy : ""); return o; };
-    uniq = idMaker(); d.decisions = arr("decisions").map((x,i)=>follow(x, {id:uniq(x.id, "dec-" + hashText(str(x.text)).slice(0,6) + "-" + i), text:str(x.text), state: x.state === "decided" ? "decided" : "open", owners:ppl(x.owners), due: validIso(x.due) ? x.due : "", item: barSet.has(str(x.item)) ? str(x.item) : "", ...(pIds.has(str(x.decider)) ? {decider:str(x.decider)} : {}), ...(Array.isArray(x.guidance) && x.guidance.length ? {guidance:[...new Set(x.guidance.map(str))].slice(0, 20)} : {}), ...hintField(x.aiHint)}));
-    uniq = idMaker(); d.risks = arr("risks").map((x,i)=>follow(x, {id:uniq(x.id, "risk-" + hashText(str(x.text)).slice(0,6) + "-" + i), sev:["high","med","low"].includes(x.sev)?x.sev:"med",text:str(x.text), owners:ppl(x.owners), item: barSet.has(str(x.item)) ? str(x.item) : "", ...(x.state === "closed" ? {state:"closed"} : {}), ...hintField(x.aiHint)}));
+    uniq = idMaker(); d.decisions = arr("decisions").map((x,i)=>follow(x, {id:uniq(x.id, "dec-" + hashText(str(x.text)).slice(0,6) + "-" + i), text:str(x.text), state: x.state === "decided" ? "decided" : "open", owners:ppl(x.owners), due: validIso(x.due) ? x.due : "", item:str(x.item), ...(pIds.has(str(x.decider)) ? {decider:str(x.decider)} : {}), ...(Array.isArray(x.guidance) && x.guidance.length ? {guidance:[...new Set(x.guidance.map(str))].slice(0, 20)} : {}), ...hintField(x.aiHint)}));
+    uniq = idMaker(); d.risks = arr("risks").map((x,i)=>follow(x, {id:uniq(x.id, "risk-" + hashText(str(x.text)).slice(0,6) + "-" + i), sev:["high","med","low"].includes(x.sev)?x.sev:"med",text:str(x.text), owners:ppl(x.owners), item:str(x.item), ...(x.state === "closed" ? {state:"closed"} : {}), ...hintField(x.aiHint)}));
     // Deliverables: plain-language things to ship, added here. Only what's set is kept, so a quick idea stays small.
     uniq = idMaker(); d.deliverables = arr("deliverables").slice(0, DV_MAX).map((x,i)=>{ const o = {id:uniq(x.id, "dv-" + (i + 1)), name:str(x.name).slice(0,120) || "Deliverable", stage:["idea","planned","done","dropped","split"].includes(x.stage) ? x.stage : "idea"};
       const put = (k, v) => { if (v) o[k] = v; };
@@ -2469,7 +2471,9 @@ function normalize(input, strict){
       if (ho && ho.to === "initiative" && ACT_ID.test(str(ho.id))) o.handoff = {to:"initiative", id:str(ho.id)}; else if (ho && ho.to === "jira" && JKEY.test(str(ho.key))) o.handoff = {to:"jira", key:str(ho.key)};
       put("note", str(x.note).slice(0,4000)); put("source", str(x.source).slice(0,100)); put("dropReason", str(x.dropReason).slice(0,300)); put("from", str(x.from).slice(0,60)); Object.assign(o, hintField(x.aiHint));
       if (x.approved && typeof x.approved === "object" && validStamp(x.approved.at) && /^[A-Za-z0-9_-]{0,48}$/.test(str(x.approved.by))) o.approved = {by:str(x.approved.by), at:str(x.approved.at)};
-      return o; }); }
+      return o; });
+    // What a risk or decision is about: an initiative, or an outcome or captured request. Anything else is cleared.
+    const about = new Set([...barSet, ...d.deliverables.map(x=>x.id)]); [...d.decisions, ...d.risks].forEach(x=>{ if (!about.has(x.item)) x.item = ""; }); }
   { const seen = new Set(); d.holidays = arr("holidays").filter(x=>validIso(x.date) && !seen.has(x.date) && seen.add(x.date)).map(x=>({date:x.date,name:str(x.name)})).sort((a,b)=>a.date<b.date?-1:1); }
   const sp = arr("sprints"); uniq = idMaker();
   d.sprints = sp.length ? sp.map((x,i)=>({id:uniq(x.id,"sprint-"+(i+1)), name:str(x.name)||("S"+i), weeks:clampInt(x.weeks,1,8,d.meta.sprintWeeks), goal:str(x.goal), ...(Number.isInteger(x.jira) && x.jira > 0 && x.jira < 1e9 ? {jira:x.jira} : {})}))
@@ -4079,7 +4083,7 @@ function noteOlderSave(prev, next){
   if (!prev || !next || !prev.meta || !next.meta) return;
   if (!(prev.meta.savedWith && !next.meta.savedWith)) return;
   const lost = featuresIn(prev).filter(f=>!featuresIn(next).includes(f));
-  const NAMES = {added:"who added what", changes:"the activity log", tags:"tags", jiraRefs:"notes and dependencies on Jira items", proposals:"proposed changes", planningGuide:"the project planning guide", guidance1:"what matters now", evidence1:"evidence and links on requests"}, words = lost.map(f=>NAMES[f] || f);
+  const NAMES = {added:"who added what", changes:"the activity log", tags:"tags", jiraRefs:"notes and dependencies on Jira items", proposals:"proposed changes", planningGuide:"the project planning guide", guidance1:"what matters now", evidence1:"evidence and links on requests", itemOutcome1:"risks and decisions about outcomes or requests"}, words = lost.map(f=>NAMES[f] || f);
   setBanner("older", "warn", [h("b",{}, "Someone saved this plan with an older copy of Sightline."), lost.length ? ` It dropped ${words.length > 1 ? words.slice(0, -1).join(", ") + " and " + words[words.length - 1] : words[0]}. ` : " Older copies drop parts of the plan they don't know. ",
     lost.length ? h("button",{type:"button",class:"btn",id:"putBack",onclick:()=>putBack(prev)},"Put them back") : null, " Ask everyone to use the latest copy."]);
 }
@@ -4095,6 +4099,8 @@ function putBack(prev){
     (prev.jiraItems || []).forEach(o=>{ const x = (s.jiraItems || []).find(y=>y.id === o.id); if (x && (o.tags || []).length && !(x.tags || []).length){ x.tags = clone(o.tags); n++; } });
     (prev.notes || []).filter(o=>String(o.on || "").startsWith("jira:")).forEach(o=>{ const x = s.notes.find(y=>y.id === o.id); if (!x){ s.notes.push(clone(o)); n++; } else if (!String(x.on || "").startsWith("jira:")){ x.on = o.on; n++; } });
     STAMPED.forEach(k=>(s[k] || []).forEach(x=>fix(k, x))); s.bars.forEach(b=>(b.tasks || []).forEach(t=>fix("task", t)));
+    ["risks","decisions"].forEach(k=>(s[k] || []).forEach(x=>{ const o = (prev[k] || []).find(y=>y.id === x.id);      // what a risk or decision was about, when that's in the plan again
+      if (!x.item && o && o.item && (s.bars.some(b=>b.id === o.item) || (s.deliverables || []).some(d=>d.id === o.item))){ x.item = o.item; n++; } }));
     const have = new Set((s.changes || []).map(c=>c.id)), back = (prev.changes || []).filter(c=>!have.has(c.id)); if (back.length){ s.changes = pruneChanges([...(s.changes || []), ...back]); n += back.length; }
     if (!n) return NOCHANGE; }).then(ok=>{ if (ok) clearBanner("older"); return ok; });
 }
@@ -4432,6 +4438,9 @@ function mergePlans(base, S, theirs){
       const src = [S, theirs, base].map(pl=>(pl.guidance || []).find(g=>g.id === id)).find(Boolean); if (!src) return;
       res.plan.guidance = [...(res.plan.guidance || []), clone(src)]; has.add(id); restored.push(id); }); }
   let merged; try { merged = normalize(res.plan, false); } catch(e){ return null; }
+  // My risk or decision about something a teammate deleted: normalize clears its item, so that edit is lost. Count it, so the backup and the note say so.
+  ["risks","decisions"].forEach(k=>(res.plan[k] || []).forEach(x=>{ const t = (theirs[k] || []).find(y=>y.id === x.id), now = merged[k].find(y=>y.id === x.id);
+    if (x.item && now && !now.item && (!t || t.item !== x.item)) res.skipped.push({op:"set", type:k, id:x.id, field:"item", value:x.item}); }));
   return {plan:merged, kept, keptDel, loops, skipped:res.skipped, restored};
 }
 function rebaseOnto(theirs, text){
@@ -6284,7 +6293,7 @@ const HELP = [
     h("h3",{},"The pieces"),
     h("ul",{}, h("li",{}, h("b",{},"Workstreams"), ": the areas or priorities the team's work belongs to, as rows."), h("li",{}, h("b",{},"Initiatives"), ": blocks of work. They can hold ", h("b",{},"sub-initiatives"), " (any depth) and ", h("b",{},"tasks"), ". A holder stretches to cover what's inside it and rolls up progress, status and owners."),
       h("li",{}, h("b",{},"Milestones"), " (◆): a point where something is done. ", h("b",{},"Gates"), " (‖): something someone else must clear before work can start."),
-      h("li",{}, h("b",{},"Meetings"), ": one-off or repeating like Outlook, in a workstream or team-wide."), h("li",{}, h("b",{},"Decisions and risks"), " (Delivery): with an owner, a date and the initiative they affect.")),
+      h("li",{}, h("b",{},"Meetings"), ": one-off or repeating like Outlook, in a workstream or team-wide."), h("li",{}, h("b",{},"Decisions and risks"), " (Delivery): with an owner, a date and the initiative, outcome or request they affect.")),
     h("h3",{},"Adding"),
     h("p",{}, "Hover the chart and click ", h("b",{},"+"), ", use ", h("b",{},"+ Add"), " (A), or double-click an empty spot. In Days view the + offers tasks, sub-initiatives, milestones, notes and meetings."),
     h("h3",{},"Moving and nesting"),
@@ -8956,9 +8965,11 @@ function actRefProblem(p, a, args){
   for (const [k, t] of actTypes(a, args)){ const alts = actAlts(t), v = args[k], refs = alts.filter(actRefOf);
     if (!refs.length || (ACT_REMOVES[a.id] || []).includes(k) || alts.some(x=>!actRefOf(x) && actAltOk(x, v))) continue;
     const ids = Array.isArray(v) ? v : [v], kinds = refs.map(actRefOf);
-    for (const id of ids) if (!kinds.some(r=>ACT_REF[r][1](p, id))) return actMissing(ACT_REF[kinds[0]][0]); }
+    for (const id of ids) if (!kinds.some(r=>ACT_REF[r][1](p, id))) return kinds.length > 1 ? actInvalid(actRefWords(kinds)) : actMissing(ACT_REF[kinds[0]][0]); }
   return null; }
 const actMissing = what => ({code:"invalid", reason:`That ${what} isn't in the plan.`});
+// A reference that can be one of several kinds. The only one is a risk's or decision's item; sightline-app.py says the same.
+const actRefWords = kinds => kinds.join("|") === "initiativeId|outcomeId" ? "That isn't an initiative, an outcome or a request in the plan." : `That ${kinds.map(r=>ACT_REF[r][0]).join(" or ")} isn't in the plan.`;
 const actInvalid = reason => ({code:"invalid", reason});
 function runAction(plan, id, args = {}, ctx = {}){
   const a = planActions[id]; if (!a) return {ok:false, code:"invalid", reason:`There's no action called ${id}.`};
@@ -9418,7 +9429,7 @@ const dvSeen = d => { const {edited, ...r} = d; return r; };
 defAction("outcome.del", {done:(p, a)=>!actDv(p, a.id), scope:"outcomes", risk:"risky", args:{id:"outcomeId"}, stale:"Someone changed it since you opened it, so it wasn't deleted. Look at their change, then delete again if you still want to.",
   cur:(p, a)=>{ const d = actDv(p, a.id); return d ? dvSeen(d) : undefined; },
   check:(p, a)=>{ if (!actDv(p, a.id)) return actMissing("deliverable"); },
-  run:(p, a)=>{ p.deliverables = p.deliverables.filter(x=>x.id !== a.id); }});
+  run:(p, a)=>{ p.deliverables = p.deliverables.filter(x=>x.id !== a.id); [...(p.decisions || []), ...(p.risks || [])].forEach(x=>{ if (x.item === a.id) x.item = ""; }); }});
 // Starts-after links, waits, workstreams, people, milestones, gates, risks and decisions: what a replan needs.
 const actLane = (p, id) => p.lanes.find(l=>l.id === id);
 const actPerson = (p, id) => p.people.find(x=>x.id === id);
@@ -9878,7 +9889,7 @@ function rdCheck(p, key, f, v){
   if (f === "text") return typeof v === "string" && v.trim() && v.length <= 4000 ? null : actInvalid("Text is 1 to 4,000 characters.");
   if (f === "aiHint") return hintProblem(v) || null;
   if (f === "owners") return ACT_ARG.ids(v) && actPeople(p, v) ? null : actMissing("person");
-  if (f === "item") return v === "" || (typeof v === "string" && actBar(p, v)) ? null : actMissing("initiative");
+  if (f === "item") return v === "" || (typeof v === "string" && (actBar(p, v) || actDv(p, v))) ? null : actInvalid(actRefWords(["initiativeId", "outcomeId"]));
   if (f in FOLLOW) return typeof v === "string" && v.length <= FOLLOW[f] ? null : actInvalid(`${f} is text up to ${FOLLOW[f]} characters.`);
   if (f === "escalateBy" || f === "due") return v === "" || validIso(v) ? null : actInvalid(`${f} is ${REL_HELP}, or empty.`);
   if (key === "risks" && f === "sev") return ["high","med","low"].includes(v) ? null : actInvalid("Severity is high, med or low.");
@@ -9892,7 +9903,7 @@ function rdPut(x, key, f, v){ if (f === "guidance"){ if (v.length) x.guidance = 
   if (key === "risks" && f === "state"){ if (v === "closed") x.state = "closed"; else delete x.state; return; }
   if ((f in FOLLOW || f === "escalateBy" || f === "decider" || f === "aiHint") && !v){ delete x[f]; return; } x[f] = v; }
 const RD_FIELDS = {risks:["text","sev","state","owners","item","next","waitingOn","escalateBy","aiHint"], decisions:["text","state","owners","item","due","decider","next","waitingOn","escalateBy","aiHint","guidance"]};
-const RD_TYPES = {text:"str", sev:"high|med|low", owners:"personId[]", item:"initiativeId|blank", next:"str", waitingOn:"str", escalateBy:"iso|blank", aiHint:"str",
+const RD_TYPES = {text:"str", sev:"high|med|low", owners:"personId[]", item:"initiativeId|outcomeId|blank", next:"str", waitingOn:"str", escalateBy:"iso|blank", aiHint:"str",
   due:"iso|blank", decider:"personId|blank", guidance:"guidanceId[]"}, rdType = (key, f) => f === "state" ? (key === "risks" ? "open|closed" : "open|decided") : RD_TYPES[f];
 [["risk","risks","risk"], ["decision","decisions","dec"]].forEach(([name, key, pre])=>{
   const extra = Object.fromEntries(RD_FIELDS[key].filter(f=>f !== "text").map(f=>[f, rdType(key, f) + "?"])), fields = Object.fromEntries(RD_FIELDS[key].map(f=>[f, rdType(key, f)]));
@@ -10994,6 +11005,8 @@ function peekContent(type, id){
     if (isLeafBar(b) && isBlocked(b)) warn.push(["bad", `Blocked: ${b.blocked.reason}` + (b.blocked.waitingOn ? ` (waiting on ${waitName(b.blocked.waitingOn)})` : "")]);
     { const nb = blockedInside(b); if (nb) warn.push(["bad", `${nb} blocked inside`]); }
     { const u = updatesFor("bar:" + b.id)[0]; if (u) row("Last update", `${fmtDay(stampDay(u.at))}: ${u.text.slice(0,80)}`); }
+    handedRd(b.id).rs.forEach(x=>warn.push([x.sev === "high" ? "bad" : "warn", `Risk (${x.sev}) on "${cutText(x.on.name, 40)}": ${x.text.slice(0,70)}`]));
+    handedRd(b.id).ds.forEach(x=>warn.push(["soft", `Waiting on, for "${cutText(x.on.name, 40)}": ${x.text.slice(0,60)}`]));
     S.risks.filter(x=>x.item===b.id).forEach(x=>warn.push([x.sev === "high" ? "bad" : "warn", `Risk (${x.sev}): ${x.text.slice(0,80)}`]));
     S.decisions.filter(x=>x.item===b.id && x.state !== "decided").forEach(x=>warn.push(["soft", `Decision needed${x.due ? " by " + fmtDay(isoToDay(x.due)) : ""}: ${x.text.slice(0,70)}`]));
     if (hasKids(b)) row("Inside", `${kidsOf(b.id).length} sub-initiative${kidsOf(b.id).length===1?"":"s"}`);
@@ -12904,6 +12917,10 @@ function renderSide0(){
     put(h("div",{class:"quick dvside"},
       can ? h("button",{type:"button",class:"btn",id:"dvAsk",onclick:()=>openPlanningAssistant({kind:"deliverable",id:d.id})},"Ask assistant about this") : null,
       B.length ? h("div",{class:"dvbadges"}, ...B.map(x=>dvChip(...x)), ...B.filter(x=>x[0] !== "jira").map(x=>h("div",{class:"hint dvwhy"}, `${x[1]}: ${x[2]}`))) : null,
+      (A=>A.ds.length || A.rs.length ? h("div",{class:"field",id:"dvRd"}, h("span",{class:"flabel"},"Risks and decisions"), h("div",{class:"tasklist"},
+        ...A.ds.map(x=>h("button",{type:"button",class:"nav","data-rd":x.id,onclick:()=>goTo("decision", x.id)}, h("span",{class:"dot notstarted"}), "Waiting on: " + cutText(x.text, 60))),
+        ...A.rs.map(x=>h("button",{type:"button",class:"nav","data-rd":x.id,onclick:()=>goTo("risk", x.id)}, h("span",{class:"dot " + (x.sev === "high" ? "atrisk" : "inprogress")}), `Risk (${x.sev}): ${cutText(x.text, 60)}`))),
+        h("p",{class:"hint"}, "For context: they don't change its stage, priority or dates.")) : null)(rdAbout(d.id)),
       txt("f-dvname", "What we'll ship", "name", 120, "e.g. Make onboarding effortless"),
       field("f-dvclass", "Priority", h("select",{id:"f-dvclass",disabled:!can,onchange:e=>{ const v = e.target.value; dvSave(`${d.name}: ${v ? DV_CLASS_NAME[v].toLowerCase() : "priority cleared"}`, s=>act("outcome.set", {id:d.id, field:"class", value:v}, s)); }},
         h("option",{value:""}, "Not set yet"), ...DV_CLASSES.map(c=>h("option",{value:c, selected:d.class === c}, DV_CLASS_PICK[c])))),
@@ -13032,10 +13049,12 @@ function sideBody(put){
       out.length ? h("div",{class:"msg warn"}, `${out.length} task${out.length === 1 ? " falls" : "s fall"} outside the planned dates. Adjust ${out.length === 1 ? "it" : "them"}, or set Dates to "From tasks".`) : null,
       r ? h("div",{class:"msg",style:{background:"var(--paper)"}}, `${r.done} of ${r.n} ${hasKids(b) ? "items" : "tasks"} done · ${r.pct}% of task-days · status ${STATUSES.find(x=>x[0]===r.status)[1].toLowerCase()}`) : null,
       quickPanel("bar:" + b.id), stickies(noteKeysOf(b, "bar"), b.lane),
-      (()=>{ const rs = S.risks.filter(x=>x.item===b.id), ds = S.decisions.filter(x=>x.item===b.id && x.state !== "decided"); if (!rs.length && !ds.length) return null;
+      (()=>{ const rs = S.risks.filter(x=>x.item===b.id), ds = S.decisions.filter(x=>x.item===b.id && x.state !== "decided"), H = handedRd(b.id); if (!rs.length && !ds.length && !H.rs.length && !H.ds.length) return null;
         return h("div",{class:"field"}, h("span",{class:"flabel"},"Risks and decisions"), h("div",{class:"tasklist"},
           ...rs.map(x=>h("button",{type:"button",class:"nav",onclick:()=>goTo("risk", x.id)}, h("span",{class:"dot " + (x.sev==="high" ? "atrisk" : "inprogress")}), `Risk (${x.sev}): ${x.text.slice(0,50)}`)),
-          ...ds.map(x=>h("button",{type:"button",class:"nav",onclick:()=>goTo("decision", x.id)}, h("span",{class:"dot notstarted"}), `Decision${x.due ? " by " + fmtDay(isoToDay(x.due)) : ""}: ${x.text.slice(0,44)}`)))); })(),
+          ...ds.map(x=>h("button",{type:"button",class:"nav",onclick:()=>goTo("decision", x.id)}, h("span",{class:"dot notstarted"}), `Decision${x.due ? " by " + fmtDay(isoToDay(x.due)) : ""}: ${x.text.slice(0,44)}`)),
+          ...H.rs.map(x=>h("button",{type:"button",class:"nav","data-handed":x.id,onclick:()=>goTo("risk", x.id)}, h("span",{class:"dot " + (x.sev==="high" ? "atrisk" : "inprogress")}), `Risk (${x.sev}) on "${cutText(x.on.name, 30)}": ${cutText(x.text, 50)}`)),
+          ...H.ds.map(x=>h("button",{type:"button",class:"nav","data-handed":x.id,onclick:()=>goTo("decision", x.id)}, h("span",{class:"dot notstarted"}), `Waiting on, for "${cutText(x.on.name, 30)}": ${cutText(x.text, 44)}`)))); })(),
       titleOf(b).from === "plan" ? field("f-label","Title", textIn("f-label", ()=>b.label, v=>act("initiative.set", {id:b.id, field:"label", value:v}), {tag:"textarea", attrs:{rows:"3"}, live:true})) : titleOf(b).from === "stale" ? jiraTitleField(b) : null,
       viewActs(showOnlyBtn("bar", b.id), present ? null : linkedBtn("bar", b.id)),
       h("div",{class:"row2"},
@@ -13420,8 +13439,10 @@ function cell(row,f,label,opts,key,i){
   if (opts === "people") return ownerPicker("tp-" + (row.id || key + i), ()=>own(row), v=>{ row.owners = v; }, {external:key === "gates", outside:true, compact:true});
   if (opts === "isodate") return h("input",{type:"date","aria-label":label,value:row[f]||"",onchange:e=>{ const v = e.target.value; commit(()=>{ if (validIso(v)) row[f] = v; else if (f === "due") row[f] = ""; else delete row[f]; }); }});
   if (opts === "person") return h("select",{"aria-label":label,onchange:e=>{ const v = e.target.value; commit(()=>{ if (v) row[f] = v; else delete row[f]; }); }}, h("option",{value:"",selected:!row[f]},"—"), ...team().map(pp=>h("option",{value:pp.id, selected:row[f] === pp.id}, pp.name)));
-  if (opts === "item") return h("select",{"aria-label":label,onchange:e=>commit(()=>{ row[f] = e.target.value; })}, h("option",{value:"",selected:!row[f]},"—"),
-    ...S.lanes.map(l=>{ const bs = S.bars.filter(b=>b.lane===l.id); return bs.length ? h("optgroup",{label:l.name}, ...bs.map(b=>h("option",{value:b.id,selected:row[f]===b.id}, "\u2003".repeat(depthOf(b)) + chartLabel(b).slice(0,48)))) : null; }));
+  if (opts === "item"){ const ds = (S.deliverables || []).filter(d=>!["split","dropped","done"].includes(d.stage) || d.id === row[f]);     // an initiative (by workstream), or an outcome or captured request still in play
+    return h("select",{"aria-label":label,onchange:e=>commit(()=>{ row[f] = e.target.value; })}, h("option",{value:"",selected:!row[f]},"—"),
+      ...S.lanes.map(l=>{ const bs = S.bars.filter(b=>b.lane===l.id); return bs.length ? h("optgroup",{label:l.name}, ...bs.map(b=>h("option",{value:b.id,selected:row[f]===b.id}, "\u2003".repeat(depthOf(b)) + chartLabel(b).slice(0,48)))) : null; }),
+      ds.length ? h("optgroup",{label:"Outcomes and requests"}, ...ds.map(d=>h("option",{value:d.id,selected:row[f]===d.id}, (d.capture ? capType(d) + ": " : "") + d.name.slice(0,48)))) : null); }
   if (opts === "gdate") return h("input",{type:"date","aria-label":label,value:row.date||"",onchange:e=>{ const v = e.target.value; commit(()=>{ row.date = validIso(v) ? v : ""; if (row.date) row.neededBy = fmtDay(isoToDay(row.date)); }); }});
   if ((f === "date" || f === "stretch") && key === "milestones" && labelMismatch(row, f === "stretch")){
     const inp = h("input",{"aria-label":label,value:row[f],onfocus:endCoalesce,oninput:e=>commit(()=>row[f]=e.target.value,{quiet:true,coalesce:key+i+f}),onchange:()=>{ endCoalesce(); render(); }});
@@ -15084,7 +15105,7 @@ function assistantView(){
     guide:[
       "# Writing Sightline amendments (version 1)",
       "Read each action's args from actions in this file and use them exactly; never guess field names.",
-      "argTypes says what each type means. A type ending in Id is a reference: that id must be in the plan, or added earlier in the batch (risk.add and decision.add take an initiative's id as item). A setter's value takes the type of its field in fields. sightline-app.py check refuses the same types, references and values the page does; whether a change makes sense today (a dropped item, a Jira-owned date) is only checked when it's applied.",
+      "argTypes says what each type means. A type ending in Id is a reference: that id must be in the plan, or added earlier in the batch (risk.add and decision.add take an initiative's, an outcome's or a captured request's id as item; a deliverable lists the open decisions it waits on as waitingOnDecisions and its open risks as risks, which never change its stage, priority or dates). A setter's value takes the type of its field in fields. sightline-app.py check refuses the same types, references and values the page does; whether a change makes sense today (a dropped item, a Jira-owned date) is only checked when it's applied.",
       "Write one JSON file: {kind:'sightline-amendments', version:1, planId, batchId, createdAt, source:'assistant', basedOn:{planRevision}, changes:[...]}.",
       "Each change: {id, summary, ops:[...]} with a stable id; a change applies whole or not at all. Keep ids stable when you rewrite the file.",
       "Rewriting the amendments file is fine: an open page reads it again when its contents change, even under the same batchId. While someone is editing a change in Sightline, the read waits until they finish.",
@@ -15127,7 +15148,7 @@ function assistantView(){
     choices:{targets:targetChoices().map(x=>x[0]), kinds:DV_KINDS.map(x=>x[0]), stages:DV_STAGES.map(x=>x[0]), proposalFields:PROPOSAL_FIELDS.map(x=>x[0]),
       lanes:S.lanes.map(l=>({id:l.id, name:l.name})), people:S.people.filter(p=>!p.inactive).map(p=>({id:p.id, name:p.name, outside:!!p.external})),
       releases:(JIRA && JIRA.releases || []).map(r=>({id:r.id, name:r.name, date:r.date || null, released:!!r.released}))},
-    deliverables:(S.deliverables || []).map(d=>({...pick(d), ...(d.capture ? {evidence:capEvidence(d)} : {})})),
+    deliverables:(S.deliverables || []).map(d=>({...pick(d), ...(d.capture ? {evidence:capEvidence(d)} : {}), ...rdView(d.id)})),
     initiatives:S.bars.map(b=>({id:b.id, label:barTitle(b), lane:b.lane, start:amWeekIso(S, b.start), weeks:b.span, status:b.status, owners:b.owners || [],
       kind:b.kind,datesFrom:b.datesFrom || "manual",scope:b.scope === "out" ? "out" : "in",...(b.chartName ? {chartName:b.chartName} : {}),...(b.effort ? {effort:clone(b.effort)} : {}),delivers:[...(b.delivers || [])],...(woIndex(b.id) ? {workOrder:woIndex(b.id)} : {}),...(tcIds.has(b.id) ? {trackerCheck:true} : {}),...((b.refs || []).length ? {refs:clone(b.refs)} : {}),parked:!!b.parked,dependsOn:[...(b.dependsOn || [])],waitsFor:[...(b.waitsFor || [])],jiraDeps:[...(b.jiraDeps || [])],epics:[...(b.epics || [])],storiesOff:[...(b.storiesOff || [])],...(b.jira ? {jira:b.jira} : {}),
       ...(b.jira || (b.epics || []).length ? {jiraLinked:true} : {}), ...(derived(b, S) ? {datesFromTasks:true} : {}), ...(b.parent ? {parent:b.parent} : {}), ...(b.story ? {story:b.story} : {}), needs:[...(b.needs || [])], ...(b.aiHint ? {aiHint:b.aiHint} : {}),
@@ -15773,6 +15794,8 @@ function planPaste(){ const sk = BUNDLED_SKILLS.files.find(x=>x.name === "sightl
     `## The data (a digest of the plan)`, "", "```json", JSON.stringify(planDigest()).replace(/`/g, "\\u0060"), "```", ""].join("\n"); }
 function copyPlanPaste(){ const t = planPaste(), n = t.length, D = planDigest();
   return copyText(t, `the plan for your assistant (${n.toLocaleString("en-US")} characters, ${D.coverage.included} of ${D.coverage.of} items)`); }
+// What's open about an outcome or request, for an assistant: the decisions it waits on and its risks, only when there are some.
+const rdView = (id, n = 4000) => { const A = rdAbout(id); return {...(A.ds.length ? {waitingOnDecisions:A.ds.map(x=>({id:x.id, text:cutText(x.text, n)}))} : {}), ...(A.rs.length ? {risks:A.rs.map(x=>({id:x.id, sev:x.sev, text:cutText(x.text, n)}))} : {})}; };
 // A digest small enough to paste into any assistant (about DIGEST_MAX characters of data): the first of the work order,
 // open requests, what matters now, and, for "Copy more about", the items that mention a topic. It says what it left
 // out; it never cuts silently. Names are the team's data, never instructions.
@@ -15783,7 +15806,7 @@ function planDigest(topic = ""){ const t0 = todayDay(), F = forecastFor(), cut =
     likely:day(F.finish(b.id).likely), ...(b.status ? {status:b.status} : {}), ...((b.delivers || []).length ? {delivers:b.delivers.slice(0, 5)} : {})});
   const dv = d => ({id:d.id, name:cut(d.name, 100), ...(d.capture ? {capture:d.capture, stage:capOpen(d) ? "open" : capShort(d)} : {stage:d.stage}), ...(d.class ? {class:d.class} : {}), ...(d.why ? {why:cut(d.why, 120)} : {}),
     ...(d.askedBy ? {askedBy:who(d.askedBy)} : d.role ? {askedBy:d.role} : {}), ...(d.raised ? {raised:d.raised} : {}), ...(d.capture ? {reports:capEvidence(d).reports} : {}), ...(d.channel ? {channel:d.channel} : {}),
-    ...((d.jira || []).length ? {jira:d.jira.slice(0, 5)} : {}), ...((d.about || []).length ? {about:d.about.slice(0, 5)} : {})});
+    ...((d.jira || []).length ? {jira:d.jira.slice(0, 5)} : {}), ...((d.about || []).length ? {about:d.about.slice(0, 5)} : {}), ...rdView(d.id, 120)});
   const hits = x => !words.size || [...capWords([x.name, x.label, x.chartName, x.why, x.line, x.impact].filter(Boolean).join(" "))].some(w=>words.has(w));
   const pools = topic ? [["related", [...(S.deliverables || []).filter(d=>d.stage !== "split" && hits(d)).map(dv), ...S.bars.filter(hits).map(bar)]]]
     : [["workOrder", woList().map(id=>S.bars.find(b=>b.id === id)).filter(b=>b && !woTag(b)).slice(0, 10).map(bar)],
@@ -16273,14 +16296,19 @@ function dvBadges(d, cols = roadmapCols(), P = dvProgress(d)){
 // Changes are quick updates: they save straight away, so ideas can go in during the meeting without Start editing.
 // These callbacks own deliverables and, when adding an owner, people. Validate a private candidate so
 // a refused update cannot mutate the live plan without history, dirty state, or a recovery draft.
-function dvSave(what, fn){ return quickSave(what, s=>{ const candidate = {...s, deliverables:clone(s.deliverables || []), people:clone(s.people)}; const r = fn(candidate);
+function dvSave(what, fn){ return quickSave(what, s=>{ const candidate = {...s, deliverables:clone(s.deliverables || []), people:clone(s.people), risks:clone(s.risks || []), decisions:clone(s.decisions || [])}; const r = fn(candidate);
   if (r === NOCHANGE) return NOCHANGE;
   if (candidate.deliverables.length > DV_MAX){ setStatus(`A plan holds up to ${DV_MAX} deliverables. Drop or delete some first.`); return NOCHANGE; }
   if (candidate.deliverables.some(d=>(d.jira || []).length > DV_MAX_KEYS)){ setStatus(`A deliverable links up to ${DV_MAX_KEYS} Jira issues. Link its epics or features instead of every story.`); return NOCHANGE; }
-  s.deliverables = candidate.deliverables; s.people = candidate.people;
+  s.deliverables = candidate.deliverables; s.people = candidate.people; s.risks = candidate.risks; s.decisions = candidate.decisions;
   return r; }); }
 function dvEdit(id, what, fn){ return dvSave(what, s=>{ const d = s.deliverables.find(x=>x.id === id); if (!d) return NOCHANGE; const before = dvWords(d); if (fn(d, s) === NOCHANGE) return NOCHANGE; dvSettle(d, before); }); }
 const dvById = id => (S.deliverables || []).find(d=>d.id === id);
+// The open decisions an outcome or request waits on, and its open risks. Shown with it; they never change its stage, priority or dates.
+// Open ones about requests handed off to an initiative, computed each time (never copied onto the initiative), each with the request it's on.
+const handedRd = barId => { const out = {rs:[], ds:[]}; (S.deliverables || []).filter(d=>d.handoff && d.handoff.to === "initiative" && d.handoff.id === barId).forEach(d=>{ const A = rdAbout(d.id);
+  out.rs.push(...A.rs.map(x=>({...x, on:d}))); out.ds.push(...A.ds.map(x=>({...x, on:d}))); }); return out; };
+const rdAbout = id => ({ds:(S.decisions || []).filter(x=>x.item === id && x.state !== "decided"), rs:(S.risks || []).filter(x=>x.item === id && x.state !== "closed")});
 // Captured items: open until handed off or declined. Who asked is a person or a group; one that's gone says so.
 const capOpen = d => !!d.capture && !d.handoff && !["dropped","done","split"].includes(d.stage);
 const capType = d => (CAPTURE_TYPES.find(c=>c[0] === d.capture) || [, ""])[1];
@@ -16421,11 +16449,12 @@ function dropDv(id){ const d = dvById(id); if (!d) return; const why = window.pr
   dvSave(`${d.name}: dropped`, s=>act("outcome.drop", {id, reason:why}, s)); }
 function splitDv(id){ const d = dvById(id); if (!d) return; const raw = window.prompt(`Split "${d.name}" into smaller deliverables. Separate their names with a semicolon (;).`, ""); if (!raw) return;
   const names = [...new Set(raw.split(";").map(x=>x.trim().slice(0, 120)).filter(Boolean))]; if (names.length < 2){ setStatus("Give at least two names, separated with ;"); return; }
-  const ids = names.map(()=>newId("dv")), kids = [];
+  const ids = names.map(()=>newId("dv")), kids = []; let moved = 0;
   dvSave(`split ${d.name} into ${names.length}`, s=>{ const o = s.deliverables.find(x=>x.id === id); if (!o || o.stage === "split") return NOCHANGE; kids.length = 0;       // from the latest file, not what was on screen
     names.forEach((nm, i)=>kids.push({id:ids[i], name:nm, stage: o.target || o.release || o.date ? "planned" : "idea", from:o.id, ...Object.fromEntries(["kind","target","release","date","lane","owners","tags"].filter(k=>o[k]).map(k=>[k, clone(o[k])]))}));
-    o.stage = "split"; s.deliverables.push(...kids); })
-    .then(ok=>{ if (ok){ sel = {type:"deliverable", id:kids[0].id}; render(); setStatus(`Split into ${names.length}. The original is kept as history on each part.`); } }); }
+    o.stage = "split"; s.deliverables.push(...kids); moved = 0;
+    [...(s.risks || []).filter(x=>x.state !== "closed"), ...(s.decisions || []).filter(x=>x.state !== "decided")].forEach(x=>{ if (x.item === id){ x.item = kids[0].id; moved++; } }); })      // open ones follow the first part
+    .then(ok=>{ if (ok){ sel = {type:"deliverable", id:kids[0].id}; render(); setStatus(`Split into ${names.length}. The original is kept as history on each part.` + (moved ? ` ${moved === 1 ? "Its open risk or decision is" : `Its ${moved} open risks and decisions are`} now about "${kids[0].name}".` : "")); } }); }
 function groupIntoDeliverable(keys){ keys = [...new Set(keys)]; if (!keys.length) return Promise.resolve(null);
   if (keys.length > DV_MAX_KEYS){ setStatus(`That's ${keys.length} issues; a deliverable links up to ${DV_MAX_KEYS}. Pick their epics or features instead.`); return Promise.resolve(null); }
   const all = jiraAll(), first = all[keys[0]], name = window.prompt(`Group ${keys.length} Jira issue${keys.length === 1 ? "" : "s"} into a deliverable. What would a customer call it?`, keys.length === 1 && first ? first.summary || "" : "");
@@ -16551,6 +16580,7 @@ function triageList(can){
   const row = d => { const age = capAge(d);
     return h("li",{"data-cap":d.id}, h("span",{class:"captype cap-" + d.capture}, capType(d)), dvClassChip(d),
       h("button",{type:"button",class:"linkish dvidea",onclick:()=>{ sel = {type:"deliverable", id:d.id}; render(); }}, d.name),
+      (ds=>ds.length ? h("span",{class:"dvb dvb-detail capwait",title:ds.map(x=>"Waiting on: " + x.text).join("\n")}, "waiting") : null)(rdAbout(d.id).ds),
       h("span",{class:"hint"}, [d.askedBy ? "asked by " + capWho(d.askedBy) : "asked by: not known", d.source || "", d.raised ? "raised " + fmtDay(isoToDay(d.raised)) : ""].filter(Boolean).join(" · ")),
       capTimes(d) > 1 ? h("span",{class:"captimes",title:(d.raisedAgain || []).map(askLine).join("\n")}, `raised ${capTimes(d)} times`) : null,
       h("span",{class:"capage" + (age.days == null ? " unknown" : age.days > 30 ? " old" : "")}, age.text)); };
@@ -16601,6 +16631,7 @@ function renderRoadmap(){
         P ? h("span",{class:"dvprog" + (P.missing ? " miss" : ""),title:progTitle(P)}, progText(P)) : null, own.length ? h("span",{class:"dvown",title:own.map(p=>p.name).join(", ")}, ...own.slice(0, 3).map(p=>h("i",{class:"ini",style:{background:p.color || "#888", color:iniFg(p.color || "#888")}}, p.initials || "?"))) : null,
         d.stage === "done" ? h("span",{class:"dvb dvb-done"}, "Done") : d.stage === "dropped" ? h("span",{class:"dvb dvb-drop"}, "Dropped") : null),
       b.filter(x=>x[0] !== "jira").length ? h("span",{class:"dvbadges"}, ...b.filter(x=>x[0] !== "jira").map(x=>dvChip(...x))) : null,
+      (A=>A.ds.length || A.rs.length ? h("span",{class:"dvrd"}, ...A.ds.map(x=>h("span",{class:"dvrdl wait"}, "Waiting on: " + cutText(x.text, 60))), ...A.rs.map(x=>h("span",{class:"dvrdl risk-" + x.sev}, `Risk (${x.sev}): ${cutText(x.text, 60)}`))) : null)(rdAbout(d.id)),
       OV.marks.has(d.id) ? h("span",{class:"dvb dvb-jira amark",title:"Your assistant proposes: " + OV.marks.get(d.id).join("; ")}, "✎ proposed") : null); };
   const retarget = (id, ci, lane) => { const d = dvById(id), c = cols[ci]; if (!d || !c) return;
     const sp = dvSpan(d, cols), sameCol = sp && ci >= sp.a && ci <= sp.b, sameLane = (d.lane || "") === (lane || "");
