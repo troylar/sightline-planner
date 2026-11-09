@@ -279,17 +279,23 @@ def ref_problem(t: str, v, refs: dict, index: dict, made: dict) -> str | None:
 REF_MAX, AGAIN_MAX, OWN_WHY = 20, 50, 200
 JKEY = re.compile(r"^[A-Z][A-Z0-9_]{0,19}-[1-9][0-9]{0,8}$")
 EV_ID = re.compile(r"^[A-Za-z0-9._-]{1,60}$")
-REF_URL = re.compile(r"^https://[^\s\"'<>\\]{1,500}$")
 EV_TEXT = {"impact": 200, "role": 40}
+JS_SPACE = " \t\n\v\f\r                 　﻿"
+REF_URL = re.compile("^https://[^" + re.escape(JS_SPACE) + "\"'<>\\\\]{1,500}$")     # JavaScript's \s, not Python's
+
+
+def js_trim(v) -> str:
+    """String.prototype.trim, which also drops a byte-order mark (Python's strip() keeps it)."""
+    return str(v if v is not None else "").strip(JS_SPACE)
 
 
 # The page checks a change's ops in order on a copy of the plan, after the ready changes before it, so whether an op is
 # allowed can depend on what the ops before it did. The working copy holds what the page's rules read about an item, from
 # the context. It never refuses what the page accepts: an item whose state isn't certain (changed by an op whose every
-# check isn't mirrored here, by a plain set, by an earlier change, or given prev) is dropped from it, and nothing is said
-# about an item the copy doesn't hold. The page checks again.
+# check isn't mirrored here, by a plain op, by an earlier change, or given prev; or an add that may be a replay) is
+# dropped from it, and nothing is said about an item the copy doesn't hold. The page checks again.
 def working_copy(ctx: dict) -> dict:
-    s = {"dv": {}, "own": {}, "tasks": {}, "bars": {}, "parent": {}, "refs": {}, "graph": True, "touched": set(),
+    s = {"dv": {}, "own": {}, "tasks": {}, "bars": {}, "parent": {}, "refs": {}, "graph": True, "touched": set(), "ids": set(),
          "releases": {r.get("id"): bool(r.get("date")) for r in (ctx.get("choices") or {}).get("releases") or [] if isinstance(r, dict)},
          "cut": not ((ctx.get("coverage") or {}).get("complete") is True)}
     for d in ctx.get("deliverables") or []:
@@ -312,7 +318,13 @@ def working_copy(ctx: dict) -> dict:
     for o in (ctx.get("planning") or {}).get("own") or []:
         if isinstance(o, dict) and isinstance(o.get("id"), str):
             s["own"][o["id"]] = bool(o.get("closed"))
+    s["ids"] = {*s["dv"], *s["bars"], *s["tasks"], *s["own"]}
     return s
+
+
+def fresh(s: dict, i) -> bool:
+    """An add with this id makes something certainly new: not in the context, not made earlier, and nothing left out."""
+    return isinstance(i, str) and not s["cut"] and i not in s["ids"]
 
 
 def forget(s: dict, kind: str, i) -> None:
@@ -354,23 +366,28 @@ def _inside(parent: dict, i, anc) -> bool:
     return False
 
 
-def _done(s: dict, name: str, a: dict) -> bool:
-    """The page's done(): an op already true in the plan changes nothing and is never refused (an add replayed, an ask
-    or a link already recorded)."""
+ADD_ACTIONS = ("outcome.add", "own.add", "task.add", "initiative.add")
+
+
+def maybe_done(s: dict, name: str, a: dict) -> bool:
+    """The page's done() comes before its reference checks and its rules: an op that may already be true in the plan (an
+    add that may be a replay, an ask or a link already recorded, an own item already closed) is never refused here."""
     i = a.get("id")
-    if name in ("outcome.add", "own.add", "task.add", "initiative.add"):
-        return isinstance(i, str) and i in s[{"outcome.add": "dv", "own.add": "own", "task.add": "tasks", "initiative.add": "bars"}[name]]
+    if name in ADD_ACTIONS:
+        return isinstance(i, str) and not fresh(s, i)
     if name == "outcome.raiseAgain" and i in s["dv"]:
         return any(x["id"] == a.get("ask") for x in s["dv"][i]["asks"])
     if name == "ref.add" and a.get("on") in s["refs"]:
         return bool(i) and any(r[0] == i for r in s["refs"][a["on"]])
+    if name == "own.close":
+        return bool(s["own"].get(i))
     return False
 
 
 def state_problem(s: dict, name: str, a: dict) -> str | None:
     """The page's rules that read what's in the plan now, in its order and its own words, for items the copy holds."""
     dv, own, tasks, bars, refs = s["dv"], s["own"], s["tasks"], s["bars"], s["refs"]
-    if "prev" in a or _done(s, name, a):
+    if "prev" in a or maybe_done(s, name, a):
         return None
     d = dv.get(a.get("id")) if name.startswith("outcome.") else None
     if name == "outcome.set" and d and a.get("field") == "stage":
@@ -384,7 +401,7 @@ def state_problem(s: dict, name: str, a: dict) -> str | None:
     if name == "outcome.setRelease" and d and a.get("release") and a["release"] not in s["releases"]:
         return "That release isn't in the Jira files."
     if name == "outcome.drop" and d:
-        if d["capture"] and not str(a.get("reason") or "").strip():
+        if d["capture"] and not js_trim(a.get("reason")):
             return "Say why it's declined: whoever asked will want to know."
         if d["handoff"] and d["stage"] != "dropped":
             return "It's handed off already. Reopen it first to decline it."
@@ -395,7 +412,7 @@ def state_problem(s: dict, name: str, a: dict) -> str | None:
             return "It's declined. Reopen it first to hand it off."
         if bool(a.get("initiative")) == bool(a.get("jira")):
             return "Hand it off to one initiative or one Jira issue."
-        if a.get("jira") and not JKEY.match(str(a["jira"]).strip().upper()):
+        if a.get("jira") and not JKEY.match(js_trim(a["jira"]).upper()):
             return "That isn't a Jira key (like ABC-123)."
     if name == "outcome.reopen" and d and not d["handoff"] and d["stage"] != "dropped":
         return "It's open already."
@@ -412,17 +429,17 @@ def state_problem(s: dict, name: str, a: dict) -> str | None:
             if a.get(k) is not None:
                 if re.search(r"[\r\n]", str(a[k])):
                     return f"Its {k} is one line."
-                if len(str(a[k]).strip()) > EV_TEXT[k]:
+                if len(js_trim(a[k])) > EV_TEXT[k]:
                     return f"Its {k} is up to {EV_TEXT[k]} characters."
         if a.get("origin") and not EV_ID.match(str(a["origin"])):
             return "Origin is a short id of letters, digits, dot, dash or underscore (up to 60)."
     if name == "ref.add" and a.get("on") in refs:
-        url = str(a.get("url") or "").strip()
+        url = js_trim(a.get("url"))
         if not REF_URL.match(url):
             return "A link starts with https:// and has no spaces."
         if a.get("id") and not EV_ID.match(str(a["id"])):
             return "Give the link an id of letters, digits, dot, dash or underscore (up to 60)."
-        if a.get("title") is not None and len(str(a["title"]).strip()) > 120:
+        if a.get("title") is not None and len(js_trim(a["title"])) > 120:
             return "Its title is up to 120 characters."
         if any(u == url for _, u in refs[a["on"]]):
             return "That link is already on it."
@@ -465,6 +482,15 @@ def state_problem(s: dict, name: str, a: dict) -> str | None:
     return None
 
 
+def _drop_bar(s: dict, i) -> None:
+    """An initiative is gone, with what's inside it: nothing about them, or the links between work, is certain now."""
+    gone = {i} | {b for b in s["bars"] if _inside(s["parent"], b, i)}
+    for b in gone:
+        s["bars"].pop(b, None)
+        s["refs"].pop(b, None)
+    forget(s, "graph", None)
+
+
 # Ops whose every check is mirrored above (or that can only make later ops more likely to be allowed): their effect is
 # applied. Any other op leaves what it touches unknown.
 def state_apply(s: dict, name: str, a: dict) -> None:
@@ -472,12 +498,24 @@ def state_apply(s: dict, name: str, a: dict) -> None:
     dv, own, tasks, bars, refs = s["dv"], s["own"], s["tasks"], s["bars"], s["refs"]
     i = a.get("id")
     touch = lambda kind, x=i: s["touched"].add((kind, x))
-    if _done(s, name, a):
+    if name in ADD_ACTIONS and not fresh(s, i):     # may be a replay: what it holds isn't known
+        for kind in ("dv", "own", "tasks", "refs"):
+            forget(s, kind, i)
+        if name == "initiative.add" and i in bars:
+            _drop_bar(s, i)
+        if name in ("task.add", "initiative.add"):
+            forget(s, "graph", None)
+        return
+    if maybe_done(s, name, a):
         return
     if "prev" in a:             # the page may call it changed since: nothing certain about it
-        for kind in ("dv", "own"):
+        for kind in ("dv", "own", "refs"):
             forget(s, kind, i)
+        if name.startswith(("initiative.", "task.", "link.")):
+            forget(s, "graph", None)
         return
+    if isinstance(i, str) and name in ADD_ACTIONS:
+        s["ids"].add(i)
     d = dv.get(i) if name.startswith("outcome.") else None
     if name == "outcome.add" and isinstance(i, str):
         timed = bool(a.get("target") or a.get("release") or a.get("date"))
@@ -519,18 +557,19 @@ def state_apply(s: dict, name: str, a: dict) -> None:
             d["asks"] = [x for x in d["asks"] if x["id"] != a.get("ask")]
         elif name == "outcome.del":
             forget(s, "dv", i)
+            forget(s, "refs", i)
     elif name == "ref.add" and a.get("on") in refs:
-        refs[a["on"]].append((i, str(a.get("url") or "").strip()))
+        refs[a["on"]].append((i, js_trim(a.get("url"))))
         touch("refs", a["on"])
     elif name == "ref.del" and a.get("on") in refs:
         refs[a["on"]] = [r for r in refs[a["on"]] if r[0] != i]
         touch("refs", a["on"])
     elif name in ("own.add", "own.close", "own.reopen", "own.del", "own.toTask") and isinstance(i, str):
         touch("own")
-        if name in ("own.add", "own.reopen"):
+        if name == "own.add":
             own[i] = False
-        elif name == "own.close" and i in own:
-            own[i] = True
+        elif name in ("own.close", "own.reopen") and i in own:
+            own[i] = name == "own.close"
         else:
             forget(s, "own", i)
             if name == "own.toTask":
@@ -553,22 +592,31 @@ def state_apply(s: dict, name: str, a: dict) -> None:
             bars[i]["deps"].append(a.get("after"))
         elif name == "link.remove" and i in bars:
             bars[i]["deps"] = [x for x in bars[i]["deps"] if x != a.get("after")]
-    elif name.startswith(("initiative.", "task.")):
-        if name in ("initiative.del", "initiative.setParent", "initiative.place", "initiative.waitFor", "initiative.unwait", "task.moveTo"):
-            forget(s, "graph", None)
+    elif name == "initiative.del":
+        _drop_bar(s, i)
+    elif name.startswith(("initiative.", "task.")):     # moves, parents, lanes, waits: the links and the tree aren't certain
+        forget(s, "graph", None)
 
 
 def legacy_apply(s: dict, o: dict) -> None:
     """A plain op (add, set, link, unlink): only what it does for certain is kept."""
-    if o.get("op") == "add" and isinstance(o.get("id"), str) and o.get("type") in ("initiative", "task"):
-        if o.get("type") == "initiative" and o["id"] not in s["bars"]:
-            s["bars"][o["id"]], s["refs"][o["id"]], s["parent"][o["id"]] = {"deps": [], "parked": False}, [], ""
-        elif o.get("type") == "task" and o["id"] not in s["tasks"]:
-            s["tasks"][o["id"]] = []
+    i = o.get("id")
+    if o.get("op") == "add" and o.get("type") in ("initiative", "task"):
+        if o.get("type") == "initiative" and fresh(s, i):
+            s["bars"][i], s["refs"][i], s["parent"][i] = {"deps": [], "parked": False}, [], ""
+        elif o.get("type") == "task" and fresh(s, i):
+            s["tasks"][i] = []
+        else:
+            forget(s, "graph", None)
+        if isinstance(i, str):
+            s["ids"].add(i)
         s["touched"].add(("graph", None))
     elif o.get("op") in ("add", "set") and o.get("type") == "deliverable":
-        forget(s, "dv", o.get("id"))
-    elif o.get("op") in ("link", "unlink"):
+        forget(s, "dv", i)
+        forget(s, "refs", i)
+        if isinstance(i, str):
+            s["ids"].add(i)
+    elif o.get("op") in ("set", "link", "unlink"):
         forget(s, "graph", None)
 
 
@@ -638,6 +686,7 @@ def check_offline(folder: Path, batch: dict) -> list:
                 bad.append(f"{where}: args must be an object.")
                 continue
             spec, fields, removes = actions[name], acts[name].get("fields"), acts[name].get("removes") or []
+            done = maybe_done(state, name, args)      # the page skips its reference checks for an op already done
             for k in args:
                 if k not in spec:
                     bad.append(f"{where}: {name} has no argument {k!r}.")
@@ -653,7 +702,7 @@ def check_offline(folder: Path, batch: dict) -> list:
                         continue
                     t, label = fields[args["field"]], args["field"]
                 gone = k in removes         # what's being removed may already be gone: the page decides whether there's anything to remove
-                why = type_problem(label, t, args[k], refs, words_for) or (None if gone else ref_problem(t, args[k], refs, index, made))
+                why = type_problem(label, t, args[k], refs, words_for) or (None if gone or done else ref_problem(t, args[k], refs, index, made))
                 if why:
                     bad.append(f"{where}: {why}")
             if acts[name].get("creates") in refs and isinstance(args.get("id"), str):

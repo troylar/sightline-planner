@@ -8,7 +8,7 @@ The assistant's check matches Sightline.
 
 ### Fixed
 
-- **The assistant's offline check runs a change in order, as Sightline does** (Assistant). The check runs each change's steps in order, as Sightline does, and refuses the same things in the same words: planning an outcome before it has a target, handing off a declined request, or a link that makes a loop. The assistant's instructions now say to set the target first. *Where:* Assistant tools: sightline-app.py check, and the instructions the assistant reads
+- **The assistant's offline check runs a change in order, as Sightline does** (Assistant). The check runs each change's steps in order, as Sightline does, and never refuses what Sightline accepts. It now catches planning an outcome before it has a target, handing off a declined request, or a link that makes a loop. The assistant's instructions now say to set the target first. *Where:* Assistant tools: sightline-app.py check, and the instructions the assistant reads
 
 ## 1.187.0 · Nov 9, 2026
 

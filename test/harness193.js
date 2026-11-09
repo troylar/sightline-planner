@@ -62,7 +62,7 @@ setTimeout(()=>{
       if ((A.removes || []).includes(k)) continue;                      // H7b: what's removed isn't a reference
       if (!refAlts.length && !(words.length && words.length === alts(t).filter(a=>a !== "blank" && a !== "null").length)) continue;
       const args = {}; let skip = false;
-      for (const [kk, tt] of Object.entries(A.args)){ if (kk === "prev") continue; if (kk === "id" && A.creates){ args.id = "new-" + A.id.replace(/\W/g, "-"); continue; }
+      for (const [kk, tt] of Object.entries(A.args)){ if (kk === "prev") continue; if (kk === "id" && A.creates){ args.id = "new-" + A.id.replace(/\W/g, "-") + "-" + k + (fld ? "-" + fld : ""); continue; }   // one id per argument: in one batch, an add with an id made earlier is already done
         if (tt.endsWith("?") && kk !== k) continue; if (kk === "field"){ args.field = fld || Object.keys(A.fields)[0]; continue; }
         const v = kk === "value" ? fill(A.fields ? A.fields[args.field] : tt) : fill(tt); if (v === undefined){ skip = true; break; } args[kk] = v; }
       if (skip) continue;
@@ -158,10 +158,11 @@ setTimeout(()=>{
     ["own.add", {id:"own-o1", text:"Book the room", owner:S.people[0].id}], ["own.add", {id:"own-o2", text:"Draft the memo", owner:S.people[0].id}], ["own.close", {id:"own-o1", as:"done"}],
     ["task.add", {id:"task-a", bar:b, start:"2026-12-14", days:2, label:"First"}], ["task.add", {id:"task-b", bar:b, after:["task-a"], days:2, label:"Second"}],
     ["initiative.add", {id:"b-x1", lane:S.lanes[0].id, label:"One", day:"2026-12-07"}], ["initiative.add", {id:"b-x2", lane:S.lanes[0].id, label:"Two", day:"2026-12-07"}],
-    ["link.add", {id:"b-x2", after:"b-x1"}], ["outcome.add", {id:"dv-t1", name:"Partner API", target:"2027-Q2"}], ["outcome.raiseAgain", {id:"dv-c1", ask:"a0", origin:"rep-0"}]].map(([a, x])=>[a, runAction(S, a, x)]); render(); return JSON.stringify(r.filter(([, x])=>!x.ok)); })()`);
+    ["link.add", {id:"b-x2", after:"b-x1"}], ["outcome.add", {id:"dv-t1", name:"Partner API", target:"2027-Q2"}], ["outcome.raiseAgain", {id:"dv-c1", ask:"a0", origin:"rep-0"}],
+    ["initiative.add", {id:"b-x3", parent:"b-x1", label:"Inside one", day:"2026-12-07"}], ["ref.add", {on:"b-x2", id:"ref-x2", url:"https://docs.example.com/x2"}]].map(([a, x])=>[a, runAction(S, a, x)]); render(); return JSON.stringify(r.filter(([, x])=>!x.ok)); })()`);
   ok("H12 (setup) the items for the order cases are in the plan", set12 === "[]", set12);
   const ctx3 = JSON.parse(ev("JSON.stringify(assistantView())")), A = (action, args) => ({op:"action", action, args}), stage = (id, value) => A("outcome.set", {id, field:"stage", value});
-  const S_BAR = ev("S.bars[0].id"), PLAN = "Pick a target to plan it.", ORDER = [
+  const S_BAR = ev("S.bars[0].id"), S_LANE = ev("S.lanes[0].id"), PREV_O1 = JSON.parse(ev("JSON.stringify(dvSeen(dvById('dv-o1')))")), PLAN = "Pick a target to plan it.", ORDER = [
     ["plan-first", [stage("dv-o1", "planned"), A("outcome.setTarget", {id:"dv-o1", target:"2027-Q4"})], PLAN],
     ["target-first", [A("outcome.setTarget", {id:"dv-o1", target:"2027-Q4"}), stage("dv-o1", "planned")], null],
     ["target-cleared", [A("outcome.setTarget", {id:"dv-o1", target:"2027-Q4"}), A("outcome.setTarget", {id:"dv-o1"}), stage("dv-o1", "planned")], PLAN],
@@ -192,7 +193,17 @@ setTimeout(()=>{
     ["not-https", [A("ref.add", {on:"dv-o1", id:"ref-o5", url:"http://docs.example.com/c"})], "A link starts with https:// and has no spaces."],
     ["handoff-nowhere", [A("outcome.handoff", {id:"dv-c1"})], "Hand it off to one initiative or one Jira issue."],
     ["deleted-and-back", [A("task.del", {id:"task-a"}), A("task.add", {id:"task-a", bar:S_BAR, start:"2026-12-14", days:1, label:"First again"}), A("task.link", {id:"task-a", after:"task-b"})], null],
-    ["reason-not-doing", [A("own.close", {id:"own-o2", as:"done", why:"Not needed"})], "A reason goes with not doing it."]];
+    ["reason-not-doing", [A("own.close", {id:"own-o2", as:"done", why:"Not needed"})], "A reason goes with not doing it."],
+    ["add-replayed-bad-lane", [A("outcome.add", {id:"dv-t1", name:"Partner API", lane:"lane-missing"})], null],
+    ["closed-replayed", [A("own.close", {id:"own-o1", as:"done", why:""})], null],
+    ["detached", [A("initiative.setParent", {id:"b-x3", parent:"", prev:"b-x1"}), A("link.add", {id:"b-x3", after:"b-x1"})], null],
+    ["moved-out", [A("initiative.setLane", {id:"b-x3", lane:S_LANE}), A("link.add", {id:"b-x3", after:"b-x1"})], null],
+    ["inside", [A("link.add", {id:"b-x3", after:"b-x1"})], "One of these is inside the other, so it can't wait for it."],
+    ["deleted-bar-link", [A("initiative.del", {id:"b-x2"}), A("initiative.add", {id:"b-x2", lane:S_LANE, label:"Two", day:"2026-12-07"}), A("ref.add", {on:"b-x2", id:"ref-x9", url:"https://docs.example.com/x2"})], null],
+    ["byte-order-mark", [A("ref.add", {on:"dv-o1", id:"ref-o6", url:"\uFEFFhttps://docs.example.com/bom"})], null],
+    ["next-line", [A("ref.add", {on:"dv-o1", id:"ref-o7", url:"https://docs.example.com/nel\u0085"})], null],
+    ["task-add-replayed", [A("task.add", {id:"task-a", bar:S_BAR, start:"2026-12-14", days:2, label:"First"}), A("task.move", {id:"task-b", start:"after"})], null],
+    ["deleted-seen-and-back", [A("outcome.del", {id:"dv-o1", prev:PREV_O1}), A("outcome.add", {id:"dv-o1", name:"Checkout v2"}), A("ref.add", {on:"dv-o1", id:"ref-o8", url:"https://docs.example.com/a"})], null]];
   const oc = ORDER.map(([id, ops, want])=>({id, summary:id, ops, want}));      // each its own batch: a ready change would change the next
   const od = oc.map(c=>{ const pg = page(c.ops), py = check([{id:c.id, summary:c.id, ops:c.ops}], ctx3).by[c.id] || [];
     return pg.ok === !c.want && (pg.ok || pg.reason === c.want) && (pg.ok ? !py.length : py.length === 1 && py[0] === c.want) ? null : `${c.id}: page ${pg.ok ? "ok" : pg.reason}, checker ${py.join("; ") || "ok"}`; }).filter(Boolean);
@@ -214,6 +225,15 @@ setTimeout(()=>{
   const plain = [{id:"p1", summary:"Target by a plain set, then plan it", ops:[{op:"set", type:"deliverable", id:"dv-o1", field:"target", prev:null, value:"2027-Q1"}, stage("dv-o1", "planned")]}];
   const pc = check(plain, ctx3).by, rp = ready(plain);
   ok("H12d a plain set that gives a target, then planning it: the panel and the checker both accept it", rp.join() === "true" && !pc.p1, rp + " / " + JSON.stringify(pc));
+  // H12e an add that may be a replay is never refused: with tasks left out of the context, a task's own add (no start)
+  // is already done on the page. H12f an add replayed after an earlier change touched the item doesn't reset it.
+  const cut3 = JSON.parse(JSON.stringify(ctx3)); cut3.coverage.complete = false; cut3.coverage.tasks = {total:99, exported:0, omitted:99}; cut3.initiatives.forEach(b=>{ b.tasks = []; });
+  const re1 = [{id:"q1", summary:"Add a task that's there", ops:[A("task.add", {id:"task-a", bar:S_BAR, label:"First"})]}];
+  ok("H12e with tasks left out of the context, replaying a task's add is accepted by both", page(re1[0].ops).ok && !check(re1, cut3).by.q1, JSON.stringify(page(re1[0].ops)) + " / " + JSON.stringify(check(re1, cut3).by));
+  const re2 = [{id:"q2", summary:"Edit the request", ops:[A("outcome.set", {id:"dv-c1", field:"name", value:"Bulk edit, all rows"})]},
+    {id:"q3", summary:"Its add again, then hand it off", ops:[A("outcome.add", {id:"dv-c1", name:"Bulk edit, all rows"}), A("outcome.handoff", {id:"dv-c1", jira:"ABC-7"})]}];
+  const rq = ready(re2), cq = check(re2, ctx3).by;
+  ok("H12f an add replayed after an earlier change edited the item doesn't make the checker refuse what follows", rq.join() === "true,true" && !Object.keys(cq).length, rq + " / " + JSON.stringify(cq));
 
   fs.rmSync(dir, {recursive:true, force:true});
   console.log(R.join("\n")); const n = R.length; console.log(`${n - f}/${n} passed`); process.exit(f ? 1 : 0);
