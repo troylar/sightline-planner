@@ -74,6 +74,8 @@ plan['own'] = [
      'closed':{'as':'done', 'by':'p-avery', 'at':date.today().isoformat() + 'T08:30:00Z'}},
     {'id':'own-demo-7', 'text':'Book the pilot kickoff room', 'owner':'p-avery',
      'closed':{'as':'done', 'by':'p-avery', 'at':(date.today() - timedelta(days=3)).isoformat() + 'T15:00:00Z'}},
+    {'id':'own-demo-8', 'text':'Write up the first pilot retro', 'owner':'p-avery',
+     'closed':{'as':'done', 'by':'p-avery', 'at':(date.today() - timedelta(days=45)).isoformat() + 'T15:00:00Z'}},
     {'id':'own-demo-5', 'text':'Check the search index sizes', 'owner':'p-morgan'},
     {'id':'own-demo-6', 'text':'Pair with the new hire on the sync setup', 'owner':'p-casey'},
 ]

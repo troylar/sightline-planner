@@ -178,8 +178,9 @@ prevention is the only real control.
 - Decision and risk text typed in the Decisions and Risks tables, or read from a plan file, has no length cap
   (an assistant's `decision.*` / `risk.*` changes are capped at 4,000 characters; notes at 500), so one long paste
   can push a plan toward the 2 MB limit. The write-size check refuses it with a clear message.
-- Closed own items stay in the plan until the history slice moves them out, so they count toward `OWN_MAX` (120) and
-  the 2 MB limit. A team that closes many items reaches the cap and has to delete closed ones.
+- Closed own items stay in the plan until the history slice moves them out. The write-size check (`MAX_BYTES`) is the
+  backstop: a save that would pass it is refused before writing, and Today offers to delete closed items older than 30
+  days when the plan nears the limit.
 
 ## Working style
 

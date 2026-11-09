@@ -622,7 +622,7 @@ body.presenting #filterBtn,body.presenting #viewSave{display:none!important}
 .ownadd{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:2px 0 6px}.ownhelp{flex-basis:100%;margin:0;font-size:11.5px}.ownhelp kbd{font:10.5px/1.4 ui-monospace,monospace;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:0 4px}.ownfield{position:relative;flex:1;min-width:0;display:flex}
 .ownadd input{flex:1;min-width:0;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink)}
 .ownadd input::placeholder{color:var(--ink-3)}.ownadd input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
-.ownrecent summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--ink-2)}
+.ownacts{display:flex;gap:10px}.ownpurgerow{margin:6px 0 2px}.ownnudge{margin:0 0 6px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}.ownrecent summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--ink-2)}
 .ownlist{gap:0}.trow.ownrow{grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:start;padding:7px 0}
 .ownrow.pinned .owntext{font-weight:600}
 .owncheck{appearance:none;-webkit-appearance:none;flex:none;width:18px;height:18px;margin:1px 0 0;border:1.6px solid var(--ink-3);border-radius:50%;background:transparent;cursor:pointer}
@@ -1971,8 +1971,8 @@ const STAMPED = ["lanes","bars","milestones","gates","notes","views","sprints","
 // optional day it's pinned to, what it relates to (initiatives, outcomes and requests by id, Jira issues by key) and how
 // it was closed. Closed items stay in the plan for now: moving them to the history files after 30 days is a later slice,
 // since it needs a new kind of history entry.
-// OWN_MAX keeps a full list of the longest items (about 5.6 KB each at worst, 0.7 MB in all) near a third of MAX_BYTES.
-const OWN_MAX = 120, OWN_TEXT = 500, OWN_WHY = 200, OWN_REL = 20, OWN_ID = /^(?!(?:__proto__|constructor|prototype)$)[A-Za-z0-9][A-Za-z0-9_.:@-]{0,79}$/;
+// OWN_MAX is a sanity bound; the real limit is the write-size check (MAX_BYTES), which refuses a save before writing.
+const OWN_MAX = 1000, OWN_TEXT = 500, OWN_WHY = 200, OWN_REL = 20, OWN_ID = /^(?!(?:__proto__|constructor|prototype)$)[A-Za-z0-9][A-Za-z0-9_.:@-]{0,79}$/;
 const ownLine = (v, n) => String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, n);
 function ownRels(L, bars, dvs){ const seen = new Set(), out = [];
   (Array.isArray(L) ? L : []).forEach(r=>{ if (!r || typeof r !== "object" || out.length >= OWN_REL) return;
@@ -12909,7 +12909,7 @@ function renderTags(){
 }
 // Delivery, then Activity: the change log, newest first, by person. Advice, not an audit.
 // How big the plan file is against what a save can write (2 MB), and what takes the room, so growth is seen early.
-const SIZE_PARTS = [["changes","Activity (change log)"],["bars","Initiatives and tasks"],["deliverables","Deliverables"],["snapshots","Snapshots"],["reports","Status updates"],["commitments","Sprint commitments"],["notes","Notes"],["updates","Updates"],["meetings","Meetings"],["proposals","Jira proposals"],["jiraItems","Jira tags"],["people","People"],["views","Saved views"]];
+const SIZE_PARTS = [["changes","Activity (change log)"],["bars","Initiatives and tasks"],["deliverables","Deliverables"],["snapshots","Snapshots"],["reports","Status updates"],["commitments","Sprint commitments"],["notes","Notes"],["updates","Updates"],["meetings","Meetings"],["proposals","Jira proposals"],["jiraItems","Jira tags"],["people","People"],["own","People's own lists"],["views","Saved views"]];
 function utf8Len(t){ if (typeof TextEncoder !== "undefined") return new TextEncoder().encode(t).length; let n = 0; for (let i = 0; i < t.length; i++){ const c = t.charCodeAt(i); n += c < 0x80 ? 1 : c < 0x800 ? 2 : c >= 0xd800 && c < 0xdc00 ? (i++, 4) : 3; } return n; }
 function planSize(){ const bytes = x => utf8Len(JSON.stringify(x == null ? null : x)), rec = planOfRecord(S);
   let total = 0; try { total = utf8Len(serialize(rec, (file.handle && file.handle.name) || "plan.json")); } catch(e){ total = bytes(S); }
@@ -17149,7 +17149,7 @@ const ownAt = o => (o.added && Date.parse(o.added.at)) || 0;
 function ownLists(me, t0 = todayDay()){ const all = (S.own || []).map((o, i)=>({o, i})), mine = all.filter(x=>x.o.owner === me), newest = (a, b)=>ownAt(b.o) - ownAt(a.o) || a.i - b.i;
   const open = mine.filter(x=>!x.o.closed), top = open.filter(x=>x.o.pin && isoToDay(x.o.pin) <= t0).sort((a, b)=>a.o.pin.localeCompare(b.o.pin) || newest(a, b));
   return {top:top.map(x=>x.o), rest:open.filter(x=>!top.includes(x)).sort(newest).map(x=>x.o),
-    done:closedIn(mine, t0, t0), recent:closedIn(mine, t0 - OWN_RECENT, t0 - 1)}; }
+    done:closedIn(mine, t0, t0), recent:closedIn(mine, t0 - OWN_RECENT, t0 - 1), earlier:closedIn(mine, -Infinity, t0 - OWN_RECENT - 1)}; }
 const OWN_RECENT = 30, closedIn = (xs, from, to) => xs.filter(x=>{ const c = x.o.closed, k = c && stampDay(c.at); return k != null && k >= from && k <= to; }).sort((a, b)=>Date.parse(b.o.closed.at) - Date.parse(a.o.closed.at)).map(x=>x.o);
 // A related item, by stable id or Jira key: never copied, so one the plan or the sync no longer has says so.
 function ownRelChip(r){ const po = () => h("span",{class:"vh"}, "Part of "), k = r.jira, b = !k && r.type === "bar" ? barById(r.id) : null, d = !k && r.type === "deliverable" ? dvById(r.id) : null;
@@ -17213,22 +17213,34 @@ function ownRow(o, can, t0){ const p = o.pin ? isoToDay(o.pin) : null, [more, pa
   return h("li",{class:"trow ownrow" + (p != null && p <= t0 ? " pinned" : ""),"data-own":o.id,"data-tkey":"own:" + o.id},
     can ? h("input",{type:"checkbox",class:"owncheck","aria-label":`Done: ${o.text}`,onchange:e=>{ e.currentTarget.disabled = true; ownClose(o, "done"); }}) : h("span",{class:"ownbox","aria-hidden":"true"}),
     h("div",{class:"ownmain"}, h("span",{class:"owntext"}, o.text), pin || rels.length ? h("div",{class:"ownmeta"}, pin, ...rels) : null), more || h("span"), panel); }
-function ownDoneRow(o, can, when){ const nd = o.closed.as === "notdoing";
+// Every closed item stays reachable until the history slice: today's, the last 30 days', and earlier ones, which can be deleted.
+function ownPurge(me){ const xs = ownLists(me).earlier; if (!xs.length) return; const ids = new Set(xs.map(o=>o.id)), n = ids.size;
+  whoAmI(null, ()=>Promise.resolve(quickSave(`deleted ${n} closed item${n === 1 ? "" : "s"} older than ${OWN_RECENT} days`, s=>{ const before = (s.own || []).length; s.own = (s.own || []).filter(o=>!ids.has(o.id)); return s.own.length === before ? NOCHANGE : undefined; }))
+    .then(ok=>{ if (!ok){ if ($("#ownSec")) renderToday(); return; } ownSay(`Deleted ${n} closed item${n === 1 ? "" : "s"} older than ${OWN_RECENT} days.`); })); }
+const ownPurgeBtn = me => h("button",{type:"button",class:"btn sm ownpurge",onclick:()=>ownPurge(me)}, `Delete closed items older than ${OWN_RECENT} days`);
+// Near the limit: within 15% of MAX_BYTES, measured on the saved file when there is one (cheap), else on the plan.
+function ownNearFull(){ try { return new Blob([file.handle && file.baseText ? file.baseText : serialize(planOfRecord(S), "plan.json")]).size >= MAX_BYTES * 0.85; } catch(e){ return false; } }
+function ownDoneRow(o, can, when, del){ const nd = o.closed.as === "notdoing";
   return h("li",{class:"trow ownrow owndone" + (nd ? " notdoing" : ""),"data-own":o.id,"data-tkey":"own:" + o.id},
     h("span",{class:"ownmark","aria-hidden":"true"}, nd ? "–" : icon("check")),
     h("div",{class:"ownmain"}, h("span",{class:"owntext"}, h("span",{class:"vh"}, nd ? "Not doing: " : "Done: "), o.text), nd || when ? h("div",{class:"ownmeta"}, when ? h("span",{class:"ownchip"}, when) : null, nd ? h("span",{class:"ownchip"}, "Not doing" + (o.closed.why ? ": " + o.closed.why : "")) : null) : null),
-    can ? h("button",{type:"button",class:"linkish ownreopen","data-oreopen":o.id,onclick:()=>ownDo(`"${cutText(o.text, 60)}" reopened`, "own.reopen", {id:o.id}).then(ok=>{ if (ok){ ownSay(`Reopened "${cutText(o.text, 60)}".`); ownGlide(o.id, null); } })}, "Reopen") : h("span")); }
+    can ? h("span",{class:"ownacts"}, h("button",{type:"button",class:"linkish ownreopen","data-oreopen":o.id,onclick:()=>ownDo(`"${cutText(o.text, 60)}" reopened`, "own.reopen", {id:o.id}).then(ok=>{ if (ok){ ownSay(`Reopened "${cutText(o.text, 60)}".`); ownGlide(o.id, null); } })}, "Reopen"),
+      del ? h("button",{type:"button",class:"linkish ownreopen","data-odel":o.id,onclick:()=>ownDo(`"${cutText(o.text, 60)}" deleted`, "own.del", {id:o.id}).then(ok=>{ if (ok) ownSay(`Deleted "${cutText(o.text, 60)}".`); })}, "Delete") : null) : h("span")); }
 function ownSection(me){ const can = ownCan(), t0 = todayDay(), L = ownLists(me, t0), n = L.top.length + L.rest.length;
   const add = can ? h("form",{class:"ownadd",id:"ownAddForm",onsubmit:e=>{ e.preventDefault(); ownAdd($("#ownAdd")); }},
     h("span",{class:"ownfield"}, h("input",{id:"ownAdd",type:"text",maxlength:String(OWN_TEXT),value:ownDraft,placeholder:"What are you working on?","aria-label":"Add to my list","aria-describedby":"ownHelp",autocomplete:"off",oninput:e=>{ ownDraft = e.currentTarget.value; }})),
       h("button",{type:"submit",class:"btn",id:"ownAddGo"}, "Add"), h("p",{class:"hint ownhelp",id:"ownHelp"}, "Enter adds it. Press ", h("kbd",{}, "Q"), " anywhere to come back here.")) : null;
+  const nudge = can && L.earlier.length && ownNearFull() ? h("p",{class:"hint ownnudge",id:"ownNudge"}, "The plan is close to its size limit. Closed items stay in it until they're deleted. ", ownPurgeBtn(me)) : null;
   return h("section",{class:"tsec town",id:"ownSec","data-tsec":"My list","aria-labelledby":"ownH"},
     h("header",{}, h("h3",{id:"ownH"}, icon("check"), "My list", h("b",{}, String(n))), h("span",{class:"hint"}, "One line each, in your words. It's saved in the shared plan, so the team can see it too.")),
-    add, n ? h("ul",{class:"ownlist",id:"ownList"}, ...[...L.top, ...L.rest].map(o=>ownRow(o, can, t0)))
+    nudge, add, n ? h("ul",{class:"ownlist",id:"ownList"}, ...[...L.top, ...L.rest].map(o=>ownRow(o, can, t0)))
       : h("p",{class:"hint ownempty",id:"ownEmpty"}, can ? (L.done.length ? "All clear. Add the next thing when it comes up." : "Nothing here yet. Type what you're working on and press Enter.") : `Nothing on ${personName(me)}'s list.`),
     L.done.length ? h("div",{class:"owndonegrp",id:"ownDone"}, h("h4",{}, icon("check"), "Done today", h("b",{}, String(L.done.length))), h("ul",{class:"ownlist"}, ...L.done.map(o=>ownDoneRow(o, can)))) : null,
     L.recent.length ? h("details",{class:"owndonegrp ownrecent",id:"ownRecent",open:!!UI.ownRecentOpen,ontoggle:e=>{ UI.ownRecentOpen = e.currentTarget.open; }},
-      h("summary",{}, `Closed in the last ${OWN_RECENT} days (${L.recent.length})`), h("ul",{class:"ownlist"}, ...L.recent.map(o=>ownDoneRow(o, can, `${WD_SHORT[dow(stampDay(o.closed.at))]} ${fmtDay(stampDay(o.closed.at))}`)))) : null); }
+      h("summary",{}, `Closed in the last ${OWN_RECENT} days (${L.recent.length})`), h("ul",{class:"ownlist"}, ...L.recent.map(o=>ownDoneRow(o, can, `${WD_SHORT[dow(stampDay(o.closed.at))]} ${fmtDay(stampDay(o.closed.at))}`)))) : null,
+    L.earlier.length ? h("details",{class:"owndonegrp ownrecent",id:"ownEarlier",open:!!UI.ownEarlierOpen,ontoggle:e=>{ UI.ownEarlierOpen = e.currentTarget.open; }},
+      h("summary",{}, `Closed earlier (${L.earlier.length})`), can ? h("p",{class:"ownpurgerow"}, ownPurgeBtn(me)) : null,
+      h("ul",{class:"ownlist"}, ...L.earlier.map(o=>ownDoneRow(o, can, fmtDay(stampDay(o.closed.at)), true)))) : null); }
 // Your Jira issues: matched by your linked Jira user key, never by name. Open ones and those that closed today, from
 // the placed items' sync and the search file. Read-only: they change in Jira.
 function myJira(me, t0 = todayDay()){ const pp = personById(me), key = pp && pp.jira && pp.jira.key; if (!key) return null;

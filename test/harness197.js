@@ -12,6 +12,7 @@ const FIX = fs.readFileSync(path.join(__dirname, "fixtures", "sample-plan.json")
 const R = []; const ok = (n, c, x = "") => R.push(`${c ? "PASS" : "FAIL"}  ${n}${x ? "  (" + x + ")" : ""}`);
 setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT"); process.exit(1); }, 90000).unref();
 const wait = ms => new Promise(r=>setTimeout(r, ms));
+const until = async (f, ms = 5000) => { const t = Date.now(); while (Date.now() - t < ms){ try { if (f()) return true; } catch(e){} await wait(20); } return false; };   // file writes are async: wait for the result, not a guess
 (async()=>{
   try {
     const dom = new JSDOM(html, {runScripts:"dangerously", pretendToBeVisual:true, url:"https://local.test/", virtualConsole:new VirtualConsole(), beforeParse(w){
@@ -253,14 +254,6 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
     ok("Q3 typing q into the add line, or into any other field, types a q", typeQ(d.getElementById("ownAdd")) && typeQ(other0) && X("UI.ws") === "today"); other0.remove();
     ok("Q2 Q is listed in the shortcut help and the command palette, and taken by nothing else", J(`SHORTCUTS.flatMap(g=>g[1]).filter(r=>r[0].includes("Q")).length`) === 1 && J(`COMMANDS.filter(c=>(c.keys || []).includes("Q")).map(c=>c.id)`).join() === "own-add");
 
-    // ---- size: a full list of the longest items stays well under half of what a save may write
-    const W = J(`(()=>{ const p = normalize(JSON.parse(FIX), false), who = p.people[0].id, ds = Array.from({length:OWN_REL}, (_, i)=>({id:"dv-" + String(i).padStart(2, "0") + "x".repeat(70), name:"Outcome " + i, stage:"idea"}));
-      p.deliverables = ds; p.own = Array.from({length:5000}, (_, i)=>({id:"own-" + String(i).padStart(4, "0") + "y".repeat(70), text:"中".repeat(OWN_TEXT), owner:who, pin:"2026-11-09", rel:ds.map(x=>({type:"deliverable", id:x.id})),
-        closed:{as:"notdoing", by:who, at:"2026-11-09T09:00:00.000Z", why:"中".repeat(OWN_WHY)}, added:{by:who, at:"2026-11-09T09:00:00.000Z"}, edited:{by:who, at:"2026-11-09T09:00:00.000Z"}}));
-      const q = normalize(p, false), base = new Blob([serialize(normalize(JSON.parse(FIX), false), "p.json")]).size;
-      return {n:q.own.length, bytes:new Blob([serialize(q, "p.json")]).size - base, max:MAX_BYTES, full:runAction(q, "own.add", {text:"One more"}).reason || ""}; })()`);
-    ok("W1 a full list of the longest items stays well under half of the 2 MB write limit (under 40%), and adding past the cap says why", W && W.bytes < W.max * 0.4 && /up to \d+ items/.test(W.full), JSON.stringify({n:W.n, bytes:W.bytes, full:W.full}));
-
     // ---- a shared file: moving into an initiative, then undo, writes the item back to the list
     X(`window.HD = {name:"own-check.json", text:"", writes:0, async queryPermission(){ return "granted"; }, async requestPermission(){ return "granted"; },
       async getFile(){ return {size:new Blob([HD.text]).size, text:async()=>HD.text, lastModified:1}; },
@@ -268,9 +261,47 @@ const wait = ms => new Promise(r=>setTimeout(r, ms));
       const p = normalize(JSON.parse(FIX), false); p.own = [{id:"f-1", text:"Fix the export", owner:"${me}", added:{by:"${me}", at:"2026-11-01T09:00:00.000Z"}}];
       HD.text = serialize(p, HD.name); installPlan(p, HD.text, HD); goWs("today"); UI.todayScope = "me"; render();`); await wait(50);
     const inFile = () => J(`(()=>{ const p = JSON.parse(HD.text); return {own:(p.own || []).some(x=>x.id === "f-1"), task:p.bars.some(b=>(b.tasks || []).some(t=>t.id === "f-1"))}; })()`);
-    const okMove = await w.ownDo("moved", "own.toTask", {id:"f-1", initiativeId:bar2}); await wait(50); const f1 = inFile();
-    X(`undo()`); await wait(150); const f2 = inFile();
+    const okMove = await w.ownDo("moved", "own.toTask", {id:"f-1", initiativeId:bar2}); await until(()=>inFile().task); const f1 = inFile();
+    X(`undo()`); await until(()=>inFile().own); const f2 = inFile();
     ok("FB1 on a shared file, Move into an initiative writes the task, and undo writes the item back to the list", !!okMove && f1.task && !f1.own && f2.own && !f2.task, JSON.stringify([okMove, f1, f2, d.getElementById("status").textContent]));
+
+    // ---- size: the write-size check is the limit, not a small cap
+    const putFile = own => X(`(()=>{ const p = normalize(JSON.parse(FIX), false); p.own = ${own}; HD.text = serialize(p, HD.name); HD.writes = 0; installPlan(p, HD.text, HD); render(); })()`);
+    putFile(`Array.from({length:999}, (_, i)=>({id:"tw-" + i, text:("Follow up on the vendor contract, item " + i).padEnd(60, "."), owner:"${me}", added:{by:"${me}", at:"2026-10-01T09:00:00.000Z"}, ...(i % 2 ? {closed:{as:"done", by:"${me}", at:"2026-10-02T09:00:00.000Z"}} : {})}))`); await wait(30);
+    const okTyp = await w.ownDo("added", "own.add", {id:"tw-last", text:"The thousandth item, about sixty characters long, more or less"}); await wait(50);
+    const typ = J(`({n:JSON.parse(HD.text).own.length, writes:HD.writes, bytes:new Blob([HD.text]).size})`);
+    ok("W1 a 1000-item list of typical length saves", !!okTyp && typ.n === 1000 && typ.writes > 0 && typ.bytes < J("MAX_BYTES"), JSON.stringify(typ));
+    putFile(`Array.from({length:300}, (_, i)=>({id:"tb-" + i, text:"中".repeat(500), owner:"${me}", closed:{as:"notdoing", by:"${me}", at:"2026-10-02T09:00:00.000Z", why:"中".repeat(200)}}))`); await wait(30);
+    const before = X("HD.text");
+    const okBig = await w.eval(`quickSave("grew the list", s=>{ for (let i = 0; i < 650; i++) s.own.push({id:"tg-" + i, text:"中".repeat(500), owner:"${me}", closed:{as:"notdoing", by:"${me}", at:"2026-10-02T09:00:00.000Z", why:"中".repeat(200)}}); })`); await wait(50);
+    ok("W2 a list that pushes the plan past 2 MB is refused with the size message, and nothing is written", !okBig && X("HD.text") === before && J("HD.writes") === 0 && /Not saved: the plan would be [\d.]+ MB, over the 2 MB/.test(d.getElementById("status").textContent) && /people's own lists/i.test(d.getElementById("status").textContent), d.getElementById("status").textContent);
+
+    // ---- every closed item is reachable; old ones can be deleted in one step
+    const old = (i, days) => `{id:"te-${i}", text:"Closed long ago ${i}", owner:"${me}", closed:{as:"done", by:"${me}", at:new Date(Date.now() - ${days} * 864e5).toISOString()}}`;
+    putFile(`[${[old(1, 45), old(2, 90), old(3, 400), old(4, 5)].join(",")}, {id:"te-x", text:"Theirs, closed long ago", owner:"${other}", closed:{as:"done", by:"${other}", at:"2025-01-01T09:00:00.000Z"}}, {id:"te-open", text:"Still open", owner:"${me}"}]`); await wait(30);
+    const ear = d.getElementById("ownEarlier");
+    ok("E1 items closed more than 30 days ago sit in a collapsed Closed earlier (N), each with Reopen and Delete", !!ear && !ear.open && ear.querySelector("summary").textContent === "Closed earlier (3)" && ["te-1","te-2","te-3"].every(id=>ear.querySelector(`[data-oreopen="${id}"]`) && ear.querySelector(`[data-odel="${id}"]`)) && !ear.querySelector('[data-own="te-4"]') && !!d.querySelector('#ownRecent [data-own="te-4"]'), ear ? ear.querySelector("summary").textContent : "none");
+    const fileHas = id => JSON.parse(X("HD.text")).own.some(x=>x.id === id);
+    ear && ear.querySelector('[data-odel="te-3"]').click(); await until(()=>!fileHas("te-3"));
+    ok("E2 …Delete removes one", !J(`S.own.some(x=>x.id === "te-3")`) && !JSON.parse(X("HD.text")).own.some(x=>x.id === "te-3"));
+    X(`undo()`); await until(()=>fileHas("te-3") && J(`S.own.some(x=>x.id === "te-3")`) === true); await wait(30);
+    const purge = () => [...d.querySelectorAll("#ownEarlier button")].find(b=>b.textContent === "Delete closed items older than 30 days");
+    const fileOwn = () => JSON.parse(X("HD.text")).own.map(x=>x.id).sort().join();
+    purge() && purge().click(); await until(()=>!fileHas("te-1") && /Deleted/.test(d.getElementById("status").textContent));
+    ok("E3 Delete closed items older than 30 days deletes my older closed items in one save, and says how many and that Undo brings them back", fileOwn() === "te-4,te-open,te-x" && /Deleted 3 closed items older than 30 days\. Ctrl\+Z undoes it\./.test(d.getElementById("status").textContent), fileOwn() + " | " + d.getElementById("status").textContent);
+    X(`undo()`); await until(()=>fileOwn() === "te-1,te-2,te-3,te-4,te-open,te-x");
+    ok("E4 …and one Undo brings them all back", fileOwn() === "te-1,te-2,te-3,te-4,te-open,te-x", fileOwn());
+    X(`locked = true; render();`); await wait(10);
+    ok("E5 viewers see the earlier items, without Delete or the button", !!d.getElementById("ownEarlier") && !purge() && !d.querySelector("#ownEarlier [data-odel]"));
+    X(`locked = false; render();`); await wait(10);
+
+    // ---- a quiet nudge when the plan nears its size limit and there are old closed items
+    ok("NG1 no nudge while the plan is far from the limit", !d.getElementById("ownNudge"));
+    X(`file.baseText = file.baseText + " ".repeat(Math.ceil(MAX_BYTES * 0.86) - new Blob([file.baseText]).size); render();`); await wait(10);
+    const ng = d.getElementById("ownNudge");
+    ok("NG2 within 15% of the limit, with closed items older than 30 days, Today offers the same button in one quiet line", !!ng && /close to its size limit/.test(ng.textContent) && [...ng.querySelectorAll("button")].map(b=>b.textContent).join() === "Delete closed items older than 30 days", ng ? ng.textContent : "none");
+    X(`S.own = S.own.filter(o=>!/^te-[123]$/.test(o.id)); render();`); await wait(10);
+    ok("NG3 …and none once there's nothing old to delete", !d.getElementById("ownNudge"));
 
     ok("Z1 no script errors", !w.errs.length, w.errs.join(" | "));
   } catch(e){ ok("no exception", false, e.stack); }
