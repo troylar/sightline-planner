@@ -194,6 +194,27 @@ with tempfile.TemporaryDirectory() as tmp:
     ok("a placement on an initiative made earlier in the change isn't checked against the context's targets",
        not any(x.startswith("change j1") for x in lines), p.stdout + p.stderr)
 
+    # A placement makes tasks with ids the page picks, and a workstream's former id reads as its id now (the page's alias).
+    REFS = {"taskId": {"noun": "task", "in": "initiatives[].tasks", "coverage": "tasks", "missing": "That task isn't in the plan."},
+            "workstreamId": {"noun": "workstream", "in": "planning.workstreams", "coverage": "workstreams", "missing": "That workstream isn't in the plan."}}
+    put(f, "sightline-assistant-view.json", {"kind": "sightline-assistant-view", "version": 1, "plan": {"id": "p-app", "revision": 4},
+                                             "argTypes": {"refs": REFS, "types": {}},
+                                             "coverage": {"complete": True, "tasks": {"total": 0, "exported": 0, "omitted": 0}, "workstreams": {"total": 1, "exported": 1, "omitted": 0}},
+                                             "actions": [{"id": "jira.toInitiative", "args": {"keys": "keys", "id": "str"}},
+                                                         {"id": "task.set", "args": {"id": "taskId", "field": "str", "value": "any"}, "fields": {"label": "str"}},
+                                                         {"id": "workstream.rename", "args": {"id": "workstreamId", "name": "str"}}],
+                                             "initiatives": [{"id": "b-1", "label": "Home", "tasks": []}],
+                                             "planning": {"workstreams": [{"id": "lane-renamed", "name": "Platform"}]},
+                                             "jiraSort": {"issues": [{"key": "ABC-901"}], "placed": {}, "epics": [],
+                                                          "targets": {"initiatives": [{"id": "b-1"}], "workstreams": [{"id": "lane-renamed", "was": ["int"]}]}}})
+    act = lambda n, x: {"op": "action", "action": n, "args": x}
+    p = run("check", str(f), str(batch(f, changes=[
+        {"id": "k1", "summary": "place, then label", "ops": [act("jira.toInitiative", {"keys": ["ABC-901"], "id": "b-1"}), act("task.set", {"id": "task-abc-901", "field": "label", "value": "Planning label"})]},
+        {"id": "k2", "summary": "former id", "ops": [act("workstream.rename", {"id": "int", "name": "Platform"})]}])))
+    ok("a task a placement made, and a workstream's former id, aren't refused as missing", out(p).get("ok") is True and not out(p).get("lines"), p.stdout + p.stderr)
+    p = run("check", str(f), str(batch(f, changes=[{"id": "k3", "summary": "no such task", "ops": [act("task.set", {"id": "task-zz", "field": "label", "value": "X"})]}])))
+    ok("…while a task nothing made is still refused", "change k3, op 1: That task isn't in the plan." in out(p).get("lines", []), p.stdout + p.stderr)
+
     ok("the tool uses only the standard library", all(not line.startswith(("import requests", "from requests")) for line in TOOL.read_text().splitlines()))
     ok("it never touches the context or results files", '"w"' not in TOOL.read_text().split("def write_atomic")[0])
 

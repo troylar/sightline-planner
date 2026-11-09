@@ -634,6 +634,25 @@ def legacy_apply(s: dict, o: dict) -> None:
         forget(s, "graph", None)
 
 
+def alias_lanes(name: str, args: dict, aliases: dict) -> dict:
+    """The page's amAliasLanes: a workstream's former id (its was list) reads as its id now."""
+    if not aliases:
+        return args
+    to = lambda v: aliases.get(v, v) if isinstance(v, str) else v
+    a = dict(args)
+    if "lane" in a:
+        a["lane"] = to(a["lane"])
+    if str(name).startswith("workstream.") and name != "workstream.reid" and "id" in a:     # reid's id is the new one
+        a["id"] = to(a["id"])
+    if isinstance(a.get("lanes"), dict):
+        a["lanes"] = {to(k): v for k, v in a["lanes"].items()}
+    if a.get("field") == "lane":
+        a["value"] = to(a.get("value"))
+        if "prev" in a:
+            a["prev"] = to(a["prev"])
+    return a
+
+
 def check_offline(folder: Path, batch: dict) -> list:
     """Problems with a batch, checked against the context file it was written from. The page checks again."""
     ctx = read_json(folder / CONTEXT_FILE, "sightline-assistant-view")
@@ -658,6 +677,10 @@ def check_offline(folder: Path, batch: dict) -> list:
     words_for = ((ctx.get("argTypes") or {}).get("types") or {}) if isinstance(ctx.get("argTypes"), dict) else {}
     ADDS = {"deliverable": "outcomeId", "initiative": "initiativeId", "task": "taskId"}      # what an {op:'add'} makes
     bad, seen, ready = [], set(), working_copy(ctx)
+    live = {x.get("id") for x in ((ctx.get("jiraSort") or {}).get("targets") or {}).get("workstreams") or [] if isinstance(x, dict)}
+    aliases = {o: x["id"] for x in ((ctx.get("jiraSort") or {}).get("targets") or {}).get("workstreams") or []
+               if isinstance(x, dict) and isinstance(x.get("id"), str) and isinstance(x.get("was"), list)
+               for o in x["was"] if isinstance(o, str) and o not in live}
     changes = batch.get("changes")
     if not isinstance(changes, list) or not changes:
         return ["The batch has no changes."]
@@ -700,6 +723,7 @@ def check_offline(folder: Path, batch: dict) -> list:
             if not isinstance(args, dict):
                 bad.append(f"{where}: args must be an object.")
                 continue
+            args = alias_lanes(name, args, aliases)
             spec, fields, removes = actions[name], acts[name].get("fields"), acts[name].get("removes") or []
             done = maybe_done(state, name, args)      # the page skips its reference checks for an op already done
             kind = acts[name].get("creates")
@@ -742,6 +766,10 @@ def check_offline(folder: Path, batch: dict) -> list:
                     state_apply(state, name, args)
                     if str(name).startswith(SORT_MOVERS):     # jiraSort is the context's: after these, placements are the page's call
                         state["sortMoved"] = True
+                    made_here = (["taskId", "initiativeId"] if str(name).startswith("jira.") and name not in ("jira.hide", "jira.unhide")
+                                 else [kind] if kind in refs and not args.get("id") else [])
+                    for k in made_here:     # ids the page makes up: a reference can't be proved missing any more
+                        index[k] = (index.get(k, (set(), False))[0], False)
     return bad
 
 
