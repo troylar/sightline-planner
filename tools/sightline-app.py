@@ -17,6 +17,7 @@ published with a different Sightline version than the page that wrote the folder
 from __future__ import annotations
 
 import argparse
+import copy
 import datetime as dt
 import json
 import os
@@ -275,6 +276,386 @@ def ref_problem(t: str, v, refs: dict, index: dict, made: dict) -> str | None:
     return None
 
 
+REF_MAX, AGAIN_MAX, OWN_WHY = 20, 50, 200
+JKEY = re.compile(r"^[A-Z][A-Z0-9_]{0,19}-[1-9][0-9]{0,8}$")
+EV_ID = re.compile(r"^[A-Za-z0-9._-]{1,60}$")
+EV_TEXT = {"impact": 200, "role": 40}
+JS_SPACE = " \t\n\v\f\r                 　﻿"
+REF_URL = re.compile("^https://[^" + re.escape(JS_SPACE) + "\"'<>\\\\]{1,500}$")     # JavaScript's \s, not Python's
+
+
+def js_trim(v) -> str:
+    """String.prototype.trim, which also drops a byte-order mark (Python's strip() keeps it)."""
+    return str(v if v is not None else "").strip(JS_SPACE)
+
+
+# The page checks a change's ops in order on a copy of the plan, after the ready changes before it, so whether an op is
+# allowed can depend on what the ops before it did. The working copy holds what the page's rules read about an item, from
+# the context. It never refuses what the page accepts: an item whose state isn't certain (changed by an op whose every
+# check isn't mirrored here, by a plain op, by an earlier change, or given prev; or an add that may be a replay) is
+# dropped from it, and nothing is said about an item the copy doesn't hold. The page checks again.
+def working_copy(ctx: dict) -> dict:
+    s = {"dv": {}, "own": {}, "tasks": {}, "bars": {}, "parent": {}, "refs": {}, "graph": True, "touched": set(), "ids": set(), "converted": set(), "sortMoved": False,
+         "releases": {r.get("id"): bool(r.get("date")) for r in (ctx.get("choices") or {}).get("releases") or [] if isinstance(r, dict)},
+         "cut": not ((ctx.get("coverage") or {}).get("complete") is True)}
+    rc = (ctx.get("coverage") or {}).get("choices.releases")
+    s["relCut"] = bool(rc.get("omitted")) if isinstance(rc, dict) else s["cut"]     # a release left out may be dated
+    for d in ctx.get("deliverables") or []:
+        if isinstance(d, dict) and isinstance(d.get("id"), str):
+            s["dv"][d["id"]] = {"target": bool(d.get("target")), "release": bool(d.get("release")), "date": bool(d.get("date")),
+                                "stage": d.get("stage") or "idea", "capture": bool(d.get("capture")), "handoff": bool(d.get("handoff")),
+                                "origin": d.get("origin") or "", "asks": [{"id": x.get("id"), "origin": x.get("origin") or ""}
+                                                                         for x in d.get("raisedAgain") or [] if isinstance(x, dict)]}
+            if d.get("release") and s["releases"].get(d["release"]):       # the page reads its quarter as the target
+                s["dv"][d["id"]]["target"] = True
+            elif d.get("release") and d["release"] not in s["releases"] and s["relCut"]:
+                del s["dv"][d["id"]]
+            s["refs"][d["id"]] = [(r.get("id"), r.get("url")) for r in d.get("refs") or [] if isinstance(r, dict)]
+    for b in ctx.get("initiatives") or []:
+        if isinstance(b, dict) and isinstance(b.get("id"), str):
+            s["bars"][b["id"]] = {"deps": list(b.get("dependsOn") or []), "parked": bool(b.get("parked"))}
+            s["parent"][b["id"]] = b.get("parent") or ""
+            s["refs"][b["id"]] = [(r.get("id"), r.get("url")) for r in b.get("refs") or [] if isinstance(r, dict)]
+            for t in b.get("tasks") or []:
+                if isinstance(t, dict) and isinstance(t.get("id"), str):
+                    s["tasks"][t["id"]] = list(t.get("dependsOn") or [])
+    for o in (ctx.get("planning") or {}).get("own") or []:
+        if isinstance(o, dict) and isinstance(o.get("id"), str):
+            s["own"][o["id"]] = bool(o.get("closed"))
+    s["ids"] = {*s["dv"], *s["bars"], *s["tasks"], *s["own"]}
+    return s
+
+
+SORT_MOVERS = ("jira.", "initiative.", "workstream.", "task.", "own.toTask")
+
+
+def fresh(s: dict, i) -> bool:
+    """An add with this id makes something certainly new: not in the context, not made earlier, and nothing left out."""
+    return isinstance(i, str) and not s["cut"] and i not in s["ids"]
+
+
+def forget(s: dict, kind: str, i) -> None:
+    """Nothing is known about this item any more: no rule speaks about it."""
+    if kind == "graph":
+        s["graph"] = False
+    else:
+        s[kind].pop(i, None)
+
+
+def settle(s: dict) -> dict:
+    """After a change the page would apply: the next change starts from the context, minus what this one touched."""
+    for kind, i in s["touched"]:
+        forget(s, kind, i)
+    s["touched"] = set()
+    return s
+
+
+def _reaches(deps: dict, start, goal) -> bool:
+    seen, stack = set(), [start]
+    while stack:
+        x = stack.pop()
+        if x == goal:
+            return True
+        if x in seen:
+            continue
+        seen.add(x)
+        stack.extend(deps.get(x) or [])
+    return False
+
+
+def _inside(parent: dict, i, anc) -> bool:
+    seen = set()
+    while i and i not in seen:
+        seen.add(i)
+        i = parent.get(i)
+        if i == anc:
+            return True
+    return False
+
+
+ADD_ACTIONS = ("outcome.add", "own.add", "task.add", "initiative.add")
+
+
+def maybe_done(s: dict, name: str, a: dict) -> bool:
+    """The page's done() comes before its reference checks and its rules: an op that may already be true in the plan (an
+    add that may be a replay, an ask or a link already recorded, an own item already closed) is never refused here."""
+    i = a.get("id")
+    if name in ADD_ACTIONS:
+        return isinstance(i, str) and not fresh(s, i)
+    if name == "outcome.raiseAgain" and i in s["dv"]:
+        return any(x["id"] == a.get("ask") for x in s["dv"][i]["asks"])
+    if name == "ref.add" and a.get("on") in s["refs"]:
+        return bool(i) and any(r[0] == i for r in s["refs"][a["on"]])
+    if name == "own.close":
+        return bool(s["own"].get(i))
+    if name == "own.toTask":      # done once it's a task: after a conversion here, or if the task may be in the plan
+        return i in s["converted"] or (i not in s["own"] and (i in s["tasks"] or s["cut"]))
+    return False
+
+
+def state_problem(s: dict, name: str, a: dict) -> str | None:
+    """The page's rules that read what's in the plan now, in its order and its own words, for items the copy holds."""
+    dv, own, tasks, bars, refs = s["dv"], s["own"], s["tasks"], s["bars"], s["refs"]
+    if "prev" in a or maybe_done(s, name, a):
+        return None
+    d = dv.get(a.get("id")) if name.startswith("outcome.") else None
+    if name == "outcome.set" and d and a.get("field") == "stage":
+        v = a.get("value")
+        if v not in ("idea", "planned", "done"):
+            return "Use outcome.drop to drop it." if v == "dropped" else "Stage is idea, planned or done."
+        if v == "planned" and not (d["target"] or d["release"] or d["date"]):
+            return "Pick a target to plan it."
+    if name == "outcome.setTarget" and d and a.get("target") and a.get("date"):
+        return "Give a target or a date, not both."
+    if name == "outcome.setRelease" and d and a.get("release") and a["release"] not in s["releases"] and not s["relCut"]:
+        return "That release isn't in the Jira files."
+    if name == "outcome.drop" and d:
+        if d["capture"] and not js_trim(a.get("reason")):
+            return "Say why it's declined: whoever asked will want to know."
+        if d["handoff"] and d["stage"] != "dropped":
+            return "It's handed off already. Reopen it first to decline it."
+    if name == "outcome.handoff" and d:
+        if not d["capture"]:
+            return "Only a captured item is handed off. Give it a capture type first."
+        if d["stage"] == "dropped":
+            return "It's declined. Reopen it first to hand it off."
+        if bool(a.get("initiative")) == bool(a.get("jira")):
+            return "Hand it off to one initiative or one Jira issue."
+        if a.get("jira") and not JKEY.match(js_trim(a["jira"]).upper()):
+            return "That isn't a Jira key (like ABC-123)."
+    if name == "outcome.reopen" and d and not d["handoff"] and d["stage"] != "dropped":
+        return "It's open already."
+    if name == "outcome.raiseAgain" and d:
+        if not d["capture"]:
+            return "Only a captured item is raised again. Give it a capture type first."
+        if not EV_ID.match(str(a.get("ask") or "")):
+            return "Give the ask an id of letters, digits, dot, dash or underscore (up to 60)."
+        if len(d["asks"]) >= AGAIN_MAX:
+            return f"It's been raised again {AGAIN_MAX} times already; that's the most a capture keeps."
+        if a.get("origin") and a["origin"] in [d["origin"], *(x["origin"] for x in d["asks"])]:
+            return "That report is already recorded on it: a forwarded copy isn't a new report."
+        for k in ("impact", "role"):
+            if a.get(k) is not None:
+                if re.search(r"[\r\n]", str(a[k])):
+                    return f"Its {k} is one line."
+                if len(js_trim(a[k])) > EV_TEXT[k]:
+                    return f"Its {k} is up to {EV_TEXT[k]} characters."
+        if a.get("origin") and not EV_ID.match(str(a["origin"])):
+            return "Origin is a short id of letters, digits, dot, dash or underscore (up to 60)."
+    if name == "ref.add" and a.get("on") in refs:
+        url = js_trim(a.get("url"))
+        if not REF_URL.match(url):
+            return "A link starts with https:// and has no spaces."
+        if a.get("id") and not EV_ID.match(str(a["id"])):
+            return "Give the link an id of letters, digits, dot, dash or underscore (up to 60)."
+        if a.get("title") is not None and len(js_trim(a["title"])) > 120:
+            return "Its title is up to 120 characters."
+        if any(u == url for _, u in refs[a["on"]]):
+            return "That link is already on it."
+        if len(refs[a["on"]]) >= REF_MAX:
+            return f"It holds {REF_MAX} links already; that's the most it keeps."
+    if name == "own.close" and a.get("id") in own:
+        if a.get("why") is not None and a.get("as") != "notdoing":
+            return "A reason goes with not doing it."
+        if isinstance(a.get("why"), str) and len(a["why"]) > OWN_WHY:
+            return f"A reason is up to {OWN_WHY} characters."
+    if name == "own.toTask" and own.get(a.get("id")):
+        return "It's closed. Reopen it first."
+    if name == "task.add":
+        after = a.get("after")
+        if a.get("start") is None and after is None:
+            return "Give a start, or after: the tasks it starts after."
+        if after is not None and not after:
+            return "after lists the tasks it starts after; leave it out to give only a start."
+        if after and a.get("id") in after:
+            return "A task can't start after itself."
+        if isinstance(a.get("days"), int) and not 1 <= a["days"] <= 260:
+            return "Working days are from 1 to 260."
+    if not s["graph"]:
+        return None
+    if name == "task.link" and a.get("id") in tasks:
+        if a.get("id") == a.get("after") or _reaches(tasks, a.get("after"), a.get("id")):
+            return "That would create a loop."
+    if name == "task.move" and a.get("start") == "after" and a.get("id") in tasks:
+        if not any(x in tasks or s["cut"] for x in tasks[a["id"]]):
+            return "It waits for no task, so there's no after. Link it first (task.link), or give a date."
+    if name == "link.add" and a.get("id") in bars and a.get("after") in bars:
+        if a.get("id") == a.get("after"):
+            return "An initiative can't start after itself."
+        if bars[a["after"]]["parked"]:
+            return None                     # refused in the page's words for the parked one; it's checked when applied
+        if _reaches({k: v["deps"] for k, v in bars.items()}, a["after"], a["id"]):
+            return "That would create a loop."
+        if _inside(s["parent"], a["id"], a["after"]) or _inside(s["parent"], a["after"], a["id"]):
+            return "One of these is inside the other, so it can't wait for it."
+    return None
+
+
+def _drop_bar(s: dict, i) -> None:
+    """An initiative is gone, with what's inside it: nothing about them, or the links between work, is certain now."""
+    gone = {i} | {b for b in s["bars"] if _inside(s["parent"], b, i)}
+    for b in gone:
+        s["bars"].pop(b, None)
+        s["refs"].pop(b, None)
+    forget(s, "graph", None)
+
+
+# Ops whose every check is mirrored above (or that can only make later ops more likely to be allowed): their effect is
+# applied. Any other op leaves what it touches unknown.
+def state_apply(s: dict, name: str, a: dict) -> None:
+    """What an op the page would accept changes in the working copy, as its run() does."""
+    dv, own, tasks, bars, refs = s["dv"], s["own"], s["tasks"], s["bars"], s["refs"]
+    i = a.get("id")
+    touch = lambda kind, x=i: s["touched"].add((kind, x))
+    if name in ADD_ACTIONS and not fresh(s, i):     # may be a replay: what it holds isn't known
+        for kind in ("dv", "own", "tasks", "refs"):
+            forget(s, kind, i)
+        if name == "initiative.add" and i in bars:
+            _drop_bar(s, i)
+        if name in ("task.add", "initiative.add"):
+            forget(s, "graph", None)
+        return
+    if maybe_done(s, name, a):
+        return
+    if "prev" in a:             # the page may call it changed since: nothing certain about it
+        for kind in ("dv", "own", "refs"):
+            forget(s, kind, i)
+        if name.startswith(("initiative.", "task.", "link.")):
+            forget(s, "graph", None)
+        return
+    if isinstance(i, str) and name in ADD_ACTIONS:
+        s["ids"].add(i)
+    d = dv.get(i) if name.startswith("outcome.") else None
+    if name == "outcome.add" and isinstance(i, str):
+        timed = bool(a.get("target") or a.get("release") or a.get("date"))
+        dv[i] = {"target": bool(a.get("target")) or bool(a.get("release") and s["releases"].get(a["release"])), "release": bool(a.get("release")),
+                 "date": bool(a.get("date")), "stage": "planned" if timed and not a.get("capture") else "idea", "capture": bool(a.get("capture")),
+                 "handoff": False, "origin": a.get("origin") if EV_ID.match(str(a.get("origin") or "")) else "", "asks": []}
+        refs[i] = []
+        touch("dv"), touch("refs")
+        if a.get("release") and a["release"] not in s["releases"]:     # a release left out: whether it's dated isn't known
+            forget(s, "dv", i)
+    elif name.startswith("outcome.") and d:
+        touch("dv")
+        if name == "outcome.set":
+            if a.get("field") == "stage":
+                d["stage"] = a.get("value")
+            elif a.get("field") == "capture":
+                d["capture"] = bool(a.get("value"))
+            elif a.get("field") == "origin":
+                d["origin"] = a.get("value") or ""
+        elif name == "outcome.setTarget":
+            if a.get("date"):
+                d.update(date=True, release=False, target=True)
+            else:
+                d.update(target=bool(a.get("target")), release=False, date=False)
+        elif name == "outcome.setRelease":
+            if a.get("release") and a["release"] not in s["releases"]:
+                forget(s, "dv", i)
+            elif a.get("release"):
+                d.update(release=True, date=False, target=d["target"] or s["releases"].get(a["release"], False))
+            else:
+                d["release"] = False
+        elif name == "outcome.drop":
+            d["stage"] = "dropped"
+        elif name == "outcome.handoff":
+            d["handoff"] = True
+        elif name == "outcome.reopen":
+            d["handoff"] = False
+            if d["stage"] == "dropped":
+                d["stage"] = "idea"
+        elif name == "outcome.raiseAgain":
+            d["asks"].append({"id": a.get("ask"), "origin": a.get("origin") or ""})
+        elif name == "outcome.unraise":
+            d["asks"] = [x for x in d["asks"] if x["id"] != a.get("ask")]
+        elif name == "outcome.del":
+            forget(s, "dv", i)
+            forget(s, "refs", i)
+    elif name == "ref.add" and a.get("on") in refs:
+        refs[a["on"]].append((i, js_trim(a.get("url"))))
+        touch("refs", a["on"])
+    elif name == "ref.del" and a.get("on") in refs:
+        refs[a["on"]] = [r for r in refs[a["on"]] if r[0] != i]
+        touch("refs", a["on"])
+    elif name in ("own.add", "own.close", "own.reopen", "own.del", "own.toTask") and isinstance(i, str):
+        touch("own")
+        if name == "own.add":
+            own[i] = False
+        elif name in ("own.close", "own.reopen") and i in own:
+            own[i] = name == "own.close"
+        else:
+            forget(s, "own", i)
+            if name == "own.toTask":
+                if i in tasks or i in bars or s["cut"]:   # the page refuses an id already in use: what waits for what isn't certain
+                    forget(s, "graph", None)
+                else:
+                    tasks[i] = []
+                s["converted"].add(i)
+    elif name in ("task.add", "task.link", "task.unlink", "task.del", "initiative.add", "link.add", "link.remove"):
+        touch("graph")
+        if name == "task.add" and isinstance(i, str):
+            tasks[i] = list(a.get("after") or [])
+        elif name == "task.link" and i in tasks and a.get("after") not in tasks[i]:
+            tasks[i].append(a.get("after"))
+        elif name == "task.unlink" and i in tasks:
+            tasks[i] = [x for x in tasks[i] if x != a.get("after")]
+        elif name == "task.del":
+            tasks.pop(i, None)
+            for k in tasks:
+                tasks[k] = [x for x in tasks[k] if x != i]
+        elif name == "initiative.add" and isinstance(i, str):
+            bars[i], refs[i], s["parent"][i] = {"deps": [], "parked": False}, [], a.get("parent") or ""
+        elif name == "link.add" and i in bars and a.get("after") in bars and not bars[a["after"]]["parked"] and a.get("after") not in bars[i]["deps"]:
+            bars[i]["deps"].append(a.get("after"))
+        elif name == "link.remove" and i in bars:
+            bars[i]["deps"] = [x for x in bars[i]["deps"] if x != a.get("after")]
+    elif name == "initiative.del":
+        _drop_bar(s, i)
+    elif name.startswith(("initiative.", "task.")):     # moves, parents, lanes, waits: the links and the tree aren't certain
+        forget(s, "graph", None)
+
+
+def legacy_apply(s: dict, o: dict) -> None:
+    """A plain op (add, set, link, unlink): only what it does for certain is kept."""
+    i = o.get("id")
+    if o.get("op") == "add" and o.get("type") in ("initiative", "task"):
+        if o.get("type") == "initiative" and fresh(s, i):
+            s["bars"][i], s["refs"][i], s["parent"][i] = {"deps": [], "parked": False}, [], ""
+        elif o.get("type") == "task" and fresh(s, i):
+            s["tasks"][i] = []
+        else:
+            forget(s, "graph", None)
+        if isinstance(i, str):
+            s["ids"].add(i)
+        s["touched"].add(("graph", None))
+    elif o.get("op") in ("add", "set") and o.get("type") == "deliverable":
+        forget(s, "dv", i)
+        forget(s, "refs", i)
+        if isinstance(i, str):
+            s["ids"].add(i)
+    elif o.get("op") in ("set", "link", "unlink"):
+        forget(s, "graph", None)
+
+
+def alias_lanes(name: str, args: dict, aliases: dict) -> dict:
+    """The page's amAliasLanes: a workstream's former id (its was list) reads as its id now."""
+    if not aliases:
+        return args
+    to = lambda v: aliases.get(v, v) if isinstance(v, str) else v
+    a = dict(args)
+    if "lane" in a:
+        a["lane"] = to(a["lane"])
+    if str(name).startswith("workstream.") and name != "workstream.reid" and "id" in a:     # reid's id is the new one
+        a["id"] = to(a["id"])
+    if isinstance(a.get("lanes"), dict):
+        a["lanes"] = {to(k): v for k, v in a["lanes"].items()}
+    if a.get("field") == "lane":
+        a["value"] = to(a.get("value"))
+        if "prev" in a:
+            a["prev"] = to(a["prev"])
+    return a
+
+
 def check_offline(folder: Path, batch: dict) -> list:
     """Problems with a batch, checked against the context file it was written from. The page checks again."""
     ctx = read_json(folder / CONTEXT_FILE, "sightline-assistant-view")
@@ -298,13 +679,20 @@ def check_offline(folder: Path, batch: dict) -> list:
     index, made = ref_index(ctx, refs), {}
     words_for = ((ctx.get("argTypes") or {}).get("types") or {}) if isinstance(ctx.get("argTypes"), dict) else {}
     ADDS = {"deliverable": "outcomeId", "initiative": "initiativeId", "task": "taskId"}      # what an {op:'add'} makes
-    bad, seen = [], set()
+    bad, seen, ready = [], set(), working_copy(ctx)
+    live = {x.get("id") for x in ((ctx.get("jiraSort") or {}).get("targets") or {}).get("workstreams") or [] if isinstance(x, dict)}
+    aliases = {o: x["id"] for x in ((ctx.get("jiraSort") or {}).get("targets") or {}).get("workstreams") or []
+               if isinstance(x, dict) and isinstance(x.get("id"), str) and isinstance(x.get("was"), list)
+               for o in x["was"] if isinstance(o, str) and o not in live}
     changes = batch.get("changes")
     if not isinstance(changes, list) or not changes:
         return ["The batch has no changes."]
     for ci, c in enumerate(changes, 1):
         cid = c.get("id") if isinstance(c, dict) else None
         at = f"change {cid or ci}"
+        if ci > 1 and len(bad) == n_before:      # the change before passed: like the page, check this one after it
+            ready = settle(state)
+        n_before, state = len(bad), copy.deepcopy(ready)
         if not isinstance(cid, str) or not CHANGE_ID.match(cid):
             bad.append(f"{at}: every change needs an id (letters, digits, . _ and -).")
             continue
@@ -327,7 +715,10 @@ def check_offline(folder: Path, batch: dict) -> list:
             if o["op"] != "action":
                 if o["op"] == "add" and o.get("type") in ADDS and isinstance(o.get("id"), str):
                     made.setdefault(ADDS[o["type"]], set()).add(o["id"])
+                legacy_apply(state, o)
+                state["sortMoved"] = True
                 continue
+            op_ok = len(bad)
             name, args = o.get("action"), o.get("args")
             if name not in actions:
                 bad.append(f"{where}: {name!r} isn't an action in the context.")
@@ -335,7 +726,13 @@ def check_offline(folder: Path, batch: dict) -> list:
             if not isinstance(args, dict):
                 bad.append(f"{where}: args must be an object.")
                 continue
+            args = alias_lanes(name, args, aliases)
             spec, fields, removes = actions[name], acts[name].get("fields"), acts[name].get("removes") or []
+            done = maybe_done(state, name, args)      # the page skips its reference checks for an op already done
+            kind = acts[name].get("creates")
+            if not done and kind in refs and isinstance(args.get("id"), str):     # any add whose id may be there already
+                ids, whole = index.get(kind, (set(), False))
+                done = args["id"] in ids or args["id"] in made.get(kind, set()) or not whole
             for k in args:
                 if k not in spec:
                     bad.append(f"{where}: {name} has no argument {k!r}.")
@@ -351,15 +748,34 @@ def check_offline(folder: Path, batch: dict) -> list:
                         continue
                     t, label = fields[args["field"]], args["field"]
                 gone = k in removes         # what's being removed may already be gone: the page decides whether there's anything to remove
-                why = type_problem(label, t, args[k], refs, words_for) or (None if gone else ref_problem(t, args[k], refs, index, made))
+                why = type_problem(label, t, args[k], refs, words_for) or (None if gone or done else ref_problem(t, args[k], refs, index, made))
                 if why:
                     bad.append(f"{where}: {why}")
             if acts[name].get("creates") in refs and isinstance(args.get("id"), str):
                 made.setdefault(acts[name]["creates"], set()).add(args["id"])
             if name.endswith(".add") and "id" in spec and not (isinstance(args.get("id"), str) and args["id"]):
                 bad.append(f"{where}: give the new item an id (like risk-vendor-limits), so reading the file again can't add it twice.")
-            if str(name).startswith("jira.") and name not in ("jira.hide", "jira.unhide"):      # hiding isn't a placement
+            if str(name).startswith("jira.") and name not in ("jira.hide", "jira.unhide") and not state["sortMoved"]:   # hiding isn't a placement
                 bad.extend(f"{where}: {x}" for x in check_jira_place(ctx.get("jiraSort") or {}, name, args))
+            if len(bad) == op_ok:       # an op the page refuses changes nothing, so the ops after it are checked without it
+                why = state_problem(state, name, args)
+                if why:
+                    bad.append(f"{where}: {why}")
+                else:
+                    state_apply(state, name, args)
+                    if str(name).startswith(SORT_MOVERS):     # jiraSort is the context's: after these, placements are the page's call
+                        state["sortMoved"] = True
+                    # Ids the page makes up, or an item that may now be another kind (an own item that may be a task, a
+                    # workstream that may have a new id): a reference to that kind can't be proved missing any more, and
+                    # an add can't be proved new.
+                    opened = (["taskId", "initiativeId"] if str(name).startswith("jira.") and name not in ("jira.hide", "jira.unhide")
+                              else ["taskId"] if name == "own.toTask" else ["workstreamId"] if name == "workstream.reid"
+                              else [kind] if kind in refs and not args.get("id") else [])
+                    for k in opened:
+                        for kk in [k] + [x for x, r in refs.items() if k in (r.get("of") or [])]:
+                            index[kk] = (index.get(kk, (set(), False))[0], False)
+                    if opened:
+                        state["cut"] = True
     return bad
 
 

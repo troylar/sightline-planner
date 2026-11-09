@@ -69,6 +69,10 @@ prevention is the only real control.
 - **Each change:** `kind` (new / improved / fixed), `area`, `title`, `now`, and where it helps `before`
   and `where`. Write for the people using the planner, not for engineers: what they'll notice and where
   to find it. US English, plain words, no people's names, no employer or client names.
+- **Every release leaves the assistant's instructions matching what shipped:** `skills/sightline-plan/SKILL.md`, the
+  in-page guide and `analysisGuide()`, the context export (`assistantView`), the `tools/sightline-app.py` checker (it
+  runs ops in order, refuses in the page's words, and never refuses what the page accepts) and
+  `docs/assistant-workflow.md`. harness193 holds the checker to the page, and harness198 fails on an action, action family or planning list the instructions don't cover.
 - `build.sh` validates the file and fails the build on a bad entry (out-of-order versions, unknown kind,
   a missing field, a typo'd field name). It regenerates `CHANGELOG.md` — **never edit that by hand.**
 - The data is embedded in the page with every `<` escaped as `\u003c`, so release text can't break out

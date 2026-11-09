@@ -62,7 +62,7 @@ setTimeout(()=>{
       if ((A.removes || []).includes(k)) continue;                      // H7b: what's removed isn't a reference
       if (!refAlts.length && !(words.length && words.length === alts(t).filter(a=>a !== "blank" && a !== "null").length)) continue;
       const args = {}; let skip = false;
-      for (const [kk, tt] of Object.entries(A.args)){ if (kk === "prev") continue; if (kk === "id" && A.creates){ args.id = "new-" + A.id.replace(/\W/g, "-"); continue; }
+      for (const [kk, tt] of Object.entries(A.args)){ if (kk === "prev") continue; if (kk === "id" && A.creates){ args.id = "new-" + A.id.replace(/\W/g, "-") + "-" + k + (fld ? "-" + fld : ""); continue; }   // one id per argument: in one batch, an add with an id made earlier is already done
         if (tt.endsWith("?") && kk !== k) continue; if (kk === "field"){ args.field = fld || Object.keys(A.fields)[0]; continue; }
         const v = kk === "value" ? fill(A.fields ? A.fields[args.field] : tt) : fill(tt); if (v === undefined){ skip = true; break; } args[kk] = v; }
       if (skip) continue;
@@ -75,8 +75,15 @@ setTimeout(()=>{
         if (other) cases.push({where, kind:"other kind", A, args:put(have[other][0]), want:miss});
         if (have[r].length) cases.push({where, kind:"exists", A, args:put(have[r][0]), want:null}); }
       else cases.push({where, kind:"unlisted word", A, args:{...args, [k]:"zz-not-a-choice"}, want:"one of"}); } }
+  // One new id per case: in one batch, an add whose id an earlier add used may be a replay, already done, so it's never refused
+  cases.forEach((c, i)=>{ if (c.A.creates && typeof c.args.id === "string" && c.args.id.startsWith("new-")) c.args = {...c.args, id:c.args.id.slice(0, 52) + "-" + i}; });
   const changes = cases.map((c, i)=>({id:"c" + i, summary:c.where, ops:[{op:"action", action:c.A.id, args:c.args}]}));
   const {by} = check(changes);
+  // Moving an own item into a task, or giving a workstream a new id, leaves the checker unable to prove an id of that kind
+  // missing in the changes after it (the page would know): check those alone
+  const SOLO = c => c.A.id === "own.toTask" || c.A.id === "workstream.reid";
+  const solo = check(changes.filter((c, i)=>!SOLO(cases[i]))).by;
+  cases.forEach((c, i)=>{ by["c" + i] = SOLO(c) ? check([changes[i]]).by["c" + i] : solo["c" + i]; });
   const bad = [], quiet = [], loud = [], TABLE = x => / isn't in the plan\.$| is one of | isn't a valid /.test(x);    // what the shared table decides
   cases.forEach((c, i)=>{ const pg = page([{action:c.A.id, args:c.args}]), py = by["c" + i] || [];
     if (c.want === "nochange"){ if (!pg.ok || !pg.nochange) bad.push(`${c.where}: page said ${pg.reason || "it changed something"}`); if (py.length) loud.push(`${c.where}: checker said ${py.join("; ")}`); }
@@ -150,6 +157,94 @@ setTimeout(()=>{
     {id:"w2", summary:"Clear who asked", ops:[{op:"action", action:"outcome.set", args:{id:"dv-h1", field:"askedBy", value:""}}]}];
   const wc = check(words, ctx2).by;
   ok("H11 a day said in words, and clearing who asked, are accepted by both", words.every(c=>page(c.ops).ok) && !Object.keys(wc).length, JSON.stringify(words.map(c=>page(c.ops))) + " / " + JSON.stringify(wc));
+
+  // H12 ops run in order (1.187.1): what an earlier op in the change did, or a ready change before it, decides whether
+  // a later op is allowed, for the page and the checker alike. Each case says what the page must answer.
+  const set12 = ev(`(()=>{ const b = S.bars[0].id, r = [["outcome.add", {id:"dv-o1", name:"Faster export"}], ["outcome.add", {id:"dv-c1", name:"Bulk edit", capture:"request"}],
+    ["outcome.add", {id:"dv-c2", name:"Dark mode", capture:"idea"}], ["outcome.handoff", {id:"dv-c2", jira:"ABC-9"}], ["ref.add", {on:"dv-o1", id:"ref-o1", url:"https://docs.example.com/a"}],
+    ["own.add", {id:"own-o1", text:"Book the room", owner:S.people[0].id}], ["own.add", {id:"own-o2", text:"Draft the memo", owner:S.people[0].id}], ["own.close", {id:"own-o1", as:"done"}],
+    ["task.add", {id:"task-a", bar:b, start:"2026-12-14", days:2, label:"First"}], ["task.add", {id:"task-b", bar:b, after:["task-a"], days:2, label:"Second"}],
+    ["initiative.add", {id:"b-x1", lane:S.lanes[0].id, label:"One", day:"2026-12-07"}], ["initiative.add", {id:"b-x2", lane:S.lanes[0].id, label:"Two", day:"2026-12-07"}],
+    ["link.add", {id:"b-x2", after:"b-x1"}], ["outcome.add", {id:"dv-t1", name:"Partner API", target:"2027-Q2"}], ["outcome.raiseAgain", {id:"dv-c1", ask:"a0", origin:"rep-0"}],
+    ["initiative.add", {id:"b-x3", parent:"b-x1", label:"Inside one", day:"2026-12-07"}], ["ref.add", {on:"b-x2", id:"ref-x2", url:"https://docs.example.com/x2"}]].map(([a, x])=>[a, runAction(S, a, x)]); render(); return JSON.stringify(r.filter(([, x])=>!x.ok)); })()`);
+  ok("H12 (setup) the items for the order cases are in the plan", set12 === "[]", set12);
+  const ctx3 = JSON.parse(ev("JSON.stringify(assistantView())")), A = (action, args) => ({op:"action", action, args}), stage = (id, value) => A("outcome.set", {id, field:"stage", value});
+  const S_BAR = ev("S.bars[0].id"), S_LANE = ev("S.lanes[0].id"), PREV_O1 = JSON.parse(ev("JSON.stringify(dvSeen(dvById('dv-o1')))")), PLAN = "Pick a target to plan it.", ORDER = [
+    ["plan-first", [stage("dv-o1", "planned"), A("outcome.setTarget", {id:"dv-o1", target:"2027-Q4"})], PLAN],
+    ["target-first", [A("outcome.setTarget", {id:"dv-o1", target:"2027-Q4"}), stage("dv-o1", "planned")], null],
+    ["target-cleared", [A("outcome.setTarget", {id:"dv-o1", target:"2027-Q4"}), A("outcome.setTarget", {id:"dv-o1"}), stage("dv-o1", "planned")], PLAN],
+    ["dated", [A("outcome.add", {id:"dv-o9", name:"Audit log", target:"2027-Q2"}), stage("dv-o9", "planned")], null],
+    ["handoff-uncaptured", [A("outcome.handoff", {id:"dv-o1", jira:"ABC-7"})], "Only a captured item is handed off. Give it a capture type first."],
+    ["capture-then-handoff", [A("outcome.set", {id:"dv-o1", field:"capture", value:"request"}), A("outcome.handoff", {id:"dv-o1", jira:"ABC-7"})], null],
+    ["declined-handoff", [A("outcome.drop", {id:"dv-c1", reason:"Out of scope"}), A("outcome.handoff", {id:"dv-c1", jira:"ABC-7"})], "It's declined. Reopen it first to hand it off."],
+    ["reopen-handoff", [A("outcome.drop", {id:"dv-c1", reason:"Out of scope"}), A("outcome.reopen", {id:"dv-c1"}), A("outcome.handoff", {id:"dv-c1", jira:"ABC-7"})], null],
+    ["drop-handed", [A("outcome.drop", {id:"dv-c2", reason:"Not now"})], "It's handed off already. Reopen it first to decline it."],
+    ["reopen-drop", [A("outcome.reopen", {id:"dv-c2"}), A("outcome.drop", {id:"dv-c2", reason:"Not now"})], null],
+    ["drop-capture-no-reason", [A("outcome.set", {id:"dv-o1", field:"capture", value:"idea"}), A("outcome.drop", {id:"dv-o1"})], "Say why it's declined: whoever asked will want to know."],
+    ["open-already", [A("outcome.reopen", {id:"dv-c1"})], "It's open already."],
+    ["ask-twice", [A("outcome.raiseAgain", {id:"dv-c1", ask:"a1"}), A("outcome.raiseAgain", {id:"dv-c1", ask:"a1"})], null],      // the same ask again is already done
+    ["forwarded", [A("outcome.raiseAgain", {id:"dv-c1", ask:"a2", origin:"rep-1"}), A("outcome.raiseAgain", {id:"dv-c1", ask:"a3", origin:"rep-1"})], "That report is already recorded on it: a forwarded copy isn't a new report."],
+    ["closed-to-task", [A("own.close", {id:"own-o2", as:"done"}), A("own.toTask", {id:"own-o2", initiativeId:S_BAR})], "It's closed. Reopen it first."],
+    ["reopened-to-task", [A("own.reopen", {id:"own-o1"}), A("own.toTask", {id:"own-o1", initiativeId:S_BAR})], null],
+    ["task-loop", [A("task.link", {id:"task-a", after:"task-b"})], "That would create a loop."],
+    ["task-loop-new", [A("task.add", {id:"task-c", bar:S_BAR, after:["task-b"], days:1, label:"Third"}), A("task.link", {id:"task-a", after:"task-c"})], "That would create a loop."],
+    ["after-nothing", [A("task.move", {id:"task-a", start:"after"})], "It waits for no task, so there's no after. Link it first (task.link), or give a date."],
+    ["bar-loop", [A("link.add", {id:"b-x1", after:"b-x2"})], "That would create a loop."],
+    ["bar-unlinked", [A("link.remove", {id:"b-x2", after:"b-x1"}), A("link.add", {id:"b-x1", after:"b-x2"})], null],
+    ["same-link", [A("ref.add", {on:"dv-o1", id:"ref-o2", url:"https://docs.example.com/a"})], "That link is already on it."],
+    ["link-twice", [A("ref.add", {on:"dv-o1", id:"ref-o3", url:"https://docs.example.com/b"}), A("ref.add", {on:"dv-o1", id:"ref-o4", url:"https://docs.example.com/b"})], "That link is already on it."],
+    // what the page treats as already done is never refused, and changes nothing the ops after it read
+    ["link-replayed", [A("ref.add", {on:"dv-o1", id:"ref-o1", url:"https://docs.example.com/a"})], null],
+    ["add-replayed", [A("outcome.add", {id:"dv-t1", name:"Partner API"}), stage("dv-t1", "planned")], null],
+    ["ask-removed", [A("outcome.unraise", {id:"dv-c1", ask:"a0"}), A("outcome.raiseAgain", {id:"dv-c1", ask:"a5", origin:"rep-0"})], null],
+    ["not-https", [A("ref.add", {on:"dv-o1", id:"ref-o5", url:"http://docs.example.com/c"})], "A link starts with https:// and has no spaces."],
+    ["handoff-nowhere", [A("outcome.handoff", {id:"dv-c1"})], "Hand it off to one initiative or one Jira issue."],
+    ["deleted-and-back", [A("task.del", {id:"task-a"}), A("task.add", {id:"task-a", bar:S_BAR, start:"2026-12-14", days:1, label:"First again"}), A("task.link", {id:"task-a", after:"task-b"})], null],
+    ["reason-not-doing", [A("own.close", {id:"own-o2", as:"done", why:"Not needed"})], "A reason goes with not doing it."],
+    ["add-replayed-bad-lane", [A("outcome.add", {id:"dv-t1", name:"Partner API", lane:"lane-missing"})], null],
+    ["closed-replayed", [A("own.close", {id:"own-o1", as:"done", why:""})], null],
+    ["detached", [A("initiative.setParent", {id:"b-x3", parent:"", prev:"b-x1"}), A("link.add", {id:"b-x3", after:"b-x1"})], null],
+    ["moved-out", [A("initiative.setLane", {id:"b-x3", lane:S_LANE}), A("link.add", {id:"b-x3", after:"b-x1"})], null],
+    ["inside", [A("link.add", {id:"b-x3", after:"b-x1"})], "One of these is inside the other, so it can't wait for it."],
+    ["deleted-bar-link", [A("initiative.del", {id:"b-x2"}), A("initiative.add", {id:"b-x2", lane:S_LANE, label:"Two", day:"2026-12-07"}), A("ref.add", {on:"b-x2", id:"ref-x9", url:"https://docs.example.com/x2"})], null],
+    ["byte-order-mark", [A("ref.add", {on:"dv-o1", id:"ref-o6", url:"\uFEFFhttps://docs.example.com/bom"})], null],
+    ["next-line", [A("ref.add", {on:"dv-o1", id:"ref-o7", url:"https://docs.example.com/nel\u0085"})], null],
+    ["task-add-replayed", [A("task.add", {id:"task-a", bar:S_BAR, start:"2026-12-14", days:2, label:"First"}), A("task.move", {id:"task-b", start:"after"})], null],
+    ["deleted-seen-and-back", [A("outcome.del", {id:"dv-o1", prev:PREV_O1}), A("outcome.add", {id:"dv-o1", name:"Checkout v2"}), A("ref.add", {on:"dv-o1", id:"ref-o8", url:"https://docs.example.com/a"})], null],
+    ["to-task-then-task", [A("own.toTask", {id:"own-o2", initiativeId:S_BAR}), A("task.set", {id:"own-o2", field:"label", value:"Now a task"})], null],
+    ["to-task-twice", [A("own.toTask", {id:"own-o2", initiativeId:S_BAR}), A("own.toTask", {id:"own-o2", initiativeId:S_BAR})], null],
+    ["reid-then-rename", [A("workstream.reid", {lane:S_LANE, id:"lane-new"}), A("workstream.rename", {id:"lane-new", name:"Platform"})], null],
+    ["group-replayed", [A("group.add", {id:"grp-new", name:"Example"}), A("group.add", {id:"grp-new", name:"Example", members:["person-left"]})], null]];
+  const oc = ORDER.map(([id, ops, want])=>({id, summary:id, ops, want}));      // each its own batch: a ready change would change the next
+  const od = oc.map(c=>{ const pg = page(c.ops), py = check([{id:c.id, summary:c.id, ops:c.ops}], ctx3).by[c.id] || [];
+    return pg.ok === !c.want && (pg.ok || pg.reason === c.want) && (pg.ok ? !py.length : py.length === 1 && py[0] === c.want) ? null : `${c.id}: page ${pg.ok ? "ok" : pg.reason}, checker ${py.join("; ") || "ok"}`; }).filter(Boolean);
+  ok(`H12 page and checker give the same answer when an earlier op in the change decides it (${oc.length} cases)`, !od.length && oc.length >= 20, od.join(" | "));
+  // H12b a ready change before it counts too, in the panel's own reading of the batch: a target set in one change lets
+  // the next plan it; after a refused one, the next is checked without it. H12c the checker never refuses a change the
+  // panel finds ready because of a change before it that the panel refused and the checker couldn't tell.
+  const ready = changes => JSON.parse(ev(`(()=>{ const F = amParse(${JSON.stringify(JSON.stringify({kind:"sightline-amendments", version:1, planId:ctx3.plan.id, batchId:"h193o" + Math.random().toString(36).slice(2, 8), createdAt:new Date().toISOString(), source:"assistant", basedOn:{planRevision:ctx3.plan.revision || 0}, changes}))}).file; AM = {file:F, name:F.batchId, hash:F.batchId}; amMemo = null; const r = amRows().map(x=>["ready", "done"].includes(x.r.status)); AM = null; return JSON.stringify(r); })()`));
+  const across = [{id:"x1", summary:"Target", ops:[A("outcome.setTarget", {id:"dv-o1", target:"2027-Q4"})]}, {id:"x2", summary:"Plan it", ops:[stage("dv-o1", "planned")]}];
+  const failed = [{id:"y1", summary:"Bad target", ops:[A("outcome.setTarget", {id:"dv-o1", target:"2027-Q4", date:"2027-01-04"})]}, {id:"y2", summary:"Plan it", ops:[stage("dv-o1", "planned")]}];
+  const xa = check(across, ctx3).by, xb = check(failed, ctx3).by, ra = ready(across), rb = ready(failed);
+  ok("H12b a change after a ready one is checked after it; after a refused one, without it", !Object.keys(xa).length && ra.join() === "true,true"
+    && (xb.y1 || []).join() === "Give a target or a date, not both." && (xb.y2 || []).join() === PLAN && rb.join() === "false,false", JSON.stringify(xa) + " / " + JSON.stringify(xb) + " / " + ra + " / " + rb);
+  const blind = [{id:"z1", summary:"Decline, and a length the page refuses", ops:[A("outcome.drop", {id:"dv-c1", reason:"Not now"}), A("task.move", {id:"task-a", days:999})]},
+    {id:"z2", summary:"Hand it off", ops:[A("outcome.handoff", {id:"dv-c1", jira:"ABC-7"})]}];
+  const zc = check(blind, ctx3).by, rz = ready(blind);
+  ok("H12c a change the panel refuses (and the checker can't tell) doesn't make the checker refuse the next one", rz.join() === "false,true" && !zc.z2, rz + " / " + JSON.stringify(zc));
+  // H12d a plain set before an action: the checker doesn't know what it did, so it doesn't refuse what follows
+  const plain = [{id:"p1", summary:"Target by a plain set, then plan it", ops:[{op:"set", type:"deliverable", id:"dv-o1", field:"target", prev:null, value:"2027-Q1"}, stage("dv-o1", "planned")]}];
+  const pc = check(plain, ctx3).by, rp = ready(plain);
+  ok("H12d a plain set that gives a target, then planning it: the panel and the checker both accept it", rp.join() === "true" && !pc.p1, rp + " / " + JSON.stringify(pc));
+  // H12e an add that may be a replay is never refused: with tasks left out of the context, a task's own add (no start)
+  // is already done on the page. H12f an add replayed after an earlier change touched the item doesn't reset it.
+  const cut3 = JSON.parse(JSON.stringify(ctx3)); cut3.coverage.complete = false; cut3.coverage.tasks = {total:99, exported:0, omitted:99}; cut3.initiatives.forEach(b=>{ b.tasks = []; });
+  const re1 = [{id:"q1", summary:"Add a task that's there", ops:[A("task.add", {id:"task-a", bar:S_BAR, label:"First"})]}];
+  ok("H12e with tasks left out of the context, replaying a task's add is accepted by both", page(re1[0].ops).ok && !check(re1, cut3).by.q1, JSON.stringify(page(re1[0].ops)) + " / " + JSON.stringify(check(re1, cut3).by));
+  const re2 = [{id:"q2", summary:"Edit the request", ops:[A("outcome.set", {id:"dv-c1", field:"name", value:"Bulk edit, all rows"})]},
+    {id:"q3", summary:"Its add again, then hand it off", ops:[A("outcome.add", {id:"dv-c1", name:"Bulk edit, all rows"}), A("outcome.handoff", {id:"dv-c1", jira:"ABC-7"})]}];
+  const rq = ready(re2), cq = check(re2, ctx3).by;
+  ok("H12f an add replayed after an earlier change edited the item doesn't make the checker refuse what follows", rq.join() === "true,true" && !Object.keys(cq).length, rq + " / " + JSON.stringify(cq));
 
   fs.rmSync(dir, {recursive:true, force:true});
   console.log(R.join("\n")); const n = R.length; console.log(`${n - f}/${n} passed`); process.exit(f ? 1 : 0);

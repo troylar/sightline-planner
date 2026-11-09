@@ -156,6 +156,112 @@ with tempfile.TemporaryDirectory() as tmp:
     ok("the unstamped source copy doesn't compare versions", p.returncode == 0 and out(p).get("matchesPage") is None, p.stdout + p.stderr)
     stamped.unlink()
 
+    # A dated release gives an outcome a target the page keeps when the release is cleared; an undated one doesn't.
+    put(f, "sightline-assistant-view.json", {"kind": "sightline-assistant-view", "version": 1, "plan": {"id": "p-app", "revision": 4},
+                                             "actions": [{"id": "outcome.set", "args": {"id": "str", "field": "str", "value": "any"}},
+                                                         {"id": "outcome.setRelease", "args": {"id": "str", "release": "str"}}],
+                                             "choices": {"releases": [{"id": "r-dated", "date": "2027-03-01"}, {"id": "r-open", "date": None}]},
+                                             "deliverables": [{"id": "dv-1", "name": "Export", "stage": "idea"}, {"id": "dv-2", "name": "Import", "stage": "idea"}]})
+    rel = lambda i, r: {"op": "action", "action": "outcome.setRelease", "args": {"id": i, "release": r}}
+    plan_it = lambda i: {"op": "action", "action": "outcome.set", "args": {"id": i, "field": "stage", "value": "planned"}}
+    p = run("check", str(f), str(batch(f, changes=[{"id": "r1", "summary": "dated", "ops": [rel("dv-1", "r-dated"), rel("dv-1", ""), plan_it("dv-1")]},
+                                                  {"id": "r2", "summary": "undated", "ops": [rel("dv-2", "r-open"), rel("dv-2", ""), plan_it("dv-2")]}])))
+    lines = out(p).get("lines", [])
+    ok("a dated release leaves a target behind when it's cleared, so planning is allowed; an undated one doesn't",
+       not any(x.startswith("change r1") for x in lines) and "change r2, op 3: Pick a target to plan it." in lines, p.stdout + p.stderr)
+
+    # A release the context left out may be dated: the checker can't refuse it, or planning an outcome that has it.
+    put(f, "sightline-assistant-view.json", {"kind": "sightline-assistant-view", "version": 1, "plan": {"id": "p-app", "revision": 4},
+                                             "actions": [{"id": "outcome.set", "args": {"id": "str", "field": "str", "value": "any"}},
+                                                         {"id": "outcome.setRelease", "args": {"id": "str", "release": "str"}}],
+                                             "choices": {"releases": [{"id": "r-open", "date": None}]},
+                                             "coverage": {"complete": False, "choices.releases": {"total": 2, "exported": 1, "omitted": 1}},
+                                             "deliverables": [{"id": "dv-1", "name": "Export", "stage": "idea"},
+                                                              {"id": "dv-2", "name": "Import", "stage": "idea", "release": "r-left-out"}]})
+    p = run("check", str(f), str(batch(f, changes=[{"id": "o1", "summary": "left out", "ops": [rel("dv-1", "r-left-out"), plan_it("dv-1")]},
+                                                  {"id": "o2", "summary": "has one", "ops": [plan_it("dv-2")]}])))
+    ok("a release the context left out isn't refused, and nor is planning an outcome that has one", out(p).get("ok") is True and not out(p).get("lines"), p.stdout + p.stderr)
+
+    # A placement checked against jiraSort is the context's: after an op that may change it (a new initiative), the page decides.
+    put(f, "sightline-assistant-view.json", {"kind": "sightline-assistant-view", "version": 1, "plan": {"id": "p-app", "revision": 4},
+                                             "actions": [{"id": "initiative.add", "args": {"id": "id?", "label": "str?"}, "creates": "initiativeId"},
+                                                         {"id": "jira.toInitiative", "args": {"keys": "keys", "id": "str"}}],
+                                             "jiraSort": {"issues": [{"key": "ABC-101"}], "placed": {}, "epics": [], "targets": {"initiatives": [], "workstreams": []}}})
+    to_new = {"op": "action", "action": "jira.toInitiative", "args": {"keys": ["ABC-101"], "id": "b-new"}}
+    p = run("check", str(f), str(batch(f, changes=[{"id": "j1", "summary": "new home", "ops": [{"op": "action", "action": "initiative.add", "args": {"id": "b-new", "label": "New"}}, to_new]},
+                                                  {"id": "j2", "summary": "alone", "ops": [to_new]}])))
+    lines = out(p).get("lines", [])
+    ok("a placement on an initiative made earlier in the change isn't checked against the context's targets",
+       not any(x.startswith("change j1") for x in lines), p.stdout + p.stderr)
+
+    # A placement makes tasks with ids the page picks, and a workstream's former id reads as its id now (the page's alias).
+    REFS = {"taskId": {"noun": "task", "in": "initiatives[].tasks", "coverage": "tasks", "missing": "That task isn't in the plan."},
+            "workstreamId": {"noun": "workstream", "in": "planning.workstreams", "coverage": "workstreams", "missing": "That workstream isn't in the plan."}}
+    put(f, "sightline-assistant-view.json", {"kind": "sightline-assistant-view", "version": 1, "plan": {"id": "p-app", "revision": 4},
+                                             "argTypes": {"refs": REFS, "types": {}},
+                                             "coverage": {"complete": True, "tasks": {"total": 0, "exported": 0, "omitted": 0}, "workstreams": {"total": 1, "exported": 1, "omitted": 0}},
+                                             "actions": [{"id": "jira.toInitiative", "args": {"keys": "keys", "id": "str"}},
+                                                         {"id": "task.set", "args": {"id": "taskId", "field": "str", "value": "any"}, "fields": {"label": "str"}},
+                                                         {"id": "workstream.rename", "args": {"id": "workstreamId", "name": "str"}}],
+                                             "initiatives": [{"id": "b-1", "label": "Home", "tasks": []}],
+                                             "planning": {"workstreams": [{"id": "lane-renamed", "name": "Platform"}]},
+                                             "jiraSort": {"issues": [{"key": "ABC-901"}], "placed": {}, "epics": [],
+                                                          "targets": {"initiatives": [{"id": "b-1"}], "workstreams": [{"id": "lane-renamed", "was": ["int"]}]}}})
+    act = lambda n, x: {"op": "action", "action": n, "args": x}
+    p = run("check", str(f), str(batch(f, changes=[
+        {"id": "k1", "summary": "place, then label", "ops": [act("jira.toInitiative", {"keys": ["ABC-901"], "id": "b-1"}), act("task.set", {"id": "task-abc-901", "field": "label", "value": "Planning label"})]},
+        {"id": "k2", "summary": "former id", "ops": [act("workstream.rename", {"id": "int", "name": "Platform"})]}])))
+    ok("a task a placement made, and a workstream's former id, aren't refused as missing", out(p).get("ok") is True and not out(p).get("lines"), p.stdout + p.stderr)
+    p = run("check", str(f), str(batch(f, changes=[{"id": "k3", "summary": "no such task", "ops": [act("task.set", {"id": "task-zz", "field": "label", "value": "X"})]}])))
+    ok("…while a task nothing made is still refused", "change k3, op 1: That task isn't in the plan." in out(p).get("lines", []), p.stdout + p.stderr)
+
+    # An epic made into an initiative gets an id the page picks: an add with that id may be the same one (already done),
+    # and a link or reference to it can't be proved wrong. An own item that may have become a task is still an own item
+    # to a later change, if the context left it out.
+    REF = lambda noun, where, cov, **x: {"noun": noun, "in": where, "coverage": cov, "missing": f"That {noun} isn't in the plan.", **x}
+    put(f, "sightline-assistant-view.json", {"kind": "sightline-assistant-view", "version": 1, "plan": {"id": "p-app", "revision": 4},
+        "argTypes": {"types": {}, "refs": {"initiativeId": REF("initiative", "initiatives", "initiatives"), "outcomeId": REF("deliverable", "deliverables", "deliverables"),
+                                           "itemId": REF("item", "deliverables, initiatives", "deliverables, initiatives", of=["outcomeId", "initiativeId"]),
+                                           "taskId": REF("task", "initiatives[].tasks", "tasks"), "ownId": REF("own item", "planning.own", "own"),
+                                           "workstreamId": REF("workstream", "planning.workstreams", "workstreams")}},
+        "coverage": {"complete": False, "initiatives": {"omitted": 0}, "deliverables": {"omitted": 0}, "tasks": {"omitted": 0}, "workstreams": {"omitted": 0}, "own": {"omitted": 1}},
+        "actions": [{"id": "jira.epicNew", "args": {"epic": "str", "lane": "workstreamId", "id": "id?"}, "creates": "initiativeId"},
+                    {"id": "initiative.add", "args": {"id": "id?", "label": "str?", "parent": "initiativeId?"}, "creates": "initiativeId"},
+                    {"id": "link.add", "args": {"id": "initiativeId", "after": "initiativeId"}},
+                    {"id": "ref.add", "args": {"on": "itemId", "id": "id?", "url": "str"}},
+                    {"id": "own.toTask", "args": {"id": "ownId", "initiativeId": "initiativeId"}},
+                    {"id": "own.set", "args": {"id": "ownId", "field": "str", "value": "any"}, "fields": {"text": "str"}}],
+        "initiatives": [{"id": "m1", "label": "Home", "tasks": []}], "deliverables": [],
+        "planning": {"workstreams": [{"id": "int", "name": "Integrations"}], "own": []},
+        "jiraSort": {"issues": [], "placed": {}, "epics": [{"key": "ABC-901", "state": "new"}], "targets": {"initiatives": [{"id": "m1"}], "workstreams": [{"id": "int"}]}}})
+    p = run("check", str(f), str(batch(f, changes=[
+        {"id": "g2", "summary": "own item into a task", "ops": [act("own.toTask", {"id": "own-x", "initiativeId": "m1"})]},
+        {"id": "g3", "summary": "edit it as an own item", "ops": [act("own.set", {"id": "own-x", "field": "text", "value": "Call the vendor"})]}])))
+    ok("an own item the context left out, that may or may not have become a task, isn't refused", out(p).get("ok") is True and not out(p).get("lines"), p.stdout + p.stderr)
+    whole = json.loads((f / "sightline-assistant-view.json").read_text())
+    whole["coverage"] = {"complete": True}
+    put(f, "sightline-assistant-view.json", whole)
+    p = run("check", str(f), str(batch(f, changes=[
+        {"id": "g1", "summary": "epic, its add again, a link", "ops": [act("jira.epicNew", {"epic": "ABC-901", "lane": "int"}),
+                                                                     act("initiative.add", {"id": "bar-abc-901", "label": "ABC-901", "parent": "m1"}),
+                                                                     act("link.add", {"id": "bar-abc-901", "after": "m1"}),
+                                                                     act("ref.add", {"on": "bar-abc-901", "id": "ref-new", "url": "https://docs.example.com/a"})]}])))
+    ok("an initiative a placement made: its add again may be done, and a link or reference to it isn't refused", out(p).get("ok") is True and not out(p).get("lines"), p.stdout + p.stderr)
+    p = run("check", str(f), str(batch(f, changes=[
+        {"id": "g4", "summary": "epic, then a reference on it", "ops": [act("jira.epicNew", {"epic": "ABC-901", "lane": "int"}),
+                                                                       act("ref.add", {"on": "bar-abc-901", "id": "ref-new", "url": "https://docs.example.com/a"})]}])))
+    ok("…and an item reference (an outcome or an initiative) to it isn't refused either", out(p).get("ok") is True and not out(p).get("lines"), p.stdout + p.stderr)
+
+    # The page refuses to make an own item into a task when a task already has its id, so that task keeps what it waits for.
+    whole["actions"] += [{"id": "task.move", "args": {"id": "taskId", "start": "any?", "after": "any?", "days": "any?"}}]
+    whole["initiatives"] = [{"id": "m1", "label": "Home", "tasks": [{"id": "t0", "label": "First"}, {"id": "shared-id", "label": "Second", "after": ["t0"]}]}]
+    whole["planning"]["own"] = [{"id": "shared-id", "text": "Call the vendor"}]
+    put(f, "sightline-assistant-view.json", whole)
+    p = run("check", str(f), str(batch(f, changes=[
+        {"id": "g5", "summary": "own item onto a used id, then move that task", "ops": [act("own.toTask", {"id": "shared-id", "initiativeId": "m1"}),
+                                                                                       act("task.move", {"id": "shared-id", "start": "after"})]}])))
+    ok("an own item made into a task on an id a task already has doesn't wipe what that task waits for", "no after" not in " ".join(out(p).get("lines", [])), p.stdout + p.stderr)
+
     ok("the tool uses only the standard library", all(not line.startswith(("import requests", "from requests")) for line in TOOL.read_text().splitlines()))
     ok("it never touches the context or results files", '"w"' not in TOOL.read_text().split("def write_atomic")[0])
 

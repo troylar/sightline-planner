@@ -110,6 +110,11 @@ No in-app **Send** is needed. For a large input, work in sections and retain a r
 item; see [large roadmaps](large-roadmaps.md). If a requested field is not in the current operation guide,
 the assistant should give a manual UI step rather than invent an operation. Links, deletions, workstreams, people,
 milestones, gates, risks and decisions are covered by the guide's actions, so a whole replan can come back as one batch.
+For example: `link.add` {id, after} makes one initiative start after another and `link.remove` undoes it;
+`holiday.add` {date, name?} and `holiday.addRange` {from, to, name?} add days off; `forecast.setReserve` {reserve}
+keeps a whole percent of the team's time back for unplanned work (null for none); and
+`risk.add` {id, text, sev?, item?} and `decision.add` {id, text, item?} record what was raised or agreed. The context's
+`actions` list every action with its arguments and a one-line `desc`.
 
 ## Give the assistant project context
 
@@ -607,8 +612,14 @@ It checks the batch against the context file, using the types the page exports: 
 `fields`, and `argTypes`. A type ending in `Id` (like `initiativeId`) is a reference, so the check refuses an id that
 isn't in the plan, or that names another kind of item, with the page's own words. A choice like `high|med|low` refuses
 any other value. An id added earlier in the same batch counts. When the context left items out to fit its size, the check
-can't prove an id is missing, so it doesn't refuse one it can't see. Checks that depend on the moment, such as a dropped
-item or a date Jira owns, happen when Sightline applies the change. A published copy refuses, with exit code 4, when the page that wrote the folder's files is a different version. Copies run from the repository aren't stamped and don't compare.
+can't prove an id is missing, so it doesn't refuse one it can't see. Since 1.187.1 it also runs each change's ops in
+order, the way the panel does, so an op is checked against what the ones before it did: setting an outcome's stage to
+planned before `outcome.setTarget` gives it a target is refused ("Pick a target to plan it."), and so are handing off a
+declined capture, declining one that's handed off, reopening one that's open, moving a closed own item into an
+initiative, a starts-after link that makes a loop and a reference whose URL is already on the item. It never refuses what Sightline would
+accept: an op Sightline treats as already done passes, and about an item an earlier change touched, or one a plain
+`set` changed, it says nothing and leaves the answer to Sightline. Checks that need the whole plan, such as a date Jira
+owns or a task that's late, happen when Sightline applies the change. A published copy refuses, with exit code 4, when the page that wrote the folder's files is a different version. Copies run from the repository aren't stamped and don't compare.
 
 With a JSON plan file, `python sightline-jira-sync.py check-amendments plan.json sightline-amendments.json --json` also checks the rules that need the whole plan. A published copy refuses when the context beside the amendments file comes from another version. This validator reads JSON plans. Sightline's own browser validation also supports a shared YAML plan. Every applied change is checked again against the latest plan during saving.
 
