@@ -5,7 +5,7 @@ const {JSDOM, VirtualConsole} = require("jsdom"), fs = require("fs"), os = requi
 const R = []; const ok = (n, c, x = "") => R.push(`${c ? "PASS" : "FAIL"}  ${n}${x ? "  (" + x + ")" : ""}`);
 setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT"); process.exit(1); }, 170000).unref();
 const wait = ms => new Promise(r=>setTimeout(r, ms));
-const ROOT = path.join(__dirname, ".."), OLD = "bb74115";
+const ROOT = path.join(__dirname, ".."), OLD = "bb74115459744e517a1f01c9c4c8d6e73e595e88";   // 1.187.1, in full: git fetch needs the whole SHA
 function oldPage(tmp){
   if (process.env.SIGHTLINE_OLD_HTML) return fs.readFileSync(process.env.SIGHTLINE_OLD_HTML, "utf8");
   const git = (...a) => execFileSync("git", ["-C", ROOT, ...a], {stdio:["ignore", "pipe", "pipe"], maxBuffer:1 << 30});
