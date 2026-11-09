@@ -32,11 +32,11 @@ picture; its words don't appear on screen.
 
 Sightline reads three kinds of input, and treats each differently.
 
-- **Trackers** are where the team officially records its work. Jira is the first. A tracker owns its facts; Sightline
-  shows them and, today, never changes them (any later write-back follows "Changing Jira, later"). Another tracker, or
-  a second one beside the first, connects the same way: a sync on the user's own computer writes files beside the
-  plan, covering only the search its user set up. Once a second tracker connects, an item is identified by its
-  tracker, its server and its key; today a plan names one Jira server.
+- **Trackers** are where the team officially records its work. Jira was the first, and GitHub Issues is the second
+  (see "GitHub Issues, an optional tracker"). A tracker owns its facts. Sightline shows them and, today, never changes
+  them (any later write-back follows "Changing Jira, later"). Each tracker connects the same way: a sync on the user's
+  own computer writes files beside the plan, covering only the search its user set up. An item is identified by its
+  tracker, its server and its key. A plan follows one tracker, or none.
 - **Signals** are what people hear: meetings, email, chat, support tickets, bug reports, complaints. Signals become
   captured requests in the plan. They're evidence, not facts any system owns.
 - **References** are documents and messages where they already live: a spec in OneDrive or SharePoint, a decision
@@ -179,6 +179,9 @@ Each principle is a test a change can pass or fail.
 | Workstream and initiative a Jira item sits in; stories switched off | Plan | Sightline | Added here |
 | Notes, tags and dependencies on Jira items | Plan | Sightline | Added here, attached by Jira key |
 | How a Jira status shows here (the status map) | Plan | Sightline | Marked as the team's reading of Jira |
+| Which tracker the plan follows (Jira, GitHub or none) and its server | Plan | Sightline | Named in plan settings; facts from another tracker or server are refused |
+| Whether sprints come from the tracker or the plan (`sprintSource`) | Plan | Sightline | "No tracker sprints" when the plan keeps its own |
+| Which board, project, iteration field or search the sync reads, and the addresses it calls | The person who runs the sync | Their private settings, never the shared folder | Not shown in the plan |
 | Plan items: initiatives, tasks, milestones, gates, meetings, notes, process blocks, plan timeboxes | Plan | Sightline | "Added here", with who added them |
 | A person's own items: what they're working on, what they relate to, when and how they were closed | Plan | Sightline | Added here, with who added them; on their owner's list in Today |
 | What's on a person's Today: their own items, Jira issues, tasks and initiatives, requests, decisions and risks | Computed by Sightline from the plan and Jira's facts | Inputs in Jira and Sightline | One list, each item marked as Jira's or the plan's |
@@ -359,6 +362,81 @@ The wall is the data; views are lenses on it:
 Each view follows the same visual grammar and the same hide rules, and nothing added in one view is invisible in
 another.
 
+## GitHub Issues, an optional tracker
+
+A plan can follow GitHub Issues instead of Jira. Everything this charter says about Jira applies to GitHub, with the
+differences below.
+
+**One tracker per plan, and both are optional.** A plan follows Jira, GitHub or no tracker at all. GitHub can be
+github.com or a GitHub Enterprise Server. A plan never mixes the two trackers, and switching a plan from one tracker to
+the other never reinterprets the keys, people links or sprints it already holds. Nothing is relinked without a
+reviewed step.
+
+**Read-only and narrow, as with Jira.**
+- GitHub issues are facts the tracker owns. The plan shows them from the latest sync and never copies them.
+- The sync never changes GitHub today. Any later write-back follows "Changing Jira, later". It makes REST GET
+  requests, and only fixed, reviewed GraphQL queries. It accepts no GraphQL query text from anyone, so nothing it
+  sends can change an issue. Which repositories or project it reads is still that person's own search.
+- The token stays in the operating system's credential store and is tied to the tracker and the server. Each address
+  the sync calls (web, REST, GraphQL) lives in that person's private settings.
+- The shared plan names its tracker and server so the page can tell whose facts it's showing. It never chooses where
+  a token is sent, and a sync refuses files from a different tracker or server.
+
+**Identity.**
+- An issue's key is `GH-` followed by GitHub's numeric issue id, scoped by the plan's tracker and server. It stays the
+  same when an issue is renamed, moved or transferred.
+- `example-org/app#12` is how an issue is shown and linked: its display reference, never its identity.
+- GitHub's opaque node id is kept only to find the issue again on the next sync. It is never decoded and never
+  derived.
+- People link by GitHub's numeric user id (`gh-` and the number), with an explicit click. A login or display name is
+  for showing only. A link is never guessed from a name or an email.
+
+**GitHub's meanings, not Jira's.**
+- An open issue is open. That alone doesn't make it in progress.
+- Closed as completed is done. Closed as not planned or as a duplicate is abandoned. A reason Sightline doesn't know
+  is shown as unknown, never guessed.
+- Whether an issue is done or abandoned comes only from its state and the reason it was closed. For an open issue, a
+  GitHub Project's status says how far along it is, but it never marks the issue done.
+- A Project's status field means nothing until the team maps each option. Until then, progress shows as unknown.
+  The order of the options is never read as a workflow.
+- Pull requests aren't issues. They never join the plan as work items.
+- When an issue has several assignees, the page shows all of them. It's on the Today of each assignee who is linked to
+  a person, and it still counts once in every total.
+- A milestone is shown as a milestone, never as a release or a sprint.
+
+**Sprints come from the tracker or from the plan.** Each plan has a shared setting, `sprintSource`. It is `tracker`
+(today's behavior, and the default) or `plan`, which the page labels "No tracker sprints". This applies to Jira as
+well as GitHub.
+- For GitHub, the tracker's sprints are a Project's iterations. Their ids are text and stay text. They're never turned
+  into numbers.
+- Choosing "No tracker sprints" stops the page from offering the tracker's sprints. It never erases timeboxes the plan
+  already has, and it never makes dates the tracker owns editable. Moving followed rows over to plan timeboxes is its
+  own reviewed step.
+- Which board, project or iteration field to read stays in the private settings of the person who runs the sync.
+
+**One sync, two trackers.**
+- One sync on the user's own computer does both. Fetching is separate for each tracker. How credentials are kept,
+  scheduling, limits, atomic writes and keeping the last good files are shared. Each tracker's tokens stay separate.
+- The sync writes `status.json` and `issues.json` beside the plan. Each file names its tracker and server, and its
+  format version goes up with that change.
+- Existing Jira setups keep their folders and file names. Older copies that can't read a GitHub plan open it
+  read-only.
+
+**Words on screen.** Items from GitHub are labeled "From GitHub", and links say "Open in GitHub". Labels change by
+exact string, never by pattern. A control that only makes sense for Jira is hidden for a GitHub plan.
+
+**Your own work stays yours.** A GitHub issue assigned to you shows in Today from the latest sync, like a Jira issue.
+It never becomes a second, personal copy on your own list.
+
+**Built in this order, each a release that works on its own:**
+1. this charter;
+2. one sync with tracker adapters, with Jira working exactly as before;
+3. GitHub issues, with the smallest page changes that make them usable (source checks, keys, links, adding and
+   placing issues, status, linking people, freshness);
+4. "No tracker sprints", for either tracker;
+5. GitHub Projects: status and iterations;
+6. sub-issues and milestones.
+
 ## Changing Jira, later
 
 The team wants to change Jira from Sightline, but not yet. The path, in order:
@@ -407,6 +485,7 @@ it the same way. The edit lock, backups, drafts and the Jira files are not histo
 
 - Editing Jira from the page, or any browser connection to Jira.
 - Creating tracker items from the page. Sightline drafts them; a person creates them.
+- More than one tracker in one plan, or Jira and GitHub items side by side.
 - Fetching, previewing or copying linked documents.
 - Verified identity, permissions, or private content inside a shared plan.
 - Treating plan timeboxes as Jira sprints, or plan copies as Jira facts.
@@ -443,6 +522,9 @@ it the same way. The edit lock, backups, drafts and the Jira files are not histo
   the history files.
 - A risk or decision can be about an initiative, an outcome or a captured request. The outcome or request shows
   what it's waiting on and its risks; nothing about its stage, priority or dates changes because of them.
+- GitHub Issues is a second tracker, on github.com or GitHub Enterprise Server. A plan follows one tracker or none.
+  Issues are keyed by GitHub's numeric issue id and people by their numeric user id. The sync stays read-only, and
+  each plan chooses whether its sprints come from the tracker or from the plan.
 
 **Open**
 
@@ -459,8 +541,9 @@ it the same way. The edit lock, backups, drafts and the Jira files are not histo
 - How long before an open capture asks "Still true?" Recommended: 90 days, set per plan.
 - How to keep a long-lived capture's evidence small once it has many reports.
 - Links on every plan item, or only on outcomes and captures at first? Recommended: every item.
-- When to rename "Jira" to the tracker in the rest of this charter, the sync and the page. Recommended: when a second
-  tracker is real, so the page keeps naming what people use.
+- When to rename "Jira" to the tracker in the rest of this charter, the sync and the page. With GitHub coming, the
+  page names the plan's own tracker wherever GitHub is supported ("From GitHub"). Recommended: rename the rest of
+  this charter once GitHub issues ship, and keep the data names (`jira`, `epics`) so older copies keep working.
 - Projects and platforms: tie people, groups and work to what they build on, own or use. Deferred until captured
   requests show which of those relationships a planning view needs; a plain project tag can't tell them apart.
 
