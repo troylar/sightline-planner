@@ -613,11 +613,13 @@ It checks the batch against the context file, using the types the page exports: 
 isn't in the plan, or that names another kind of item, with the page's own words. A choice like `high|med|low` refuses
 any other value. An id added earlier in the same batch counts. When the context left items out to fit its size, the check
 can't prove an id is missing, so it doesn't refuse one it can't see. Since 1.187.1 it also runs each change's ops in
-order, after the changes before it that pass, the way the panel does, so an op is checked against what the ones before
-it did: setting an outcome's stage to planned before `outcome.setTarget` gives it a target is refused ("Pick a target to
-plan it."), and so are handing off a declined capture, declining one that's handed off, reopening one that's open,
-moving a closed own item into an initiative, a starts-after link that makes a loop and the same link added twice. Checks
-that need the whole plan, such as a date Jira owns or a task that's late, happen when Sightline applies the change. A published copy refuses, with exit code 4, when the page that wrote the folder's files is a different version. Copies run from the repository aren't stamped and don't compare.
+order, the way the panel does, so an op is checked against what the ones before it did: setting an outcome's stage to
+planned before `outcome.setTarget` gives it a target is refused ("Pick a target to plan it."), and so are handing off a
+declined capture, declining one that's handed off, reopening one that's open, moving a closed own item into an
+initiative, a starts-after link that makes a loop and the same link added twice. It never refuses what Sightline would
+accept: an op Sightline treats as already done passes, and about an item an earlier change touched, or one a plain
+`set` changed, it says nothing and leaves the answer to Sightline. Checks that need the whole plan, such as a date Jira
+owns or a task that's late, happen when Sightline applies the change. A published copy refuses, with exit code 4, when the page that wrote the folder's files is a different version. Copies run from the repository aren't stamped and don't compare.
 
 With a JSON plan file, `python sightline-jira-sync.py check-amendments plan.json sightline-amendments.json --json` also checks the rules that need the whole plan. A published copy refuses when the context beside the amendments file comes from another version. This validator reads JSON plans. Sightline's own browser validation also supports a shared YAML plan. Every applied change is checked again against the latest plan during saving.
 

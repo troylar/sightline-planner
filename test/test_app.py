@@ -156,6 +156,20 @@ with tempfile.TemporaryDirectory() as tmp:
     ok("the unstamped source copy doesn't compare versions", p.returncode == 0 and out(p).get("matchesPage") is None, p.stdout + p.stderr)
     stamped.unlink()
 
+    # A dated release gives an outcome a target the page keeps when the release is cleared; an undated one doesn't.
+    put(f, "sightline-assistant-view.json", {"kind": "sightline-assistant-view", "version": 1, "plan": {"id": "p-app", "revision": 4},
+                                             "actions": [{"id": "outcome.set", "args": {"id": "str", "field": "str", "value": "any"}},
+                                                         {"id": "outcome.setRelease", "args": {"id": "str", "release": "str"}}],
+                                             "choices": {"releases": [{"id": "r-dated", "date": "2027-03-01"}, {"id": "r-open", "date": None}]},
+                                             "deliverables": [{"id": "dv-1", "name": "Export", "stage": "idea"}, {"id": "dv-2", "name": "Import", "stage": "idea"}]})
+    rel = lambda i, r: {"op": "action", "action": "outcome.setRelease", "args": {"id": i, "release": r}}
+    plan_it = lambda i: {"op": "action", "action": "outcome.set", "args": {"id": i, "field": "stage", "value": "planned"}}
+    p = run("check", str(f), str(batch(f, changes=[{"id": "r1", "summary": "dated", "ops": [rel("dv-1", "r-dated"), rel("dv-1", ""), plan_it("dv-1")]},
+                                                  {"id": "r2", "summary": "undated", "ops": [rel("dv-2", "r-open"), rel("dv-2", ""), plan_it("dv-2")]}])))
+    lines = out(p).get("lines", [])
+    ok("a dated release leaves a target behind when it's cleared, so planning is allowed; an undated one doesn't",
+       not any(x.startswith("change r1") for x in lines) and "change r2, op 3: Pick a target to plan it." in lines, p.stdout + p.stderr)
+
     ok("the tool uses only the standard library", all(not line.startswith(("import requests", "from requests")) for line in TOOL.read_text().splitlines()))
     ok("it never touches the context or results files", '"w"' not in TOOL.read_text().split("def write_atomic")[0])
 

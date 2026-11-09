@@ -158,7 +158,7 @@ setTimeout(()=>{
     ["own.add", {id:"own-o1", text:"Book the room", owner:S.people[0].id}], ["own.add", {id:"own-o2", text:"Draft the memo", owner:S.people[0].id}], ["own.close", {id:"own-o1", as:"done"}],
     ["task.add", {id:"task-a", bar:b, start:"2026-12-14", days:2, label:"First"}], ["task.add", {id:"task-b", bar:b, after:["task-a"], days:2, label:"Second"}],
     ["initiative.add", {id:"b-x1", lane:S.lanes[0].id, label:"One", day:"2026-12-07"}], ["initiative.add", {id:"b-x2", lane:S.lanes[0].id, label:"Two", day:"2026-12-07"}],
-    ["link.add", {id:"b-x2", after:"b-x1"}]].map(([a, x])=>[a, runAction(S, a, x)]); render(); return JSON.stringify(r.filter(([, x])=>!x.ok)); })()`);
+    ["link.add", {id:"b-x2", after:"b-x1"}], ["outcome.add", {id:"dv-t1", name:"Partner API", target:"2027-Q2"}], ["outcome.raiseAgain", {id:"dv-c1", ask:"a0", origin:"rep-0"}]].map(([a, x])=>[a, runAction(S, a, x)]); render(); return JSON.stringify(r.filter(([, x])=>!x.ok)); })()`);
   ok("H12 (setup) the items for the order cases are in the plan", set12 === "[]", set12);
   const ctx3 = JSON.parse(ev("JSON.stringify(assistantView())")), A = (action, args) => ({op:"action", action, args}), stage = (id, value) => A("outcome.set", {id, field:"stage", value});
   const S_BAR = ev("S.bars[0].id"), PLAN = "Pick a target to plan it.", ORDER = [
@@ -184,17 +184,36 @@ setTimeout(()=>{
     ["bar-loop", [A("link.add", {id:"b-x1", after:"b-x2"})], "That would create a loop."],
     ["bar-unlinked", [A("link.remove", {id:"b-x2", after:"b-x1"}), A("link.add", {id:"b-x1", after:"b-x2"})], null],
     ["same-link", [A("ref.add", {on:"dv-o1", id:"ref-o2", url:"https://docs.example.com/a"})], "That link is already on it."],
-    ["link-twice", [A("ref.add", {on:"dv-o1", id:"ref-o3", url:"https://docs.example.com/b"}), A("ref.add", {on:"dv-o1", id:"ref-o4", url:"https://docs.example.com/b"})], "That link is already on it."]];
+    ["link-twice", [A("ref.add", {on:"dv-o1", id:"ref-o3", url:"https://docs.example.com/b"}), A("ref.add", {on:"dv-o1", id:"ref-o4", url:"https://docs.example.com/b"})], "That link is already on it."],
+    // what the page treats as already done is never refused, and changes nothing the ops after it read
+    ["link-replayed", [A("ref.add", {on:"dv-o1", id:"ref-o1", url:"https://docs.example.com/a"})], null],
+    ["add-replayed", [A("outcome.add", {id:"dv-t1", name:"Partner API"}), stage("dv-t1", "planned")], null],
+    ["ask-removed", [A("outcome.unraise", {id:"dv-c1", ask:"a0"}), A("outcome.raiseAgain", {id:"dv-c1", ask:"a5", origin:"rep-0"})], null],
+    ["not-https", [A("ref.add", {on:"dv-o1", id:"ref-o5", url:"http://docs.example.com/c"})], "A link starts with https:// and has no spaces."],
+    ["handoff-nowhere", [A("outcome.handoff", {id:"dv-c1"})], "Hand it off to one initiative or one Jira issue."],
+    ["deleted-and-back", [A("task.del", {id:"task-a"}), A("task.add", {id:"task-a", bar:S_BAR, start:"2026-12-14", days:1, label:"First again"}), A("task.link", {id:"task-a", after:"task-b"})], null],
+    ["reason-not-doing", [A("own.close", {id:"own-o2", as:"done", why:"Not needed"})], "A reason goes with not doing it."]];
   const oc = ORDER.map(([id, ops, want])=>({id, summary:id, ops, want}));      // each its own batch: a ready change would change the next
   const od = oc.map(c=>{ const pg = page(c.ops), py = check([{id:c.id, summary:c.id, ops:c.ops}], ctx3).by[c.id] || [];
     return pg.ok === !c.want && (pg.ok || pg.reason === c.want) && (pg.ok ? !py.length : py.length === 1 && py[0] === c.want) ? null : `${c.id}: page ${pg.ok ? "ok" : pg.reason}, checker ${py.join("; ") || "ok"}`; }).filter(Boolean);
   ok(`H12 page and checker give the same answer when an earlier op in the change decides it (${oc.length} cases)`, !od.length && oc.length >= 20, od.join(" | "));
-  // H12b a ready change before it counts too: a target set in one change lets the next plan it; a refused one doesn't
+  // H12b a ready change before it counts too, in the panel's own reading of the batch: a target set in one change lets
+  // the next plan it; after a refused one, the next is checked without it. H12c the checker never refuses a change the
+  // panel finds ready because of a change before it that the panel refused and the checker couldn't tell.
+  const ready = changes => JSON.parse(ev(`(()=>{ const F = amParse(${JSON.stringify(JSON.stringify({kind:"sightline-amendments", version:1, planId:ctx3.plan.id, batchId:"h193o" + Math.random().toString(36).slice(2, 8), createdAt:new Date().toISOString(), source:"assistant", basedOn:{planRevision:ctx3.plan.revision || 0}, changes}))}).file; AM = {file:F, name:F.batchId, hash:F.batchId}; amMemo = null; const r = amRows().map(x=>["ready", "done"].includes(x.r.status)); AM = null; return JSON.stringify(r); })()`));
   const across = [{id:"x1", summary:"Target", ops:[A("outcome.setTarget", {id:"dv-o1", target:"2027-Q4"})]}, {id:"x2", summary:"Plan it", ops:[stage("dv-o1", "planned")]}];
   const failed = [{id:"y1", summary:"Bad target", ops:[A("outcome.setTarget", {id:"dv-o1", target:"2027-Q4", date:"2027-01-04"})]}, {id:"y2", summary:"Plan it", ops:[stage("dv-o1", "planned")]}];
-  const xa = check(across, ctx3).by, xb = check(failed, ctx3).by;
-  ok("H12b a change after a ready one is checked after it; after a refused one, without it", !Object.keys(xa).length && page([...across[0].ops, ...across[1].ops]).ok
-    && (xb.y1 || []).join() === "Give a target or a date, not both." && (xb.y2 || []).join() === PLAN, JSON.stringify(xa) + " / " + JSON.stringify(xb));
+  const xa = check(across, ctx3).by, xb = check(failed, ctx3).by, ra = ready(across), rb = ready(failed);
+  ok("H12b a change after a ready one is checked after it; after a refused one, without it", !Object.keys(xa).length && ra.join() === "true,true"
+    && (xb.y1 || []).join() === "Give a target or a date, not both." && (xb.y2 || []).join() === PLAN && rb.join() === "false,false", JSON.stringify(xa) + " / " + JSON.stringify(xb) + " / " + ra + " / " + rb);
+  const blind = [{id:"z1", summary:"Decline, and a length the page refuses", ops:[A("outcome.drop", {id:"dv-c1", reason:"Not now"}), A("task.move", {id:"task-a", days:999})]},
+    {id:"z2", summary:"Hand it off", ops:[A("outcome.handoff", {id:"dv-c1", jira:"ABC-7"})]}];
+  const zc = check(blind, ctx3).by, rz = ready(blind);
+  ok("H12c a change the panel refuses (and the checker can't tell) doesn't make the checker refuse the next one", rz.join() === "false,true" && !zc.z2, rz + " / " + JSON.stringify(zc));
+  // H12d a plain set before an action: the checker doesn't know what it did, so it doesn't refuse what follows
+  const plain = [{id:"p1", summary:"Target by a plain set, then plan it", ops:[{op:"set", type:"deliverable", id:"dv-o1", field:"target", prev:null, value:"2027-Q1"}, stage("dv-o1", "planned")]}];
+  const pc = check(plain, ctx3).by, rp = ready(plain);
+  ok("H12d a plain set that gives a target, then planning it: the panel and the checker both accept it", rp.join() === "true" && !pc.p1, rp + " / " + JSON.stringify(pc));
 
   fs.rmSync(dir, {recursive:true, force:true});
   console.log(R.join("\n")); const n = R.length; console.log(`${n - f}/${n} passed`); process.exit(f ? 1 : 0);
