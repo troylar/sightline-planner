@@ -380,6 +380,23 @@ Asked why something is above something else, the skill gives the reason recorded
 what today's guidance would suggest. On Today, **What matters now** lists the current entries, tagged New or Review due, and
 **Sightline noticed** says when guidance has ended, or starts or is due for review without being listed.
 
+### Own lists
+
+**Requires Sightline 1.187.0 or later.** `planning.own` holds each person's own list: one line each (up to 500
+characters), its `owner`, an optional `pin` (a day to pick it up, never a schedule), `relatesTo` (initiative or outcome
+ids, or Jira keys), `closed` (done or not doing, who and when, with an optional reason) and who added it.
+
+- `own.add` {id, text, owner?, pin?, rel?} puts an item on a list; `owner` is a person in `planning.people` and defaults
+  to whoever is reviewing. It always waits for a person.
+- `own.set` {id, field: text, owner, pin or rel, value}, `own.close` {id, as: done or notdoing, why?}, `own.reopen` {id}
+  and `own.del` {id}.
+- `own.toTask` {id, initiativeId} makes it a plan task in that initiative with the same id, creator and owner; undo puts
+  it back on the list.
+- A relation never closes anything: Jira finishing an issue doesn't check off an item related to it. Never put
+  something on someone's list because their name came up.
+
+A plan with own items needs this version or later: older copies open it read-only.
+
 ### Workstream actions
 
 `workstream.set` {id, field: note, color, from or until, value, prev} and `workstream.move` {id, index} change a
@@ -453,6 +470,7 @@ are never applied on their own. Each says why it waits:
 - An outcome's priority: `class`, `why` or `reconsider`.
 - The work order (`initiative.order`).
 - What matters now (`guidance.add`, `guidance.set`, `guidance.del`) and a decision's citation of it.
+- A new item on someone's own list (`own.add`).
 - A new person, group or skill; deleting a workstream or changing its id.
 - Deleting an initiative with Jira-linked work.
 - Every Jira change: placements for **Sort Jira work**, and hiding or bringing back Jira items.

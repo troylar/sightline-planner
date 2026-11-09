@@ -1852,6 +1852,12 @@ ACTIONS = {
     "guidance.add": ({"id": "id?", "text": "str", "why": "str?", "lanes": "workstreamId[]?", "from": "iso?", "through": "iso?", "reviewOn": "iso?", "supersedes": "guidanceId?"}, False),
     "guidance.set": ({"id": "guidanceId", "field": "str", "value": "str"}, True),
     "guidance.del": ({"id": "guidanceId"}, False),
+    "own.add": ({"id": "id?", "text": "str", "owner": "personId?", "pin": "iso|blank?", "rel": "str[]?"}, False),
+    "own.set": ({"id": "ownId", "field": "str", "value": "any"}, True),
+    "own.close": ({"id": "ownId", "as": "done|notdoing", "why": "str?"}, False),
+    "own.reopen": ({"id": "ownId"}, False),
+    "own.del": ({"id": "ownId"}, False),
+    "own.toTask": ({"id": "ownId", "initiativeId": "initiativeId"}, False),
     "template.set": ({"kind": "str", "value": "str"}, True),
     "skill.add": ({"id": "id", "label": "str"}, False),
     "skill.rename": ({"id": "skillId", "label": "str"}, True),
@@ -1899,9 +1905,9 @@ ACTIONS = {
 ACT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,79}$")
 # What an id-like argument points at, by the action's first word (id) or the argument's own name.
 ACT_REF_BY_NOUN = {"initiative": "bar", "link": "bar", "task": "task", "outcome": "dv", "workstream": "lane", "person": "person", "skill": "skill", "meeting": "meeting",
-                   "milestone": "ms", "gate": "gate", "risk": "risk", "decision": "dec", "sprint": "sprint", "jira": "bar"}
+                   "milestone": "ms", "gate": "gate", "risk": "risk", "decision": "dec", "sprint": "sprint", "jira": "bar", "own": "own"}
 ACT_REF_BY_ARG = {"outcome": "dv", "after": "bar", "parent": "bar", "target": "bar", "bar": "bar", "lane": "lane", "person": "person",
-                  "owners": "person", "members": "person", "item": "bar", "decider": "person"}
+                  "owners": "person", "members": "person", "item": "bar", "decider": "person", "owner": "person", "initiativeId": "bar"}
 
 
 _ACT_BASE = {"id", "isoOrNull", "isoOrAfter", "idOrBlank", "ids", "str", "num", "int", "bool", "iso", "keys", "any", "who", "weights"}
@@ -2110,7 +2116,7 @@ def _plan_ids(plan) -> dict:
     return {"bar": {b.get("id") for b in bars}, "task": {t.get("id") for b in bars for t in b.get("tasks") or [] if isinstance(t, dict)},
             "dv": pick("deliverables"), "lane": _lane_ids(plan), "person": pick("people"), "ms": pick("milestones"), "gate": pick("gates"),
             "block": pick("blocks"), "risk": pick("risks"), "dec": pick("decisions"), "sprint": pick("sprints"), "skill": pick("skills"), "meeting": pick("meetings"),
-            "laneOf": _lane_of(plan)}
+            "own": pick("own"), "laneOf": _lane_of(plan)}
 
 
 def _plan_start(plan) -> _dt.date:
