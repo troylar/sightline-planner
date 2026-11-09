@@ -7,7 +7,7 @@ not grant access to its file.
 The menu runs down the left side. At the top are your pinned pages: Today, Sprint, Timeline and Capacity until you
 change them. Below them, every page has one home in a group:
 
-- **Work**: Today shows attention and next actions. Sprint shows the current sprint by person, workstream or epic. Sort Jira work places synced issues on the plan. Cards shows the plan's Jira work as cards by workstream. Jira change proposals reviews what the sync suggests.
+- **Work**: Today starts with your own list, then shows attention and next actions. Sprint shows the current sprint by person, workstream or epic. Sort Jira work places synced issues on the plan. Cards shows the plan's Jira work as cards by workstream. Jira change proposals reviews what the sync suggests.
 - **Delivery**, in three parts. Plan: Timeline shows planned work. List shows the same work as rows. Capacity shows the forecast, people and time off. Review: Status update, Milestones, Gates, Decisions and Risks support delivery reviews. History: Snapshots and Activity. Activity also shows how full the plan file is and is where you connect the plan's folder for its history files.
 - **Product updates**: Roadmap explains what the team plans to ship. Customer release notes opens the customer wording approved for each Jira release.
 - **Settings**: Plan (Plan details, Tags, Cards, Planning guide), Team (Team, Work calendar, Meetings, Timeboxes and ceremonies) and Connections (Jira connection).
@@ -108,6 +108,17 @@ changes the selection while keeping your text, and **Test reply** checks for a r
 Unsubmitted **New roadmap idea** text stays with its plan during navigation and redraws in this tab's session. It is not
 included in the saved plan or assistant context until added. Successful submission clears only the submitted text;
 an idea you start typing while the save finishes is retained. Copy or submit drafts before closing the app.
+
+In **Mine**, Today starts with **My list** (since 1.187.0): type what you're working on in **What are you working on?**
+and press Enter, or press **Q** from anywhere to get there. Items pinned to today, or to a day that has passed (marked
+with that day), come first, then the rest, newest first. Check one off and it moves to **Done today**, with Undo in the
+status line; **⋯** pins it to today or unpins it, marks it **Not doing** (with an optional reason), says what it's
+**Part of** (an initiative, an outcome or a Jira key, shown as chips that open it), moves it into an initiative as a task
+you own, or deletes it. Beside it, **My Jira issues** lists the open issues assigned to your linked Jira user, plus any
+that closed today, read-only; if you aren't linked yet, one line offers to link you. Sightline never matches you by
+name. The list is saved in the shared plan, so anyone who opens it can see it. Closed items stay in the plan: the last 30 days' are under **Closed in the last 30 days**, each with Reopen, and older ones under **Closed earlier**, each with Reopen and Delete, plus **Delete closed items older than 30 days** (one Undo brings them all back). When the plan nears its size limit, Today offers that button. In **Team**, one line counts the open
+items on people's lists and opens to them by person; people you've hidden are counted, not listed. Viewers and Present
+see the lists without inputs.
 
 Today distinguishes no work loaded, missing Jira status data, and incomplete connected data. Its attention flags
 describe the available plan and sync; a quiet summary does not establish delivery feasibility.

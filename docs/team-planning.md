@@ -102,7 +102,7 @@ say them in the room.
 
 ## Between meetings
 
-- Start in **Work → Today** for attention, blockers and due decisions.
+- Start in **Work → Today**: your own list and Jira issues first (in Mine), then attention, blockers and due decisions.
 - Use **Work → Sprint** for the current Jira sprint, and **Delivery → Timeline** for sequencing.
 - Use **Product updates → Roadmap** for outcomes and the wider horizon. Its whole-plan scope differs from saved Timeline filters.
 - Read **From Jira** and **Added here** as distinct ownership; planning does not alter Jira facts.

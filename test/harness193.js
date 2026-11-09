@@ -15,11 +15,12 @@ setTimeout(()=>{
   const w = dom.window, ev = s=>w.eval(s); w.FIX = sample;
   ev(`S = normalize(JSON.parse(FIX), false); file.handle = null; render();`);
   // One of every kind the fixture lacks, so every action gets cases: a task, an outcome and a capture, a group, a skill,
-  // what matters now, a risk, a milestone, a gate. Made through the actions themselves; every name is invented.
+  // what matters now, a risk, a milestone, a gate, an own item. Made through the actions themselves; every name is invented.
   const made0 = ev(`(()=>{ const b = S.bars[0].id, r = [["task.add", {id:"task-h1", bar:b, start:"2026-12-01", days:2, label:"Write it"}], ["outcome.add", {id:"dv-h1", name:"Faster search"}],
     ["outcome.add", {id:"dv-h2", name:"Export to CSV", capture:"request"}], ["group.add", {id:"grp-h1", name:"Support"}], ["skill.add", {id:"sk-h1", label:"Go"}],
     ["guidance.add", {id:"gd-h1", text:"Keep cloud cost flat", from:"2026-11-01"}], ["risk.add", {id:"risk-h1", text:"Vendor limits"}],
-    ["milestone.add", {id:"ms-h1", what:"Pilot", day:"2026-12-10"}], ["gate.add", {id:"gate-h1", gate:"Security review", day:"2026-12-10"}]].map(([a, x])=>[a, runAction(S, a, x)]);
+    ["milestone.add", {id:"ms-h1", what:"Pilot", day:"2026-12-10"}], ["gate.add", {id:"gate-h1", gate:"Security review", day:"2026-12-10"}],
+    ["own.add", {id:"own-h1", text:"Call the vendor", owner:S.people[0].id}]].map(([a, x])=>[a, runAction(S, a, x)]);
     render(); return JSON.stringify(r.filter(([, x])=>!x.ok)); })()`);
   const ctx = JSON.parse(ev("JSON.stringify(assistantView())")), refs = (ctx.argTypes || {}).refs || {}, acts = ctx.actions;
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "sl193-"));
@@ -31,7 +32,7 @@ setTimeout(()=>{
   const page = (ops) => JSON.parse(ev(`(()=>{ const p = clone(S); let last = {ok:true}; for (const o of ${JSON.stringify(ops)}){ last = runAction(p, o.action, o.args); if (!last.ok) break; } return JSON.stringify(last); })()`));
 
   // ids that exist, by kind, from the plan itself
-  const have = JSON.parse(ev(`JSON.stringify(typeof ACT_REF === "undefined" ? {} : Object.fromEntries(Object.keys(ACT_REF).map(r=>[r, r.replace(/Id$/, "")]).map(([r, k])=>[r, (k === "initiative" ? S.bars : k === "task" ? S.bars.flatMap(b=>b.tasks || []) : k === "outcome" ? S.deliverables || [] : k === "item" ? [...(S.deliverables || []), ...S.bars] : k === "person" ? S.people : k === "group" ? S.groups || [] : k === "workstream" ? S.lanes : k === "milestone" ? S.milestones : k === "gate" ? S.gates : k === "guidance" ? S.guidance || [] : k === "skill" ? S.skills || [] : k === "meeting" ? S.meetings || [] : k === "risk" ? S.risks : k === "decision" ? S.decisions : S.sprints || []).map(x=>x.id)])))`));
+  const have = JSON.parse(ev(`JSON.stringify(typeof ACT_REF === "undefined" ? {} : Object.fromEntries(Object.keys(ACT_REF).map(r=>[r, r.replace(/Id$/, "")]).map(([r, k])=>[r, (k === "initiative" ? S.bars : k === "task" ? S.bars.flatMap(b=>b.tasks || []) : k === "outcome" ? S.deliverables || [] : k === "item" ? [...(S.deliverables || []), ...S.bars] : k === "person" ? S.people : k === "group" ? S.groups || [] : k === "workstream" ? S.lanes : k === "milestone" ? S.milestones : k === "gate" ? S.gates : k === "guidance" ? S.guidance || [] : k === "own" ? S.own || [] : k === "skill" ? S.skills || [] : k === "meeting" ? S.meetings || [] : k === "risk" ? S.risks : k === "decision" ? S.decisions : S.sprints || []).map(x=>x.id)])))`));
   const alts = t => t.replace(/\?$/, "").split("|"), refOf = a => refs[a.replace(/\[\]$/, "")] ? a.replace(/\[\]$/, "") : null;
   const BASE = {id:"x-1", ids:[], keys:["ABC-1"], str:"x", num:1, int:1, bool:true, iso:"2026-12-01", isoOrAfter:"2026-12-01", isoOrNull:"2026-12-01", idOrBlank:"", who:null, weights:null, any:"x"};
   const fill = t => { for (const a of alts(t)){ if (a === "blank") return ""; if (a === "null") return null; const r = refOf(a); if (r){ if (!have[r].length) continue; return a.endsWith("[]") ? [have[r][0]] : have[r][0]; }

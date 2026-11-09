@@ -65,5 +65,19 @@ plan['decisions'] = [
     {'id':'dec-pilot', 'text':'Onboarding comes before the partner integrations this quarter', 'state':'decided', 'owners':['p-avery'],
      'due':'', 'item':'', 'guidance':['gd-pilot']},
 ]
+plan['own'] = [
+    {'id':'own-demo-1', 'text':'Walk the pilot teams through their first shared plan', 'owner':'p-avery', 'pin':date.today().isoformat(),
+     'rel':[{'type':'deliverable', 'id':'dv-onboard'}]},
+    {'id':'own-demo-2', 'text':'Answer the sign-in questions from support', 'owner':'p-avery', 'rel':[{'type':'deliverable', 'id':'dv-req-sso'}]},
+    {'id':'own-demo-3', 'text':'Draft the notes for Thursday\'s review', 'owner':'p-avery'},
+    {'id':'own-demo-4', 'text':'Read the onboarding survey results', 'owner':'p-avery',
+     'closed':{'as':'done', 'by':'p-avery', 'at':date.today().isoformat() + 'T08:30:00Z'}},
+    {'id':'own-demo-7', 'text':'Book the pilot kickoff room', 'owner':'p-avery',
+     'closed':{'as':'done', 'by':'p-avery', 'at':(date.today() - timedelta(days=3)).isoformat() + 'T15:00:00Z'}},
+    {'id':'own-demo-8', 'text':'Write up the first pilot retro', 'owner':'p-avery',
+     'closed':{'as':'done', 'by':'p-avery', 'at':(date.today() - timedelta(days=45)).isoformat() + 'T15:00:00Z'}},
+    {'id':'own-demo-5', 'text':'Check the search index sizes', 'owner':'p-morgan'},
+    {'id':'own-demo-6', 'text':'Pair with the new hire on the sync setup', 'owner':'p-casey'},
+]
 p.write_text(json.dumps(plan, indent=2) + '\n')
 print('Documentation demo: invented team, fixed roadmap targets; Jira dates follow today.')

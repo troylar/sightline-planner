@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.187.0",
+  "date": "2026-11-09",
+  "headline": "Your own list, first on Today",
+  "changes": [
+    {
+      "kind": "new",
+      "area": "Today",
+      "title": "Keep your own list beside the team's work",
+      "before": "Today showed only the plan's work and Jira's. What you were actually working on day to day lived somewhere else.",
+      "now": "In Mine, Today starts with your own list. Type what you're working on and press Enter, or press Q. Check an item off and it moves to Done today, with Undo. The ⋯ menu pins it to today, marks it not doing, links it to an initiative or Jira issue, or moves it into an initiative. My Jira issues sits beside it. Older copies of Sightline open a plan with lists read-only.",
+      "where": "Work, Today, Mine"
+    }
+  ]
+},
+{
   "version": "1.186.0",
   "date": "2026-11-09",
   "headline": "Risks and decisions about outcomes and requests",
