@@ -42,7 +42,7 @@ setTimeout(()=>{
   const loose = acts.flatMap(A=>Object.entries(A.args).filter(([k, t])=>t.replace(/\?$/, "") === "any" && k !== "prev" && !(k === "value" && A.fields)).map(([k])=>A.id + "." + k));
   ok("H0 (setup) one of every kind is in the plan", made0 === "[]", made0);
   ok("H1 every exported argument has a type narrower than any", !loose.length, loose.join(", "));
-  ok("H1b decision.add and risk.add say item is an initiative id", ["decision.add", "risk.add"].every(id=>acts.find(a=>a.id === id).args.item === "initiativeId|blank?"));
+  ok("H1b decision.add and risk.add say item is an initiative's or an outcome's id", ["decision.add", "risk.add"].every(id=>acts.find(a=>a.id === id).args.item === "initiativeId|outcomeId|blank?") && ["decision.set", "risk.set"].every(id=>acts.find(a=>a.id === id).fields.item === "initiativeId|outcomeId|blank"));
   const clash = acts.flatMap(A=>[...Object.values(A.args), ...Object.values(A.fields || {})]).flatMap(t=>alts(t)).filter(a=>!refOf(a) && !(a.replace(/\[\]$/, "") in BASE) && a !== "blank" && a !== "null" && (/Id$/.test(a) || a in BASE));
   ok("H1d no listed value can be read as a type or a reference (a word ending in Id would be)", !clash.length, [...new Set(clash)].join(", "));
   const word = (id, k) => (acts.find(a=>a.id === id) || {args:{}}).args[k];
@@ -69,9 +69,9 @@ setTimeout(()=>{
       const where = A.id + "." + (fld ? "value(" + fld + ")" : k);
       const gone = /^[a-z]+\.del$/.test(A.id) && k === "id";          // deleting what isn't there is already done, for both
       if (gone){ cases.push({where, kind:"gone", A, args:put("zz-missing"), want:"nochange"}); continue; }
-      if (refAlts.length){ const r = refOf(refAlts[0]), other = Object.keys(have).find(o=>o !== r && o !== "itemId" && !(r === "itemId" && (o === "outcomeId" || o === "initiativeId")) && have[o].length && !refAlts.map(refOf).some(x=>have[x].includes(have[o][0])));
-        cases.push({where, kind:"missing", A, args:put("zz-missing"), want:refs[r].missing});
-        if (other) cases.push({where, kind:"other kind", A, args:put(have[other][0]), want:refs[r].missing});
+      if (refAlts.length){ const r = refOf(refAlts[0]), miss = refAlts.length > 1 ? `That ${refAlts.map(a=>refs[refOf(a)].noun).join(" or ")} isn't in the plan.` : refs[r].missing, other = Object.keys(have).find(o=>o !== r && o !== "itemId" && !(r === "itemId" && (o === "outcomeId" || o === "initiativeId")) && have[o].length && !refAlts.map(refOf).some(x=>have[x].includes(have[o][0])));
+        cases.push({where, kind:"missing", A, args:put("zz-missing"), want:miss});
+        if (other) cases.push({where, kind:"other kind", A, args:put(have[other][0]), want:miss});
         if (have[r].length) cases.push({where, kind:"exists", A, args:put(have[r][0]), want:null}); }
       else cases.push({where, kind:"unlisted word", A, args:{...args, [k]:"zz-not-a-choice"}, want:"one of"}); } }
   const changes = cases.map((c, i)=>({id:"c" + i, summary:c.where, ops:[{op:"action", action:c.A.id, args:c.args}]}));
@@ -87,12 +87,18 @@ setTimeout(()=>{
   ok(`H3 the checker refuses the same ones with the same words, and every unlisted value the way the page does (${nWord} value cases)`, !quiet.length && nWord >= 12, quiet.slice(0, 8).join(" | "));
   ok("H4 the checker raises nothing about a reference that exists, unless the page refuses it with the same words", !loud.length, loud.slice(0, 8).join(" | "));
 
-  // H5 the issue's repro: a decision about a capture added in the same change. Both refuse it, the same way.
+  // H5 the issue's repro, since 1.186.0: a decision about a capture added in the same change is accepted by both.
   const lane = ev("S.lanes[0].id"), repro = [{id:"r1", summary:"A capture and its decision", ops:[
     {op:"action", action:"outcome.add", args:{id:"dv-new", name:"Example request", lane, capture:"request"}},
     {op:"action", action:"decision.add", args:{id:"dec-new", text:"Example decision", item:"dv-new"}}]}];
   const pr = page(repro[0].ops), cr = check(repro).by.r1 || [];
-  ok("H5 a decision whose item is a new capture: page and checker both say the initiative isn't in the plan", !pr.ok && pr.reason === "That initiative isn't in the plan." && cr.join() === "That initiative isn't in the plan.", JSON.stringify(pr) + " / " + cr.join("; "));
+  ok("H5 a decision whose item is a new capture: page and checker both accept it", pr.ok && !cr.length, JSON.stringify(pr) + " / " + cr.join("; "));
+  // H5c an outcome or a capture already in the plan is a good item for both; a person's id is refused by both, naming both kinds
+  const person = ev("S.people[0].id"), UNION = "That initiative or deliverable isn't in the plan.", kinds = [["out", "risk.add", {id:"risk-o1", text:"Example", item:"dv-h1"}], ["cap", "decision.add", {id:"dec-c1", text:"Example", item:"dv-h2"}],
+    ["setcap", "risk.set", {id:"risk-h1", field:"item", value:"dv-h2"}], ["who", "decision.add", {id:"dec-p1", text:"Example", item:person}], ["setwho", "risk.set", {id:"risk-h1", field:"item", value:person}]].map(([id, action, args])=>({id, summary:action, ops:[{op:"action", action, args}]}));
+  const kc = check(kinds).by, kp = kinds.map(c=>page(c.ops));
+  ok("H5c an outcome id and a capture id are good items for page and checker (add and set)", kp.slice(0, 3).every(x=>x.ok) && !kc.out && !kc.cap && !kc.setcap, JSON.stringify(kp.slice(0, 3)) + " / " + JSON.stringify(kc));
+  ok("H5d a person's id as item: both refuse it, naming an initiative and a deliverable", kp.slice(3).every(x=>!x.ok && x.reason === UNION) && (kc.who || []).join() === UNION && (kc.setwho || []).join() === UNION, JSON.stringify(kp.slice(3)) + " / " + JSON.stringify(kc));
   const bar = ev("S.bars[0].id"), fine = [{id:"r2", summary:"A decision about an initiative", ops:[
     {op:"action", action:"initiative.add", args:{id:"b-new", lane, label:"New work", day:"2026-12-07"}}, {op:"action", action:"decision.add", args:{id:"dec-2", text:"Example", item:"b-new"}},
     {op:"action", action:"risk.add", args:{id:"risk-2", text:"Example", item:bar, sev:"high"}}]}];

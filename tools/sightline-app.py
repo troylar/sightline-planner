@@ -267,6 +267,8 @@ def ref_problem(t: str, v, refs: dict, index: dict, made: dict) -> str | None:
             continue
         other = any(i in ids for kk, ids in made.items() if kk not in covers)
         if other or all(index[k][1] for k in kinds):
+            if len(kinds) > 1:      # a choice of kinds names each, as the page does
+                return f"That {' or '.join(refs[k].get('noun') or k for k in kinds)} isn't in the plan."
             return refs[kinds[0]].get("missing") or f"That {kinds[0]} isn't in the plan."
     return None
 

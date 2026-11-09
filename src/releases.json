@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.186.0",
+  "date": "2026-11-09",
+  "headline": "Risks and decisions about outcomes and requests",
+  "changes": [
+    {
+      "kind": "new",
+      "area": "Roadmap",
+      "title": "A risk or decision can be about an outcome or a captured request",
+      "before": "A risk's or decision's Affects column listed only initiatives, so a question about a request that wasn't planned yet had nowhere to point.",
+      "now": "Affects lists initiatives and, apart, outcomes and requests. Their cards and details show \"Waiting on\" for each open decision about them and each open risk, and To triage marks a request that's waiting. Nothing about their stage, priority or dates changes because of them. Older copies of Sightline open a plan that uses this read-only, so nothing is lost.",
+      "where": "Delivery, the Risks and Decisions tables; Roadmap, outcome cards, their details and To triage"
+    }
+  ]
+},
+{
   "version": "1.185.0",
   "date": "2026-11-09",
   "headline": "What matters now, on Today",
