@@ -17,6 +17,7 @@ published with a different Sightline version than the page that wrote the folder
 from __future__ import annotations
 
 import argparse
+import copy
 import datetime as dt
 import json
 import os
@@ -275,6 +276,175 @@ def ref_problem(t: str, v, refs: dict, index: dict, made: dict) -> str | None:
     return None
 
 
+REF_MAX, AGAIN_MAX = 20, 50
+
+
+def working_copy(ctx: dict) -> dict:
+    """What the page's rules read about an item's current state, from the context. The page runs a change's ops in order
+    on a copy of the plan, after the ready changes before it, so an op is checked against what the ones before it did."""
+    s = {"dv": {}, "own": {}, "tasks": {}, "bars": {}, "refs": {},
+         "cut": not ((ctx.get("coverage") or {}).get("complete") is True)}
+    for d in ctx.get("deliverables") or []:
+        if isinstance(d, dict) and isinstance(d.get("id"), str):
+            again = [x for x in d.get("raisedAgain") or [] if isinstance(x, dict)]
+            s["dv"][d["id"]] = {"target": bool(d.get("target")), "release": bool(d.get("release")), "date": bool(d.get("date")),
+                                "stage": d.get("stage") or "idea", "capture": bool(d.get("capture")), "handoff": bool(d.get("handoff")),
+                                "asks": [x.get("id") for x in again], "origins": [x.get("origin") for x in [d, *again] if x.get("origin")]}
+            s["refs"][d["id"]] = [(r.get("id"), r.get("url")) for r in d.get("refs") or [] if isinstance(r, dict)]
+    for b in ctx.get("initiatives") or []:
+        if isinstance(b, dict) and isinstance(b.get("id"), str):
+            s["bars"][b["id"]] = {"deps": list(b.get("dependsOn") or []), "parked": bool(b.get("parked"))}
+            s["refs"][b["id"]] = [(r.get("id"), r.get("url")) for r in b.get("refs") or [] if isinstance(r, dict)]
+            for t in b.get("tasks") or []:
+                if isinstance(t, dict) and isinstance(t.get("id"), str):
+                    s["tasks"][t["id"]] = list(t.get("dependsOn") or [])
+    for o in (ctx.get("planning") or {}).get("own") or []:
+        if isinstance(o, dict) and isinstance(o.get("id"), str):
+            s["own"][o["id"]] = bool(o.get("closed"))
+    return s
+
+
+def _reaches(deps: dict, start, goal) -> bool:
+    seen, stack = set(), [start]
+    while stack:
+        x = stack.pop()
+        if x == goal:
+            return True
+        if x in seen:
+            continue
+        seen.add(x)
+        stack.extend(deps.get(x) or [])
+    return False
+
+
+def state_problem(s: dict, name: str, a: dict) -> str | None:
+    """The page's rules that depend on what's in the plan now, in its own words, for items the context shows. Says
+    nothing about an item it can't see: the page checks again."""
+    dv, own, tasks, bars, refs = s["dv"], s["own"], s["tasks"], s["bars"], s["refs"]
+    d = dv.get(a.get("id")) if name.startswith("outcome.") else None
+    if name == "outcome.set" and d and a.get("field") == "stage":
+        v = a.get("value")
+        if v not in ("idea", "planned", "done"):
+            return "Use outcome.drop to drop it." if v == "dropped" else "Stage is idea, planned or done."
+        if v == "planned" and not (d["target"] or d["release"] or d["date"]):
+            return "Pick a target to plan it."
+    if name == "outcome.setTarget" and d and a.get("target") and a.get("date"):
+        return "Give a target or a date, not both."
+    if name == "outcome.drop" and d:
+        if d["capture"] and not str(a.get("reason") or "").strip():
+            return "Say why it's declined: whoever asked will want to know."
+        if d["handoff"] and d["stage"] != "dropped":
+            return "It's handed off already. Reopen it first to decline it."
+    if name == "outcome.handoff" and d:
+        if not d["capture"]:
+            return "Only a captured item is handed off. Give it a capture type first."
+        if d["stage"] == "dropped":
+            return "It's declined. Reopen it first to hand it off."
+    if name == "outcome.reopen" and d and not d["handoff"] and d["stage"] != "dropped":
+        return "It's open already."
+    if name == "outcome.raiseAgain" and d:
+        if not d["capture"]:
+            return "Only a captured item is raised again. Give it a capture type first."
+        if a.get("ask") in d["asks"]:       # the same ask again is already done, as the page says
+            return None
+        if len(d["asks"]) >= AGAIN_MAX:
+            return f"It's been raised again {AGAIN_MAX} times already; that's the most a capture keeps."
+        if a.get("origin") and a.get("origin") in d["origins"]:
+            return "That report is already recorded on it: a forwarded copy isn't a new report."
+    if name == "ref.add" and a.get("on") in refs:
+        have = refs[a["on"]]
+        if any(u == str(a.get("url") or "").strip() for _, u in have):
+            return "That link is already on it."
+        if len(have) >= REF_MAX:
+            return f"It holds {REF_MAX} links already; that's the most it keeps."
+    if name == "own.toTask" and own.get(a.get("id")):
+        return "It's closed. Reopen it first."
+    if name == "task.link" and a.get("id") in tasks:
+        if a.get("id") == a.get("after") or _reaches(tasks, a.get("after"), a.get("id")):
+            return "That would create a loop."
+    if name == "task.move" and a.get("start") == "after" and a.get("id") in tasks:
+        if not any(x in tasks or s["cut"] for x in tasks[a["id"]]):
+            return "It waits for no task, so there's no after. Link it first (task.link), or give a date."
+    if name == "link.add" and a.get("id") in bars:
+        if a.get("id") == a.get("after"):
+            return "An initiative can't start after itself."
+        x = bars.get(a.get("after"))
+        if x and not x["parked"] and _reaches({k: v["deps"] for k, v in bars.items()}, a.get("after"), a.get("id")):
+            return "That would create a loop."
+    return None
+
+
+def state_apply(s: dict, name: str, a: dict) -> None:
+    """What an op the page accepted changes in the working copy, for the rules above."""
+    dv, own, tasks, bars, refs = s["dv"], s["own"], s["tasks"], s["bars"], s["refs"]
+    i = a.get("id")
+    d = dv.get(i) if name.startswith("outcome.") else None
+    if name == "outcome.add" and isinstance(i, str):
+        timed = bool(a.get("target") or a.get("release") or a.get("date"))
+        dv[i] = {"target": bool(a.get("target")), "release": bool(a.get("release")), "date": bool(a.get("date")),
+                 "stage": "planned" if timed and not a.get("capture") else "idea", "capture": bool(a.get("capture")), "handoff": False,
+                 "asks": [], "origins": [a["origin"]] if a.get("origin") else []}
+        refs[i] = []
+    elif name == "outcome.set" and d:
+        if a.get("field") == "stage":
+            d["stage"] = a.get("value")
+        elif a.get("field") == "capture":
+            d["capture"] = bool(a.get("value"))
+    elif name == "outcome.setTarget" and d:
+        if a.get("date"):
+            d.update(date=True, release=False, target=True)
+        else:
+            d.update(target=bool(a.get("target")), release=False, date=False)
+            if not a.get("target") and d["stage"] == "planned":
+                d["stage"] = "idea"
+    elif name == "outcome.setRelease" and d:
+        if a.get("release"):
+            d.update(release=True, date=False)
+        else:
+            d["release"] = False
+    elif name == "outcome.drop" and d:
+        d["stage"] = "dropped"
+    elif name == "outcome.handoff" and d:
+        d["handoff"] = True
+    elif name == "outcome.reopen" and d:
+        d["handoff"] = False
+        if d["stage"] == "dropped":
+            d["stage"] = "idea"
+    elif name == "outcome.raiseAgain" and d:
+        d["asks"].append(a.get("ask"))
+        if a.get("origin"):
+            d["origins"].append(a["origin"])
+    elif name == "outcome.unraise" and d and a.get("ask") in d["asks"]:
+        d["asks"].remove(a.get("ask"))
+    elif name == "ref.add" and a.get("on") in refs:
+        refs[a["on"]].append((a.get("id"), str(a.get("url") or "").strip()))
+    elif name == "ref.del" and a.get("on") in refs:
+        refs[a["on"]] = [r for r in refs[a["on"]] if r[0] != i]
+    elif name == "own.add" and isinstance(i, str):
+        own[i] = False
+    elif name in ("own.close", "own.reopen") and i in own:
+        own[i] = name == "own.close"
+    elif name == "own.del":
+        own.pop(i, None)
+    elif name == "own.toTask" and i in own:
+        own.pop(i)
+        tasks[i] = []
+    elif name == "task.add" and isinstance(i, str):
+        tasks[i] = list(a.get("after") or [])
+    elif name == "task.link" and i in tasks and a.get("after") not in tasks[i]:
+        tasks[i].append(a.get("after"))
+    elif name == "task.unlink" and i in tasks:
+        tasks[i] = [x for x in tasks[i] if x != a.get("after")]
+    elif name == "task.del":
+        tasks.pop(i, None)
+    elif name == "initiative.add" and isinstance(i, str):
+        bars[i], refs[i] = {"deps": [], "parked": False}, []
+    elif name == "link.add" and i in bars and a.get("after") not in bars[i]["deps"]:
+        bars[i]["deps"].append(a.get("after"))
+    elif name == "link.remove" and i in bars:
+        bars[i]["deps"] = [x for x in bars[i]["deps"] if x != a.get("after")]
+
+
 def check_offline(folder: Path, batch: dict) -> list:
     """Problems with a batch, checked against the context file it was written from. The page checks again."""
     ctx = read_json(folder / CONTEXT_FILE, "sightline-assistant-view")
@@ -298,13 +468,16 @@ def check_offline(folder: Path, batch: dict) -> list:
     index, made = ref_index(ctx, refs), {}
     words_for = ((ctx.get("argTypes") or {}).get("types") or {}) if isinstance(ctx.get("argTypes"), dict) else {}
     ADDS = {"deliverable": "outcomeId", "initiative": "initiativeId", "task": "taskId"}      # what an {op:'add'} makes
-    bad, seen = [], set()
+    bad, seen, ready = [], set(), working_copy(ctx)
     changes = batch.get("changes")
     if not isinstance(changes, list) or not changes:
         return ["The batch has no changes."]
     for ci, c in enumerate(changes, 1):
         cid = c.get("id") if isinstance(c, dict) else None
         at = f"change {cid or ci}"
+        if ci > 1 and len(bad) == n_before:      # the change before passed: like the page, check this one after it
+            ready = state
+        n_before, state = len(bad), copy.deepcopy(ready)
         if not isinstance(cid, str) or not CHANGE_ID.match(cid):
             bad.append(f"{at}: every change needs an id (letters, digits, . _ and -).")
             continue
@@ -327,7 +500,13 @@ def check_offline(folder: Path, batch: dict) -> list:
             if o["op"] != "action":
                 if o["op"] == "add" and o.get("type") in ADDS and isinstance(o.get("id"), str):
                     made.setdefault(ADDS[o["type"]], set()).add(o["id"])
+                    v = o.get("value") if isinstance(o.get("value"), dict) else {}
+                    state_apply(state, {"deliverable": "outcome.add", "initiative": "initiative.add", "task": "task.add"}[o["type"]],
+                                {"id": o["id"], "target": v.get("target"), "release": v.get("release")})
+                    if o["type"] == "deliverable" and v.get("stage"):
+                        state["dv"][o["id"]]["stage"] = v["stage"]
                 continue
+            op_ok = len(bad)
             name, args = o.get("action"), o.get("args")
             if name not in actions:
                 bad.append(f"{where}: {name!r} isn't an action in the context.")
@@ -360,6 +539,12 @@ def check_offline(folder: Path, batch: dict) -> list:
                 bad.append(f"{where}: give the new item an id (like risk-vendor-limits), so reading the file again can't add it twice.")
             if str(name).startswith("jira.") and name not in ("jira.hide", "jira.unhide"):      # hiding isn't a placement
                 bad.extend(f"{where}: {x}" for x in check_jira_place(ctx.get("jiraSort") or {}, name, args))
+            if len(bad) == op_ok:       # an op the page refuses changes nothing, so the ops after it are checked without it
+                why = state_problem(state, name, args)
+                if why:
+                    bad.append(f"{where}: {why}")
+                else:
+                    state_apply(state, name, args)
     return bad
 
 

@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.187.1",
+  "date": "2026-11-09",
+  "headline": "The assistant's check matches Sightline",
+  "changes": [
+    {
+      "kind": "fixed",
+      "area": "Assistant",
+      "title": "The assistant's offline check runs a change in order, as Sightline does",
+      "before": "The check your assistant runs before handing over changes looked at each step on its own. A change that planned an outcome and only then gave it a target passed the check, and Sightline then refused it.",
+      "now": "The check runs each change's steps in order, after the changes before it, as Sightline does, and refuses the same things in the same words: planning an outcome before it has a target, handing off a declined request, or a link that makes a loop. The assistant's instructions now say to set the target first.",
+      "where": "Assistant tools: sightline-app.py check, and the instructions the assistant reads"
+    }
+  ]
+},
+{
   "version": "1.187.0",
   "date": "2026-11-09",
   "headline": "Your own list, first on Today",
