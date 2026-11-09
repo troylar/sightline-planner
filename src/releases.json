@@ -1,5 +1,20 @@
 [
 {
+  "version": "1.188.0",
+  "date": "2026-11-09",
+  "headline": "The Jira sync names where its facts come from",
+  "changes": [
+    {
+      "kind": "improved",
+      "area": "Jira",
+      "title": "The sync's files say which tracker and server they come from",
+      "before": "The files the Jira sync writes didn't say which tracker they came from, so Sightline couldn't tell Jira's facts from another tracker's.",
+      "now": "Both files now name their tracker and server. Sightline refuses a file from a tracker it can't read, and sets aside search results from a different server than the status file. Jira works as before. Older copies of Sightline can't read the new files: put this version in your plan's folder before you update the sync. The sync warns when the page beside the plan is older.",
+      "where": "The Jira sync, and Settings, then Jira connection"
+    }
+  ]
+},
+{
   "version": "1.187.1",
   "date": "2026-11-09",
   "headline": "The assistant's check matches Sightline",

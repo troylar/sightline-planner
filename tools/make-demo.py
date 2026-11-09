@@ -159,14 +159,14 @@ class Demo:
         listed = {k for e in on_board for k in self.stories_of.get(e, [])}
         snap = secrets.token_hex(8)
         at = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=4)).isoformat(timespec="seconds")
-        status = {"kind": "sightline-jira-status", "version": 1, "snapshot": snap, "generatedAt": at, "jiraBase": BASE,
+        status = {"kind": "sightline-jira-status", "version": 2, "snapshot": snap, "generatedAt": at, "jiraBase": BASE, "tracker": {"kind": "jira", "server": BASE},
                   "issues": {k: v for k, v in self.issues.items() if k in linked or k in listed}, "missing": [],
                   "sync": {"by": "watch", "every": 15, "plan": "plan.json"},
                   "board": {"id": 7, "name": board_name, "columns": [{"name": c, "statuses": s} for c, s in self.columns]},
                   "sprints": sprints, "rollups": rollups, "rollupsTruncated": False,
                   "releases": releases, "releasesAt": at, "dev": extra["dev"], "burndown": extra["burndown"]}
         open_stories = [k for k, v in self.issues.items() if not v["isEpic"] and v["category"] != "done"]
-        listing = {"kind": "sightline-jira-issues", "version": 2, "snapshot": snap, "generatedAt": at, "jiraBase": BASE,
+        listing = {"kind": "sightline-jira-issues", "version": 3, "snapshot": snap, "generatedAt": at, "jiraBase": BASE, "tracker": {"kind": "jira", "server": BASE},
                    "searches": [{"name": "Epics", "jql": jql_epics, "total": len(epic_keys), "truncated": False, "keys": epic_keys},
                                 {"name": "Open stories", "jql": jql_stories, "total": len(open_stories), "truncated": False, "keys": open_stories}],
                    "issues": [{"key": k, **self.issues[k]} for k in dict.fromkeys(epic_keys + open_stories)]}

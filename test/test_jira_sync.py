@@ -970,7 +970,7 @@ try:
         _json.dump({"bars": []}, open(plan, "w"))
         js.sync_once(plan, out, SBASE, TOKEN, [{"name": "First", "jql": "project = ABC"}, {"name": "Second", "jql": "project = ABC"}], 3, iss)
         L = _json.load(open(iss))
-        ok("searches: each search keeps its own list", L["version"] == 2 and [x["name"] for x in L["searches"]] == ["First", "Second"] and all(len(x["keys"]) == 3 for x in L["searches"]))
+        ok("searches: each search keeps its own list", L["version"] == 3 and [x["name"] for x in L["searches"]] == ["First", "Second"] and all(len(x["keys"]) == 3 for x in L["searches"]))
         ok("searches: an issue in two searches is stored once", len(L["issues"]) == 3)
         ok("searches: the first search is also written the old way, for an older page", L["jql"] == "project = ABC" and L["total"] == 250)
         cap = js.MAX_ISSUES; js.MAX_ISSUES = 3
@@ -1072,6 +1072,87 @@ with _vt.TemporaryDirectory() as rt:
     ok("reid: an id another workstream has, or had, is refused", st.get("r2") == "invalid" and st.get("r3") == "invalid")
     ok("reid: an id that breaks the rules, or an initiative has, is refused", st.get("r4") == "invalid" and st.get("r5") == "invalid")
     ok("reid: a former id still resolves in other actions, and a workstream can take its own back", st.get("r6") == "ready" and st.get("r7") == "ready")
+
+# ---- one sync, a part for each tracker (vision.md, "GitHub Issues, an optional tracker") ----
+import contextlib as _cl
+import io as _io
+import shutil as _sh
+TR = getattr(js, "TRACKERS", {})
+ok("trackers: one sync with a part for each tracker, and today only Jira's", list(TR) == ["jira"] and isinstance(TR.get("jira"), getattr(js, "Tracker", ()))
+   and TR["jira"].status_kind == "sightline-jira-status" and TR["jira"].issues_kind == "sightline-jira-issues")
+ok("trackers: a Jira token keeps its name, so a sign-in saved by an earlier copy still works", js.CredentialStore("jira.example.com").target == "Sightline Jira: jira.example.com")
+try:
+    ok("trackers: a server saved before trackers were named is Jira's", js.tracker_of({"base": "https://jira.example.com"}) is TR["jira"])
+    try:
+        js.tracker_of({"base": "https://x.example.com", "tracker": "nope"})
+        ok("trackers: a server for a tracker this copy doesn't know is refused, not synced as Jira", False)
+    except SystemExit:
+        ok("trackers: a server for a tracker this copy doesn't know is refused, not synced as Jira", True)
+except AttributeError:
+    ok("trackers: a server saved before trackers were named is Jira's", False)
+real_filter, real_search = js.jira_filter, js.jira_search
+js.jira_filter = lambda b, t, q, lim, opener=None: real_filter(b, t, q, lim, opener=http_opener)
+js.jira_search = lambda b, t, k, opener=None: real_search(b, t, k, opener=http_opener)
+try:
+    with _tempfile.TemporaryDirectory() as d:
+        plan, out, iss = (_os.path.join(d, n) for n in ("plan.json", "status.json", "issues.json"))
+        _json.dump({"bars": [{"jira": "ABC-2"}]}, open(plan, "w"))
+        js.sync_once(plan, out, SBASE, TOKEN, "project = ABC", 3, iss)
+        S, L = _json.load(open(out)), _json.load(open(iss))
+        ok("envelope: both files name their tracker and server, in formats 2 and 3",
+           S.get("tracker") == {"kind": "jira", "server": SBASE} and L.get("tracker") == S.get("tracker") and S["version"] == 2 and L["version"] == 3 and js.STATUS_FORMAT == 2 and js.ISSUES_FORMAT == 3)
+        ok("envelope: and keep every field an older reader uses", S["jiraBase"] == SBASE and L["jiraBase"] == SBASE and L["jql"] == "project = ABC" and S["snapshot"] == L["snapshot"])
+finally:
+    js.jira_filter, js.jira_search = real_filter, real_search
+
+# The seam: a stand-in tracker gets the shared lifecycle (envelope, drop guard, atomic writes) without any Jira code.
+if hasattr(js, "Tracker"):
+    class FakeTracker(js.Tracker):
+        kind, app, status_kind, issues_kind = "fake", "Sightline Fake", "sightline-fake-status", "sightline-fake-issues"
+        found: dict = {}
+        def normalize_server(self, url): return url
+        def plan_keys(self, plan, total): total.append(len(plan["keys"])); return list(plan["keys"])
+        def fetch(self, plan, plan_path, out_path, base, token, keys, searches, limit, board, env):
+            got = {k: {"summary": "From the fake " + k} for k in keys if k in self.found}
+            lists = [{"name": s["name"], "jql": s["jql"], "total": 1, "truncated": False, "keys": ["F-1"]} for s in searches]
+            return {"issues": got, "missing": [k for k in keys if k not in got]}, lists, {"F-1": {"summary": "found"}} if searches else {}
+    fake = FakeTracker()
+    js.TRACKERS["fake"] = fake
+    try:
+        ok("seam: a tracker's own token has its own name", js.CredentialStore("h.example", "fake").target == "Sightline Fake: h.example")
+        with _tempfile.TemporaryDirectory() as d:
+            plan, out, iss = (_os.path.join(d, n) for n in ("plan.json", "status.json", "issues.json"))
+            _json.dump({"keys": [f"F-{i}" for i in range(1, 13)]}, open(plan, "w"))
+            fake.found = {f"F-{i}" for i in range(1, 13)}
+            js.sync_once(plan, out, "https://fake.example", "t", [{"name": "Mine", "jql": "q"}], 10, iss, tracker="fake")
+            S, L = _json.load(open(out)), _json.load(open(iss))
+            ok("seam: the shared lifecycle writes the envelope for any tracker, without Jira's fields",
+               S["kind"] == "sightline-fake-status" and S["tracker"] == {"kind": "fake", "server": "https://fake.example"} and len(S["issues"]) == 12
+               and "jiraBase" not in S and L["kind"] == "sightline-fake-issues" and L["tracker"] == S["tracker"] and "jiraBase" not in L and L["snapshot"] == S["snapshot"])
+            fake.found = {"F-1"}
+            res = js.sync_once(plan, out, "https://fake.example", "t", tracker="fake")
+            ok("seam: the drop guard keeps the last good files for any tracker", res.get("guarded", {}).get("found") == 1 and len(_json.load(open(out))["issues"]) == 12)
+    finally:
+        js.TRACKERS.pop("fake", None)
+else:
+    ok("seam: a tracker's own token has its own name", False)
+
+# The sync warns when the page beside the plan is too old to read these files.
+buf = _io.StringIO()
+with _cl.redirect_stdout(buf):
+    js.report_run({"issues": {}, "missing": [], "page": {"version": "1.187.1", "file": "sightline.html"}}, "s.json", "i.json")
+    js.report_run({"issues": {}, "missing": [], "page": {"version": "1.188.0", "file": "sightline.html"}}, "s.json", "i.json")
+lines = buf.getvalue().splitlines()
+ok("page: an older page beside the plan is named, and a current one isn't", sum("can't read these files" in x for x in lines) == 1 and any("1.187.1" in x and "can't read" in x for x in lines))
+
+# install copies one file: that file, alone in a folder, still runs and still has its trackers.
+with _tempfile.TemporaryDirectory() as d:
+    copy = _os.path.join(d, "sightline-jira-sync.py")
+    _sh.copy(HERE.parent / "tools" / "sightline-jira-sync.py", copy)
+    r = subprocess.run([sys.executable, "-I", "-c", "import importlib.util,sys; s=importlib.util.spec_from_file_location('c', sys.argv[1]); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); print(sorted(m.TRACKERS))", copy],
+                       capture_output=True, text=True, timeout=60, cwd=d)
+    h = subprocess.run([sys.executable, "-I", copy, "--help"], capture_output=True, text=True, timeout=60, cwd=d)
+    ok("install: the single file runs on its own, with the Jira tracker in it", r.returncode == 0 and r.stdout.strip() == "['jira']" and h.returncode == 0 and "sync" in h.stdout)
 
 search.shutdown()
 other.shutdown()

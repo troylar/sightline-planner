@@ -14,7 +14,11 @@ Your personal access token (PAT) is kept in the operating system's credential st
 Windows Credential Manager on Windows, the login keychain on macOS. It is never written to disk
 by this script, never printed, and never sent anywhere except your Jira server over HTTPS.
 
-Standard library only (no pip installs), Python 3.9+.
+Standard library only (no pip installs), Python 3.9+. One file, so `install` copies just this one.
+
+One sync, with a part for each tracker (the Tracker classes; today only Jira). What every tracker shares (the plan,
+credentials, scheduling, limits, the files' envelope, atomic writes and the drop guard) is written once. Each file
+names its tracker and server (`tracker`), so the page can refuse facts it can't read.
 
     python sightline-jira-sync.py setup                     # once: Jira address + token
     python sightline-jira-sync.py sync  PLAN.json           # write jira-status.json beside it
@@ -74,8 +78,9 @@ MAX_PLAN_BYTES = 5 * 1024 * 1024
 PAGE_VERSION = None
 CONTEXT_FILE = "sightline-assistant-view.json"
 PLAN_SCHEMA = 2        # the plan format this script reads; must equal SCHEMA in the page (a test checks)
-STATUS_FORMAT = 1      # the formats this script writes; the page refuses files newer than it knows (a test checks)
-ISSUES_FORMAT = 2
+STATUS_FORMAT = 2      # the formats this script writes; the page refuses files newer than it knows (a test checks)
+ISSUES_FORMAT = 3      # status 2 and issues 3 name their tracker and server (`tracker`)
+PAGE_READS_FORMATS = "1.188.0"   # the first Sightline page that reads them; an older page in the plan's folder is warned about
 TIMEOUT = 30
 FIELDS = "summary,status,assignee,duedate,updated,resolution,issuetype,priority,parent,labels,fixVersions,created,resolutiondate,description"
 DESC_MAX = 4000                    # a description, like a story in the plan
@@ -110,10 +115,11 @@ def _sq(v: str) -> str:
 
 
 class CredentialStore:
-    """Stores one secret per Jira host in the OS credential store."""
+    """Stores one secret per tracker and host in the OS credential store. A Jira token keeps the name it always had
+    ("Sightline Jira: host"), so a sign-in saved by an earlier copy still works."""
 
-    def __init__(self, host: str):
-        self.target = f"{APP}: {host}"
+    def __init__(self, host: str, tracker: str = "jira"):
+        self.target = f"{TRACKERS[tracker].app}: {host}"
 
     def save(self, secret: str) -> None:
         if sys.platform == "win32":
@@ -229,15 +235,26 @@ def pick_server(cfg: dict, jira: str | None = None, plan: dict | None = None) ->
     return sv[want]
 
 
+def tracker_of(entry: dict) -> "Tracker":
+    """The tracker a saved server belongs to. A server saved before trackers were named is Jira."""
+    kind = entry.get("tracker") or "jira"
+    if kind not in TRACKERS:
+        raise SystemExit(f"This copy of the sync doesn't know the tracker {clean(kind, 20)!r}. Get the latest Sightline sync.")
+    return TRACKERS[kind]
+
+
+def token_store(tr: "Tracker", host: str) -> "CredentialStore":
+    return CredentialStore(host) if tr.kind == "jira" else CredentialStore(host, tr.kind)
+
+
 def use_server(entry: dict) -> tuple[str, str]:
-    """(base, token) for a server, with its custom fields loaded (they differ from server to server)."""
-    base = normalize_base(entry["base"])
-    token = CredentialStore(urllib.parse.urlparse(base).hostname).load()
+    """(base, token) for a server, with what its tracker needs from the saved settings loaded."""
+    tr = tracker_of(entry)
+    base = tr.normalize_server(entry["base"])
+    token = token_store(tr, urllib.parse.urlparse(base).hostname).load()
     if not token:
-        raise SystemExit(f"No stored token for {urllib.parse.urlparse(base).hostname}. Run: setup --jira {base}")
-    saved = entry.get("fields") if isinstance(entry.get("fields"), dict) else {}
-    CUSTOM.clear()
-    CUSTOM.update({k: v for k, v in saved.items() if k in FIELD_LABELS and isinstance(v, str) and FIELD_ID_RE.match(v)})
+        raise SystemExit(f"No stored token for {urllib.parse.urlparse(base).hostname}. Run: setup --{tr.kind} {base}")
+    tr.prepare(entry)
     return base, token
 
 
@@ -1325,105 +1342,171 @@ def newest_page(folder: str) -> dict | None:
     return best
 
 
-def sync_once(plan_path: str, out_path: str, base: str, token: str, jql: str | None = None, limit: int = 500,
-              issues_path: str | None = None, board: str | None = None, how: dict | None = None, accept_drop: bool = False) -> dict:
+# ---------------------------------------------------------------- trackers
+class Tracker:
+    """What one tracker brings to a sync: how its server is written, which of the plan's keys it reads, and how its
+    facts are fetched and given their meanings. Everything around that is shared by every tracker, in sync_once and
+    run_job: reading the plan, credentials (one token per tracker and server), scheduling, limits, the file envelope,
+    atomic writes, keeping the last good files, and the drop guard."""
+    kind = ""                       # tracker.kind in the files
+    app = ""                        # the credential store's name for its tokens
+    status_kind = ""                # the files' kinds
+    issues_kind = ""
+
+    def normalize_server(self, url: str) -> str:
+        raise NotImplementedError
+
+    def prepare(self, entry: dict) -> None:
+        """Load what this server's saved settings hold, before a sync."""
+
+    def plan_keys(self, plan: dict, total: list) -> list:
+        raise NotImplementedError
+
+    def fetch(self, plan: dict, plan_path: str, out_path: str, base: str, token: str, keys: list, searches: list,
+              limit: int, board, env: dict) -> tuple[dict, list, dict]:
+        """(the status file's body, the searches' lists, the issues the searches found). The body holds `issues`
+        and `missing`; env is the run's snapshot and time."""
+        raise NotImplementedError
+
+    def listing_extra(self, base: str, lists: list) -> dict:
+        return {}
+
+
+class JiraTracker(Tracker):
+    kind, app, status_kind, issues_kind = "jira", APP, "sightline-jira-status", "sightline-jira-issues"
+
+    def normalize_server(self, url: str) -> str:
+        return normalize_base(url)
+
+    def prepare(self, entry: dict) -> None:
+        saved = entry.get("fields") if isinstance(entry.get("fields"), dict) else {}     # custom fields differ from server to server
+        CUSTOM.clear()
+        CUSTOM.update({k: v for k, v in saved.items() if k in FIELD_LABELS and isinstance(v, str) and FIELD_ID_RE.match(v)})
+
+    def plan_keys(self, plan: dict, total: list) -> list:
+        return plan_keys(plan, total)
+
+    def fetch(self, plan, plan_path, out_path, base, token, keys, searches, limit, board, env):
+        issues = jira_search(base, token, keys) if keys else {}
+        issues_all, lists = {}, []
+        for srch in searches:
+            # Several named searches ("Epics", "This sprint", "No epic"): each keeps its own list of keys, in Jira's order,
+            # and the issues are stored once. --limit applies to each search; MAX_ISSUES caps the whole file.
+            room = min(limit, MAX_ISSUES - len(issues_all))
+            if room <= 0:                                # the file is full: say so rather than fetch past the cap
+                lists.append({"name": srch["name"], "jql": srch["jql"], "total": 0, "truncated": True, "keys": [], "full": True})
+                continue
+            found, order, total = jira_filter(base, token, srch["jql"], room)
+            for k in order:
+                issues_all.setdefault(k, found[k])
+            lists.append({"name": srch["name"], "jql": srch["jql"], "total": total, "truncated": total > len(order), "keys": order, **({"full": True} if room < limit and total > len(order) else {})})
+        # epics linked by an initiative's list, or by its own key when Jira says that key is an epic
+        epics = sorted({k for k in plan_epics(plan) if k in issues} | {k for k in keys if (issues.get(k) or {}).get("isEpic")})
+        # epics the searches found that aren't on the board: counted too (not listed), so the page can tell a finished
+        # epic from a live one while you sort. The board's epics come first for the count limit.
+        found_epics = sorted(k for k, v in issues_all.items() if v.get("isEpic") and k not in epics)
+        stories: dict = {}
+        parked = parked_epics(plan)
+        counted = epics + found_epics
+        rollups, cut = jira_rollups(base, token, counted, stories=stories, listed={k for k in epics if k not in parked}) if counted else ({}, False)
+        fold_nested(rollups, {k: issues.get(k) or issues_all.get(k) or {} for k in rollups})
+        for k, v in stories.items():                     # an epic's stories, for the page; issues the plan links keep their own entry
+            issues.setdefault(k, v)
+        keep_descriptions(issues, own_keys(plan))
+        keep_descriptions(issues_all, set())             # the search file never carries them
+        ancestors = jira_ancestors(base, token, {**issues_all, **issues})
+        out = {"jiraBase": base, "issues": issues, "missing": [k for k in keys if k not in issues],
+               **({"ancestors": ancestors} if ancestors else {}),
+               # without Parent Link, a story under a feature can't be traced to its epic: the page says so where it shows
+               **({} if FIELD_ID_RE.match(CUSTOM.get("parentLink", "")) else {"noParentLink": True})}
+        if board:
+            out["board"], out["sprints"] = board_sprints(base, token, board)
+        rel_keys = list(issues) + [k for k in issues_all if k not in issues]
+        prev_rel = prev_status(out_path)
+        fresh = prev_rel.get("releasesAt") and isinstance(prev_rel.get("releases"), list) and (_dt.datetime.now(_dt.timezone.utc) - _dt.datetime.fromisoformat(prev_rel["releasesAt"])).total_seconds() < RELEASE_TTL
+        if rel_keys and fresh:
+            out["releases"], out["releasesAt"] = prev_rel["releases"], prev_rel["releasesAt"]      # releases change rarely: reread every few hours
+            if prev_rel.get("releasesSkipped"):
+                out["releasesSkipped"] = prev_rel["releasesSkipped"]
+        elif rel_keys:
+            out["releases"], skipped_rel = project_releases(base, token, rel_keys)
+            out["releasesAt"] = env["generatedAt"]
+            if skipped_rel:
+                out["releasesSkipped"] = skipped_rel
+        prev_st = prev_status(out_path)
+        burndown_snapshot(out, prev_st, issues_all, plan)
+        card_keys = [k for k, v in {**issues_all, **issues}.items() if isinstance(v, dict) and v.get("sprintState") in ("active", "future") and not v.get("isEpic")]
+        every = {**issues_all, **issues}
+        # the active sprint's work: open issues first (their pull requests change), then done ones (for merged pull requests)
+        act = [k for k in card_keys if every[k].get("jid") and every[k].get("sprintState") == "active"]
+        done_keys = {k for k in act if every[k].get("category") == "done"}
+        open_i = [(k, every[k]["jid"]) for k in act if k not in done_keys]
+        done_i = [(k, every[k]["jid"]) for k in act if k in done_keys]
+        room = max(MAX_DEV // 4, MAX_DEV - len(open_i))                  # a quarter of the room is kept for done issues' merged pull requests
+        dev_items = open_i[:MAX_DEV - min(room, len(done_i))] + done_i[:room]
+        if dev_items:
+            dev = dev_status(base, token, dev_items, prev_st.get("dev") if isinstance(prev_st.get("dev"), dict) else {}, env["generatedAt"], done=done_keys)
+            if dev:
+                out["dev"] = dev
+            out["devCover"] = {"read": sum(1 for k, _ in dev_items if k in (dev or {})), "of": len(dev_items)}     # so the page can say when it's partial
+        if card_keys:
+            old = prev_st.get("issues") if isinstance(prev_st.get("issues"), dict) else {}
+            cm, ask = {}, []
+            for k in card_keys:
+                o, n = old.get(k) or {}, {**issues_all, **issues}.get(k) or {}
+                if o.get("commentedAt") and o.get("updated") and o.get("updated") == n.get("updated"):
+                    cm[k] = o["commentedAt"]                   # nothing changed since: no need to ask Jira again
+                else:
+                    ask.append(k)
+            cm.update(last_comments(base, token, ask) if ask else {})
+            for k, d in cm.items():
+                for src in (issues, issues_all):
+                    if k in src:
+                        src[k]["commentedAt"] = d
+        if counted:
+            out["rollups"] = rollups
+            out["rollupsTruncated"] = cut
+        return out, lists, issues_all
+
+    def listing_extra(self, base: str, lists: list) -> dict:
+        # version-1 fields, so an older page still shows the first search
+        return {"jiraBase": base, "jql": lists[0]["jql"], "total": lists[0]["total"], "truncated": lists[0]["truncated"]}
+
+
+TRACKERS: dict = {t.kind: t for t in (JiraTracker(),)}      # GitHub joins here (vision.md, "GitHub Issues, an optional tracker")
+
+
+def read_plan(plan_path: str) -> dict:
     if os.path.getsize(plan_path) > MAX_PLAN_BYTES:
         raise SystemExit("The plan file is larger than 5 MB.")
     with open(plan_path, encoding="utf-8") as f:
         plan = json.load(f)
     check_plan_format(plan)
+    return plan
+
+
+def sync_once(plan_path: str, out_path: str, base: str, token: str, jql: str | None = None, limit: int = 500,
+              issues_path: str | None = None, board: str | None = None, how: dict | None = None, accept_drop: bool = False,
+              tracker: str = "jira") -> dict:
+    tr = TRACKERS[tracker]
+    plan = read_plan(plan_path)
     linked: list = []
-    keys = plan_keys(plan, linked)
-    issues = jira_search(base, token, keys) if keys else {}
+    keys = tr.plan_keys(plan, linked)
     searches = jql if isinstance(jql, list) else ([{"name": "Search", "jql": jql}] if jql else [])
-    issues_all, lists = {}, []
-    for srch in searches:
-        # Several named searches ("Epics", "This sprint", "No epic"): each keeps its own list of keys, in Jira's order,
-        # and the issues are stored once. --limit applies to each search; MAX_ISSUES caps the whole file.
-        room = min(limit, MAX_ISSUES - len(issues_all))
-        if room <= 0:                                # the file is full: say so rather than fetch past the cap
-            lists.append({"name": srch["name"], "jql": srch["jql"], "total": 0, "truncated": True, "keys": [], "full": True})
-            continue
-        found, order, total = jira_filter(base, token, srch["jql"], room)
-        for k in order:
-            issues_all.setdefault(k, found[k])
-        lists.append({"name": srch["name"], "jql": srch["jql"], "total": total, "truncated": total > len(order), "keys": order, **({"full": True} if room < limit and total > len(order) else {})})
-    # epics linked by an initiative's list, or by its own key when Jira says that key is an epic
-    epics = sorted({k for k in plan_epics(plan) if k in issues} | {k for k in keys if (issues.get(k) or {}).get("isEpic")})
-    # epics the searches found that aren't on the board: counted too (not listed), so the page can tell a finished
-    # epic from a live one while you sort. The board's epics come first for the count limit.
-    found_epics = sorted(k for k, v in issues_all.items() if v.get("isEpic") and k not in epics)
-    stories: dict = {}
-    parked = parked_epics(plan)
-    counted = epics + found_epics
-    rollups, cut = jira_rollups(base, token, counted, stories=stories, listed={k for k in epics if k not in parked}) if counted else ({}, False)
-    fold_nested(rollups, {k: issues.get(k) or issues_all.get(k) or {} for k in rollups})
-    for k, v in stories.items():                     # an epic's stories, for the page; issues the plan links keep their own entry
-        issues.setdefault(k, v)
-    keep_descriptions(issues, own_keys(plan))
-    keep_descriptions(issues_all, set())             # the search file never carries them
-    ancestors = jira_ancestors(base, token, {**issues_all, **issues})
-    out = {"kind": "sightline-jira-status", "version": STATUS_FORMAT, "snapshot": secrets.token_hex(8),   # both files from one run share it
-           "generatedAt": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
-           "jiraBase": base, "issues": issues, "missing": [k for k in keys if k not in issues],
+    env = {"snapshot": secrets.token_hex(8),                                     # both files from one run share it
+           "generatedAt": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds")}
+    body, lists, issues_all = tr.fetch(plan, plan_path, out_path, base, token, keys, searches, limit, board, env)
+    source = {"kind": tr.kind, "server": base}                                  # whose facts these are; the page checks it
+    out = {"kind": tr.status_kind, "version": STATUS_FORMAT, **env, "tracker": source, **body,
            **({"keysCut": {"linked": linked[0], "fetched": len(keys)}} if linked and linked[0] > len(keys) else {}),
-           **({"ancestors": ancestors} if ancestors else {}),
-           # without Parent Link, a story under a feature can't be traced to its epic: the page says so where it shows
-           **({} if FIELD_ID_RE.match(CUSTOM.get("parentLink", "")) else {"noParentLink": True}),
            # how this file is kept up to date, so the page can say when it's overdue (no computer or user names)
            "sync": {"by": (how or {}).get("by", "sync"), "every": int((how or {}).get("every") or 0), "plan": os.path.basename(plan_path)[:200]}}
-    if board:
-        out["board"], out["sprints"] = board_sprints(base, token, board)
+    issues = out["issues"]
     page = newest_page(os.path.dirname(os.path.abspath(plan_path)))
     if page:
         out["page"] = page                              # so an open page can say a newer copy of itself is there
-    rel_keys = list(issues) + [k for k in issues_all if k not in issues]
-    prev_rel = prev_status(out_path)
-    fresh = prev_rel.get("releasesAt") and isinstance(prev_rel.get("releases"), list) and (_dt.datetime.now(_dt.timezone.utc) - _dt.datetime.fromisoformat(prev_rel["releasesAt"])).total_seconds() < RELEASE_TTL
-    if rel_keys and fresh:
-        out["releases"], out["releasesAt"] = prev_rel["releases"], prev_rel["releasesAt"]      # releases change rarely: reread every few hours
-        if prev_rel.get("releasesSkipped"):
-            out["releasesSkipped"] = prev_rel["releasesSkipped"]
-    elif rel_keys:
-        out["releases"], skipped_rel = project_releases(base, token, rel_keys)
-        out["releasesAt"] = out["generatedAt"]
-        if skipped_rel:
-            out["releasesSkipped"] = skipped_rel
-    prev_st = prev_status(out_path)
-    burndown_snapshot(out, prev_st, issues_all, plan)
-    card_keys = [k for k, v in {**issues_all, **issues}.items() if isinstance(v, dict) and v.get("sprintState") in ("active", "future") and not v.get("isEpic")]
-    every = {**issues_all, **issues}
-    # the active sprint's work: open issues first (their pull requests change), then done ones (for merged pull requests)
-    act = [k for k in card_keys if every[k].get("jid") and every[k].get("sprintState") == "active"]
-    done_keys = {k for k in act if every[k].get("category") == "done"}
-    open_i = [(k, every[k]["jid"]) for k in act if k not in done_keys]
-    done_i = [(k, every[k]["jid"]) for k in act if k in done_keys]
-    room = max(MAX_DEV // 4, MAX_DEV - len(open_i))                  # a quarter of the room is kept for done issues' merged pull requests
-    dev_items = open_i[:MAX_DEV - min(room, len(done_i))] + done_i[:room]
-    if dev_items:
-        dev = dev_status(base, token, dev_items, prev_st.get("dev") if isinstance(prev_st.get("dev"), dict) else {}, out["generatedAt"], done=done_keys)
-        if dev:
-            out["dev"] = dev
-        out["devCover"] = {"read": sum(1 for k, _ in dev_items if k in (dev or {})), "of": len(dev_items)}     # so the page can say when it's partial
-    if card_keys:
-        old = prev_st.get("issues") if isinstance(prev_st.get("issues"), dict) else {}
-        cm, ask = {}, []
-        for k in card_keys:
-            o, n = old.get(k) or {}, {**issues_all, **issues}.get(k) or {}
-            if o.get("commentedAt") and o.get("updated") and o.get("updated") == n.get("updated"):
-                cm[k] = o["commentedAt"]                   # nothing changed since: no need to ask Jira again
-            else:
-                ask.append(k)
-        cm.update(last_comments(base, token, ask) if ask else {})
-        for k, d in cm.items():
-            for src in (issues, issues_all):
-                if k in src:
-                    src[k]["commentedAt"] = d
-    if counted:
-        out["rollups"] = rollups
-        out["rollupsTruncated"] = cut
-    # A guard against a bad sync: if this run found far fewer of the plan's own Jira items than the last good one (a
-    # permissions change, a Jira outage returning nothing, a search that broke), keep the previous files and say so,
+    # A guard against a bad sync: if this run found far fewer of the plan's own items than the last good one (a
+    # permissions change, an outage returning nothing, a search that broke), keep the previous files and say so,
     # rather than making the team's work look like it vanished. --accept-drop takes the new result when the drop is real.
     prev = None
     try:
@@ -1439,10 +1522,8 @@ def sync_once(plan_path: str, out_path: str, base: str, token: str, jql: str | N
             write_atomic(out_path, prev)
             return {**out, "guarded": prev["guard"]}
     if searches:
-        listing = {"kind": "sightline-jira-issues", "version": ISSUES_FORMAT, "snapshot": out["snapshot"], "generatedAt": out["generatedAt"], "jiraBase": base,
-                   "searches": lists, "issues": [{"key": k, **v} for k, v in issues_all.items()],
-                   # version-1 fields, so an older page still shows the first search
-                   "jql": lists[0]["jql"], "total": lists[0]["total"], "truncated": lists[0]["truncated"]}
+        listing = {"kind": tr.issues_kind, "version": ISSUES_FORMAT, **env, "tracker": source,
+                   "searches": lists, "issues": [{"key": k, **v} for k, v in issues_all.items()], **tr.listing_extra(base, lists)}
         write_atomic(issues_path or os.path.join(os.path.dirname(os.path.abspath(out_path)), "jira-issues.json"), listing)
         out["search"] = [{"name": x["name"], "found": x["total"], "kept": len(x["keys"]), "truncated": x["truncated"], "full": x.get("full", False)} for x in lists]   # for the console only
     write_atomic(out_path, {k: v for k, v in out.items() if k != "search"})
@@ -1520,6 +1601,10 @@ def report_run(res: dict, out: str, issues_out: str, label: str = "") -> None:
         return
     kids = sum(len(r.get("children") or []) for r in (res.get("rollups") or {}).values())
     print(f"[{stamp}] {label}{len(res['issues'])} issue(s) written to {out}" + (f" ({kids} of them stories under your epics)" if kids else "") + (f"; not found in Jira: {', '.join(res['missing'][:10])}" if res["missing"] else ""))
+    pg = res.get("page") or {}
+    if pg.get("version") and semver(pg["version"]) < semver(PAGE_READS_FORMATS):
+        print(f"        {pg.get('file') or 'The Sightline page'} beside the plan is version {pg['version']}, which can't read these files. "
+              f"Put Sightline {PAGE_READS_FORMATS} or later in that folder.")
     if res.get("noParentLink"):
         print("        no Parent Link field found: a story that sits under a feature will show with no epic. Run fields to check.")
     if res.get("keysCut"):
