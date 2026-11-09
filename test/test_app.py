@@ -170,6 +170,18 @@ with tempfile.TemporaryDirectory() as tmp:
     ok("a dated release leaves a target behind when it's cleared, so planning is allowed; an undated one doesn't",
        not any(x.startswith("change r1") for x in lines) and "change r2, op 3: Pick a target to plan it." in lines, p.stdout + p.stderr)
 
+    # A release the context left out may be dated: the checker can't refuse it, or planning an outcome that has it.
+    put(f, "sightline-assistant-view.json", {"kind": "sightline-assistant-view", "version": 1, "plan": {"id": "p-app", "revision": 4},
+                                             "actions": [{"id": "outcome.set", "args": {"id": "str", "field": "str", "value": "any"}},
+                                                         {"id": "outcome.setRelease", "args": {"id": "str", "release": "str"}}],
+                                             "choices": {"releases": [{"id": "r-open", "date": None}]},
+                                             "coverage": {"complete": False, "choices.releases": {"total": 2, "exported": 1, "omitted": 1}},
+                                             "deliverables": [{"id": "dv-1", "name": "Export", "stage": "idea"},
+                                                              {"id": "dv-2", "name": "Import", "stage": "idea", "release": "r-left-out"}]})
+    p = run("check", str(f), str(batch(f, changes=[{"id": "o1", "summary": "left out", "ops": [rel("dv-1", "r-left-out"), plan_it("dv-1")]},
+                                                  {"id": "o2", "summary": "has one", "ops": [plan_it("dv-2")]}])))
+    ok("a release the context left out isn't refused, and nor is planning an outcome that has one", out(p).get("ok") is True and not out(p).get("lines"), p.stdout + p.stderr)
+
     ok("the tool uses only the standard library", all(not line.startswith(("import requests", "from requests")) for line in TOOL.read_text().splitlines()))
     ok("it never touches the context or results files", '"w"' not in TOOL.read_text().split("def write_atomic")[0])
 

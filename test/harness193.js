@@ -77,6 +77,8 @@ setTimeout(()=>{
       else cases.push({where, kind:"unlisted word", A, args:{...args, [k]:"zz-not-a-choice"}, want:"one of"}); } }
   const changes = cases.map((c, i)=>({id:"c" + i, summary:c.where, ops:[{op:"action", action:c.A.id, args:c.args}]}));
   const {by} = check(changes);
+  // A change that moves an own item into a task makes it a task for the changes after it, as the page would: check those alone
+  cases.forEach((c, i)=>{ if (c.A.id === "own.toTask") by["c" + i] = check([changes[i]]).by["c" + i]; });
   const bad = [], quiet = [], loud = [], TABLE = x => / isn't in the plan\.$| is one of | isn't a valid /.test(x);    // what the shared table decides
   cases.forEach((c, i)=>{ const pg = page([{action:c.A.id, args:c.args}]), py = by["c" + i] || [];
     if (c.want === "nochange"){ if (!pg.ok || !pg.nochange) bad.push(`${c.where}: page said ${pg.reason || "it changed something"}`); if (py.length) loud.push(`${c.where}: checker said ${py.join("; ")}`); }
@@ -203,7 +205,9 @@ setTimeout(()=>{
     ["byte-order-mark", [A("ref.add", {on:"dv-o1", id:"ref-o6", url:"\uFEFFhttps://docs.example.com/bom"})], null],
     ["next-line", [A("ref.add", {on:"dv-o1", id:"ref-o7", url:"https://docs.example.com/nel\u0085"})], null],
     ["task-add-replayed", [A("task.add", {id:"task-a", bar:S_BAR, start:"2026-12-14", days:2, label:"First"}), A("task.move", {id:"task-b", start:"after"})], null],
-    ["deleted-seen-and-back", [A("outcome.del", {id:"dv-o1", prev:PREV_O1}), A("outcome.add", {id:"dv-o1", name:"Checkout v2"}), A("ref.add", {on:"dv-o1", id:"ref-o8", url:"https://docs.example.com/a"})], null]];
+    ["deleted-seen-and-back", [A("outcome.del", {id:"dv-o1", prev:PREV_O1}), A("outcome.add", {id:"dv-o1", name:"Checkout v2"}), A("ref.add", {on:"dv-o1", id:"ref-o8", url:"https://docs.example.com/a"})], null],
+    ["to-task-then-task", [A("own.toTask", {id:"own-o2", initiativeId:S_BAR}), A("task.set", {id:"own-o2", field:"label", value:"Now a task"})], null],
+    ["to-task-twice", [A("own.toTask", {id:"own-o2", initiativeId:S_BAR}), A("own.toTask", {id:"own-o2", initiativeId:S_BAR})], null]];
   const oc = ORDER.map(([id, ops, want])=>({id, summary:id, ops, want}));      // each its own batch: a ready change would change the next
   const od = oc.map(c=>{ const pg = page(c.ops), py = check([{id:c.id, summary:c.id, ops:c.ops}], ctx3).by[c.id] || [];
     return pg.ok === !c.want && (pg.ok || pg.reason === c.want) && (pg.ok ? !py.length : py.length === 1 && py[0] === c.want) ? null : `${c.id}: page ${pg.ok ? "ok" : pg.reason}, checker ${py.join("; ") || "ok"}`; }).filter(Boolean);

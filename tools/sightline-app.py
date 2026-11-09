@@ -295,9 +295,11 @@ def js_trim(v) -> str:
 # check isn't mirrored here, by a plain op, by an earlier change, or given prev; or an add that may be a replay) is
 # dropped from it, and nothing is said about an item the copy doesn't hold. The page checks again.
 def working_copy(ctx: dict) -> dict:
-    s = {"dv": {}, "own": {}, "tasks": {}, "bars": {}, "parent": {}, "refs": {}, "graph": True, "touched": set(), "ids": set(),
+    s = {"dv": {}, "own": {}, "tasks": {}, "bars": {}, "parent": {}, "refs": {}, "graph": True, "touched": set(), "ids": set(), "converted": set(),
          "releases": {r.get("id"): bool(r.get("date")) for r in (ctx.get("choices") or {}).get("releases") or [] if isinstance(r, dict)},
          "cut": not ((ctx.get("coverage") or {}).get("complete") is True)}
+    rc = (ctx.get("coverage") or {}).get("choices.releases")
+    s["relCut"] = bool(rc.get("omitted")) if isinstance(rc, dict) else s["cut"]     # a release left out may be dated
     for d in ctx.get("deliverables") or []:
         if isinstance(d, dict) and isinstance(d.get("id"), str):
             s["dv"][d["id"]] = {"target": bool(d.get("target")), "release": bool(d.get("release")), "date": bool(d.get("date")),
@@ -306,6 +308,8 @@ def working_copy(ctx: dict) -> dict:
                                                                          for x in d.get("raisedAgain") or [] if isinstance(x, dict)]}
             if d.get("release") and s["releases"].get(d["release"]):       # the page reads its quarter as the target
                 s["dv"][d["id"]]["target"] = True
+            elif d.get("release") and d["release"] not in s["releases"] and s["relCut"]:
+                del s["dv"][d["id"]]
             s["refs"][d["id"]] = [(r.get("id"), r.get("url")) for r in d.get("refs") or [] if isinstance(r, dict)]
     for b in ctx.get("initiatives") or []:
         if isinstance(b, dict) and isinstance(b.get("id"), str):
@@ -381,6 +385,8 @@ def maybe_done(s: dict, name: str, a: dict) -> bool:
         return bool(i) and any(r[0] == i for r in s["refs"][a["on"]])
     if name == "own.close":
         return bool(s["own"].get(i))
+    if name == "own.toTask":      # done once it's a task: after a conversion here, or if the task may be in the plan
+        return i in s["converted"] or (i not in s["own"] and (i in s["tasks"] or s["cut"]))
     return False
 
 
@@ -398,7 +404,7 @@ def state_problem(s: dict, name: str, a: dict) -> str | None:
             return "Pick a target to plan it."
     if name == "outcome.setTarget" and d and a.get("target") and a.get("date"):
         return "Give a target or a date, not both."
-    if name == "outcome.setRelease" and d and a.get("release") and a["release"] not in s["releases"]:
+    if name == "outcome.setRelease" and d and a.get("release") and a["release"] not in s["releases"] and not s["relCut"]:
         return "That release isn't in the Jira files."
     if name == "outcome.drop" and d:
         if d["capture"] and not js_trim(a.get("reason")):
@@ -524,6 +530,8 @@ def state_apply(s: dict, name: str, a: dict) -> None:
                  "handoff": False, "origin": a.get("origin") if EV_ID.match(str(a.get("origin") or "")) else "", "asks": []}
         refs[i] = []
         touch("dv"), touch("refs")
+        if a.get("release") and a["release"] not in s["releases"]:     # a release left out: whether it's dated isn't known
+            forget(s, "dv", i)
     elif name.startswith("outcome.") and d:
         touch("dv")
         if name == "outcome.set":
@@ -539,7 +547,9 @@ def state_apply(s: dict, name: str, a: dict) -> None:
             else:
                 d.update(target=bool(a.get("target")), release=False, date=False)
         elif name == "outcome.setRelease":
-            if a.get("release"):
+            if a.get("release") and a["release"] not in s["releases"]:
+                forget(s, "dv", i)
+            elif a.get("release"):
                 d.update(release=True, date=False, target=d["target"] or s["releases"].get(a["release"], False))
             else:
                 d["release"] = False
@@ -574,6 +584,7 @@ def state_apply(s: dict, name: str, a: dict) -> None:
             forget(s, "own", i)
             if name == "own.toTask":
                 tasks[i] = []
+                s["converted"].add(i)
     elif name in ("task.add", "task.link", "task.unlink", "task.del", "initiative.add", "link.add", "link.remove"):
         touch("graph")
         if name == "task.add" and isinstance(i, str):
@@ -707,6 +718,8 @@ def check_offline(folder: Path, batch: dict) -> list:
                     bad.append(f"{where}: {why}")
             if acts[name].get("creates") in refs and isinstance(args.get("id"), str):
                 made.setdefault(acts[name]["creates"], set()).add(args["id"])
+            if name == "own.toTask" and isinstance(args.get("id"), str):     # the own item becomes a task with its id
+                made.setdefault("taskId", set()).add(args["id"])
             if name.endswith(".add") and "id" in spec and not (isinstance(args.get("id"), str) and args["id"]):
                 bad.append(f"{where}: give the new item an id (like risk-vendor-limits), so reading the file again can't add it twice.")
             if str(name).startswith("jira.") and name not in ("jira.hide", "jira.unhide"):      # hiding isn't a placement
