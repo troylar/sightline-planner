@@ -8,7 +8,7 @@ Risks and decisions about outcomes and requests.
 
 ### New
 
-- **A risk or decision can be about an outcome or a captured request** (Roadmap). Affects lists initiatives and, apart, outcomes and requests. Their cards and details show "Waiting on" for each open decision about them and each open risk, and To triage marks a request that's waiting. Nothing about their stage, priority or dates changes because of them. Older copies of Sightline open a plan that uses this read-only, so nothing is lost. *Where:* Delivery, the Risks and Decisions tables; Roadmap, outcome cards, their details and To triage
+- **A risk or decision can be about an outcome or a captured request** (Roadmap). Affects now lists outcomes and requests, in their own group, after the initiatives. On their cards and details, an open decision shows as "Waiting on: …" and an open risk as "Risk (high): …". To triage marks a waiting request, and an initiative shows those of requests handed off to it. Their stage, priority and dates don't change. Older copies open such a plan read-only. *Where:* Delivery, the Risks and Decisions tables; Roadmap, outcome cards, their details and To triage
 
 ## 1.185.0 · Nov 9, 2026
 

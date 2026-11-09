@@ -69,7 +69,7 @@ setTimeout(()=>{
       const where = A.id + "." + (fld ? "value(" + fld + ")" : k);
       const gone = /^[a-z]+\.del$/.test(A.id) && k === "id";          // deleting what isn't there is already done, for both
       if (gone){ cases.push({where, kind:"gone", A, args:put("zz-missing"), want:"nochange"}); continue; }
-      if (refAlts.length){ const r = refOf(refAlts[0]), miss = refAlts.length > 1 ? `That ${refAlts.map(a=>refs[refOf(a)].noun).join(" or ")} isn't in the plan.` : refs[r].missing, other = Object.keys(have).find(o=>o !== r && o !== "itemId" && !(r === "itemId" && (o === "outcomeId" || o === "initiativeId")) && have[o].length && !refAlts.map(refOf).some(x=>have[x].includes(have[o][0])));
+      if (refAlts.length){ const r = refOf(refAlts[0]), miss = refAlts.length > 1 ? "That isn't an initiative, an outcome or a request in the plan." : refs[r].missing, other = Object.keys(have).find(o=>o !== r && o !== "itemId" && !(r === "itemId" && (o === "outcomeId" || o === "initiativeId")) && have[o].length && !refAlts.map(refOf).some(x=>have[x].includes(have[o][0])));
         cases.push({where, kind:"missing", A, args:put("zz-missing"), want:miss});
         if (other) cases.push({where, kind:"other kind", A, args:put(have[other][0]), want:miss});
         if (have[r].length) cases.push({where, kind:"exists", A, args:put(have[r][0]), want:null}); }
@@ -83,7 +83,7 @@ setTimeout(()=>{
     else if (c.want === "one of"){ if (pg.ok || !/ is one of /.test(pg.reason)) bad.push(`${c.where}: page said ${pg.ok ? "ok" : pg.reason}`); if (!py.some(x=>x === pg.reason)) quiet.push(`${c.where}: page "${pg.reason}", checker "${py.join("; ") || "ok"}"`); }
     else if (py.some(TABLE) && (pg.ok || !py.filter(TABLE).every(x=>x === pg.reason))) loud.push(`${c.where}: checker said ${py.join("; ")}, page ${pg.ok ? "accepted it" : "said " + pg.reason}`); });
   const nRef = cases.filter(c=>c.kind !== "unlisted word").length, nWord = cases.length - nRef;
-  ok(`H2 the page refuses every missing or wrong-kind reference with "That … isn't in the plan." (${nRef} reference cases)`, !bad.length && nRef > 150, bad.slice(0, 8).join(" | "));
+  ok(`H2 the page refuses every missing or wrong-kind reference with "That … isn't in the plan." or, for an item, "That isn't an initiative, an outcome or a request in the plan." (${nRef} reference cases)`, !bad.length && nRef > 150, bad.slice(0, 8).join(" | "));
   ok(`H3 the checker refuses the same ones with the same words, and every unlisted value the way the page does (${nWord} value cases)`, !quiet.length && nWord >= 12, quiet.slice(0, 8).join(" | "));
   ok("H4 the checker raises nothing about a reference that exists, unless the page refuses it with the same words", !loud.length, loud.slice(0, 8).join(" | "));
 
@@ -94,11 +94,11 @@ setTimeout(()=>{
   const pr = page(repro[0].ops), cr = check(repro).by.r1 || [];
   ok("H5 a decision whose item is a new capture: page and checker both accept it", pr.ok && !cr.length, JSON.stringify(pr) + " / " + cr.join("; "));
   // H5c an outcome or a capture already in the plan is a good item for both; a person's id is refused by both, naming both kinds
-  const person = ev("S.people[0].id"), UNION = "That initiative or deliverable isn't in the plan.", kinds = [["out", "risk.add", {id:"risk-o1", text:"Example", item:"dv-h1"}], ["cap", "decision.add", {id:"dec-c1", text:"Example", item:"dv-h2"}],
+  const person = ev("S.people[0].id"), UNION = "That isn't an initiative, an outcome or a request in the plan.", kinds = [["out", "risk.add", {id:"risk-o1", text:"Example", item:"dv-h1"}], ["cap", "decision.add", {id:"dec-c1", text:"Example", item:"dv-h2"}],
     ["setcap", "risk.set", {id:"risk-h1", field:"item", value:"dv-h2"}], ["who", "decision.add", {id:"dec-p1", text:"Example", item:person}], ["setwho", "risk.set", {id:"risk-h1", field:"item", value:person}]].map(([id, action, args])=>({id, summary:action, ops:[{op:"action", action, args}]}));
   const kc = check(kinds).by, kp = kinds.map(c=>page(c.ops));
   ok("H5c an outcome id and a capture id are good items for page and checker (add and set)", kp.slice(0, 3).every(x=>x.ok) && !kc.out && !kc.cap && !kc.setcap, JSON.stringify(kp.slice(0, 3)) + " / " + JSON.stringify(kc));
-  ok("H5d a person's id as item: both refuse it, naming an initiative and a deliverable", kp.slice(3).every(x=>!x.ok && x.reason === UNION) && (kc.who || []).join() === UNION && (kc.setwho || []).join() === UNION, JSON.stringify(kp.slice(3)) + " / " + JSON.stringify(kc));
+  ok("H5d a person's id as item: both refuse it, naming an initiative, an outcome or a request", kp.slice(3).every(x=>!x.ok && x.reason === UNION) && (kc.who || []).join() === UNION && (kc.setwho || []).join() === UNION, JSON.stringify(kp.slice(3)) + " / " + JSON.stringify(kc));
   const bar = ev("S.bars[0].id"), fine = [{id:"r2", summary:"A decision about an initiative", ops:[
     {op:"action", action:"initiative.add", args:{id:"b-new", lane, label:"New work", day:"2026-12-07"}}, {op:"action", action:"decision.add", args:{id:"dec-2", text:"Example", item:"b-new"}},
     {op:"action", action:"risk.add", args:{id:"risk-2", text:"Example", item:bar, sev:"high"}}]}];

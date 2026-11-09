@@ -184,7 +184,7 @@ The context and amendments envelope versions remain 1; this does not change the 
 - `planning.risks`, `decisions`, `gates` and `milestones`: shared planning text, owners, affected item IDs,
   follow-up actions, dates and links where those fields exist. A risk's or decision's `item` is an initiative's, an outcome's or a
   captured request's ID (since 1.186.0), and each entry in `deliverables` lists the open decisions it's waiting on as
-  `waitingOn: [{id, text}]` and its open risks as `risks: [{id, sev, text}]`, only when there are some. They never
+  `waitingOnDecisions: [{id, text}]` and its open risks as `risks: [{id, sev, text}]`, only when there are some. They never
   change the outcome's stage, priority or dates. This data is for reasoning; it does not authorize
   new amendment operations. Unsupported changes still need the normal UI.
 - `jira`: loaded issue facts, including assignee keys, points, sprint membership and hierarchy, with separate
