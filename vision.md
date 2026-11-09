@@ -181,7 +181,7 @@ Each principle is a test a change can pass or fail.
 | How a Jira status shows here (the status map) | Plan | Sightline | Marked as the team's reading of Jira |
 | Plan items: initiatives, tasks, milestones, gates, meetings, notes, process blocks, plan timeboxes | Plan | Sightline | "Added here", with who added them |
 | A person's own items: what they're working on, what they relate to, when and how they were closed | Plan | Sightline | Added here, with who added them; on their owner's list in Today |
-| What's on a person's Today: their own items, Jira issues, tasks, requests, decisions and risks | Computed by Sightline from the plan and Jira's facts | Inputs in Jira and Sightline | One list, each item marked as Jira's or the plan's |
+| What's on a person's Today: their own items, Jira issues, tasks and initiatives, requests, decisions and risks | Computed by Sightline from the plan and Jira's facts | Inputs in Jira and Sightline | One list, each item marked as Jira's or the plan's |
 | A short chart label or lead for a Jira item | Plan | Sightline | Labeled as the plan's, next to Jira's title |
 | Progress counts | Computed by Sightline from Jira's facts and the plan's choices | Inputs in Jira and Sightline | Count with unit, scope and freshness |
 | Effort ranges, skills, workstream shares, scenarios | Plan | Sightline | Added here, with who added them |
@@ -226,21 +226,24 @@ the context; a person's own list is where they start their day.
 
 - **Everyone has their own list.** People put in what they're working on as fast as they can type it, one line of up
   to 500 characters, and close it out when it's done. An item needs nothing else: no initiative, date, estimate or
-  Jira key. An item can be pinned to a day ("today"); otherwise it's on the list until it's closed.
+  Jira key. Someone can pin an item to a day, saved on the item: a reminder of when to pick it up, not a schedule,
+  so it doesn't put the item on the timeline. A pinned day that has passed keeps the item at the top, marked with
+  the day it was pinned to, until it's unpinned, moved or closed; it never moves on its own.
 - **Own items are plan items.** They're saved in the plan, with an owner and who added them (anyone can add one to
   someone else's list, and an assistant can propose one through a reviewed change). Like every plan item, anyone who
   can open the plan can see and change them, keeping the creator and showing the last editor; Sightline makes no
   promise that they're private. "You" is the same unverified "who am I" the page already uses.
 - **All of your stuff in one place.** The **Today** view shows your own items, then what is yours elsewhere, worked
   out from the plan and the Jira files and never copied:
-  - your Jira issues: open issues whose Jira assignee matches your linked Jira user key. Someone not linked to Jira is
-    asked to link, and is never matched by display name;
+  - your Jira issues: open issues whose Jira assignee matches your linked Jira user key, and those that closed today.
+    Someone not linked to Jira is asked to link, and is never matched by display name;
   - plan tasks and initiatives you own that are started, due or late;
   - captured requests you own;
   - decisions you own or decide, and risks you own.
 
   What matters now is shown beside the list as context, not as one of your items. Own items appear only in Today and
-  on standup cards; they're undated, so they aren't on the timeline or the roadmap.
+  on standup cards (open ones, and those closed since the sprint started); they have no planned dates, so they aren't
+  on the timeline or the roadmap.
 - **Related, not filed.** An own item can point at one or more initiatives, outcomes, requests or Jira issues (a
   story too), saved by stable ID or Jira key; the related Jira item is never copied, and one the sync no longer
   returns shows as not in the last sync. A relation never closes anything, in either direction: Jira finishing an
@@ -249,8 +252,10 @@ the context; a person's own list is where they start their day.
   plan task you own), and follows the plan's rules for tasks. A Jira key it was related to becomes the task's Jira
   link only if the person chooses it, and then Jira owns its dates and status.
 - **Closing out.** An item is closed as done, or as not doing (with an optional reason); neither is deleting, and a
-  closed item can be reopened. Both record who closed it and when. Jira issues in Today are read-only, close in Jira,
-  and show as done (or abandoned, as `jiraState()` reads them) after the next sync.
+  closed item can be reopened. Both record who closed it and when. Reopening an item that has moved to the history
+  files moves it back into the plan file, following the history rules: only from a quarter that was read, and undo
+  puts it back. Jira issues in Today are read-only and close in Jira; one that closes shows that day as done (or
+  abandoned, as the team's status map reads it) after the next sync, then leaves the list.
 - **Finishing is the point, and the plan stays small.** Items closed in the last 30 days stay in the plan file and
   show as what you got done; older ones move to the history files, filed by the quarter they were closed. Showing
   older ones reads history and follows its rules: never waiting on it, and naming a quarter that couldn't be read.
@@ -373,9 +378,9 @@ authorization; the token holder decides.
 ## The plan and its history
 
 A plan in daily use piles up history: snapshots, saved status updates, the dated updates on each item, the
-Activity log, and people's closed own items. After a year that history is most of the file, and the file reaches the size limit. So the plan file
-holds what the team is planning now, and history lives in history files in a folder beside the plan, one file per
-calendar quarter. Each entry goes in the quarter of its own date, so every copy files it the same way. The edit lock,
+Activity log, and people's closed own items. After a year that history is most of the file, and the file reaches
+the size limit. So the plan file holds what the team is planning now, and history lives in history files in a folder
+beside the plan, one file per calendar quarter. Each entry goes in the quarter of its own date, so every copy files it the same way. The edit lock,
 backups, drafts and the Jira files are not history.
 
 - **The plan file is enough to plan.** Opening, drawing and saving the plan never wait on history. The plan keeps
@@ -422,8 +427,8 @@ backups, drafts and the Jira files are not history.
 - Meeting requests and ideas are captured as roadmap ideas with a capture type, who asked and what became of
   them, kept apart from delivery stage. Requesters are existing people and groups; there is no separate list of
   teams yet.
-- History (snapshots, saved status updates, older item updates, the Activity log, closed own items) lives in history files beside the
-  plan, one per period; the plan file holds what's being planned now.
+- History (snapshots, saved status updates, older item updates, the Activity log, closed own items) lives in history
+  files beside the plan, one per period; the plan file holds what's being planned now.
 - Sightline reads three kinds of input: trackers (Jira first), signals and references. The rules for Jira apply to
   any tracker.
 - What matters now is dated guidance kept beside the planning guide, scoped to the whole plan or listed workstreams;
@@ -433,13 +438,14 @@ backups, drafts and the Jira files are not history.
 - Intake from any channel is a shared assistant skill that writes reviewed captures, not a separate store.
 - Tracker items are drafted in the plan and created by a person.
 - Each person keeps their own list in the shared plan and sees it in Today, beside everything of theirs computed from
-  the plan and Jira. It's open like the rest of the plan; items closed over 30 days ago move to the history files.
+  the plan and Jira. Anyone can see and change it, like the rest of the plan; items closed over 30 days ago move to
+  the history files.
 - A risk or decision can be about an initiative, an outcome or a captured request. The outcome or request shows
   what it's waiting on and its risks; nothing about its stage, priority or dates changes because of them.
 
 **Open**
 
-- Can anyone edit anyone's plan items, own items included? Recommended: yes, keeping the creator and showing the last editor.
+- Can anyone edit anyone's plan items? Recommended: yes, keeping the creator and showing the last editor.
 - Can anyone delete anyone's item? Recommended: yes after showing what goes with it (children, notes, links), with a
   way to bring it back.
 - Is a note's text editable only by its author? Recommended: the page asks before editing someone else's words, and
