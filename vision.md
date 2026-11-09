@@ -180,6 +180,8 @@ Each principle is a test a change can pass or fail.
 | Notes, tags and dependencies on Jira items | Plan | Sightline | Added here, attached by Jira key |
 | How a Jira status shows here (the status map) | Plan | Sightline | Marked as the team's reading of Jira |
 | Plan items: initiatives, tasks, milestones, gates, meetings, notes, process blocks, plan timeboxes | Plan | Sightline | "Added here", with who added them |
+| A person's own items: what they're working on, what it relates to, when it was done | Plan | Sightline | On their list, with them as owner; open to anyone with the plan |
+| What's on a person's day: their Jira issues, tasks, requests, decisions and risks | Computed by Sightline from the plan and Jira's facts | Inputs in Jira and Sightline | One list, each item marked as Jira's or the plan's |
 | A short chart label or lead for a Jira item | Plan | Sightline | Labeled as the plan's, next to Jira's title |
 | Progress counts | Computed by Sightline from Jira's facts and the plan's choices | Inputs in Jira and Sightline | Count with unit, scope and freshness |
 | Effort ranges, skills, workstream shares, scenarios | Plan | Sightline | Added here, with who added them |
@@ -216,6 +218,28 @@ chosen people. A team view (for example "refinement board") saves a combination 
 items). Jira's own labels appear as tags marked as Jira's, read-only. A plan tag and a Jira label
 with the same name stay separate; a filter can pick either or both. Tags filter, show-only and hide, together with
 people, authors and layers.
+
+## Your own work, beside the team's
+
+Sightline is also where each person runs their own work, in relation to everything else going on. The team's wall is
+the context; a person's own list is where they start their day.
+
+- **Everyone has their own list.** People put in what they're working on as fast as they can type it, and close it
+  out when it's done. An item on it needs nothing else: no initiative, date, estimate or Jira key.
+- **All of your stuff in one place.** Beside your own items, Sightline shows everything that is yours elsewhere: your
+  Jira issues, plan tasks you own, requests you were asked to look at, decisions you owe, risks you hold, and what
+  matters now. Each item says what it relates to. That's computed from the plan and the Jira files, never copied.
+- **Related, not filed.** An item can point at an initiative, outcome, request or Jira issue to show what it's part
+  of, without becoming part of it. Moving it into an initiative, as a plan task, is a deliberate step; from then on
+  it follows the plan's rules for tasks.
+- **Open, like the rest of the plan.** Your items live in the shared plan with you as their owner, and anyone who can
+  open the plan can see them. Show and hide work on them like everything else. Sightline makes no promise that they
+  are private.
+- **Finishing is the point.** Checking something off records when it was done. Done items stay visible as what you
+  got done, feed your standup and status update when you share them, and move to the history files with the rest of
+  the plan's history, so the plan file holds what's open now.
+- **The wall rule still holds.** Your list never changes a Jira fact. Jira issues on it are read-only, close in
+  Jira, and show as done after the next sync.
 
 ## Captured requests and ideas
 
@@ -387,6 +411,8 @@ backups, drafts and the Jira files are not history.
   objectives.
 - Intake from any channel is a shared assistant skill that writes reviewed captures, not a separate store.
 - Tracker items are drafted in the plan and created by a person.
+- Each person keeps their own list in the shared plan, beside everything of theirs computed from the plan and Jira;
+  it's open like the rest of the plan, and finished items move to the history files.
 - A risk or decision can be about an initiative, an outcome or a captured request. The outcome or request shows
   what it's waiting on and its risks; nothing about its stage, priority or dates changes because of them.
 
