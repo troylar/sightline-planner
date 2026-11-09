@@ -104,11 +104,12 @@ quarter and capture another as an unscheduled idea. No AI account needed.
 ## 5. Keep the plan useful between meetings
 
 Find attention items in **Today**, current work in **Sprint**, and the delivery conversation in **Status update**.
-Today opens with **Sightline noticed** (up to three things worth a look) and offers **Prep our grooming**, a short
-agenda for the next grooming session that starts with decisions. Neither changes the plan. Use **Customer release
+Under its summary, Today shows **What matters now** (the team's current guidance) and **Sightline noticed** (up to three things
+worth a look) and offers **Prep our grooming**, a short
+agenda for the next grooming session that starts with decisions. None of them changes the plan. Use **Customer release
 notes** for customer wording. Return to Roadmap for the broader direction.
 
-<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/today-light.png" aria-label="Open full-size today screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/today-dark.png"><img src="docs/images/today-light.png" alt="Actual Sightline Today view: Sightline noticed a request that came up twice in two weeks, and Prep our grooming turns it into a one-topic agenda with a decision to make, with Jira freshness and coverage." width="1440"></picture></a>
+<a href="https://raw.githubusercontent.com/troylar/sightline-planner/main/docs/images/today-light.png" aria-label="Open full-size today screenshot"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/today-dark.png"><img src="docs/images/today-light.png" alt="Actual Sightline Today view: What matters now lists the team's current guidance with why and dates, Sightline noticed a request that came up twice in two weeks, and Prep our grooming turns it into a one-topic agenda with a decision to make, with Jira freshness and coverage." width="1440"></picture></a>
 
 *The same invented plan, viewed for daily attention. Check scope and freshness before relying on the summary.*
 

@@ -35,7 +35,7 @@ Stone as the viewer, and writes `docs/images/<shot>-light.png` and `-dark.png`:
 - **roadmap**: Four quarters, starting Q4 2026, with each outcome's priority; the one Later outcome stays outside the
   window.
 - **timeline**: by workstream, in weeks, with the Jira and plan work visible.
-- **today**: Mine, with **Sightline noticed** and **Prep our grooming** open, and the freshness and coverage line.
+- **today**: Mine, with **What matters now**, **Sightline noticed** and **Prep our grooming** open, and the freshness and coverage line.
 - **review**: `assistant-reply.json` pasted through **Paste proposed changes**, scrolled to the three ready changes,
   grouped by topic, with Apply, Skip and Edit.
 - **assistant**: Setup and files, **Use any AI assistant** open: **Copy for my assistant**, **Paste proposed

@@ -363,7 +363,8 @@ place, from 1. A plan with a work order needs this version or later: older copie
 **Requires Sightline 1.183.0 or later.** `planning.guidance` holds what the team is weighing this period, in plain
 words: a statement, why, which workstreams it covers (none means the whole plan), when it starts and ends, when to
 review it, who set it, its state, the decisions that cited it and the entries it overlaps. People add it with **Add
-what matters now** in **Delivery → Capacity**, Forecast, above the work order. It never moves anything.
+what matters now** in **Delivery → Capacity**, Forecast, above the work order; since 1.185.0 the live entries also
+open **Work → Today**. It never moves anything.
 
 - `guidance.add` {text, why?, lanes?, from?, through?, reviewOn?, supersedes?} adds an entry; `supersedes` ends the
   one it replaces, which stays as history. `guidance.set` {id, field: text, why, through or reviewOn, value} fixes the
@@ -376,8 +377,8 @@ what matters now** in **Delivery → Capacity**, Forecast, above the work order.
 - Every one of these always waits for a person, and any reorder it suggests is its own `initiative.order` change.
 
 Asked why something is above something else, the skill gives the reason recorded at the time, then, separately,
-what today's guidance would suggest. **Sightline noticed** on Today says when guidance starts, is due for review or
-has ended.
+what today's guidance would suggest. On Today, **What matters now** lists the current entries, tagged New or Review due, and
+**Sightline noticed** says when guidance has ended, or starts or is due for review without being listed.
 
 ### Workstream actions
 
