@@ -374,8 +374,9 @@ reviewed step.
 
 **Read-only and narrow, as with Jira.**
 - GitHub issues are facts the tracker owns. The plan shows them from the latest sync and never copies them.
-- The sync never changes GitHub. It makes REST GET requests, and only fixed, reviewed GraphQL queries. It accepts no
-  query text from anyone, and nothing it sends can change an issue.
+- The sync never changes GitHub today. Any later write-back follows "Changing Jira, later". It makes REST GET
+  requests, and only fixed, reviewed GraphQL queries. It accepts no GraphQL query text from anyone, so nothing it
+  sends can change an issue. Which repositories or project it reads is still that person's own search.
 - The token stays in the operating system's credential store and is tied to the tracker and the server. Each address
   the sync calls (web, REST, GraphQL) lives in that person's private settings.
 - The shared plan names its tracker and server so the page can tell whose facts it's showing. It never chooses where
@@ -394,10 +395,13 @@ reviewed step.
 - An open issue is open. That alone doesn't make it in progress.
 - Closed as completed is done. Closed as not planned or as a duplicate is abandoned. A reason Sightline doesn't know
   is shown as unknown, never guessed.
-- A GitHub Project's status field means nothing until the team maps each option. The order of the options is never
-  read as a workflow.
+- Whether an issue is done or abandoned comes only from its state and the reason it was closed. For an open issue, a
+  GitHub Project's status says how far along it is, but it never marks the issue done.
+- A Project's status field means nothing until the team maps each option. Until then, progress shows as unknown.
+  The order of the options is never read as a workflow.
 - Pull requests aren't issues. They never join the plan as work items.
-- When an issue has several assignees, the page shows all of them, and it says which one decides whose Today it is on.
+- When an issue has several assignees, the page shows all of them. It's on the Today of each assignee who is linked to
+  a person, and it still counts once in every total.
 - A milestone is shown as a milestone, never as a release or a sprint.
 
 **Sprints come from the tracker or from the plan.** Each plan has a shared setting, `sprintSource`. It is `tracker`
@@ -411,8 +415,8 @@ well as GitHub.
 - Which board, project or iteration field to read stays in the private settings of the person who runs the sync.
 
 **One sync, two trackers.**
-- One sync on the user's own computer does both. Fetching is separate for each tracker. Credentials, scheduling,
-  limits, atomic writes and keeping the last good files are shared.
+- One sync on the user's own computer does both. Fetching is separate for each tracker. How credentials are kept,
+  scheduling, limits, atomic writes and keeping the last good files are shared. Each tracker's tokens stay separate.
 - The sync writes `status.json` and `issues.json` beside the plan. Each file names its tracker and server, and its
   format version goes up with that change.
 - Existing Jira setups keep their folders and file names. Older copies that can't read a GitHub plan open it
