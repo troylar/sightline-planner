@@ -586,7 +586,10 @@ def state_apply(s: dict, name: str, a: dict) -> None:
         else:
             forget(s, "own", i)
             if name == "own.toTask":
-                tasks[i] = []
+                if i in tasks or i in bars or s["cut"]:   # the page refuses an id already in use: what waits for what isn't certain
+                    forget(s, "graph", None)
+                else:
+                    tasks[i] = []
                 s["converted"].add(i)
     elif name in ("task.add", "task.link", "task.unlink", "task.del", "initiative.add", "link.add", "link.remove"):
         touch("graph")

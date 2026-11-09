@@ -252,6 +252,16 @@ with tempfile.TemporaryDirectory() as tmp:
                                                                        act("ref.add", {"on": "bar-abc-901", "id": "ref-new", "url": "https://docs.example.com/a"})]}])))
     ok("…and an item reference (an outcome or an initiative) to it isn't refused either", out(p).get("ok") is True and not out(p).get("lines"), p.stdout + p.stderr)
 
+    # The page refuses to make an own item into a task when a task already has its id, so that task keeps what it waits for.
+    whole["actions"] += [{"id": "task.move", "args": {"id": "taskId", "start": "any?", "after": "any?", "days": "any?"}}]
+    whole["initiatives"] = [{"id": "m1", "label": "Home", "tasks": [{"id": "t0", "label": "First"}, {"id": "shared-id", "label": "Second", "after": ["t0"]}]}]
+    whole["planning"]["own"] = [{"id": "shared-id", "text": "Call the vendor"}]
+    put(f, "sightline-assistant-view.json", whole)
+    p = run("check", str(f), str(batch(f, changes=[
+        {"id": "g5", "summary": "own item onto a used id, then move that task", "ops": [act("own.toTask", {"id": "shared-id", "initiativeId": "m1"}),
+                                                                                       act("task.move", {"id": "shared-id", "start": "after"})]}])))
+    ok("an own item made into a task on an id a task already has doesn't wipe what that task waits for", "no after" not in " ".join(out(p).get("lines", [])), p.stdout + p.stderr)
+
     ok("the tool uses only the standard library", all(not line.startswith(("import requests", "from requests")) for line in TOOL.read_text().splitlines()))
     ok("it never touches the context or results files", '"w"' not in TOOL.read_text().split("def write_atomic")[0])
 
