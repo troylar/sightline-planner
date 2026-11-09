@@ -78,9 +78,9 @@ MAX_PLAN_BYTES = 5 * 1024 * 1024
 PAGE_VERSION = None
 CONTEXT_FILE = "sightline-assistant-view.json"
 PLAN_SCHEMA = 2        # the plan format this script reads; must equal SCHEMA in the page (a test checks)
-STATUS_FORMAT = 2      # the formats this script writes; the page refuses files newer than it knows (a test checks)
-ISSUES_FORMAT = 3      # status 2 and issues 3 name their tracker and server (`tracker`)
-PAGE_READS_FORMATS = "1.188.0"   # the first Sightline page that reads them; an older page in the plan's folder is warned about
+STATUS_FORMAT = 1      # the formats this script writes; the page refuses files newer than it knows (a test checks)
+ISSUES_FORMAT = 2      # `tracker` was added without raising them: older pages ignore it and keep reading these files.
+                       # Step 3 (GitHub files) raises them to 2 and 3, so a page that can't read GitHub's refuses them.
 TIMEOUT = 30
 FIELDS = "summary,status,assignee,duedate,updated,resolution,issuetype,priority,parent,labels,fixVersions,created,resolutiondate,description"
 DESC_MAX = 4000                    # a description, like a story in the plan
@@ -1601,10 +1601,6 @@ def report_run(res: dict, out: str, issues_out: str, label: str = "") -> None:
         return
     kids = sum(len(r.get("children") or []) for r in (res.get("rollups") or {}).values())
     print(f"[{stamp}] {label}{len(res['issues'])} issue(s) written to {out}" + (f" ({kids} of them stories under your epics)" if kids else "") + (f"; not found in Jira: {', '.join(res['missing'][:10])}" if res["missing"] else ""))
-    pg = res.get("page") or {}
-    if pg.get("version") and semver(pg["version"]) < semver(PAGE_READS_FORMATS):
-        print(f"        {pg.get('file') or 'The Sightline page'} beside the plan is version {pg['version']}, which can't read these files. "
-              f"Put Sightline {PAGE_READS_FORMATS} or later in that folder.")
     if res.get("noParentLink"):
         print("        no Parent Link field found: a story that sits under a feature will show with no epic. Run fields to check.")
     if res.get("keysCut"):

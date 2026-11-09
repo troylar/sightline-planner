@@ -1,4 +1,4 @@
-// The sync's files name their tracker and server (1.188.0, status format 2, issues format 3). This copy reads Jira's:
+// The sync's files name their tracker and server (1.188.0, still status format 1 and issues format 2). This copy reads Jira's:
 // an older file with no tracker is still Jira's, a file from another tracker is refused rather than read as Jira, a file
 // naming two servers is refused, and a folder whose search results came from another server than its status file sets
 // the results aside. The sample plan (every name invented).
@@ -12,8 +12,8 @@ setTimeout(()=>{ console.log(R.join("\n")); console.log("TIMEOUT"); process.exit
 const wait = ms => new Promise(r=>setTimeout(r, ms));
 const AT = "2026-10-07T08:00:00Z", BASE = "https://jira.example.com";
 const ISSUE = {summary:"Wire the export", status:"In Progress", category:"inprogress"};
-const status = (x = {}) => JSON.stringify({kind:"sightline-jira-status", version:2, snapshot:"aaaa1111bbbb2222", generatedAt:AT, jiraBase:BASE, tracker:{kind:"jira", server:BASE}, missing:[], issues:{"ABC-1":ISSUE}, ...x});
-const listing = (x = {}) => JSON.stringify({kind:"sightline-jira-issues", version:3, snapshot:"aaaa1111bbbb2222", generatedAt:AT, jiraBase:BASE, tracker:{kind:"jira", server:BASE},
+const status = (x = {}) => JSON.stringify({kind:"sightline-jira-status", version:1, snapshot:"aaaa1111bbbb2222", generatedAt:AT, jiraBase:BASE, tracker:{kind:"jira", server:BASE}, missing:[], issues:{"ABC-1":ISSUE}, ...x});
+const listing = (x = {}) => JSON.stringify({kind:"sightline-jira-issues", version:2, snapshot:"aaaa1111bbbb2222", generatedAt:AT, jiraBase:BASE, tracker:{kind:"jira", server:BASE},
   searches:[{name:"Mine", jql:"project = ABC", total:1, truncated:false, keys:["ABC-2"]}], issues:[{key:"ABC-2", summary:"Found by the search"}], jql:"project = ABC", total:1, truncated:false, ...x});
 (async()=>{
   try {
@@ -27,9 +27,13 @@ const listing = (x = {}) => JSON.stringify({kind:"sightline-jira-issues", versio
     X(`askWhoOnStart = ()=>{}; whoAmI = (x, cb)=>cb && cb(); stopAuto(); startAuto = ()=>{}; S = normalize(JSON.parse(FIX), false); resetHistory(); file.handle = null; render();`);
     const read = (fn, text) => X(`(()=>{ try { return JSON.stringify(${fn}(${JSON.stringify(text)}).tracker); } catch(e){ return "REFUSED " + e.message; } })()`);
 
-    ok("T1 the page reads the formats the sync writes", X("JIRA_FORMATS.status") === pyConst("STATUS_FORMAT") && X("JIRA_FORMATS.issues") === pyConst("ISSUES_FORMAT") && X("JIRA_FORMATS.status") === 2 && X("JIRA_FORMATS.issues") === 3);
-    ok("T2 a status file in format 2 names its tracker and server", read("parseJiraStatus", status()) === JSON.stringify({kind:"jira", server:BASE, named:true}), read("parseJiraStatus", status()));
-    ok("T3 a search file in format 3 does too", read("parseJiraIssues", listing()) === JSON.stringify({kind:"jira", server:BASE, named:true}), read("parseJiraIssues", listing()));
+    // Sightline 1.187.1 and earlier read status format 1 and issues format 2, and ignore `tracker`. The sync keeps writing
+    // those until GitHub's files exist (step 3), so a team's older pages keep reading them. compat-old-page.js proves it
+    // against a real 1.187.1 build; this guard runs everywhere.
+    ok("T1 the sync still writes the formats 1.187.1 reads, and the page reads them", pyConst("STATUS_FORMAT") === 1 && pyConst("ISSUES_FORMAT") === 2
+      && X("JIRA_FORMATS.status") === pyConst("STATUS_FORMAT") && X("JIRA_FORMATS.issues") === pyConst("ISSUES_FORMAT"));
+    ok("T2 a status file names its tracker and server", read("parseJiraStatus", status()) === JSON.stringify({kind:"jira", server:BASE, named:true}), read("parseJiraStatus", status()));
+    ok("T3 a search file does too", read("parseJiraIssues", listing()) === JSON.stringify({kind:"jira", server:BASE, named:true}), read("parseJiraIssues", listing()));
     const old = JSON.stringify({kind:"sightline-jira-status", version:1, generatedAt:AT, jiraBase:BASE + "/browse/", missing:[], issues:{"ABC-1":ISSUE}});
     const oldList = JSON.stringify({kind:"sightline-jira-issues", version:2, generatedAt:AT, jiraBase:BASE, searches:[{name:"Mine", keys:["ABC-2"]}], issues:[{key:"ABC-2", summary:"x"}]});
     ok("T4 an older file, which names no tracker, is still read as Jira's", read("parseJiraStatus", old) === JSON.stringify({kind:"jira", server:BASE, named:false}) && read("parseJiraIssues", oldList) === JSON.stringify({kind:"jira", server:BASE, named:false})

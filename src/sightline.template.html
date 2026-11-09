@@ -1857,7 +1857,7 @@ function setTextSize(x){ const v = Math.min(TS_MAX, Math.max(TS_MIN, Math.round(
 applyTheme();
 // ================= constants =================
 const SCHEMA = 2;                       // the plan format; tools/sightline-jira-sync.py PLAN_SCHEMA must match (a test checks)
-const JIRA_FORMATS = {status:2, issues:3};  // the newest Jira file formats this page reads (the sync's STATUS_FORMAT, ISSUES_FORMAT)
+const JIRA_FORMATS = {status:1, issues:2};  // the newest Jira file formats this page reads (the sync's STATUS_FORMAT, ISSUES_FORMAT)
 const STORE_LOCAL = "timeline-planner-local";           // plan when no file is linked
 const STORE_SEEN = "timeline-planner-seen";             // per plan, this browser only: when you last visited and a daily summary of Jira
 const STORE_DRAFT = "timeline-planner-draft";           // recovery draft of unsaved edits to a linked file
@@ -5036,7 +5036,7 @@ function parseJiraStatus(text){                // the file is untrusted input: c
       parent: JKEY.test(t(v.parent,40)) ? t(v.parent,40) : "", epic: JKEY.test(t(v.epic,40)) ? t(v.epic,40) : ""}; });
   return {tracker, ancestors, noParentLink: o.noParentLink === true, page, devCover, sync, guard, keysCut, releases, burndown, dev, rollups, rollupsTruncated: o.rollupsTruncated === true, sprints, board, snapshot: /^[0-9a-f]{8,64}$/.test(t(o.snapshot,64)) ? t(o.snapshot,64) : "", generatedAt:t(o.generatedAt,40), jiraBase: /^https:\/\/\S+$/.test(t(o.jiraBase,200)) ? t(o.jiraBase,200) : "", issues, missing:(Array.isArray(o.missing) ? o.missing : []).map(x=>t(x,40)).filter(x=>JKEY.test(x)).slice(0,2000)};
 }
-// Whose facts a sync file holds: tracker.kind and tracker.server (format 2 status, 3 issues). An older file names no
+// Whose facts a sync file holds: tracker.kind and tracker.server (from the 1.188.0 sync). An older file names no
 // tracker and is Jira's. This copy reads Jira only, so a file from another tracker is refused, never read as Jira.
 const TRACKER_NAMES = {jira:"Jira", github:"GitHub"};
 const serverOf = u => { const m = /^https:\/\/([^/?#\s]+)(\/[^?#\s]*)?$/i.exec(String(u || "").trim()); return m ? "https://" + m[1].toLowerCase() + (m[2] || "").replace(/\/+$/, "").replace(/\/browse$/i, "") : ""; };

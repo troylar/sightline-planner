@@ -970,7 +970,7 @@ try:
         _json.dump({"bars": []}, open(plan, "w"))
         js.sync_once(plan, out, SBASE, TOKEN, [{"name": "First", "jql": "project = ABC"}, {"name": "Second", "jql": "project = ABC"}], 3, iss)
         L = _json.load(open(iss))
-        ok("searches: each search keeps its own list", L["version"] == 3 and [x["name"] for x in L["searches"]] == ["First", "Second"] and all(len(x["keys"]) == 3 for x in L["searches"]))
+        ok("searches: each search keeps its own list", L["version"] == 2 and [x["name"] for x in L["searches"]] == ["First", "Second"] and all(len(x["keys"]) == 3 for x in L["searches"]))
         ok("searches: an issue in two searches is stored once", len(L["issues"]) == 3)
         ok("searches: the first search is also written the old way, for an older page", L["jql"] == "project = ABC" and L["total"] == 250)
         cap = js.MAX_ISSUES; js.MAX_ISSUES = 3
@@ -1074,8 +1074,6 @@ with _vt.TemporaryDirectory() as rt:
     ok("reid: a former id still resolves in other actions, and a workstream can take its own back", st.get("r6") == "ready" and st.get("r7") == "ready")
 
 # ---- one sync, a part for each tracker (vision.md, "GitHub Issues, an optional tracker") ----
-import contextlib as _cl
-import io as _io
 import shutil as _sh
 TR = getattr(js, "TRACKERS", {})
 ok("trackers: one sync with a part for each tracker, and today only Jira's", list(TR) == ["jira"] and isinstance(TR.get("jira"), getattr(js, "Tracker", ()))
@@ -1099,8 +1097,8 @@ try:
         _json.dump({"bars": [{"jira": "ABC-2"}]}, open(plan, "w"))
         js.sync_once(plan, out, SBASE, TOKEN, "project = ABC", 3, iss)
         S, L = _json.load(open(out)), _json.load(open(iss))
-        ok("envelope: both files name their tracker and server, in formats 2 and 3",
-           S.get("tracker") == {"kind": "jira", "server": SBASE} and L.get("tracker") == S.get("tracker") and S["version"] == 2 and L["version"] == 3 and js.STATUS_FORMAT == 2 and js.ISSUES_FORMAT == 3)
+        ok("envelope: both files name their tracker and server, in the formats older pages read (status 1, issues 2)",
+           S.get("tracker") == {"kind": "jira", "server": SBASE} and L.get("tracker") == S.get("tracker") and S["version"] == 1 and L["version"] == 2 and js.STATUS_FORMAT == 1 and js.ISSUES_FORMAT == 2)
         ok("envelope: and keep every field an older reader uses", S["jiraBase"] == SBASE and L["jiraBase"] == SBASE and L["jql"] == "project = ABC" and S["snapshot"] == L["snapshot"])
 finally:
     js.jira_filter, js.jira_search = real_filter, real_search
@@ -1136,14 +1134,6 @@ if hasattr(js, "Tracker"):
         js.TRACKERS.pop("fake", None)
 else:
     ok("seam: a tracker's own token has its own name", False)
-
-# The sync warns when the page beside the plan is too old to read these files.
-buf = _io.StringIO()
-with _cl.redirect_stdout(buf):
-    js.report_run({"issues": {}, "missing": [], "page": {"version": "1.187.1", "file": "sightline.html"}}, "s.json", "i.json")
-    js.report_run({"issues": {}, "missing": [], "page": {"version": "1.188.0", "file": "sightline.html"}}, "s.json", "i.json")
-lines = buf.getvalue().splitlines()
-ok("page: an older page beside the plan is named, and a current one isn't", sum("can't read these files" in x for x in lines) == 1 and any("1.187.1" in x and "can't read" in x for x in lines))
 
 # install copies one file: that file, alone in a folder, still runs and still has its trackers.
 with _tempfile.TemporaryDirectory() as d:

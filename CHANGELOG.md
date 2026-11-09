@@ -8,7 +8,7 @@ The Jira sync names where its facts come from.
 
 ### Improved
 
-- **The sync's files say which tracker and server they come from** (Jira). Both files now name their tracker and server. Sightline refuses a file from a tracker it can't read, and sets aside search results from a different server than the status file. Jira works as before. Older copies of Sightline can't read the new files: put this version in your plan's folder before you update the sync. The sync warns when the page beside the plan is older. *Where:* The Jira sync, and Settings, then Jira connection
+- **The sync's files say which tracker and server they come from** (Jira). Both files now name their tracker and server. Sightline refuses a file from a tracker it can't read, and sets aside search results from a different server than the status file. Jira works as before, and older copies of Sightline keep reading the files the new sync writes. *Where:* The Jira sync, and Settings, then Jira connection
 
 ## 1.187.1 · Nov 9, 2026
 

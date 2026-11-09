@@ -45,10 +45,9 @@ that computer, in `jira.json` in your own Sightline settings folder (`%APPDATA%\
 `~/.config/Sightline` elsewhere), never in the shared folder. The default output is a **jira** folder beside the plan:
 `status.json` holds the plan's issues, its epics' story counts and, with `--board`, the board's sprints; `issues.json`
 holds what `--jql`, `--filter` or `--search` found. Both files name their tracker and server (`tracker`), and the page
-sets aside search results that came from a different server than the status file. Sightline 1.188.0 and later read
-these files; an older page refuses them and asks for the latest Sightline, so update the page in the plan's folder
-before you update the sync (the sync warns when the page beside the plan is older). `inspect` prints your statuses,
-resolutions, a board's sprints and sample issues, and `forget` removes a stored token.
+sets aside search results that came from a different server than the status file. Older copies of Sightline ignore
+`tracker` and keep reading the files. `inspect` prints your statuses, resolutions, a board's sprints and sample issues,
+and `forget` removes a stored token.
 
 ## Connect the output in Sightline
 
