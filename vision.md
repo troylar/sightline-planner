@@ -387,6 +387,8 @@ backups, drafts and the Jira files are not history.
   objectives.
 - Intake from any channel is a shared assistant skill that writes reviewed captures, not a separate store.
 - Tracker items are drafted in the plan and created by a person.
+- A risk or decision can be about an initiative, an outcome or a captured request. The outcome or request shows
+  what it's waiting on and its risks; nothing about its stage, priority or dates changes because of them.
 
 **Open**
 
