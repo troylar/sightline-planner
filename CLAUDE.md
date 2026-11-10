@@ -102,6 +102,13 @@ prevention is the only real control.
   OS credential store (Windows Credential Manager / macOS keychain), and writes `jira/status.json` (and
   `jira/issues.json`) beside the plan atomically. The page also reads the older `jira-status.json` /
   `jira-issues.json` names. The browser never sees a token.
+- **One sync, a part per tracker.** A tracker is a `Tracker` subclass in `TRACKERS` (today only `JiraTracker`): its
+  server form, the plan keys it reads, and `fetch`. Everything else (the plan, credentials, the envelope, the drop guard,
+  atomic writes) is shared in `sync_once`. Both files carry `tracker: {kind, server}`, and the page reads them through
+  `trackerOf`, refusing a kind it doesn't read. A Jira token keeps its credential name, `Sightline Jira: host`.
+  `tracker` was added without raising the formats, so older pages keep reading the files (`compat-old-page.js` checks a
+  real 1.187.1 build). Step 3 of the GitHub plan raises `STATUS_FORMAT` to 2 and `ISSUES_FORMAT` to 3 (and
+  `JIRA_FORMATS` with them) when GitHub's files exist; retire that check and harness199 T1's guard then.
 - **The Jira search belongs to whoever runs the sync.** `--jql` / `--filter` come from that person's command
   line, never from the shared plan: the search runs with their token and its results land in a file the
   team can read (`issues.json`, separate from `status.json`), so a plan editor must not be able

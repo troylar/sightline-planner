@@ -4994,6 +4994,7 @@ function parseJiraStatus(text){                // the file is untrusted input: c
   let o; try { o = JSON.parse(text); } catch(e){ throw new Error("It isn't a valid JSON file."); }
   if (!o || o.kind !== "sightline-jira-status" || !o.issues || typeof o.issues !== "object" || Array.isArray(o.issues)) throw new Error("This isn't a jira-status.json file from the Sightline Jira helper.");
   if (Number.isInteger(o.version) && o.version > JIRA_FORMATS.status) throw new Error(`It was written by a newer sync script (format ${o.version}). Get the latest Sightline to read it.`);
+  const tracker = trackerOf(o);
   const t = (v, n) => typeof v === "string" ? v.trim().slice(0, n) : "", issues = {};
   for (const [k, v] of Object.entries(o.issues).slice(0, 9000)){ if (!JKEY.test(k) || !v || typeof v !== "object") continue;
     issues[k] = {...jiraDesc(v), summary:t(v.summary,300), status:t(v.status,60), category:["todo","inprogress","done"].includes(v.category) ? v.category : "", assignee:t(v.assignee,80), assigneeKey:/^[A-Za-z0-9._+-]{1,100}$/.test(t(v.assigneeKey,100)) ? t(v.assigneeKey,100) : "", assigneeUser:/^[A-Za-z0-9._+-]{1,100}$/.test(t(v.assigneeUser,100)) ? t(v.assigneeUser,100) : "", epic: JKEY.test(t(v.epic,40)) ? t(v.epic,40) : "", parent: JKEY.test(t(v.parent,40)) ? t(v.parent,40) : "", isEpic: v.isEpic === true, resolution:t(v.resolution,60), sprintState:["active","future","closed"].includes(v.sprintState) ? v.sprintState : "", sprint:t(v.sprint,80), sprintId: Number.isInteger(v.sprintId) && v.sprintId > 0 && v.sprintId < 1e9 ? v.sprintId : 0, sprintStart: validIso(v.sprintStart) ? v.sprintStart : "", sprintEnd: validIso(v.sprintEnd) && (!validIso(v.sprintStart) || v.sprintEnd >= v.sprintStart) ? v.sprintEnd : "", points: typeof v.points === "number" && isFinite(v.points) && v.points >= 0 && v.points <= 1000 ? v.points : null, due: validIso(v.due) ? v.due : "", updated:t(v.updated,40), type:t(v.type,40), priority:t(v.priority,40), labels:(Array.isArray(v.labels) ? v.labels : []).filter(x=>typeof x === "string" && x.trim()).map(x=>x.trim().slice(0,60)).slice(0,20), releases:(Array.isArray(v.releases) ? v.releases : []).filter(r=>r && /^[0-9]{1,18}$/.test(String(r.id))).map(r=>({id:String(r.id), name:t(r.name,80)})).slice(0,10), created: /^\d{4}-\d{2}-\d{2}/.test(t(v.created,40)) ? t(v.created,40).slice(0,10) : "", commentedAt: validIso(t(v.commentedAt,10)) ? t(v.commentedAt,10) : "", resolvedAt: /^\d{4}-\d{2}-\d{2}/.test(t(v.resolvedAt,40)) ? t(v.resolvedAt,40).slice(0,10) : "", url: /^https:\/\/\S+$/.test(t(v.url,300)) ? t(v.url,300) : ""}; }
@@ -5033,7 +5034,22 @@ function parseJiraStatus(text){                // the file is untrusted input: c
     if (!JKEY.test(k) || issues[k] || !v || typeof v !== "object") return;
     ancestors[k] = {summary:t(v.summary,300), status:t(v.status,60), category:["todo","inprogress","done"].includes(v.category) ? v.category : "", type:t(v.type,40), isEpic: v.isEpic === true,
       parent: JKEY.test(t(v.parent,40)) ? t(v.parent,40) : "", epic: JKEY.test(t(v.epic,40)) ? t(v.epic,40) : ""}; });
-  return {ancestors, noParentLink: o.noParentLink === true, page, devCover, sync, guard, keysCut, releases, burndown, dev, rollups, rollupsTruncated: o.rollupsTruncated === true, sprints, board, snapshot: /^[0-9a-f]{8,64}$/.test(t(o.snapshot,64)) ? t(o.snapshot,64) : "", generatedAt:t(o.generatedAt,40), jiraBase: /^https:\/\/\S+$/.test(t(o.jiraBase,200)) ? t(o.jiraBase,200) : "", issues, missing:(Array.isArray(o.missing) ? o.missing : []).map(x=>t(x,40)).filter(x=>JKEY.test(x)).slice(0,2000)};
+  return {tracker, ancestors, noParentLink: o.noParentLink === true, page, devCover, sync, guard, keysCut, releases, burndown, dev, rollups, rollupsTruncated: o.rollupsTruncated === true, sprints, board, snapshot: /^[0-9a-f]{8,64}$/.test(t(o.snapshot,64)) ? t(o.snapshot,64) : "", generatedAt:t(o.generatedAt,40), jiraBase: /^https:\/\/\S+$/.test(t(o.jiraBase,200)) ? t(o.jiraBase,200) : "", issues, missing:(Array.isArray(o.missing) ? o.missing : []).map(x=>t(x,40)).filter(x=>JKEY.test(x)).slice(0,2000)};
+}
+// Whose facts a sync file holds: tracker.kind and tracker.server (from the 1.188.0 sync). An older file names no
+// tracker and is Jira's. This copy reads Jira only, so a file from another tracker is refused, never read as Jira.
+const TRACKER_NAMES = {jira:"Jira", github:"GitHub"};
+const serverOf = u => { const m = /^https:\/\/([^/?#\s]+)(\/[^?#\s]*)?$/i.exec(String(u || "").trim()); return m ? "https://" + m[1].toLowerCase() + (m[2] || "").replace(/\/+$/, "").replace(/\/browse$/i, "") : ""; };
+function trackerOf(o){
+  if (o.tracker === undefined) return {kind:"jira", server:serverOf(o.jiraBase), named:false};
+  const tr = o.tracker && typeof o.tracker === "object" && !Array.isArray(o.tracker) ? o.tracker : {};
+  const kind = typeof tr.kind === "string" ? tr.kind.trim().toLowerCase().slice(0, 20) : "";
+  if (kind !== "jira") throw new Error(Object.hasOwn(TRACKER_NAMES, kind) ? `It comes from ${TRACKER_NAMES[kind]}, and this copy of Sightline reads only Jira's files. Get the latest Sightline to read it.`
+    : "It comes from a tracker this copy of Sightline doesn't know. Get the latest Sightline to read it.");
+  const server = serverOf(tr.server);
+  if (!server) throw new Error("It doesn't say which Jira server it comes from. Run the sync again.");
+  if (o.jiraBase !== undefined && serverOf(o.jiraBase) !== server) throw new Error("It names two different Jira servers. Run the sync again.");
+  return {kind, server, named:true};
 }
 // jira-issues.json: what the helper's Jira search found (--filter / --jql), in Jira's order. Also untrusted input.
 let JIRA_ISSUES = null, jiraIssuesHandle = null;
@@ -5042,6 +5058,7 @@ function parseJiraIssues(text){
   let o; try { o = JSON.parse(text); } catch(e){ throw new Error("It isn't a valid JSON file."); }
   if (!o || o.kind !== "sightline-jira-issues" || !Array.isArray(o.issues)) throw new Error("This isn't a jira-issues.json file from the Sightline Jira helper.");
   if (Number.isInteger(o.version) && o.version > JIRA_FORMATS.issues) throw new Error(`It was written by a newer sync script (format ${o.version}). Get the latest Sightline to read it.`);
+  const tracker = trackerOf(o);
   const t = (v, n) => typeof v === "string" ? v.trim().slice(0, n) : "", issues = {}, keys = [];
   for (const v of o.issues.slice(0, 2000)){ const k = v && typeof v === "object" ? t(v.key, 40) : ""; if (!JKEY.test(k) || issues[k]) continue; keys.push(k);
     issues[k] = {...jiraDesc(v), summary:t(v.summary,300), status:t(v.status,60), category:["todo","inprogress","done"].includes(v.category) ? v.category : "", assignee:t(v.assignee,80), assigneeKey:/^[A-Za-z0-9._+-]{1,100}$/.test(t(v.assigneeKey,100)) ? t(v.assigneeKey,100) : "", assigneeUser:/^[A-Za-z0-9._+-]{1,100}$/.test(t(v.assigneeUser,100)) ? t(v.assigneeUser,100) : "", epic: JKEY.test(t(v.epic,40)) ? t(v.epic,40) : "", parent: JKEY.test(t(v.parent,40)) ? t(v.parent,40) : "", isEpic: v.isEpic === true, resolution:t(v.resolution,60), sprintState:["active","future","closed"].includes(v.sprintState) ? v.sprintState : "", sprint:t(v.sprint,80), sprintId: Number.isInteger(v.sprintId) && v.sprintId > 0 && v.sprintId < 1e9 ? v.sprintId : 0, sprintStart: validIso(v.sprintStart) ? v.sprintStart : "", sprintEnd: validIso(v.sprintEnd) && (!validIso(v.sprintStart) || v.sprintEnd >= v.sprintStart) ? v.sprintEnd : "", points: typeof v.points === "number" && isFinite(v.points) && v.points >= 0 && v.points <= 1000 ? v.points : null, due: validIso(v.due) ? v.due : "", type:t(v.type,40), priority:t(v.priority,40), labels:(Array.isArray(v.labels) ? v.labels : []).filter(x=>typeof x === "string" && x.trim()).map(x=>x.trim().slice(0,60)).slice(0,20), releases:(Array.isArray(v.releases) ? v.releases : []).filter(r=>r && /^[0-9]{1,18}$/.test(String(r.id))).map(r=>({id:String(r.id), name:t(r.name,80)})).slice(0,10), updated:t(v.updated,40), created: /^\d{4}-\d{2}-\d{2}/.test(t(v.created,40)) ? t(v.created,40).slice(0,10) : "", commentedAt: validIso(t(v.commentedAt,10)) ? t(v.commentedAt,10) : "", resolvedAt: /^\d{4}-\d{2}-\d{2}/.test(t(v.resolvedAt,40)) ? t(v.resolvedAt,40).slice(0,10) : "", url: /^https:\/\/\S+$/.test(t(v.url,300)) ? t(v.url,300) : ""}; }
@@ -5051,7 +5068,7 @@ function parseJiraIssues(text){
     .map(x=>({name:t(x.name,30), jql:t(x.jql,2000), total:num(x.total), truncated:x.truncated === true, keys:[...new Set((Array.isArray(x.keys) ? x.keys : []).map(k=>t(k,40)).filter(k=>JKEY.test(k) && issues[k]))]}))
     .filter((x,i,a)=>a.findIndex(y=>lc(y.name) === lc(x.name)) === i);
   if (!searches.length) searches = [{name:"Search", jql:t(o.jql,2000), total: Number.isInteger(o.total) && o.total >= 0 ? o.total : keys.length, truncated:o.truncated === true, keys}];
-  return {snapshot: /^[0-9a-f]{8,64}$/.test(t(o.snapshot,64)) ? t(o.snapshot,64) : "", jiraBase: /^https:\/\/\S+$/.test(t(o.jiraBase,200)) ? t(o.jiraBase,200) : "", generatedAt:t(o.generatedAt,40), searches, jql:t(o.jql,2000), total: Number.isInteger(o.total) && o.total >= 0 ? o.total : keys.length, truncated: o.truncated === true, keys, issues};
+  return {tracker, snapshot: /^[0-9a-f]{8,64}$/.test(t(o.snapshot,64)) ? t(o.snapshot,64) : "", jiraBase: /^https:\/\/\S+$/.test(t(o.jiraBase,200)) ? t(o.jiraBase,200) : "", generatedAt:t(o.generatedAt,40), searches, jql:t(o.jql,2000), total: Number.isInteger(o.total) && o.total >= 0 ? o.total : keys.length, truncated: o.truncated === true, keys, issues};
 }
 const ageOf = iso => { const t = Date.parse(iso || ""); if (!t) return ""; const m = Math.round((Date.now() - t)/60000); return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m/60)} h ago` : `${Math.round(m/1440)} d ago`; };
 async function readJiraIssues(hd, quiet){
@@ -5068,7 +5085,12 @@ async function readJiraDir(dir, quiet){
     if (st == null && is == null){ if (!quiet) setStatus(`${dir.name} has no Sightline Jira files (status.json, issues.json). Run the sync, then connect the folder it names.`); return false; }
     const same = jiraSame("dir-st", st) & jiraSame("dir-is", is);           // both checked, so each remembers its text
     if (quiet && same && (JIRA || JIRA_ISSUES)) return true;                // the minute check: nothing new
-    JIRA = st != null ? parseJiraStatus(st) : null; JIRA_ISSUES = is != null ? parseJiraIssues(is) : null; rememberTitles();
+    JIRA = st != null ? parseJiraStatus(st) : null; JIRA_ISSUES = is != null ? parseJiraIssues(is) : null;
+    // Both files name their source: a search from another server is set aside, never mixed into this one's facts.
+    if (JIRA && JIRA_ISSUES && JIRA.tracker.named && JIRA_ISSUES.tracker.named && (JIRA.tracker.kind !== JIRA_ISSUES.tracker.kind || JIRA.tracker.server !== JIRA_ISSUES.tracker.server)){
+      JIRA_ISSUES = null; rememberTitles(); render();
+      setStatus(`The search results in ${dir.name} (issues.json) come from a different server than its status file, so they aren't shown. Run the sync again.`); return true; }
+    rememberTitles();
     if (!quiet) setStatus(`Jira folder ${dir.name} connected` + (JIRA ? `, synced ${jiraAge()}` : "") + "."); render(); return true;
   } catch(e){ if (!quiet) setStatus(`Couldn't read the Jira folder: ${e.message}`); return false; }
 }
@@ -15604,7 +15626,7 @@ function analysisGuide(){ const t = cutText(S.meta.title || "this plan", 120).re
     "Look in the folder that holds this file. If you can't read files, ask the person to paste the data, or to choose Copy instructions with data in Sightline's assistant panel.", "",
     `- \`${ASSISTANT_FILES.context}\` (kind \`sightline-assistant-view\`): start here. Sightline writes it: Export for your assistant, or on its own in a connected assistant folder. It has the plan with dates as YYYY-MM-DD, its people, workstreams, milestones, risks, decisions, capacity and Jira facts, in one file.`,
     "- The plan file (`.json` or `.yaml`, often in a shared folder): the team's own plan. Read it only when the export isn't there; see Reading the plan file below.",
-    "- `jira/jira-status.json` (kind `sightline-jira-status`): Jira's facts for the issues the plan links to, by issue key. `generatedAt` says when Jira was read, and `rollups` count each epic's stories.",
+    "- `jira/jira-status.json` (kind `sightline-jira-status`): Jira's facts for the issues the plan links to, by issue key. `generatedAt` says when Jira was read, `tracker` names the tracker and server they come from, and `rollups` count each epic's stories.",
     "- `jira/jira-issues.json` (kind `sightline-jira-issues`): what a saved Jira search found. These issues are offered to the plan; they aren't part of it.", "",
     "## Rules", "",
     "1. Jira owns its facts. A Jira-linked item (`jiraLinked: true`) takes its status, sprint and dates from Jira. Sightline owns everything the team added: initiatives, tasks, workstreams, milestones, risks and decisions.",

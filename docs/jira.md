@@ -44,8 +44,10 @@ local to the token holder and is never taken from the shared plan. `--save` reme
 that computer, in `jira.json` in your own Sightline settings folder (`%APPDATA%\Sightline` on Windows,
 `~/.config/Sightline` elsewhere), never in the shared folder. The default output is a **jira** folder beside the plan:
 `status.json` holds the plan's issues, its epics' story counts and, with `--board`, the board's sprints; `issues.json`
-holds what `--jql`, `--filter` or `--search` found. `inspect` prints your statuses, resolutions, a board's sprints and
-sample issues, and `forget` removes a stored token.
+holds what `--jql`, `--filter` or `--search` found. Both files name their tracker and server (`tracker`), and the page
+sets aside search results that came from a different server than the status file. Older copies of Sightline ignore
+`tracker` and keep reading the files. `inspect` prints your statuses, resolutions, a board's sprints and sample issues,
+and `forget` removes a stored token.
 
 ## Connect the output in Sightline
 
